@@ -7,6 +7,10 @@
  * - Solo procesa actividades con ID de Classroom explícito.
  * - Requiere que la actividad esté asociada con este proyecto desarrollador.
  * - El token de GitHub se lee exclusivamente de Script Properties: GITHUB_TOKEN.
+ *
+ * Automatización E2E:
+ * - Crea idempotentemente registros en Evaluaciones GitHub para cada actividad/repositorio.
+ * - Publica CourseWork solo cuando Estado Classroom = PUBLICAR, lo que representa autorización docente explícita.
  */
 const GH_GRADE_SYNC = Object.freeze({
   SPREADSHEET_ID: '1YLSPcDSpqvaAk7lLeL6O3CTcgeqdrBtmxCgmdF6ISeA',
@@ -60,11 +64,32 @@ function ejecutarMonitorCalificacionesGitHub_(aplicar) {
     validarConfiguracionGitHub_();
 
     var ss = SpreadsheetApp.openById(GH_GRADE_SYNC.SPREADSHEET_ID);
-    var repoData = ghLeerTabla_(ghHoja_(ss, GH_GRADE_SYNC.REPOSITORIES_SHEET));
+    var repoSheet = ghHoja_(ss, GH_GRADE_SYNC.REPOSITORIES_SHEET);
+    var repoData = ghLeerTabla_(repoSheet);
     var activitySheet = ghHoja_(ss, GH_GRADE_SYNC.ACTIVITIES_SHEET);
     var activityData = ghLeerTabla_(activitySheet);
     var evaluationSheet = ghHoja_(ss, GH_GRADE_SYNC.EVALUATIONS_SHEET);
     var evaluationData = ghLeerTabla_(evaluationSheet);
+
+    var report = {
+      aplicar: aplicar,
+      evaluacionesCreadas: 0,
+      actividadesPublicadas: 0,
+      evaluacionesRevisadas: 0,
+      resultadosGitHubActualizados: 0,
+      entregasDetectadas: 0,
+      borradoresDeNotaEscritos: 0,
+      yaCalificadas: 0,
+      pendientes: 0,
+      errores: []
+    };
+
+    if (aplicar) {
+      report.evaluacionesCreadas = ghAsegurarEvaluaciones_(evaluationSheet, evaluationData, activityData, repoData);
+      report.actividadesPublicadas = ghPublicarActividadesAutorizadas_(activitySheet, activityData, report);
+      evaluationData = ghLeerTabla_(evaluationSheet);
+      activityData = ghLeerTabla_(activitySheet);
+    }
 
     var reposById = {};
     repoData.records.forEach(function(r) {
@@ -78,16 +103,6 @@ function ejecutarMonitorCalificacionesGitHub_(aplicar) {
 
     var submissionsCache = {};
     var studentsCache = {};
-    var report = {
-      aplicar: aplicar,
-      evaluacionesRevisadas: 0,
-      resultadosGitHubActualizados: 0,
-      entregasDetectadas: 0,
-      borradoresDeNotaEscritos: 0,
-      yaCalificadas: 0,
-      pendientes: 0,
-      errores: []
-    };
 
     evaluationData.records.forEach(function(ev) {
       report.evaluacionesRevisadas++;
@@ -214,6 +229,86 @@ function ejecutarMonitorCalificacionesGitHub_(aplicar) {
   }
 }
 
+function ghAsegurarEvaluaciones_(evaluationSheet, evaluationData, activityData, repoData) {
+  var existentes = {};
+  evaluationData.records.forEach(function(ev) {
+    existentes[ghClean_(ev['Actividad GitHub ID']) + '|' + ghClean_(ev['Registro repositorio ID'])] = true;
+  });
+
+  var headers = evaluationData.headers;
+  var creadas = 0;
+  activityData.records.forEach(function(activity) {
+    var activityId = ghClean_(activity['Actividad GitHub ID']);
+    var courseId = ghClean_(activity['ID curso']);
+    if (!activityId || !courseId) return;
+
+    repoData.records.forEach(function(repo) {
+      if (ghClean_(repo['ID curso']) !== courseId) return;
+      var repoId = ghClean_(repo['Registro ID']);
+      if (!repoId) return;
+      var key = activityId + '|' + repoId;
+      if (existentes[key]) return;
+
+      evaluationSheet.insertRowBefore(2);
+      var values = {
+        'Evaluación ID': 'EVAL-' + activityId + '-' + repoId,
+        'Actividad GitHub ID': activityId,
+        'Registro repositorio ID': repoId,
+        'ID curso': courseId,
+        'Correo Classroom': ghClean_(repo['Correo Classroom']),
+        'Repositorio': ghClean_(repo['Repositorio']),
+        'Estado entrega': 'SIN_ENTREGA',
+        'Estado calificación': 'PROVISIONAL',
+        'Fecha evaluación': new Date(),
+        'Error': '',
+        'Observaciones': 'Registro creado automáticamente por el monitor GitHub.'
+      };
+      headers.forEach(function(h, i) {
+        if (Object.prototype.hasOwnProperty.call(values, h)) {
+          evaluationSheet.getRange(2, i + 1).setValue(values[h]);
+        }
+      });
+      existentes[key] = true;
+      creadas++;
+    });
+  });
+  return creadas;
+}
+
+function ghPublicarActividadesAutorizadas_(activitySheet, activityData, report) {
+  var publicadas = 0;
+  activityData.records.forEach(function(activity) {
+    if (ghClean_(activity['Estado Classroom']).toUpperCase() !== 'PUBLICAR') return;
+    var courseId = ghClean_(activity['ID curso']);
+    var workId = ghClean_(activity['ID Classroom']);
+    if (!courseId || !workId) return;
+
+    try {
+      var work = Classroom.Courses.CourseWork.get(courseId, workId);
+      if (work.state !== 'PUBLISHED') {
+        Classroom.Courses.CourseWork.patch(
+          {state: 'PUBLISHED'},
+          courseId,
+          workId,
+          {updateMask: 'state'}
+        );
+      }
+      var headers = activityData.headers;
+      var stateIndex = headers.indexOf('Estado Classroom');
+      var syncIndex = headers.indexOf('Última sincronización');
+      var obsIndex = headers.indexOf('Observaciones');
+      if (stateIndex >= 0) activitySheet.getRange(activity.__row, stateIndex + 1).setValue('PUBLICADA');
+      if (syncIndex >= 0) activitySheet.getRange(activity.__row, syncIndex + 1).setValue(new Date());
+      if (obsIndex >= 0) activitySheet.getRange(activity.__row, obsIndex + 1).setValue('Publicación visible autorizada por el docente y aplicada automáticamente por el monitor.');
+      publicadas++;
+    } catch (err) {
+      var message = String(err && err.message ? err.message : err);
+      if (report && report.errores) report.errores.push({actividad: ghClean_(activity['Actividad GitHub ID']), error: message});
+    }
+  });
+  return publicadas;
+}
+
 function ghObtenerResultado_(organization, repository, branch, expectedTests, maxPoints) {
   if (!organization || !repository) throw new Error('Falta organización o repositorio GitHub.');
   var fullName = organization + '/' + repository;
@@ -237,7 +332,7 @@ function ghObtenerResultado_(organization, repository, branch, expectedTests, ma
     });
   });
 
-  var compileStep = ghFindStep_(steps, /cmakes*--build|compil|build/i);
+  var compileStep = ghFindStep_(steps, /cmake\s*--build|compil|build/i);
   var testStep = ghFindStep_(steps, /ctest|pruebas?|tests?/i);
   var compilationOk = compileStep ? compileStep.conclusion === 'success' : run.conclusion === 'success';
   var testsTotal = expectedTests;
@@ -323,7 +418,7 @@ function ghDescargarLogJob_(organization, repository, jobId) {
 
 function ghParseCTest_(text) {
   if (!text) return null;
-  var match = text.match(/(d+)% tests passed,s*(d+) tests failed out ofs*(d+)/i);
+  var match = text.match(/(\d+)% tests passed,\s*(\d+) tests failed out of\s*(\d+)/i);
   if (!match) return null;
   var failed = Number(match[2]);
   var total = Number(match[3]);
