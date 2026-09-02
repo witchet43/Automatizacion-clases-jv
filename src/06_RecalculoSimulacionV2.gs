@@ -1,28 +1,25 @@
 /**
- * Recalculo V5 de la simulación de Administración.
- * Filosofía: premiar poco y castigar fuerte.
- * Las mejoras sistémicas se ponderan al 18%; las decisiones débiles reciben
- * penalizaciones directas altas y las restricciones estructurales pesan más.
+ * Recalculo V6 de la simulación de Administración.
+ * Ajuste intermedio: premiar poco, castigar claramente, pero evitar colapsos extremos.
  */
 const SIM_V2 = Object.freeze({
-  IMPACT_FACTOR: 0.18,
-  RECALC_MARK: 'SIM_V5_SEVERA'
+  IMPACT_FACTOR: 0.22,
+  RECALC_MARK: 'SIM_V6_BALANCEADA'
 });
 
-// Penalización directa sobre Salud final por calidad de la alternativa elegida.
-// 0 = mejor decisión sistémica bajo las condiciones del caso.
-// Una mala decisión puede eliminar el beneficio de varias buenas.
+// Penalización directa sobre Salud final por calidad de la alternativa.
+// 0 = mejor decisión sistémica; valores mayores = mayor costo/riesgo administrativo.
 const SIM_DECISION_PENALTY = Object.freeze({
-  1:  {A:6,  B:2, C:0, D:9},
-  2:  {A:10, B:8, C:0, D:6},
-  3:  {A:4,  B:8, C:0, D:10},
-  4:  {A:8,  B:4, C:0, D:2},
-  5:  {A:4,  B:0, C:12,D:8},
-  6:  {A:8,  B:6, C:0, D:10},
-  7:  {A:8,  B:0, C:4, D:10},
-  8:  {A:14, B:8, C:0, D:6},
-  9:  {A:8,  B:0, C:6, D:8},
-  10: {A:8,  B:4, C:0, D:10}
+  1:  {A:4, B:1, C:0, D:6},
+  2:  {A:6, B:5, C:0, D:4},
+  3:  {A:3, B:5, C:0, D:6},
+  4:  {A:5, B:3, C:0, D:1},
+  5:  {A:3, B:0, C:8, D:5},
+  6:  {A:5, B:4, C:0, D:6},
+  7:  {A:5, B:0, C:3, D:6},
+  8:  {A:9, B:5, C:0, D:4},
+  9:  {A:5, B:0, C:4, D:5},
+  10: {A:5, B:3, C:0, D:6}
 });
 
 const SIM_V2_BOOTSTRAP = (function () {
@@ -36,7 +33,7 @@ const SIM_V2_BOOTSTRAP = (function () {
         .create();
     }
   } catch (err) {
-    console.log('Bootstrap recalculo V5: ' + err);
+    console.log('Bootstrap recalculo V6: ' + err);
   }
   return true;
 })();
@@ -100,8 +97,8 @@ function recalcularSimulacionAdministracionV2() {
 
       const qPenalty = Number((SIM_DECISION_PENALTY[decision] || {})[impact.optionKey] || 0);
       decisionPenalty += qPenalty;
-      if (qPenalty >= 8) criticalChoices++;
-      if (qPenalty >= 6) badChoices++;
+      if (qPenalty >= 6) criticalChoices++;
+      if (qPenalty >= 4) badChoices++;
     });
 
     fin = round1_(clampScore_(fin));
@@ -112,35 +109,35 @@ function recalcularSimulacionAdministracionV2() {
 
     const metricValues = [fin, ops, people, clients, adapt];
     const rawHealth = round2_(metricValues.reduce((s, v) => s + v, 0) / metricValues.length);
-    const weakUnder65 = metricValues.filter(v => v < 65).length;
-    const weakUnder55 = metricValues.filter(v => v < 55).length;
+    const weakUnder60 = metricValues.filter(v => v < 60).length;
+    const weakUnder50 = metricValues.filter(v => v < 50).length;
     const spread = Math.max.apply(null, metricValues) - Math.min.apply(null, metricValues);
 
     let structuralPenalty = 0;
-    structuralPenalty += weakUnder65 * 3;
-    structuralPenalty += weakUnder55 * 6;
-    if (budget < 2000000) structuralPenalty += 8;
-    if (budget < 1000000) structuralPenalty += 15;
-    if (budget < 0) structuralPenalty += 20;
-    if (spread > 30) structuralPenalty += 15;
-    else if (spread > 20) structuralPenalty += 8;
+    structuralPenalty += weakUnder60 * 3;
+    structuralPenalty += weakUnder50 * 5;
+    if (budget < 2000000) structuralPenalty += 5;
+    if (budget < 1000000) structuralPenalty += 8;
+    if (budget < 0) structuralPenalty += 12;
+    if (spread > 30) structuralPenalty += 8;
+    else if (spread > 20) structuralPenalty += 4;
 
-    // Penalización adicional por acumulación de malas decisiones.
-    if (badChoices >= 3) structuralPenalty += 6;
-    if (badChoices >= 5) structuralPenalty += 10;
-    if (criticalChoices >= 3) structuralPenalty += 10;
+    // Castigo acumulativo moderado: equivocarse varias veces sí pesa, sin destruir toda la simulación.
+    if (badChoices >= 4) structuralPenalty += 4;
+    if (badChoices >= 6) structuralPenalty += 6;
+    if (criticalChoices >= 3) structuralPenalty += 5;
 
     const totalPenalty = round2_(structuralPenalty + decisionPenalty);
     const health = round2_(Math.max(0, Math.min(100, rawHealth - totalPenalty)));
 
     let status;
-    if (budget < 0 || health < 50 || criticalChoices >= 5) {
+    if (budget < 0 || health < 45 || criticalChoices >= 5) {
       status = 'CRÍTICA';
-    } else if (health < 65 || criticalChoices >= 3 || weakUnder65 >= 2) {
+    } else if (health < 60 || criticalChoices >= 3 || weakUnder60 >= 2) {
       status = 'EN RIESGO';
-    } else if (health < 75) {
+    } else if (health < 70) {
       status = 'ESTABLE';
-    } else if (health < 85) {
+    } else if (health < 82) {
       status = 'SALUDABLE';
     } else {
       status = 'EXCELENTE';
