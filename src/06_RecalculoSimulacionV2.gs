@@ -1,14 +1,12 @@
 /**
- * Recalculo V6 de la simulación de Administración.
- * Ajuste intermedio: premiar poco, castigar claramente, pero evitar colapsos extremos.
+ * Recalculo V7 de la simulación de Administración.
+ * Ajuste balanceado y explicación visible de cada penalización aplicada.
  */
 const SIM_V2 = Object.freeze({
   IMPACT_FACTOR: 0.22,
-  RECALC_MARK: 'SIM_V6_BALANCEADA'
+  RECALC_MARK: 'SIM_V7_MOTIVOS'
 });
 
-// Penalización directa sobre Salud final por calidad de la alternativa.
-// 0 = mejor decisión sistémica; valores mayores = mayor costo/riesgo administrativo.
 const SIM_DECISION_PENALTY = Object.freeze({
   1:  {A:4, B:1, C:0, D:6},
   2:  {A:6, B:5, C:0, D:4},
@@ -33,7 +31,7 @@ const SIM_V2_BOOTSTRAP = (function () {
         .create();
     }
   } catch (err) {
-    console.log('Bootstrap recalculo V6: ' + err);
+    console.log('Bootstrap recalculo V7: ' + err);
   }
   return true;
 })();
@@ -43,6 +41,9 @@ function recalcularSimulacionAdministracionV2() {
   const results = ss.getSheetByName(SIM_ADM.RESULTS_SHEET);
   const impactsSheet = ss.getSheetByName(SIM_ADM.IMPACTS_SHEET);
   if (!results || !impactsSheet || results.getLastRow() < 2) return;
+
+  // La columna Q queda reservada para explicar la penalización total.
+  results.getRange(1, 17).setValue('Motivo de penalización');
 
   const impactValues = impactsSheet.getDataRange().getValues();
   const impacts = {};
@@ -79,6 +80,7 @@ function recalcularSimulacionAdministracionV2() {
     let decisionPenalty = 0;
     let criticalChoices = 0;
     let badChoices = 0;
+    const reasons = [];
 
     decisionsText.split(' | ').forEach(piece => {
       const m = piece.match(/^D(\d+):\s*(.*)$/s);
@@ -99,6 +101,9 @@ function recalcularSimulacionAdministracionV2() {
       decisionPenalty += qPenalty;
       if (qPenalty >= 6) criticalChoices++;
       if (qPenalty >= 4) badChoices++;
+      if (qPenalty > 0) {
+        reasons.push('D' + decision + '-' + impact.optionKey + ': -' + qPenalty + ' por ' + decisionPenaltyReason_(qPenalty));
+      }
     });
 
     fin = round1_(clampScore_(fin));
@@ -114,18 +119,48 @@ function recalcularSimulacionAdministracionV2() {
     const spread = Math.max.apply(null, metricValues) - Math.min.apply(null, metricValues);
 
     let structuralPenalty = 0;
-    structuralPenalty += weakUnder60 * 3;
-    structuralPenalty += weakUnder50 * 5;
-    if (budget < 2000000) structuralPenalty += 5;
-    if (budget < 1000000) structuralPenalty += 8;
-    if (budget < 0) structuralPenalty += 12;
-    if (spread > 30) structuralPenalty += 8;
-    else if (spread > 20) structuralPenalty += 4;
+    if (weakUnder60) {
+      const p = weakUnder60 * 3;
+      structuralPenalty += p;
+      reasons.push('-' + p + ' por ' + weakUnder60 + ' métrica(s) debajo de 60');
+    }
+    if (weakUnder50) {
+      const p = weakUnder50 * 5;
+      structuralPenalty += p;
+      reasons.push('-' + p + ' adicional por ' + weakUnder50 + ' métrica(s) debajo de 50');
+    }
+    if (budget < 2000000) {
+      structuralPenalty += 5;
+      reasons.push('-5 por liquidez menor a $2,000,000');
+    }
+    if (budget < 1000000) {
+      structuralPenalty += 8;
+      reasons.push('-8 adicional por liquidez menor a $1,000,000');
+    }
+    if (budget < 0) {
+      structuralPenalty += 12;
+      reasons.push('-12 por presupuesto negativo');
+    }
+    if (spread > 30) {
+      structuralPenalty += 8;
+      reasons.push('-8 por desbalance mayor a 30 puntos entre áreas');
+    } else if (spread > 20) {
+      structuralPenalty += 4;
+      reasons.push('-4 por desbalance mayor a 20 puntos entre áreas');
+    }
 
-    // Castigo acumulativo moderado: equivocarse varias veces sí pesa, sin destruir toda la simulación.
-    if (badChoices >= 4) structuralPenalty += 4;
-    if (badChoices >= 6) structuralPenalty += 6;
-    if (criticalChoices >= 3) structuralPenalty += 5;
+    if (badChoices >= 4) {
+      structuralPenalty += 4;
+      reasons.push('-4 por acumular al menos 4 decisiones débiles');
+    }
+    if (badChoices >= 6) {
+      structuralPenalty += 6;
+      reasons.push('-6 adicional por acumular al menos 6 decisiones débiles');
+    }
+    if (criticalChoices >= 3) {
+      structuralPenalty += 5;
+      reasons.push('-5 por acumular al menos 3 decisiones críticas');
+    }
 
     const totalPenalty = round2_(structuralPenalty + decisionPenalty);
     const health = round2_(Math.max(0, Math.min(100, rawHealth - totalPenalty)));
@@ -162,9 +197,18 @@ function recalcularSimulacionAdministracionV2() {
       metrics[0][0] + ' (' + metrics[0][1] + ')',
       metrics[metrics.length - 1][0] + ' (' + metrics[metrics.length - 1][1] + ')'
     ]]);
+    results.getRange(r + 1, 17).setValue(reasons.length ? reasons.join(' | ') : 'Sin penalización');
   }
 
   rebuildSimulationDashboard_(ss);
+}
+
+function decisionPenaltyReason_(points) {
+  if (points >= 8) return 'decisión de riesgo sistémico muy alto';
+  if (points >= 6) return 'decisión crítica o fuertemente cortoplacista';
+  if (points >= 4) return 'decisión débil con costo sistémico importante';
+  if (points >= 2) return 'trade-off desfavorable o riesgo moderado';
+  return 'trade-off menor frente a la alternativa más sólida';
 }
 
 function round1_(n) {
