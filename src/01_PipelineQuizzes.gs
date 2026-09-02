@@ -64,8 +64,14 @@ function processOneQuiz_(sheet, record, allQuestions) {
   SpreadsheetApp.flush();
 
   try {
-    if (clean_(q['ID del Form']) || clean_(q['ID actividad Classroom'])) {
-      throw new Error('La fila ya contiene IDs de salida; se detuvo para evitar duplicados.');
+    const existingFormId = clean_(q['ID del Form']);
+    const existingClassroomId = clean_(q['ID actividad Classroom']);
+
+    if (existingFormId && existingClassroomId) {
+      throw new Error('La fila ya contiene Form y actividad Classroom; se detuvo para evitar duplicados.');
+    }
+    if (!existingFormId && existingClassroomId) {
+      throw new Error('Estado inconsistente: existe ID de Classroom pero falta ID del Form.');
     }
 
     const items = allQuestions
@@ -90,8 +96,22 @@ function processOneQuiz_(sheet, record, allQuestions) {
       throw new Error('Los puntos de las preguntas (' + total + ') no coinciden con Puntos totales.');
     }
 
+    validateQuizFeedbackRequirements_(q, items);
     assertNoManualEmailQuestions_(items.map(x => x.data.Pregunta), 'Preguntas Quiz');
-    const form = buildQuizForm_(q, items);
+
+    let form;
+    let reusedForm = false;
+    if (existingFormId) {
+      try {
+        form = FormApp.openById(existingFormId);
+        reusedForm = true;
+      } catch (err) {
+        throw new Error('No se pudo reutilizar el Form existente ' + existingFormId + ': ' + (err && err.message ? err.message : err));
+      }
+    } else {
+      form = buildQuizForm_(q, items);
+    }
+
     assertNoManualEmailQuestions_(
       form.getItems().map(item => item.getTitle()),
       'Form creado'
@@ -126,9 +146,11 @@ function processOneQuiz_(sheet, record, allQuestions) {
       'URL responder Form': form.getPublishedUrl(),
       'ID actividad Classroom': work.id,
       'URL actividad Classroom': work.alternateLink || '',
-      [H.CREATED_AT]: new Date(),
+      [H.CREATED_AT]: clean_(q[H.CREATED_AT]) || new Date(),
       [H.LAST_UPDATE]: new Date(),
-      'Resultado / error': 'CREADA como DRAFT; no publicada a alumnos.'
+      'Resultado / error': reusedForm
+        ? 'CREADA como DRAFT; Form existente reutilizado y actividad Classroom recreada.'
+        : 'CREADA como DRAFT; no publicada a alumnos.'
     });
   } catch (err) {
     sheet.getRange(record.row, statusCol).setValue(QUIZ_PIPELINE.ERROR);
@@ -138,7 +160,7 @@ function processOneQuiz_(sheet, record, allQuestions) {
   }
 }
 
-function buildQuizForm_(quiz, items) {
+function validateQuizFeedbackRequirements_(quiz, items) {
   const instrumentType = clean_(quiz['Tipo instrumento']).toUpperCase();
   const feedbackPolicy = clean_(quiz['Política retroalimentación']).toUpperCase();
   const isQuizInstrument = instrumentType === 'QUIZ';
@@ -158,7 +180,11 @@ function buildQuizForm_(quiz, items) {
     });
   }
 
-  const showFeedback = isQuizInstrument || feedbackPolicy !== 'SIN_RETROALIMENTACION';
+  return isQuizInstrument || feedbackPolicy !== 'SIN_RETROALIMENTACION';
+}
+
+function buildQuizForm_(quiz, items) {
+  const showFeedback = validateQuizFeedbackRequirements_(quiz, items);
 
   const form = FormApp.create(clean_(quiz[H.TITLE]));
   form.setDescription(quizDescription_(quiz.Instrucciones));
