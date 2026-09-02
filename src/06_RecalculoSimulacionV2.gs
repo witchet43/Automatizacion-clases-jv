@@ -1,11 +1,28 @@
 /**
- * Recalculo V3 de la simulación de Administración.
- * Mantiene impactos cualitativos ponderados al 30% y aplica evaluación más estricta:
- * penaliza métricas débiles, falta de liquidez y desbalance sistémico.
+ * Recalculo V4 de la simulación de Administración.
+ * Mantiene los impactos sistémicos por métrica y añade una penalización explícita
+ * por calidad de decisión. Una opción administrativamente débil puede empeorar la
+ * salud global aunque otras métricas queden temporalmente altas.
  */
 const SIM_V2 = Object.freeze({
   IMPACT_FACTOR: 0.30,
-  RECALC_MARK: 'SIM_V3_RECALCULADA'
+  RECALC_MARK: 'SIM_V4_RECALCULADA'
+});
+
+// Penalización directa sobre Salud final por calidad de la alternativa elegida.
+// 0 = decisión sistémicamente más sólida bajo las condiciones del caso.
+// Valores altos = decisión con costos ocultos, riesgo o visión local/cortoplacista.
+const SIM_DECISION_PENALTY = Object.freeze({
+  1:  {A:3, B:1, C:0, D:4},
+  2:  {A:5, B:4, C:0, D:3},
+  3:  {A:2, B:4, C:0, D:5},
+  4:  {A:4, B:2, C:0, D:1},
+  5:  {A:2, B:0, C:6, D:4},
+  6:  {A:4, B:3, C:0, D:5},
+  7:  {A:4, B:0, C:2, D:5},
+  8:  {A:7, B:4, C:0, D:3},
+  9:  {A:4, B:0, C:3, D:4},
+  10: {A:4, B:2, C:0, D:5}
 });
 
 const SIM_V2_BOOTSTRAP = (function () {
@@ -19,7 +36,7 @@ const SIM_V2_BOOTSTRAP = (function () {
         .create();
     }
   } catch (err) {
-    console.log('Bootstrap recalculo V3: ' + err);
+    console.log('Bootstrap recalculo V4: ' + err);
   }
   return true;
 })();
@@ -35,9 +52,11 @@ function recalcularSimulacionAdministracionV2() {
   for (let r = 1; r < impactValues.length; r++) {
     const row = impactValues[r];
     const decision = Number(row[0]);
+    const optionKey = String(row[1] || '').trim().toUpperCase();
     const option = String(row[2] || '').trim();
     if (!decision || !option) continue;
     impacts[decision + '||' + option] = {
+      optionKey: optionKey,
       budget: Number(row[3] || 0),
       fin: Number(row[4] || 0) * SIM_V2.IMPACT_FACTOR,
       ops: Number(row[5] || 0) * SIM_V2.IMPACT_FACTOR,
@@ -60,6 +79,8 @@ function recalcularSimulacionAdministracionV2() {
     let people = SIM_ADM.START_SCORE;
     let clients = SIM_ADM.START_SCORE;
     let adapt = SIM_ADM.START_SCORE;
+    let decisionPenalty = 0;
+    let criticalChoices = 0;
 
     decisionsText.split(' | ').forEach(piece => {
       const m = piece.match(/^D(\d+):\s*(.*)$/s);
@@ -68,12 +89,17 @@ function recalcularSimulacionAdministracionV2() {
       const option = String(m[2] || '').trim();
       const impact = impacts[decision + '||' + option];
       if (!impact) return;
+
       budget += impact.budget;
       fin += impact.fin;
       ops += impact.ops;
       people += impact.people;
       clients += impact.clients;
       adapt += impact.adapt;
+
+      const qPenalty = Number((SIM_DECISION_PENALTY[decision] || {})[impact.optionKey] || 0);
+      decisionPenalty += qPenalty;
+      if (qPenalty >= 5) criticalChoices++;
     });
 
     fin = round1_(clampScore_(fin));
@@ -88,21 +114,22 @@ function recalcularSimulacionAdministracionV2() {
     const weakUnder50 = metricValues.filter(v => v < 50).length;
     const spread = Math.max.apply(null, metricValues) - Math.min.apply(null, metricValues);
 
-    let penalty = 0;
-    penalty += weakUnder60 * 4;
-    penalty += weakUnder50 * 8;
-    if (budget < 2000000) penalty += 5;
-    if (budget < 1000000) penalty += 10;
-    if (spread > 30) penalty += 10;
-    else if (spread > 20) penalty += 5;
+    let structuralPenalty = 0;
+    structuralPenalty += weakUnder60 * 4;
+    structuralPenalty += weakUnder50 * 8;
+    if (budget < 2000000) structuralPenalty += 5;
+    if (budget < 1000000) structuralPenalty += 10;
+    if (spread > 30) structuralPenalty += 10;
+    else if (spread > 20) structuralPenalty += 5;
 
-    let health = round2_(Math.max(0, Math.min(100, rawHealth - penalty)));
+    const totalPenalty = round2_(structuralPenalty + decisionPenalty);
+    const health = round2_(Math.max(0, Math.min(100, rawHealth - totalPenalty)));
     let status;
 
     if (budget < 0) {
       status = 'CRÍTICA';
-    } else if (weakUnder60 >= 2) {
-      status = 'EN RIESGO';
+    } else if (weakUnder60 >= 2 || criticalChoices >= 3) {
+      status = health < 50 ? 'CRÍTICA' : 'EN RIESGO';
     } else if (health >= 85) {
       status = 'EXCELENTE';
     } else if (health >= 75) {
@@ -128,7 +155,7 @@ function recalcularSimulacionAdministracionV2() {
       clients,
       adapt,
       rawHealth,
-      penalty,
+      totalPenalty,
       health,
       status,
       metrics[0][0] + ' (' + metrics[0][1] + ')',
