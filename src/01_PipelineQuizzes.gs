@@ -139,6 +139,27 @@ function processOneQuiz_(sheet, record, allQuestions) {
 }
 
 function buildQuizForm_(quiz, items) {
+  const instrumentType = clean_(quiz['Tipo instrumento']).toUpperCase();
+  const feedbackPolicy = clean_(quiz['Política retroalimentación']).toUpperCase();
+  const isQuizInstrument = instrumentType === 'QUIZ';
+
+  if (isQuizInstrument && feedbackPolicy === 'SIN_RETROALIMENTACION') {
+    throw new Error('Configuración inválida: todo QUIZ debe proporcionar retroalimentación.');
+  }
+
+  if (isQuizInstrument) {
+    items.forEach(rec => {
+      const x = rec.data;
+      if (!clean_(x[H.GOOD_FEEDBACK]) || !clean_(x[H.BAD_FEEDBACK])) {
+        throw new Error(
+          'El QUIZ requiere retroalimentación correcta e incorrecta en la pregunta ' + x.Orden + '.'
+        );
+      }
+    });
+  }
+
+  const showFeedback = isQuizInstrument || feedbackPolicy !== 'SIN_RETROALIMENTACION';
+
   const form = FormApp.create(clean_(quiz[H.TITLE]));
   form.setDescription(quizDescription_(quiz.Instrucciones));
   form.setIsQuiz(true);
@@ -148,8 +169,6 @@ function buildQuizForm_(quiz, items) {
   form.setLimitOneResponsePerUser(true);
   form.setShowLinkToRespondAgain(false);
   form.setPublishingSummary(false);
-
-  const showFeedback = clean_(quiz['Política retroalimentación']).toUpperCase() !== 'SIN_RETROALIMENTACION';
 
   items.forEach(rec => {
     const x = rec.data;
