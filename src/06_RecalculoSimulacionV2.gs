@@ -1,11 +1,11 @@
 /**
- * Recalculo V2 de la simulación de Administración.
- * Corrige saturación de métricas: los impactos cualitativos se ponderan al 30%.
- * El presupuesto final también produce penalización de liquidez.
+ * Recalculo V3 de la simulación de Administración.
+ * Mantiene impactos cualitativos ponderados al 30% y aplica evaluación más estricta:
+ * penaliza métricas débiles, falta de liquidez y desbalance sistémico.
  */
 const SIM_V2 = Object.freeze({
   IMPACT_FACTOR: 0.30,
-  RECALC_MARK: 'SIM_V2_RECALCULADA'
+  RECALC_MARK: 'SIM_V3_RECALCULADA'
 });
 
 const SIM_V2_BOOTSTRAP = (function () {
@@ -19,7 +19,7 @@ const SIM_V2_BOOTSTRAP = (function () {
         .create();
     }
   } catch (err) {
-    console.log('Bootstrap recalculo V2: ' + err);
+    console.log('Bootstrap recalculo V3: ' + err);
   }
   return true;
 })();
@@ -61,8 +61,7 @@ function recalcularSimulacionAdministracionV2() {
     let clients = SIM_ADM.START_SCORE;
     let adapt = SIM_ADM.START_SCORE;
 
-    const pieces = decisionsText.split(' | ');
-    pieces.forEach(piece => {
+    decisionsText.split(' | ').forEach(piece => {
       const m = piece.match(/^D(\d+):\s*(.*)$/s);
       if (!m) return;
       const decision = Number(m[1]);
@@ -83,15 +82,38 @@ function recalcularSimulacionAdministracionV2() {
     clients = round1_(clampScore_(clients));
     adapt = round1_(clampScore_(adapt));
 
-    const rawHealth = round2_((fin + ops + people + clients + adapt) / 5);
-    let penalty = liquidityPenaltyV2_(budget);
-    [fin, ops, people, clients, adapt].forEach(v => {
-      if (v < 40) penalty += 5;
-      else if (v < 55) penalty += 2;
-    });
+    const metricValues = [fin, ops, people, clients, adapt];
+    const rawHealth = round2_(metricValues.reduce((s, v) => s + v, 0) / metricValues.length);
+    const weakUnder60 = metricValues.filter(v => v < 60).length;
+    const weakUnder50 = metricValues.filter(v => v < 50).length;
+    const spread = Math.max.apply(null, metricValues) - Math.min.apply(null, metricValues);
 
-    const health = round2_(Math.max(0, Math.min(100, rawHealth - penalty)));
-    const status = health >= 85 ? 'SALUDABLE' : health >= 70 ? 'ESTABLE' : health >= 55 ? 'EN RIESGO' : 'CRÍTICA';
+    let penalty = 0;
+    penalty += weakUnder60 * 4;
+    penalty += weakUnder50 * 8;
+    if (budget < 2000000) penalty += 5;
+    if (budget < 1000000) penalty += 10;
+    if (spread > 30) penalty += 10;
+    else if (spread > 20) penalty += 5;
+
+    let health = round2_(Math.max(0, Math.min(100, rawHealth - penalty)));
+    let status;
+
+    if (budget < 0) {
+      status = 'CRÍTICA';
+    } else if (weakUnder60 >= 2) {
+      status = 'EN RIESGO';
+    } else if (health >= 85) {
+      status = 'EXCELENTE';
+    } else if (health >= 75) {
+      status = 'SALUDABLE';
+    } else if (health >= 65) {
+      status = 'ESTABLE';
+    } else if (health >= 50) {
+      status = 'EN RIESGO';
+    } else {
+      status = 'CRÍTICA';
+    }
 
     const metrics = [
       ['Finanzas', fin], ['Operaciones', ops], ['Personas', people], ['Clientes', clients], ['Adaptabilidad', adapt]
@@ -118,11 +140,9 @@ function recalcularSimulacionAdministracionV2() {
 }
 
 function liquidityPenaltyV2_(budget) {
-  if (budget < 0) return 20;
-  if (budget < 500000) return 14;
-  if (budget < 1000000) return 9;
-  if (budget < 1500000) return 5;
-  if (budget < 2000000) return 2;
+  if (budget < 0) return 15;
+  if (budget < 1000000) return 15;
+  if (budget < 2000000) return 5;
   return 0;
 }
 
