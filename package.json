@@ -1,0 +1,19 @@
+{
+  "name": "automatizacion-academica",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Fuente versionada del proyecto Apps Script Pipeline Quizzes - Forms - Classroom",
+  "devDependencies": {
+    "@google/clasp": "^3.4.1"
+  },
+  "scripts": {
+    "clasp:login": "clasp login",
+    "clasp:status": "clasp status",
+    "clasp:pull": "clasp pull",
+    "clasp:push": "clasp push",
+    "clasp:open": "clasp open-script"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
