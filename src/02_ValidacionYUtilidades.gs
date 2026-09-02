@@ -172,5 +172,3 @@ function yes_(value) {
   return ['S\u00cd', 'SI', 'TRUE', '1', 'YES']
     .includes(clean_(value).toUpperCase());
 }
-
-// Trigger CI connectivity check; no runtime behavior change.
