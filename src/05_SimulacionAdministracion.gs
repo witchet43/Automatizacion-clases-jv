@@ -16,9 +16,6 @@ const SIM_ADM = Object.freeze({
   CONFIG_MARK: '[SIM_CONFIGURADA]'
 });
 
-// Se ejecuta cada vez que arranca el proyecto por cualquier trigger ya existente.
-// Garantiza que exista un monitor independiente para terminar de configurar
-// formularios de simulación creados por el pipeline común.
 const SIM_ADM_BOOTSTRAP = (function () {
   try {
     const exists = ScriptApp.getProjectTriggers()
@@ -65,7 +62,6 @@ function procesarSimulacionesPendientes() {
     try {
       form.setDestination(FormApp.DestinationType.SPREADSHEET, SIM_ADM.SPREADSHEET_ID);
     } catch (err) {
-      // Si ya tiene destino, continuar sin bloquear la simulación.
       console.log('Destino de respuestas: ' + err);
     }
     form.setConfirmationMessage(
@@ -160,7 +156,8 @@ function procesarRespuestaSimulacion(e) {
     status: status,
     strongest: strongest,
     weakest: weakest,
-    decisions: selected.join(' | ')
+    decisions: selected.join(' | '),
+    reason: 'Pendiente de recálculo automático'
   });
   rebuildSimulationDashboard_(ss);
 }
@@ -192,9 +189,10 @@ function upsertSimulationResult_(ss, x) {
   const headers = [
     'Fecha','Correo verificado','Presupuesto inicial','Presupuesto final','Finanzas','Operaciones',
     'Personas','Clientes','Adaptabilidad','Salud bruta','Penalización','Salud final','Estado',
-    'Fortaleza','Debilidad','Decisiones'
+    'Fortaleza','Debilidad','Decisiones','Motivo de penalización'
   ];
   if (sheet.getLastRow() === 0) sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  else sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
 
   const data = sheet.getDataRange().getValues();
   let targetRow = -1;
@@ -208,7 +206,7 @@ function upsertSimulationResult_(ss, x) {
   sheet.getRange(targetRow, 1, 1, headers.length).setValues([[
     x.timestamp, x.email, SIM_ADM.START_BUDGET, x.budget, x.fin, x.ops, x.people, x.clients, x.adapt,
     Number(x.rawHealth.toFixed(2)), x.penalty, Number(x.health.toFixed(2)), x.status,
-    x.strongest, x.weakest, x.decisions
+    x.strongest, x.weakest, x.decisions, x.reason || 'Pendiente de recálculo automático'
   ]]);
 }
 
@@ -221,19 +219,19 @@ function rebuildSimulationDashboard_(ss) {
   rows.sort((a, b) => Number(b[11] || 0) - Number(a[11] || 0));
 
   dash.getRange('A1').setValue('SIMULACIÓN SISTÉMICA - SALUD DE LAS EMPRESAS');
-  dash.getRange('A3:P3').setValues([[
+  dash.getRange('A3:Q3').setValues([[
     'Posición','Correo','Salud final','Estado','Presupuesto final','Finanzas','Operaciones','Personas',
-    'Clientes','Adaptabilidad','Penalización','Fortaleza','Debilidad','Salud bruta','Presupuesto inicial','Fecha'
+    'Clientes','Adaptabilidad','Penalización','Motivo de penalización','Fortaleza','Debilidad','Salud bruta','Presupuesto inicial','Fecha'
   ]]);
 
   if (rows.length) {
     const out = rows.map((r, i) => [
-      i + 1, r[1], r[11], r[12], r[3], r[4], r[5], r[6], r[7], r[8], r[10], r[13], r[14], r[9], r[2], r[0]
+      i + 1, r[1], r[11], r[12], r[3], r[4], r[5], r[6], r[7], r[8], r[10], r[16] || 'Sin penalización', r[13], r[14], r[9], r[2], r[0]
     ]);
     dash.getRange(4, 1, out.length, out[0].length).setValues(out);
 
     const avg = idx => rows.reduce((s, r) => s + Number(r[idx] || 0), 0) / rows.length;
-    dash.getRange('R1:S8').setValues([
+    dash.getRange('S1:T8').setValues([
       ['Resumen del grupo','Valor'],
       ['Participantes', rows.length],
       ['Salud promedio', Number(avg(11).toFixed(2))],
@@ -245,7 +243,7 @@ function rebuildSimulationDashboard_(ss) {
     ]);
   }
   dash.setFrozenRows(3);
-  dash.autoResizeColumns(1, 19);
+  dash.autoResizeColumns(1, 20);
 }
 
 function ensureSimulationSheets_(ss) {
@@ -261,12 +259,12 @@ function ensureSimulationSheets_(ss) {
       'Decisión','Clave','Opción exacta','Impacto presupuesto','Finanzas','Operaciones','Personas','Clientes','Adaptabilidad','Notas'
     ]]);
   }
-  if (results.getLastRow() === 0) {
-    results.getRange(1, 1, 1, 16).setValues([[
-      'Fecha','Correo verificado','Presupuesto inicial','Presupuesto final','Finanzas','Operaciones','Personas',
-      'Clientes','Adaptabilidad','Salud bruta','Penalización','Salud final','Estado','Fortaleza','Debilidad','Decisiones'
-    ]]);
-  }
+  const headers = [
+    'Fecha','Correo verificado','Presupuesto inicial','Presupuesto final','Finanzas','Operaciones','Personas',
+    'Clientes','Adaptabilidad','Salud bruta','Penalización','Salud final','Estado','Fortaleza','Debilidad','Decisiones','Motivo de penalización'
+  ];
+  if (results.getLastRow() === 0) results.getRange(1, 1, 1, headers.length).setValues([headers]);
+  else results.getRange(1, 1, 1, headers.length).setValues([headers]);
 }
 
 function clampScore_(value) {
