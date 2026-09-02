@@ -55,6 +55,20 @@ La función procesa los quizzes en estado `CREADA`, empata exclusivamente por
 correo exacto, conserva cualquier calificación existente, exige entregas
 `TURNED_IN` y escribe solo `draftGrade`. No devuelve trabajos ni publica notas.
 
+## Calificación final de Unidad 1
+
+Para crear o actualizar la actividad `Calificación final - Unidad 1` en el tema
+`Unidad 1`, ejecutar:
+
+```javascript
+calcularYPublicarCalificacionUnidad1()
+```
+
+Calcula por alumno el promedio de los exámenes publicados del tema al 70% y el
+promedio de las demás actividades publicadas del tema al 30%. Las actividades
+publicadas sin nota cuentan como cero. La función escribe el resultado como
+`draftGrade` y puede volver a ejecutarse para recalcularlo.
+
 ## Recuperar un cambio manual hecho en Apps Script
 
 Solo cuando conscientemente quieras traer cambios remotos al repositorio:
