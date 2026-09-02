@@ -15,16 +15,16 @@ const QUIZ_PIPELINE = Object.freeze({
 const QUIZ_EMAIL_NOTICE = 'Importante: responde el cuestionario utilizando la misma cuenta de Google y el mismo correo electrónico con el que estás registrado en Google Classroom. Si utilizas otra cuenta, tu calificación no podrá asociarse automáticamente.';
 
 const H = Object.freeze({
-  TITLE: 'T\u00edtulo',
-  LAST_UPDATE: '\u00daltima actualizaci\u00f3n',
-  FORM_EDIT_URL: 'URL edici\u00f3n Form',
-  CREATED_AT: 'Fecha creaci\u00f3n',
-  OPTION_A: 'Opci\u00f3n A',
-  OPTION_B: 'Opci\u00f3n B',
-  OPTION_C: 'Opci\u00f3n C',
-  OPTION_D: 'Opci\u00f3n D',
-  GOOD_FEEDBACK: 'Retroalimentaci\u00f3n correcta',
-  BAD_FEEDBACK: 'Retroalimentaci\u00f3n incorrecta'
+  TITLE: 'Título',
+  LAST_UPDATE: 'Última actualización',
+  FORM_EDIT_URL: 'URL edición Form',
+  CREATED_AT: 'Fecha creación',
+  OPTION_A: 'Opción A',
+  OPTION_B: 'Opción B',
+  OPTION_C: 'Opción C',
+  OPTION_D: 'Opción D',
+  GOOD_FEEDBACK: 'Retroalimentación correcta',
+  BAD_FEEDBACK: 'Retroalimentación incorrecta'
 });
 
 function instalarMonitorQuizzes() {
@@ -142,9 +142,6 @@ function buildQuizForm_(quiz, items) {
   const form = FormApp.create(clean_(quiz[H.TITLE]));
   form.setDescription(quizDescription_(quiz.Instrucciones));
   form.setIsQuiz(true);
-  // La identidad siempre proviene de la cuenta de Google autenticada.
-  // setCollectEmail(true) por si el formulario se abrió antes de la llamada REST;
-  // VERIFIED evita el modo RESPONDER_INPUT (campo manual de correo).
   form.setCollectEmail(true);
   configureVerifiedEmail_(form.getId(), true);
   form.setShuffleQuestions(yes_(quiz['Barajar preguntas']));
@@ -152,19 +149,14 @@ function buildQuizForm_(quiz, items) {
   form.setShowLinkToRespondAgain(false);
   form.setPublishingSummary(false);
 
-  // Limitación confirmada (Forms API v1 y FormApp, 2026-09-02):
-  // no existe un ajuste programático para ocultar o fijar
-  // "Envíame una copia de mis respuestas". La API expone
-  // emailCollectionType, pero no ese control de la interfaz.
+  const showFeedback = clean_(quiz['Política retroalimentación']).toUpperCase() !== 'SIN_RETROALIMENTACION';
 
   items.forEach(rec => {
     const x = rec.data;
     const type = normalizeQuizQuestionType_(x.Tipo);
 
     if (type === 'RESPUESTA_CORTA') {
-      // FormApp puede crear TextItem, pero no permite definir su clave de
-      // respuestas para autocalificación. Para respuesta corta usamos Forms API v1.
-      createShortAnswerQuestion_(form.getId(), form.getItems().length, x);
+      createShortAnswerQuestion_(form.getId(), form.getItems().length, x, showFeedback);
       return;
     }
 
@@ -208,14 +200,16 @@ function buildQuizForm_(quiz, items) {
       item.createChoice(value, keys.indexOf(letters[index]) >= 0)
     ));
 
-    const good = FormApp.createFeedback()
-      .setText(clean_(x[H.GOOD_FEEDBACK]))
-      .build();
-    const bad = FormApp.createFeedback()
-      .setText(clean_(x[H.BAD_FEEDBACK]))
-      .build();
-    item.setFeedbackForCorrect(good);
-    item.setFeedbackForIncorrect(bad);
+    if (showFeedback) {
+      const goodText = clean_(x[H.GOOD_FEEDBACK]);
+      const badText = clean_(x[H.BAD_FEEDBACK]);
+      if (goodText) {
+        item.setFeedbackForCorrect(FormApp.createFeedback().setText(goodText).build());
+      }
+      if (badText) {
+        item.setFeedbackForIncorrect(FormApp.createFeedback().setText(badText).build());
+      }
+    }
   });
 
   return form;
@@ -272,7 +266,7 @@ function shortAnswerValues_(x) {
   return unique;
 }
 
-function createShortAnswerQuestion_(formId, index, x) {
+function createShortAnswerQuestion_(formId, index, x, showFeedback) {
   const answers = shortAnswerValues_(x);
   const points = Number(x.Puntos);
   if (!Number.isFinite(points) || points < 0 || Math.floor(points) !== points) {
@@ -280,19 +274,22 @@ function createShortAnswerQuestion_(formId, index, x) {
   }
 
   const instruction = clean_(x['Instrucción de formato']);
-  const feedbackText = 'Respuesta esperada: ' + answers.join(' / ');
+  const grading = {
+    pointValue: points,
+    correctAnswers: {
+      answers: answers.map(value => ({value: value}))
+    }
+  };
+  if (showFeedback) {
+    grading.generalFeedback = {text: 'Respuesta esperada: ' + answers.join(' / ')};
+  }
+
   const item = {
     title: clean_(x.Pregunta),
     questionItem: {
       question: {
         required: yes_(x.Obligatoria),
-        grading: {
-          pointValue: points,
-          correctAnswers: {
-            answers: answers.map(value => ({value: value}))
-          },
-          generalFeedback: {text: feedbackText}
-        },
+        grading: grading,
         textQuestion: {paragraph: false}
       }
     }
