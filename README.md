@@ -39,6 +39,22 @@ validarSoporteTiposQuiz()
 
 El monitor ya instalado seguirá invocando `procesarQuizzesAprobados()`; no es necesario reinstalarlo solo por actualizar código.
 
+## Flujo canónico de exámenes
+
+1. Registrar el examen y sus preguntas en las hojas `Quizzes` y `Preguntas Quiz`.
+2. Marcarlo como `APROBADA`. El pipeline crea el Google Form y la actividad de
+   Classroom enlazada y administrable por este proyecto.
+3. Publicar la actividad cuando corresponda y esperar las entregas.
+4. Cuando el docente solicite importar notas, ejecutar en Apps Script:
+
+```javascript
+importarCalificacionesAhora()
+```
+
+La función procesa los quizzes en estado `CREADA`, empata exclusivamente por
+correo exacto, conserva cualquier calificación existente, exige entregas
+`TURNED_IN` y escribe solo `draftGrade`. No devuelve trabajos ni publica notas.
+
 ## Recuperar un cambio manual hecho en Apps Script
 
 Solo cuando conscientemente quieras traer cambios remotos al repositorio:

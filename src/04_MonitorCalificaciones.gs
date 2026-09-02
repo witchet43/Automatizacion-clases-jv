@@ -13,6 +13,17 @@ function auditarMonitorCalificacionesQuizzes() {
   return ejecutarMonitorCalificacionesQuizzes_(false);
 }
 
+/**
+ * Punto de entrada canónico para una importación solicitada por el docente.
+ *
+ * Uso: seleccionar importarCalificacionesAhora en Apps Script y pulsar Ejecutar.
+ * Procesa todos los quizzes en estado CREADA, empata exclusivamente por correo
+ * exacto, escribe solo draftGrade y no devuelve ni publica entregas.
+ */
+function importarCalificacionesAhora() {
+  return ejecutarMonitorCalificacionesQuizzes_(true);
+}
+
 function monitorearCalificacionesQuizzesCadaMinuto() {
   return ejecutarMonitorCalificacionesQuizzes_(true);
 }
@@ -20,11 +31,6 @@ function monitorearCalificacionesQuizzesCadaMinuto() {
 function ejecutarMonitorCalificacionesQuizzes_(aplicar) {
   const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
   const sh = ss.getSheetByName(QUIZ_PIPELINE.QUIZZES_SHEET);
-
-  // Recuperación controlada del Examen 1 de Ética y Legislación Informática.
-  // Vincula el Form y la actividad ya existentes por títulos EXACTOS y deja
-  // registrados sus IDs en la hoja operativa. No crea duplicados.
-  recuperarExamen1EliSiNecesario_(ss, sh);
 
   const data = sh.getDataRange().getValues();
   const h = {};
@@ -100,6 +106,13 @@ function procesarCalificacionesQuiz_(courseId, workId, formId, aplicar, quizId) 
     const e = String((x.profile && x.profile.emailAddress) || '').trim().toLowerCase();
     if (e) byEmail[e] = x;
   });
+
+  if (alumnos.length && Object.keys(byEmail).length !== alumnos.length) {
+    throw new Error(
+      'Classroom no devolvió el correo de todos los alumnos. ' +
+      'No se importará ninguna calificación sin correspondencia exacta por correo.'
+    );
+  }
 
   const map = {};
   const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
@@ -207,89 +220,6 @@ function obtenerAjusteCalificacionQuiz_(quizId) {
   // y se otorgan 16 puntos en bloque sobre la nota registrada por Forms.
   if (String(quizId || '').trim() === 'EXAM-20260831-ELI-U1-001') return 16;
   return 0;
-}
-
-function recuperarExamen1EliSiNecesario_(ss, sh) {
-  const QUIZ_ID = 'EXAM-20260831-ELI-U1-001';
-  const COURSE_ID = '871149624583';
-  const COURSEWORK_TITLE = 'Examen 1 - Introducción al Derecho Informático';
-  const FORM_TITLES = [
-    'Examen Unidad 1 - Introducción al Derecho Informático',
-    'Examen 1 - Introducción al Derecho Informático'
-  ];
-
-  const data = sh.getDataRange().getValues();
-  if (!data.length) return;
-
-  const h = {};
-  data[0].forEach((v, i) => h[String(v)] = i);
-  const rowIndex = data.findIndex((r, idx) => idx > 0 && String(r[h['Quiz ID']] || '').trim() === QUIZ_ID);
-  if (rowIndex < 1) return;
-
-  const row = data[rowIndex];
-  let formId = String(row[h['ID del Form']] || '').trim();
-  let workId = String(row[h['ID actividad Classroom']] || '').trim();
-
-  if (!formId) {
-    const forms = [];
-    FORM_TITLES.forEach(title => {
-      const it = DriveApp.getFilesByName(title);
-      while (it.hasNext()) {
-        const f = it.next();
-        if (f.getMimeType() === 'application/vnd.google-apps.form') {
-          forms.push({id: f.getId(), name: f.getName()});
-        }
-      }
-    });
-
-    const uniqueForms = {};
-    forms.forEach(f => uniqueForms[f.id] = f);
-    const foundForms = Object.keys(uniqueForms).map(id => uniqueForms[id]);
-
-    if (foundForms.length === 1) {
-      formId = foundForms[0].id;
-    } else if (foundForms.length > 1) {
-      throw new Error('Recuperación Examen 1 detenida: se encontraron varios Forms con títulos canónicos.');
-    } else {
-      throw new Error('Recuperación Examen 1 detenida: no se encontró el Google Form por título exacto.');
-    }
-  }
-
-  if (!workId) {
-    const works = [];
-    let token = null;
-    do {
-      const page = Classroom.Courses.CourseWork.list(COURSE_ID, {pageToken: token, courseWorkStates: ['PUBLISHED', 'DRAFT']});
-      (page.courseWork || []).forEach(w => {
-        if (String(w.title || '').trim() === COURSEWORK_TITLE) works.push(w);
-      });
-      token = page.nextPageToken;
-    } while (token);
-
-    if (works.length === 1) {
-      workId = String(works[0].id);
-    } else if (works.length > 1) {
-      throw new Error('Recuperación Examen 1 detenida: existen varias actividades con el título exacto en Classroom.');
-    } else {
-      throw new Error('Recuperación Examen 1 detenida: no se encontró la actividad publicada por título exacto.');
-    }
-  }
-
-  const form = FormApp.openById(formId);
-  const work = Classroom.Courses.CourseWork.get(COURSE_ID, workId);
-  const sheetRow = rowIndex + 1;
-
-  sh.getRange(sheetRow, h['ID del Form'] + 1).setValue(formId);
-  sh.getRange(sheetRow, h['URL edición Form'] + 1).setValue(form.getEditUrl());
-  sh.getRange(sheetRow, h['URL responder Form'] + 1).setValue(form.getPublishedUrl());
-  sh.getRange(sheetRow, h['ID actividad Classroom'] + 1).setValue(workId);
-  sh.getRange(sheetRow, h['URL actividad Classroom'] + 1).setValue(work.alternateLink || '');
-  sh.getRange(sheetRow, h['Estado'] + 1).setValue('CREADA');
-  sh.getRange(sheetRow, h['Última actualización'] + 1).setValue(new Date());
-  sh.getRange(sheetRow, h['Resultado / error'] + 1).setValue(
-    'Recuperación controlada: Form y actividad Classroom existentes vinculados para importación de calificaciones. Ajuste Examen 1: +16 puntos, máximo 100.'
-  );
-  SpreadsheetApp.flush();
 }
 
 // Monitor de calificaciones cada minuto
