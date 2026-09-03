@@ -1,13 +1,14 @@
 /**
  * Pipeline: Sheets -> Forms -> Classroom.
- * Creation is DRAFT by default. Publication requires explicit state PUBLICAR.
+ * Classroom coursework is always created and kept as DRAFT by this monitor.
+ * This pipeline never publishes quiz coursework.
  */
 const QUIZ_PIPELINE = Object.freeze({
   SPREADSHEET_ID: '1YLSPcDSpqvaAk7lLeL6O3CTcgeqdrBtmxCgmdF6ISeA',
   QUIZZES_SHEET: 'Quizzes',
   QUESTIONS_SHEET: 'Preguntas Quiz',
   APPROVED: 'APROBADA',
-  PUBLISH: 'PUBLICAR',
+  RETRACT: 'RETIRAR',
   PROCESSING: 'PROCESANDO',
   CREATED: 'CREADA',
   ERROR: 'ERROR'
@@ -47,7 +48,7 @@ function procesarQuizzesAprobados() {
     quizzes
       .filter(x => {
         const state = clean_(x.data.Estado);
-        return state === QUIZ_PIPELINE.APPROVED || state === QUIZ_PIPELINE.PUBLISH;
+        return state === QUIZ_PIPELINE.APPROVED || state === QUIZ_PIPELINE.RETRACT;
       })
       .forEach(x => processOneQuiz_(quizSheet, x, questions));
   } finally {
@@ -72,12 +73,12 @@ function processOneQuiz_(sheet, record, allQuestions) {
     const existingFormId = clean_(q['ID del Form']);
     const existingClassroomId = clean_(q['ID actividad Classroom']);
 
-    if (requestedState === QUIZ_PIPELINE.PUBLISH) {
-      if (!existingFormId || !existingClassroomId) {
-        throw new Error('No se puede publicar: faltan ID del Form o ID de Classroom.');
+    if (requestedState === QUIZ_PIPELINE.RETRACT) {
+      if (!existingClassroomId) {
+        throw new Error('No se puede retirar a DRAFT: falta ID de Classroom.');
       }
       const work = Classroom.Courses.CourseWork.patch(
-        {state: 'PUBLISHED'},
+        {state: 'DRAFT'},
         courseId,
         existingClassroomId,
         {updateMask: 'state'}
@@ -86,7 +87,7 @@ function processOneQuiz_(sheet, record, allQuestions) {
         Estado: QUIZ_PIPELINE.CREATED,
         [H.LAST_UPDATE]: new Date(),
         'URL actividad Classroom': work.alternateLink || clean_(q['URL actividad Classroom']),
-        'Resultado / error': 'PUBLICADA en Classroom por autorización expresa del docente.'
+        'Resultado / error': 'RETIRADA a DRAFT. El pipeline no publica quizzes.'
       });
       return;
     }
