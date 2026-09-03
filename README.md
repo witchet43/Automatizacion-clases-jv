@@ -69,15 +69,10 @@ promedio de las demás actividades publicadas del tema al 30%. Las actividades
 publicadas sin nota cuentan como cero. La función escribe el resultado como
 `draftGrade` y puede volver a ejecutarse para recalcularlo.
 
-Para que el recálculo no dependa de una ejecución manual, ejecutar una sola vez:
-
-```javascript
-instalarRecalculoAutomaticoUnidad1()
-```
-
-Esto instala un activador de Google Apps Script que vuelve a calcular la
-actividad final cada cinco minutos. El activador se reemplaza de forma
-idempotente si el instalador se ejecuta otra vez.
+El activador ya instalado de `monitorearCalificacionesQuizzesCadaMinuto`
+ejecuta también el recálculo de Unidad 1 una vez por cada bloque de cinco
+minutos. Todo el proceso corre dentro de Google Apps Script y no necesita una
+ejecución manual ni una sesión de Work.
 
 ## Recuperar un cambio manual hecho en Apps Script
 

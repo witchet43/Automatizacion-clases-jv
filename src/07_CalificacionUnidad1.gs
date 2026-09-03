@@ -96,24 +96,6 @@ function calcularYPublicarCalificacionUnidad1() {
   return result;
 }
 
-/**
- * Instala una sola vez el recálculo automático de la Unidad 1.
- * El activador queda alojado y ejecutado por Google Apps Script.
- */
-function instalarRecalculoAutomaticoUnidad1() {
-  const handler = 'recalcularCalificacionUnidad1Automaticamente';
-  ScriptApp.getProjectTriggers()
-    .filter(trigger => trigger.getHandlerFunction() === handler)
-    .forEach(trigger => ScriptApp.deleteTrigger(trigger));
-
-  ScriptApp.newTrigger(handler)
-    .timeBased()
-    .everyMinutes(5)
-    .create();
-
-  return calcularYPublicarCalificacionUnidad1();
-}
-
 function recalcularCalificacionUnidad1Automaticamente() {
   return calcularYPublicarCalificacionUnidad1();
 }

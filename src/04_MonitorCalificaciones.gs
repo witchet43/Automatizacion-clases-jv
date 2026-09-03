@@ -25,7 +25,27 @@ function importarCalificacionesAhora() {
 }
 
 function monitorearCalificacionesQuizzesCadaMinuto() {
-  return ejecutarMonitorCalificacionesQuizzes_(true);
+  let monitorResult = null;
+  let unit1Result = null;
+
+  try {
+    monitorResult = ejecutarMonitorCalificacionesQuizzes_(true);
+  } catch (err) {
+    console.error('[MONITOR_QUIZZES] ' + String(err && err.message ? err.message : err));
+  }
+
+  // Reutiliza el activador ya instalado del monitor. Apps Script lo ejecuta
+  // automáticamente cada minuto y el cierre de Unidad 1 se recalcula una vez
+  // por cada bloque de cinco minutos.
+  if (new Date().getMinutes() % 5 === 0) {
+    try {
+      unit1Result = recalcularCalificacionUnidad1Automaticamente();
+    } catch (err) {
+      console.error('[CALIFICACION_UNIDAD_1] ' + String(err && err.message ? err.message : err));
+    }
+  }
+
+  return {monitorCalificaciones: monitorResult, calificacionUnidad1: unit1Result};
 }
 
 function ejecutarMonitorCalificacionesQuizzes_(aplicar) {
