@@ -37,6 +37,15 @@ function instalarMonitorQuizzes() {
 }
 
 function procesarQuizzesAprobados() {
+  // El mismo trigger de producción atiende las solicitudes de importación
+  // bajo demanda. Se ejecuta antes de tomar el lock del pipeline principal
+  // porque procesarSolicitudesImportacion() administra su propio lock.
+  try {
+    procesarSolicitudesImportacion();
+  } catch (err) {
+    console.error('Solicitud de importación: ' + String(err && err.message ? err.message : err));
+  }
+
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) return;
   try {
