@@ -1,12 +1,19 @@
 function instalarMonitorCalificacionesQuizzes() {
+  // La importación de calificaciones es bajo demanda. Eliminamos cualquier
+  // trigger histórico que ejecute el monitor cada minuto para evitar consumo
+  // innecesario de cuotas y consultas repetitivas.
+  const removed = [];
   ScriptApp.getProjectTriggers()
     .filter(t => t.getHandlerFunction() === 'monitorearCalificacionesQuizzesCadaMinuto')
-    .forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('monitorearCalificacionesQuizzesCadaMinuto')
-    .timeBased()
-    .everyMinutes(1)
-    .create();
-  return auditarMonitorCalificacionesQuizzes();
+    .forEach(t => {
+      removed.push(t.getUniqueId());
+      ScriptApp.deleteTrigger(t);
+    });
+  return {
+    modo: 'BAJO_DEMANDA',
+    triggersEliminados: removed.length,
+    instruccion: 'Usar importarCalificacionesAhora() únicamente cuando el docente solicite Importar calificaciones.'
+  };
 }
 
 function auditarMonitorCalificacionesQuizzes() {
@@ -15,8 +22,6 @@ function auditarMonitorCalificacionesQuizzes() {
 
 /**
  * Punto de entrada canónico para una importación solicitada por el docente.
- *
- * Uso: seleccionar importarCalificacionesAhora en Apps Script y pulsar Ejecutar.
  * Procesa todos los quizzes en estado CREADA, empata exclusivamente por correo
  * exacto, escribe solo draftGrade y no devuelve ni publica entregas.
  */
@@ -24,28 +29,15 @@ function importarCalificacionesAhora() {
   return ejecutarMonitorCalificacionesQuizzes_(true);
 }
 
+/**
+ * Compatibilidad con triggers históricos: no hace polling ni consume recursos.
+ * instalarMonitorCalificacionesQuizzes() elimina estos triggers.
+ */
 function monitorearCalificacionesQuizzesCadaMinuto() {
-  let monitorResult = null;
-  let unit1Result = null;
-
-  try {
-    monitorResult = ejecutarMonitorCalificacionesQuizzes_(true);
-  } catch (err) {
-    console.error('[MONITOR_QUIZZES] ' + String(err && err.message ? err.message : err));
-  }
-
-  // Reutiliza el activador ya instalado del monitor. Apps Script lo ejecuta
-  // automáticamente cada minuto y el cierre de Unidad 1 se recalcula una vez
-  // por cada bloque de cinco minutos.
-  if (new Date().getMinutes() % 5 === 0) {
-    try {
-      unit1Result = recalcularCalificacionUnidad1Automaticamente();
-    } catch (err) {
-      console.error('[CALIFICACION_UNIDAD_1] ' + String(err && err.message ? err.message : err));
-    }
-  }
-
-  return {monitorCalificaciones: monitorResult, calificacionUnidad1: unit1Result};
+  return {
+    deshabilitado: true,
+    motivo: 'La importación de calificaciones ahora es bajo demanda.'
+  };
 }
 
 function ejecutarMonitorCalificacionesQuizzes_(aplicar) {
@@ -74,7 +66,7 @@ function ejecutarMonitorCalificacionesQuizzes_(aplicar) {
     if (aplicar) {
       sh.getRange(i + 1, h['Última actualización'] + 1).setValue(new Date());
       sh.getRange(i + 1, h['Resultado / error'] + 1).setValue(
-        'Monitor: ' + result.actualizadas + ' actualizadas; ' +
+        'Importación manual: ' + result.actualizadas + ' actualizadas; ' +
         result.yaCalificadas + ' ya calificadas; ' +
         result.sinCorrespondencia.length + ' sin correspondencia; ' +
         result.noTurnedIn + ' no TURNED_IN.' +
@@ -235,11 +227,6 @@ function procesarCalificacionesQuiz_(courseId, workId, formId, aplicar, quizId) 
 }
 
 function obtenerAjusteCalificacionQuiz_(quizId) {
-  // Excepción académica autorizada por el docente el 02/09/2026:
-  // las 4 preguntas de respuesta inequívoca se ignoran para evaluación manual
-  // y se otorgan 16 puntos en bloque sobre la nota registrada por Forms.
   if (String(quizId || '').trim() === 'EXAM-20260831-ELI-U1-001') return 16;
   return 0;
 }
-
-// Monitor de calificaciones cada minuto
