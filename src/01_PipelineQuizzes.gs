@@ -1,12 +1,13 @@
 /**
  * Pipeline: Sheets -> Forms -> Classroom.
- * Classroom coursework is always created as DRAFT.
+ * Creation is DRAFT by default. Publication requires explicit state PUBLICAR.
  */
 const QUIZ_PIPELINE = Object.freeze({
   SPREADSHEET_ID: '1YLSPcDSpqvaAk7lLeL6O3CTcgeqdrBtmxCgmdF6ISeA',
   QUIZZES_SHEET: 'Quizzes',
   QUESTIONS_SHEET: 'Preguntas Quiz',
   APPROVED: 'APROBADA',
+  PUBLISH: 'PUBLICAR',
   PROCESSING: 'PROCESANDO',
   CREATED: 'CREADA',
   ERROR: 'ERROR'
@@ -44,7 +45,10 @@ function procesarQuizzesAprobados() {
     const quizzes = readObjects_(quizSheet);
     const questions = readObjects_(questionSheet);
     quizzes
-      .filter(x => clean_(x.data.Estado) === QUIZ_PIPELINE.APPROVED)
+      .filter(x => {
+        const state = clean_(x.data.Estado);
+        return state === QUIZ_PIPELINE.APPROVED || state === QUIZ_PIPELINE.PUBLISH;
+      })
       .forEach(x => processOneQuiz_(quizSheet, x, questions));
   } finally {
     lock.releaseLock();
@@ -53,6 +57,7 @@ function procesarQuizzesAprobados() {
 
 function processOneQuiz_(sheet, record, allQuestions) {
   const q = record.data;
+  const requestedState = clean_(q.Estado);
   const quizId = required_(q, 'Quiz ID');
   const courseId = required_(q, 'ID del curso');
   const statusCol = column_(record, 'Estado');
@@ -66,6 +71,25 @@ function processOneQuiz_(sheet, record, allQuestions) {
   try {
     const existingFormId = clean_(q['ID del Form']);
     const existingClassroomId = clean_(q['ID actividad Classroom']);
+
+    if (requestedState === QUIZ_PIPELINE.PUBLISH) {
+      if (!existingFormId || !existingClassroomId) {
+        throw new Error('No se puede publicar: faltan ID del Form o ID de Classroom.');
+      }
+      const work = Classroom.Courses.CourseWork.patch(
+        {state: 'PUBLISHED'},
+        courseId,
+        existingClassroomId,
+        {updateMask: 'state'}
+      );
+      writeOutputs_(sheet, record, {
+        Estado: QUIZ_PIPELINE.CREATED,
+        [H.LAST_UPDATE]: new Date(),
+        'URL actividad Classroom': work.alternateLink || clean_(q['URL actividad Classroom']),
+        'Resultado / error': 'PUBLICADA en Classroom por autorización expresa del docente.'
+      });
+      return;
+    }
 
     if (existingFormId && existingClassroomId) {
       throw new Error('La fila ya contiene Form y actividad Classroom; se detuvo para evitar duplicados.');
@@ -350,12 +374,22 @@ function createShortAnswerQuestion_(formId, index, x, showFeedback) {
 }
 
 function formsBatchUpdate_(formId, requests) {
-  try {
-    return Forms.Forms.batchUpdate({requests: requests}, formId);
-  } catch (err) {
+  const response = UrlFetchApp.fetch(
+    'https://forms.googleapis.com/v1/forms/' + encodeURIComponent(formId) + ':batchUpdate',
+    {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()},
+      payload: JSON.stringify({requests: requests}),
+      muteHttpExceptions: true
+    }
+  );
+  const code = response.getResponseCode();
+  if (code < 200 || code >= 300) {
     throw new Error(
-      'Forms API batchUpdate falló: ' +
-      String(err && err.message ? err.message : err)
+      'Forms API batchUpdate falló: HTTP ' + code + ' - ' +
+      response.getContentText().slice(0, 500)
     );
   }
+  return JSON.parse(response.getContentText() || '{}');
 }
