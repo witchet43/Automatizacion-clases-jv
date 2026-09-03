@@ -39,17 +39,60 @@ function procesarSolicitudesImportacion() {
       return {procesado: false, motivo: 'SIN_SOLICITUD_PENDIENTE', estado: estado};
     }
 
+    const targetQuizId = String(sh.getRange(row, 4).getDisplayValue() || '').trim();
+    if (!targetQuizId) {
+      throw new Error('Falta el Quiz ID objetivo de la importación.');
+    }
+
     sh.getRange(row, 2).setValue(IMPORT_REQUEST.PROCESSING);
     sh.getRange(row, 6).setValue(new Date());
     SpreadsheetApp.flush();
 
     try {
-      const result = importarCalificacionesAhora();
+      const quizSheet = ss.getSheetByName(QUIZ_PIPELINE.QUIZZES_SHEET);
+      if (!quizSheet) throw new Error('No existe la hoja ' + QUIZ_PIPELINE.QUIZZES_SHEET);
+      const data = quizSheet.getDataRange().getValues();
+      const h = {};
+      data[0].forEach((v, i) => h[String(v)] = i);
+
+      let quizRow = -1;
+      let q = null;
+      for (let i = 1; i < data.length; i++) {
+        if (String(data[i][h['Quiz ID']] || '').trim() === targetQuizId) {
+          quizRow = i + 1;
+          q = data[i];
+          break;
+        }
+      }
+      if (!q) throw new Error('No se encontró el Quiz ID objetivo: ' + targetQuizId);
+
+      const estadoQuiz = String(q[h['Estado']] || '').trim().toUpperCase();
+      if (estadoQuiz !== QUIZ_PIPELINE.CREATED) {
+        throw new Error('El Quiz ID ' + targetQuizId + ' no está en estado CREADA; estado actual: ' + estadoQuiz);
+      }
+
+      const courseId = String(q[h['ID del curso']] || '').trim();
+      const workId = String(q[h['ID actividad Classroom']] || '').trim();
+      const formId = String(q[h['ID del Form']] || '').trim();
+      if (!courseId || !workId || !formId) {
+        throw new Error('Faltan IDs de curso, Classroom o Form para ' + targetQuizId);
+      }
+
+      const result = procesarCalificacionesQuiz_(courseId, workId, formId, true, targetQuizId);
+      const resumen =
+        'Importación manual: ' + result.actualizadas + ' actualizadas; ' +
+        result.yaCalificadas + ' ya calificadas; ' +
+        result.sinCorrespondencia.length + ' sin correspondencia; ' +
+        result.noTurnedIn + ' no TURNED_IN.' +
+        (result.ajuste ? ' Ajuste aplicado: +' + result.ajuste + ' puntos.' : '');
+
+      quizSheet.getRange(quizRow, h['Última actualización'] + 1).setValue(new Date());
+      quizSheet.getRange(quizRow, h['Resultado / error'] + 1).setValue(resumen);
+
       sh.getRange(row, 2).setValue(IMPORT_REQUEST.DONE);
-      sh.getRange(row, 3).setValue('Importación ejecutada bajo demanda desde ChatGPT.');
-      sh.getRange(row, 4).setValue(JSON.stringify(result).slice(0, 45000));
+      sh.getRange(row, 3).setValue('Importación ejecutada bajo demanda para ' + targetQuizId + '.');
       sh.getRange(row, 6).setValue(new Date());
-      return result;
+      return {quizId: targetQuizId, resumen: resumen, detalle: result};
     } catch (err) {
       sh.getRange(row, 2).setValue(IMPORT_REQUEST.ERROR);
       sh.getRange(row, 3).setValue(String(err && err.message ? err.message : err));
