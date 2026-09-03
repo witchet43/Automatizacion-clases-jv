@@ -23,6 +23,15 @@ function procesarSolicitudesImportacion() {
     const sh = ss.getSheetByName(IMPORT_REQUEST.SHEET);
     if (!sh) throw new Error('No existe la hoja ' + IMPORT_REQUEST.SHEET);
 
+    // El mismo trigger autorizado atiende también la orden transversal
+    // "Revisa tareas". El error de una revisión de tareas no debe bloquear
+    // una solicitud independiente de importación de quizzes.
+    try {
+      procesarSolicitudRevisionTareas_();
+    } catch (taskErr) {
+      console.error('Solicitud de revisión de tareas: ' + String(taskErr && taskErr.message ? taskErr.message : taskErr));
+    }
+
     const lastRow = Math.max(sh.getLastRow(), 1);
     const values = sh.getRange(1, 1, lastRow, 6).getDisplayValues();
     let row = -1;
