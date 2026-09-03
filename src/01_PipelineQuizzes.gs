@@ -350,22 +350,12 @@ function createShortAnswerQuestion_(formId, index, x, showFeedback) {
 }
 
 function formsBatchUpdate_(formId, requests) {
-  const response = UrlFetchApp.fetch(
-    'https://forms.googleapis.com/v1/forms/' + encodeURIComponent(formId) + ':batchUpdate',
-    {
-      method: 'post',
-      contentType: 'application/json',
-      headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()},
-      payload: JSON.stringify({requests: requests}),
-      muteHttpExceptions: true
-    }
-  );
-  const code = response.getResponseCode();
-  if (code < 200 || code >= 300) {
+  try {
+    return Forms.Forms.batchUpdate({requests: requests}, formId);
+  } catch (err) {
     throw new Error(
-      'Forms API batchUpdate fallo: HTTP ' + code + ' - ' +
-      response.getContentText().slice(0, 500)
+      'Forms API batchUpdate falló: ' +
+      String(err && err.message ? err.message : err)
     );
   }
-  return JSON.parse(response.getContentText() || '{}');
 }
