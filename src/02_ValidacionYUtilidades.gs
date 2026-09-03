@@ -50,42 +50,25 @@ function assertNoManualEmailQuestions_(titles, context) {
     throw new Error(
       'Pregunta manual de correo no permitida en ' + context + ': ' +
       invalid.join(', ') +
-      '. La identidad debe provenir solo del correo verificado de Google.'
+      '. La identidad debe provenir solo de la cuenta de Google del alumno.'
     );
   }
 }
 
 function configureVerifiedEmail_(formId, enabled) {
   if (!enabled) return;
-  try {
-    Forms.Forms.batchUpdate({
-      requests: [{
-        updateSettings: {
-          settings: {emailCollectionType: 'VERIFIED'},
-          updateMask: 'emailCollectionType'
-        }
-      }]
-    }, formId);
-  } catch (err) {
-    throw new Error('No se pudo configurar correo verificado con Forms API: ' +
-      String(err && err.message ? err.message : err));
-  }
+  const form = FormApp.openById(formId);
+  form.setCollectEmail(true);
+  form.setLimitOneResponsePerUser(true);
 }
 
 function verifyVerifiedEmail_(formId) {
-  let data;
-  try {
-    data = Forms.Forms.get(formId);
-  } catch (err) {
-    throw new Error('No se pudo verificar la configuración del Form con Forms API: ' +
-      String(err && err.message ? err.message : err));
+  const form = FormApp.openById(formId);
+  if (!form.collectsEmail()) {
+    throw new Error('El Form no quedó configurado para recopilar correo.');
   }
-  const type = data.settings && data.settings.emailCollectionType;
-  if (type !== 'VERIFIED') {
-    throw new Error(
-      'El Form no quedó con correo verificado (emailCollectionType=' +
-      (type || 'NO INFORMADO') + ').'
-    );
+  if (!form.hasLimitOneResponsePerUser()) {
+    throw new Error('El Form no quedó limitado a una respuesta por usuario.');
   }
 }
 
