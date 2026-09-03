@@ -6,6 +6,11 @@
         "userSymbol": "Classroom",
         "version": "v1",
         "serviceId": "classroom"
+      },
+      {
+        "userSymbol": "Forms",
+        "version": "v1",
+        "serviceId": "forms"
       }
     ]
   },
@@ -25,4 +30,3 @@
   "exceptionLogging": "STACKDRIVER",
   "runtimeVersion": "V8"
 }
-
