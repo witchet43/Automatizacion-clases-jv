@@ -42,3 +42,9 @@ jobs:
         env:
           clasp_config_auth: .clasprc.json
         run: npx clasp push --force
+
+      - name: Import quiz grades on demand
+        if: contains(github.event.head_commit.message, '[import-grades]')
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp run importarCalificacionesAhora
