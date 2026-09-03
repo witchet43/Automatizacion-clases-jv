@@ -57,46 +57,29 @@ function assertNoManualEmailQuestions_(titles, context) {
 
 function configureVerifiedEmail_(formId, enabled) {
   if (!enabled) return;
-  const response = UrlFetchApp.fetch(
-    'https://forms.googleapis.com/v1/forms/' +
-      encodeURIComponent(formId) + ':batchUpdate',
-    {
-      method: 'post',
-      contentType: 'application/json',
-      headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()},
-      payload: JSON.stringify({
-        requests: [{
-          updateSettings: {
-            settings: {emailCollectionType: 'VERIFIED'},
-            updateMask: 'emailCollectionType'
-          }
-        }]
-      }),
-      muteHttpExceptions: true
-    }
-  );
-  const code = response.getResponseCode();
-  if (code < 200 || code >= 300) {
-    throw new Error('No se pudo configurar correo verificado: HTTP ' +
-      code + ' - ' + response.getContentText().slice(0, 300));
+  try {
+    Forms.Forms.batchUpdate({
+      requests: [{
+        updateSettings: {
+          settings: {emailCollectionType: 'VERIFIED'},
+          updateMask: 'emailCollectionType'
+        }
+      }]
+    }, formId);
+  } catch (err) {
+    throw new Error('No se pudo configurar correo verificado con Forms API: ' +
+      String(err && err.message ? err.message : err));
   }
 }
 
 function verifyVerifiedEmail_(formId) {
-  const response = UrlFetchApp.fetch(
-    'https://forms.googleapis.com/v1/forms/' + encodeURIComponent(formId),
-    {
-      method: 'get',
-      headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()},
-      muteHttpExceptions: true
-    }
-  );
-  const code = response.getResponseCode();
-  if (code < 200 || code >= 300) {
-    throw new Error('No se pudo verificar la configuración del Form: HTTP ' +
-      code + ' - ' + response.getContentText().slice(0, 300));
+  let data;
+  try {
+    data = Forms.Forms.get(formId);
+  } catch (err) {
+    throw new Error('No se pudo verificar la configuración del Form con Forms API: ' +
+      String(err && err.message ? err.message : err));
   }
-  const data = JSON.parse(response.getContentText());
   const type = data.settings && data.settings.emailCollectionType;
   if (type !== 'VERIFIED') {
     throw new Error(
@@ -169,6 +152,6 @@ function quizDescription_(value) {
 }
 
 function yes_(value) {
-  return ['S\u00cd', 'SI', 'TRUE', '1', 'YES']
+  return ['SÍ', 'SI', 'TRUE', '1', 'YES']
     .includes(clean_(value).toUpperCase());
 }
