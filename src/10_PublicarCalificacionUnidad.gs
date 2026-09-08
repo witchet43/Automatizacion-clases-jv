@@ -1,7 +1,7 @@
 /**
- * Crea/reutiliza una actividad DRAFT de cierre de unidad y carga draftGrade
- * desde la hoja auditable "Promedios Unidad".
- * No publica ni devuelve entregas.
+ * Crea/reutiliza la actividad sintética "Calificación Unidad N" como PUBLISHED
+ * y carga draftGrade + assignedGrade desde el reporte auditable "Promedios Unidad".
+ * Esta es la única excepción automática al DRAFT general del sistema.
  */
 const UNIT_GRADE_PUBLISH = Object.freeze({
   SHEET: 'Configuración Quizzes',
@@ -44,11 +44,11 @@ function procesarSolicitudPublicarCalificacionUnidad_() {
   SpreadsheetApp.flush();
 
   try {
-    const result = publicarCalificacionUnidadDraft_(ss, courseId, unidad, titulo);
+    const result = publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo);
     sh.getRange(row, 2).setValue(UNIT_GRADE_PUBLISH.DONE);
     sh.getRange(row, 3).setValue(
-      'Actividad DRAFT creada/reutilizada: ' + titulo + '. ' +
-      result.actualizadas + ' draftGrade cargadas.'
+      'Calificación de unidad enviada: ' + titulo + ' PUBLISHED; ' +
+      result.actualizadas + ' assignedGrade cargadas y verificadas.'
     );
     sh.getRange(row, 5).setValue('ACTIVA');
     sh.getRange(row, 6).setValue(new Date());
@@ -61,7 +61,7 @@ function procesarSolicitudPublicarCalificacionUnidad_() {
   }
 }
 
-function publicarCalificacionUnidadDraft_(ss, courseId, unidad, titulo) {
+function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
   const report = ss.getSheetByName(UNIT_GRADE_PUBLISH.REPORT_SHEET);
   if (!report) throw new Error('No existe el reporte ' + UNIT_GRADE_PUBLISH.REPORT_SHEET + '.');
 
@@ -76,66 +76,124 @@ function publicarCalificacionUnidadDraft_(ss, courseId, unidad, titulo) {
   );
   if (!rows.length) throw new Error('No hay promedios calculados para el curso/unidad indicados.');
 
-  const topicId = buscarTopicIdPorNombre_(courseId, unidad);
+  const topicId = buscarTopicIdUnidad_(courseId, unidad);
   const allWork = listarCourseWorkPublicacion_(courseId);
-  let work = allWork.find(w => String(w.title || '').trim() === titulo);
+  const canonicalTitle = titulo || ('Calificación ' + unidad);
+  const matches = allWork.filter(w => String(w.title || '').trim() === canonicalTitle);
+  if (matches.length > 1) throw new Error('Existen múltiples CourseWork con título ' + canonicalTitle + '. Resolver duplicado antes de cerrar.');
+  let work = matches[0] || null;
 
   if (work) {
-    if (String(work.state || '').toUpperCase() !== 'DRAFT') {
-      throw new Error('Ya existe una actividad con ese título y no está en DRAFT.');
-    }
     if (!work.associatedWithDeveloper) {
       throw new Error('La actividad existente no es administrable por este Apps Script.');
     }
+    if (String(work.topicId || '') !== String(topicId)) {
+      work = Classroom.Courses.CourseWork.patch(
+        {topicId: topicId}, String(courseId), String(work.id), {updateMask: 'topicId'}
+      );
+    }
+    if (String(work.state || '').toUpperCase() === 'DRAFT') {
+      work = Classroom.Courses.CourseWork.patch(
+        {state: 'PUBLISHED'}, String(courseId), String(work.id), {updateMask: 'state'}
+      );
+    } else if (String(work.state || '').toUpperCase() !== 'PUBLISHED') {
+      throw new Error('La actividad final existe en estado incompatible: ' + work.state);
+    }
   } else {
     work = Classroom.Courses.CourseWork.create({
-      title: titulo,
+      title: canonicalTitle,
       description:
-        'Calificación calculada automáticamente para ' + unidad + ': ' +
-        'Examen 70% + promedio de tareas, actividades, quizzes y prácticas 30%.',
+        'Calificación final de ' + unidad + '. Cálculo: Examen 70% + promedio de tareas, actividades, quizzes y prácticas 30%.',
       workType: 'ASSIGNMENT',
-      state: 'DRAFT',
+      state: 'PUBLISHED',
       maxPoints: 100,
-      topicId: topicId || undefined
+      topicId: topicId
     }, String(courseId));
   }
 
-  const submissions = entregasPorAlumnoPublicacion_(courseId, work.id);
+  if (String(work.state || '').toUpperCase() !== 'PUBLISHED') {
+    throw new Error('No se logró dejar PUBLISHED la actividad final.');
+  }
+
+  // Classroom genera StudentSubmissions al publicar. Reintento breve por propagación.
+  let submissions = {};
+  for (let attempt = 0; attempt < 5; attempt++) {
+    submissions = entregasPorAlumnoPublicacion_(courseId, work.id);
+    if (Object.keys(submissions).length >= rows.length) break;
+    Utilities.sleep(1000);
+  }
+
+  if (Object.keys(submissions).length < rows.length) {
+    throw new Error('Classroom no generó StudentSubmissions para todos los alumnos: ' + Object.keys(submissions).length + '/' + rows.length + '.');
+  }
+
   let updated = 0;
   rows.forEach(r => {
     const uid = String(r[h['User ID']] || '').trim();
     const grade = Number(r[h['Promedio final']]);
+    if (!uid || !Number.isFinite(grade)) throw new Error('Fila de promedio inválida para User ID ' + uid + '.');
     const sub = submissions[uid];
-    if (!uid || !sub) return;
+    if (!sub) throw new Error('No existe StudentSubmission final para User ID ' + uid + '.');
     Classroom.Courses.CourseWork.StudentSubmissions.patch(
-      {draftGrade: grade},
-      String(courseId),
-      String(work.id),
-      String(sub.id),
-      {updateMask: 'draftGrade'}
+      {draftGrade: grade, assignedGrade: grade},
+      String(courseId), String(work.id), String(sub.id),
+      {updateMask: 'draftGrade,assignedGrade'}
     );
     updated++;
   });
+
+  // Verificación de cierre: todos los alumnos deben tener assignedGrade igual al reporte.
+  const verify = entregasPorAlumnoPublicacion_(courseId, work.id);
+  const mismatches = [];
+  rows.forEach(r => {
+    const uid = String(r[h['User ID']] || '').trim();
+    const expected = Number(r[h['Promedio final']]);
+    const sub = verify[uid];
+    const assigned = sub && sub.assignedGrade !== undefined && sub.assignedGrade !== null
+      ? Number(sub.assignedGrade) : null;
+    if (assigned === null || Math.abs(assigned - expected) > 0.001) {
+      mismatches.push({userId: uid, esperado: expected, assignedGrade: assigned});
+    }
+  });
+  if (mismatches.length) {
+    throw new Error('Falló verificación de assignedGrade final: ' + JSON.stringify(mismatches).slice(0, 3000));
+  }
 
   return {
     courseWorkId: String(work.id),
     alternateLink: work.alternateLink || '',
     estado: work.state,
-    titulo: titulo,
+    titulo: canonicalTitle,
     actualizadas: updated,
-    alumnosReporte: rows.length
+    alumnosReporte: rows.length,
+    verificadas: rows.length
   };
 }
 
-function buscarTopicIdPorNombre_(courseId, unidad) {
+function buscarTopicIdUnidad_(courseId, unidad) {
+  const unitNo = extraerNumeroUnidad_(unidad);
+  const topics = listarTopics_(courseId).filter(t => extraerNumeroUnidad_(t.name) === unitNo);
+  if (!topics.length) throw new Error('No existe tema verificable para ' + unidad + '.');
+  const exact = topics.filter(t => String(t.name || '').trim().toLowerCase() === ('unidad ' + unitNo).toLowerCase());
+  if (exact.length === 1) return exact[0].topicId;
+  if (topics.length === 1) return topics[0].topicId;
+  throw new Error('Hay múltiples temas candidatos para ' + unidad + ': ' + topics.map(t => t.name).join(' | '));
+}
+
+function extraerNumeroUnidad_(text) {
+  const m = String(text || '').trim().match(/^unidad\s+(\d+)/i);
+  return m ? Number(m[1]) : null;
+}
+
+function listarTopics_(courseId) {
+  const out = [];
   let token = null;
   do {
-    const page = Classroom.Courses.Topics.list(String(courseId), {pageToken: token});
-    const hit = (page.topic || []).find(t => String(t.name || '').trim() === String(unidad));
-    if (hit) return hit.topicId;
+    const page = Classroom.Courses.Topics.list(String(courseId), {pageToken: token, pageSize: 100});
+    (page.topic || []).forEach(t => out.push(t));
     token = page.nextPageToken;
   } while (token);
-  return null;
+  return out;
 }
 
 function listarCourseWorkPublicacion_(courseId) {
