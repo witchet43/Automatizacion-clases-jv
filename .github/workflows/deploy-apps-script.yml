@@ -60,3 +60,9 @@ jobs:
         env:
           clasp_config_auth: .clasprc.json
         run: npx clasp run cerrarUnidadConSiguienteVerificadaAhora
+
+      - name: Recalculate and publish unit grade only
+        if: contains(github.event.head_commit.message, '[recalcular-publicar-unidad]')
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp run recalcularYPublicarUnidadSolicitadaAhora
