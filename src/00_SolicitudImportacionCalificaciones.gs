@@ -35,6 +35,11 @@ function procesarSolicitudesImportacion() {
     } catch (avgErr) {
       console.error('Solicitud de promedios de unidad: ' + String(avgErr && avgErr.message ? avgErr.message : avgErr));
     }
+    try {
+      procesarSolicitudPublicarCalificacionUnidad_();
+    } catch (pubErr) {
+      console.error('Solicitud de publicación draft de calificación de unidad: ' + String(pubErr && pubErr.message ? pubErr.message : pubErr));
+    }
 
     const lastRow = Math.max(sh.getLastRow(), 1);
     const values = sh.getRange(1, 1, lastRow, 6).getDisplayValues();
