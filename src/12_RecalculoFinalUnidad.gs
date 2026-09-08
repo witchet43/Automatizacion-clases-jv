@@ -1,4 +1,40 @@
 /** Recalculo directo desde Classroom, sin revisar ni devolver tareas. */
+const DIRECT_UNIT_RECALC = Object.freeze({
+  SHEET:'Configuración Quizzes',
+  KEY:'SOLICITUD_RECALCULAR_PUBLICAR_UNIDAD',
+  REQUESTED:'SOLICITAR', PROCESSING:'PROCESANDO', DONE:'PROCESADO', ERROR:'ERROR'
+});
+
+function procesarSolicitudRecalculoFinalUnidad_() {
+  const ss=SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
+  const cfg=ss.getSheetByName(DIRECT_UNIT_RECALC.SHEET);
+  if(!cfg) throw new Error('No existe '+DIRECT_UNIT_RECALC.SHEET+'.');
+  const vals=cfg.getRange(1,1,Math.max(cfg.getLastRow(),1),8).getDisplayValues();
+  let row=-1;
+  for(let i=1;i<vals.length;i++) if(String(vals[i][0]||'').trim()===DIRECT_UNIT_RECALC.KEY){row=i+1;break;}
+  if(row<0) return {procesado:false,motivo:'SIN_SOLICITUD_CONFIGURADA'};
+  const estado=String(cfg.getRange(row,2).getDisplayValue()||'').trim().toUpperCase();
+  if(estado!==DIRECT_UNIT_RECALC.REQUESTED) return {procesado:false,motivo:'SIN_SOLICITUD_PENDIENTE',estado:estado};
+  const courseId=String(cfg.getRange(row,4).getDisplayValue()||'').trim();
+  const unidad=String(cfg.getRange(row,7).getDisplayValue()||'').trim()||'Unidad 1';
+  if(!courseId) throw new Error('Falta ID curso.');
+  cfg.getRange(row,2).setValue(DIRECT_UNIT_RECALC.PROCESSING);
+  cfg.getRange(row,3).setValue('Recalculando directamente desde Classroom sin revisar tareas.');
+  cfg.getRange(row,6).setValue(new Date()); SpreadsheetApp.flush();
+  try {
+    const result=calcularPromediosDirectoClassroom_(ss,courseId,unidad);
+    const final=publicarCalificacionUnidadFinal_(ss,courseId,unidad,'Calificación '+unidad);
+    cfg.getRange(row,2).setValue(DIRECT_UNIT_RECALC.DONE);
+    cfg.getRange(row,3).setValue('Promedios recalculados desde Classroom y cargados en Calificación '+unidad+'. '+result.alumnos+' alumnos; '+result.noExamen.length+' instrumentos no-examen; '+final.actualizadas+' calificaciones finales asignadas y verificadas.');
+    cfg.getRange(row,5).setValue('ACTIVA'); cfg.getRange(row,6).setValue(new Date());
+    return {promedios:result,cierre:final};
+  } catch(err) {
+    cfg.getRange(row,2).setValue(DIRECT_UNIT_RECALC.ERROR);
+    cfg.getRange(row,3).setValue(String(err&&err.message?err.message:err));
+    cfg.getRange(row,6).setValue(new Date()); throw err;
+  }
+}
+
 function recalcularYPublicarUnidadSolicitadaAhora() {
   const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
   const cfg = ss.getSheetByName('Configuración Quizzes');
