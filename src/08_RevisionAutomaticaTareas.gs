@@ -39,7 +39,7 @@ function procesarSolicitudRevisionTareas_() {
     const result = revisarTareasCurso_(courseId, true);
     sh.getRange(row, 2).setValue(TASK_REVIEW_REQUEST.DONE);
     sh.getRange(row, 3).setValue(
-      'Revisión de tareas y prácticas ejecutada. ' + result.calificadas100 + ' con 100; ' +
+      'Revisión de tareas, prácticas y actividades en clase ejecutada. ' + result.calificadas100 + ' con 100; ' +
       result.calificadas0 + ' con 0; ' + result.yaCalificadas +
       ' ya calificadas sin cambios; ' + result.trabajosNoPublicados + ' trabajos no publicados.'
     );
@@ -79,8 +79,10 @@ function revisarTareasCurso_(courseId, aplicar) {
 
     const esTarea = type === 'TAREA' || /^TAREA\s*\d+/i.test(title);
     const esPractica = type === 'PRACTICA' || type === 'PRÁCTICA' || /^PR[ÁA]CTICA\s*\d+/i.test(title);
+    const esActividad = type === 'ACTIVIDAD' || type === 'ACTIVIDAD EN CLASE' || /^ACTIVIDAD\s*\d+/i.test(title);
     const esQuizOExamen = type === 'QUIZ' || type === 'EXAMEN' || /^(QUIZ|EXAMEN)\b/i.test(title);
-    if (esQuizOExamen || (!esTarea && !esPractica)) continue;
+    const esProyecto = type === 'PROYECTO' || /^PROYECTO\b/i.test(title);
+    if (esQuizOExamen || esProyecto || (!esTarea && !esPractica && !esActividad)) continue;
 
     if (seen.has(workId)) continue;
     seen.add(workId);
