@@ -40,8 +40,9 @@ function procesarSolicitudRevisionTareas_() {
     sh.getRange(row, 2).setValue(TASK_REVIEW_REQUEST.DONE);
     sh.getRange(row, 3).setValue(
       'Revisión de tareas, prácticas y actividades en clase ejecutada. ' + result.calificadas100 + ' con 100; ' +
-      result.calificadas0 + ' con 0; ' + result.yaCalificadas +
-      ' ya calificadas sin cambios; ' + result.trabajosNoPublicados + ' trabajos no publicados.'
+      result.calificadas0 + ' con 0; ' + result.borradoresFinalizados + ' borradores finalizados; ' +
+      result.devueltas + ' entregas devueltas; ' + result.yaAsignadas +
+      ' ya tenían assignedGrade sin cambios; ' + result.trabajosNoPublicados + ' trabajos no publicados.'
     );
     sh.getRange(row, 5).setValue('ACTIVA');
     sh.getRange(row, 6).setValue(new Date());
@@ -54,6 +55,14 @@ function procesarSolicitudRevisionTareas_() {
   }
 }
 
+/**
+ * Primera revisión de cumplimiento.
+ * - assignedGrade existente: intocable.
+ * - draftGrade sin assignedGrade: conserva el valor y lo finaliza.
+ * - sin calificación: TURNED_IN/RETURNED = puntaje completo; resto = 0.
+ * - escribe draftGrade + assignedGrade.
+ * - solo llama return() para TURNED_IN; Classroom no permite return() en NEW/CREATED.
+ */
 function revisarTareasCurso_(courseId, aplicar) {
   const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
   const sh = ss.getSheetByName('Tareas');
@@ -91,7 +100,9 @@ function revisarTareasCurso_(courseId, aplicar) {
 
   let calificadas100 = 0;
   let calificadas0 = 0;
-  let yaCalificadas = 0;
+  let borradoresFinalizados = 0;
+  let yaAsignadas = 0;
+  let devueltas = 0;
   let trabajosNoPublicados = 0;
   let entregasRevisadas = 0;
   const trabajos = [];
@@ -122,30 +133,45 @@ function revisarTareasCurso_(courseId, aplicar) {
 
       let t100 = 0;
       let t0 = 0;
-      let tExisting = 0;
+      let tDraftFinal = 0;
+      let tAssigned = 0;
+      let tReturned = 0;
+
       subs.forEach(sub => {
         entregasRevisadas++;
         const tieneDraft = sub.draftGrade !== undefined && sub.draftGrade !== null;
         const tieneAssigned = sub.assignedGrade !== undefined && sub.assignedGrade !== null;
-        if (tieneDraft || tieneAssigned) {
-          yaCalificadas++;
-          tExisting++;
+        if (tieneAssigned) {
+          yaAsignadas++;
+          tAssigned++;
           return;
         }
 
         const state = String(sub.state || '').toUpperCase();
         const entregada = state === 'TURNED_IN' || state === 'RETURNED';
-        const score = entregada ? fullScore : 0;
+        const score = tieneDraft ? Number(sub.draftGrade) : (entregada ? fullScore : 0);
+
         if (aplicar) {
           Classroom.Courses.CourseWork.StudentSubmissions.patch(
-            {draftGrade: score},
+            {draftGrade: score, assignedGrade: score},
             String(courseId),
             task.workId,
             sub.id,
-            {updateMask: 'draftGrade'}
+            {updateMask: 'draftGrade,assignedGrade'}
           );
+          if (state === 'TURNED_IN') {
+            Classroom.Courses.CourseWork.StudentSubmissions.return(
+              {}, String(courseId), task.workId, sub.id
+            );
+            devueltas++;
+            tReturned++;
+          }
         }
-        if (entregada) {
+
+        if (tieneDraft) {
+          borradoresFinalizados++;
+          tDraftFinal++;
+        } else if (entregada) {
           calificadas100++;
           t100++;
         } else {
@@ -162,8 +188,10 @@ function revisarTareasCurso_(courseId, aplicar) {
         alumnos: subs.length,
         con100: t100,
         con0: t0,
-        yaCalificadas: tExisting,
-        accion: aplicar ? 'APLICADA' : 'AUDITORIA'
+        borradoresFinalizados: tDraftFinal,
+        yaAsignadas: tAssigned,
+        devueltas: tReturned,
+        accion: aplicar ? 'APLICADA_Y_FINALIZADA' : 'AUDITORIA'
       });
     } catch (err) {
       errores.push({titulo: task.title, classroomId: task.workId, error: String(err && err.message ? err.message : err)});
@@ -182,7 +210,9 @@ function revisarTareasCurso_(courseId, aplicar) {
     entregasRevisadas: entregasRevisadas,
     calificadas100: calificadas100,
     calificadas0: calificadas0,
-    yaCalificadas: yaCalificadas,
+    borradoresFinalizados: borradoresFinalizados,
+    yaAsignadas: yaAsignadas,
+    devueltas: devueltas,
     trabajos: trabajos
   };
 }
