@@ -12,8 +12,7 @@ function procesarSolicitudRevisionTareas_() {
   const sh = ss.getSheetByName(TASK_REVIEW_REQUEST.SHEET);
   if (!sh) throw new Error('No existe la hoja ' + TASK_REVIEW_REQUEST.SHEET);
 
-  const lastRow = Math.max(sh.getLastRow(), 1);
-  const values = sh.getRange(1, 1, lastRow, 6).getDisplayValues();
+  const values = sh.getRange(1, 1, Math.max(sh.getLastRow(), 1), 6).getDisplayValues();
   let row = -1;
   for (let i = 1; i < values.length; i++) {
     if (String(values[i][0] || '').trim() === TASK_REVIEW_REQUEST.KEY) {
@@ -39,10 +38,10 @@ function procesarSolicitudRevisionTareas_() {
     const result = revisarTareasCurso_(courseId, true);
     sh.getRange(row, 2).setValue(TASK_REVIEW_REQUEST.DONE);
     sh.getRange(row, 3).setValue(
-      'Revisión de tareas, prácticas y actividades en clase ejecutada. ' + result.calificadas100 + ' con 100; ' +
+      'Revisión directa de Classroom ejecutada. ' + result.calificadas100 + ' con puntaje completo; ' +
       result.calificadas0 + ' con 0; ' + result.borradoresFinalizados + ' borradores finalizados; ' +
       result.devueltas + ' entregas devueltas; ' + result.yaAsignadas +
-      ' ya tenían assignedGrade sin cambios; ' + result.trabajosNoPublicados + ' trabajos no publicados.'
+      ' ya tenían assignedGrade sin cambios; ' + result.trabajosCandidatos + ' trabajos revisados.'
     );
     sh.getRange(row, 5).setValue('ACTIVA');
     sh.getRange(row, 6).setValue(new Date());
@@ -56,86 +55,67 @@ function procesarSolicitudRevisionTareas_() {
 }
 
 /**
- * Primera revisión de cumplimiento.
- * - assignedGrade existente: la nota es intocable; si sigue TURNED_IN, se devuelve.
+ * Revisión transversal de cumplimiento directamente sobre Classroom.
+ * No depende de que el trabajo exista en la hoja Tareas.
+ * Incluye Tareas, Prácticas y Actividades publicadas.
+ * Excluye quizzes, exámenes, proyectos y cierres de unidad.
+ *
+ * Reglas:
+ * - assignedGrade existente: intocable; si sigue TURNED_IN, se devuelve.
  * - draftGrade sin assignedGrade: conserva el valor y lo finaliza.
  * - sin calificación: TURNED_IN/RETURNED = puntaje completo; resto = 0.
  * - escribe draftGrade + assignedGrade cuando falta assignedGrade.
- * - llama return() para toda entrega TURNED_IN, incluso si ya tenía assignedGrade.
+ * - devuelve toda entrega TURNED_IN después de asegurar su calificación.
  */
 function revisarTareasCurso_(courseId, aplicar) {
-  const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
-  const sh = ss.getSheetByName('Tareas');
-  if (!sh) throw new Error('No existe la hoja Tareas.');
-
-  const data = sh.getDataRange().getValues();
-  if (data.length < 2) return {courseId: courseId, trabajos: []};
-  const h = {};
-  data[0].forEach((v, i) => h[String(v)] = i);
-
   const candidates = [];
-  const seen = new Set();
-  for (let i = 1; i < data.length; i++) {
-    const r = data[i];
-    const rowCourse = String(r[h['ID curso']] || '').trim();
-    const estado = String(r[h['Estado solicitud']] || '').trim().toUpperCase();
-    const title = String(r[h['Título']] || '').trim();
-    const type = String(r[h['Tipo de actividad']] || '').trim().toUpperCase();
-    const workId = String(r[h['ID Classroom']] || '').trim();
-
-    if (rowCourse !== String(courseId)) continue;
-    if (estado !== 'CREADA' || !workId) continue;
-
-    const esTarea = type === 'TAREA' || /^TAREA\s*\d+/i.test(title);
-    const esPractica = type === 'PRACTICA' || type === 'PRÁCTICA' || /^PR[ÁA]CTICA\s*\d+/i.test(title);
-    const esActividad = type === 'ACTIVIDAD' || type === 'ACTIVIDAD EN CLASE' || /^ACTIVIDAD\s*\d+/i.test(title);
-    const esQuizOExamen = type === 'QUIZ' || type === 'EXAMEN' || /^(QUIZ|EXAMEN)\b/i.test(title);
-    const esProyecto = type === 'PROYECTO' || /^PROYECTO\b/i.test(title);
-    if (esQuizOExamen || esProyecto || (!esTarea && !esPractica && !esActividad)) continue;
-
-    if (seen.has(workId)) continue;
-    seen.add(workId);
-    candidates.push({row: i + 1, title: title, type: type, workId: workId});
-  }
+  let token = null;
+  do {
+    const page = Classroom.Courses.CourseWork.list(String(courseId), {
+      pageToken: token,
+      pageSize: 100,
+      courseWorkStates: ['PUBLISHED']
+    });
+    (page.courseWork || []).forEach(cw => {
+      const title = String(cw.title || '').trim();
+      const upper = title.toUpperCase();
+      const esAssignment = String(cw.workType || '').toUpperCase() === 'ASSIGNMENT';
+      const esTarea = /^TAREA\b/i.test(title);
+      const esPractica = /^PR[ÁA]CTICA\b/i.test(title);
+      const esActividad = /^ACTIVIDAD\b/i.test(title);
+      const excluida = /^(QUIZ|EXAMEN|PROYECTO)\b/i.test(title) || /^CALIFICACI[ÓO]N\s+UNIDAD\b/i.test(title);
+      if (esAssignment && !excluida && (esTarea || esPractica || esActividad)) {
+        candidates.push({workId: String(cw.id), title: title, cw: cw});
+      }
+    });
+    token = page.nextPageToken;
+  } while (token);
 
   let calificadas100 = 0;
   let calificadas0 = 0;
   let borradoresFinalizados = 0;
   let yaAsignadas = 0;
   let devueltas = 0;
-  let trabajosNoPublicados = 0;
   let entregasRevisadas = 0;
   const trabajos = [];
   const errores = [];
 
   candidates.forEach(task => {
     try {
-      const cw = Classroom.Courses.CourseWork.get(String(courseId), task.workId);
-      if (String(cw.state || '').toUpperCase() !== 'PUBLISHED') {
-        trabajosNoPublicados++;
-        trabajos.push({titulo: task.title, tipo: task.type, classroomId: task.workId, estado: cw.state, accion: 'OMITIDA_NO_PUBLICADA'});
-        return;
-      }
-      if (String(cw.workType || '').toUpperCase() !== 'ASSIGNMENT') {
-        trabajos.push({titulo: task.title, tipo: task.type, classroomId: task.workId, estado: cw.state, accion: 'OMITIDA_NO_ASSIGNMENT'});
-        return;
-      }
-
+      const cw = task.cw;
       const maxPoints = Number(cw.maxPoints || 100);
-      const fullScore = Math.min(100, maxPoints || 100);
+      const fullScore = maxPoints > 0 ? maxPoints : 100;
       const subs = [];
-      let token = null;
+      let st = null;
       do {
-        const p = Classroom.Courses.CourseWork.StudentSubmissions.list(String(courseId), task.workId, {pageToken: token});
-        (p.studentSubmissions || []).forEach(x => subs.push(x));
-        token = p.nextPageToken;
-      } while (token);
+        const page = Classroom.Courses.CourseWork.StudentSubmissions.list(
+          String(courseId), task.workId, {pageToken: st, pageSize: 100}
+        );
+        (page.studentSubmissions || []).forEach(s => subs.push(s));
+        st = page.nextPageToken;
+      } while (st);
 
-      let t100 = 0;
-      let t0 = 0;
-      let tDraftFinal = 0;
-      let tAssigned = 0;
-      let tReturned = 0;
+      let t100 = 0, t0 = 0, tDraft = 0, tAssigned = 0, tReturned = 0;
 
       subs.forEach(sub => {
         entregasRevisadas++;
@@ -143,14 +123,11 @@ function revisarTareasCurso_(courseId, aplicar) {
         const tieneAssigned = sub.assignedGrade !== undefined && sub.assignedGrade !== null;
         const state = String(sub.state || '').toUpperCase();
 
-        // Una nota ya asignada nunca se modifica, pero una entrega TURNED_IN sí debe devolverse.
         if (tieneAssigned) {
           yaAsignadas++;
           tAssigned++;
           if (aplicar && state === 'TURNED_IN') {
-            Classroom.Courses.CourseWork.StudentSubmissions.return(
-              {}, String(courseId), task.workId, sub.id
-            );
+            Classroom.Courses.CourseWork.StudentSubmissions.return({}, String(courseId), task.workId, String(sub.id));
             devueltas++;
             tReturned++;
           }
@@ -163,15 +140,11 @@ function revisarTareasCurso_(courseId, aplicar) {
         if (aplicar) {
           Classroom.Courses.CourseWork.StudentSubmissions.patch(
             {draftGrade: score, assignedGrade: score},
-            String(courseId),
-            task.workId,
-            sub.id,
+            String(courseId), task.workId, String(sub.id),
             {updateMask: 'draftGrade,assignedGrade'}
           );
           if (state === 'TURNED_IN') {
-            Classroom.Courses.CourseWork.StudentSubmissions.return(
-              {}, String(courseId), task.workId, sub.id
-            );
+            Classroom.Courses.CourseWork.StudentSubmissions.return({}, String(courseId), task.workId, String(sub.id));
             devueltas++;
             tReturned++;
           }
@@ -179,7 +152,7 @@ function revisarTareasCurso_(courseId, aplicar) {
 
         if (tieneDraft) {
           borradoresFinalizados++;
-          tDraftFinal++;
+          tDraft++;
         } else if (entregada) {
           calificadas100++;
           t100++;
@@ -191,13 +164,11 @@ function revisarTareasCurso_(courseId, aplicar) {
 
       trabajos.push({
         titulo: task.title,
-        tipo: task.type,
         classroomId: task.workId,
-        estado: cw.state,
         alumnos: subs.length,
-        con100: t100,
+        conPuntajeCompleto: t100,
         con0: t0,
-        borradoresFinalizados: tDraftFinal,
+        borradoresFinalizados: tDraft,
         yaAsignadas: tAssigned,
         devueltas: tReturned,
         accion: aplicar ? 'APLICADA_Y_FINALIZADA' : 'AUDITORIA'
@@ -215,7 +186,6 @@ function revisarTareasCurso_(courseId, aplicar) {
     courseId: String(courseId),
     aplicar: Boolean(aplicar),
     trabajosCandidatos: candidates.length,
-    trabajosNoPublicados: trabajosNoPublicados,
     entregasRevisadas: entregasRevisadas,
     calificadas100: calificadas100,
     calificadas0: calificadas0,
