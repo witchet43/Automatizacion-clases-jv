@@ -57,11 +57,11 @@ function procesarSolicitudRevisionTareas_() {
 
 /**
  * Primera revisión de cumplimiento.
- * - assignedGrade existente: intocable.
+ * - assignedGrade existente: la nota es intocable; si sigue TURNED_IN, se devuelve.
  * - draftGrade sin assignedGrade: conserva el valor y lo finaliza.
  * - sin calificación: TURNED_IN/RETURNED = puntaje completo; resto = 0.
- * - escribe draftGrade + assignedGrade.
- * - solo llama return() para TURNED_IN; Classroom no permite return() en NEW/CREATED.
+ * - escribe draftGrade + assignedGrade cuando falta assignedGrade.
+ * - llama return() para toda entrega TURNED_IN, incluso si ya tenía assignedGrade.
  */
 function revisarTareasCurso_(courseId, aplicar) {
   const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
@@ -141,13 +141,22 @@ function revisarTareasCurso_(courseId, aplicar) {
         entregasRevisadas++;
         const tieneDraft = sub.draftGrade !== undefined && sub.draftGrade !== null;
         const tieneAssigned = sub.assignedGrade !== undefined && sub.assignedGrade !== null;
+        const state = String(sub.state || '').toUpperCase();
+
+        // Una nota ya asignada nunca se modifica, pero una entrega TURNED_IN sí debe devolverse.
         if (tieneAssigned) {
           yaAsignadas++;
           tAssigned++;
+          if (aplicar && state === 'TURNED_IN') {
+            Classroom.Courses.CourseWork.StudentSubmissions.return(
+              {}, String(courseId), task.workId, sub.id
+            );
+            devueltas++;
+            tReturned++;
+          }
           return;
         }
 
-        const state = String(sub.state || '').toUpperCase();
         const entregada = state === 'TURNED_IN' || state === 'RETURNED';
         const score = tieneDraft ? Number(sub.draftGrade) : (entregada ? fullScore : 0);
 
