@@ -16,6 +16,12 @@ function instalarMonitorSolicitudesImportacion() {
 }
 
 function procesarSolicitudesImportacion() {
+  // La revisión nocturna reutiliza este monitor ya autorizado. La función
+  // interna se auto-limita a la hora 00 y procesa como máximo un curso por
+  // invocación para no bloquear las operaciones ordinarias del pipeline.
+  try { procesarRevisionNocturnaSiCorresponde_(); }
+  catch (nightErr) { console.error('Revisión nocturna: ' + String(nightErr && nightErr.message ? nightErr.message : nightErr)); }
+
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(1000)) return {procesado: false, motivo: 'LOCK'};
   try {
