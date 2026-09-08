@@ -57,7 +57,12 @@ function reubicarCourseWorkSinUnidad_(ss, courseId, unidadActual) {
   }
 
   const targetName = 'Unidad ' + targetNo;
-  let targetTopicId = buscarTopicIdUnidad_(courseId, targetName);
+  let targetTopicId = null;
+  try {
+    targetTopicId = buscarTopicIdUnidad_(courseId, targetName);
+  } catch (err) {
+    targetTopicId = null;
+  }
   if (!targetTopicId) {
     const created = Classroom.Courses.Topics.create({name: targetName}, String(courseId));
     targetTopicId = String(created.topicId);
