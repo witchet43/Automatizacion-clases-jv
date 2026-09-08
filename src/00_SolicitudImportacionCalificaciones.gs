@@ -40,6 +40,11 @@ function procesarSolicitudesImportacion() {
     } catch (pubErr) {
       console.error('Solicitud de publicación draft de calificación de unidad: ' + String(pubErr && pubErr.message ? pubErr.message : pubErr));
     }
+    try {
+      procesarSolicitudRecalculoFinalUnidad_();
+    } catch (directErr) {
+      console.error('Solicitud de recálculo final directo: ' + String(directErr && directErr.message ? directErr.message : directErr));
+    }
 
     const lastRow = Math.max(sh.getLastRow(), 1);
     const values = sh.getRange(1, 1, lastRow, 6).getDisplayValues();
