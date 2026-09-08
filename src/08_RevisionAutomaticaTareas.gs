@@ -39,9 +39,9 @@ function procesarSolicitudRevisionTareas_() {
     const result = revisarTareasCurso_(courseId, true);
     sh.getRange(row, 2).setValue(TASK_REVIEW_REQUEST.DONE);
     sh.getRange(row, 3).setValue(
-      'Revisión de tareas ejecutada. ' + result.calificadas100 + ' con 100; ' +
+      'Revisión de tareas y prácticas ejecutada. ' + result.calificadas100 + ' con 100; ' +
       result.calificadas0 + ' con 0; ' + result.yaCalificadas +
-      ' ya calificadas sin cambios; ' + result.tareasNoPublicadas + ' tareas no publicadas.'
+      ' ya calificadas sin cambios; ' + result.trabajosNoPublicados + ' trabajos no publicados.'
     );
     sh.getRange(row, 5).setValue('ACTIVA');
     sh.getRange(row, 6).setValue(new Date());
@@ -60,7 +60,7 @@ function revisarTareasCurso_(courseId, aplicar) {
   if (!sh) throw new Error('No existe la hoja Tareas.');
 
   const data = sh.getDataRange().getValues();
-  if (data.length < 2) return {courseId: courseId, tareas: []};
+  if (data.length < 2) return {courseId: courseId, trabajos: []};
   const h = {};
   data[0].forEach((v, i) => h[String(v)] = i);
 
@@ -76,31 +76,35 @@ function revisarTareasCurso_(courseId, aplicar) {
 
     if (rowCourse !== String(courseId)) continue;
     if (estado !== 'CREADA' || !workId) continue;
+
     const esTarea = type === 'TAREA' || /^TAREA\s*\d+/i.test(title);
-    if (!esTarea) continue;
+    const esPractica = type === 'PRACTICA' || type === 'PRÁCTICA' || /^PR[ÁA]CTICA\s*\d+/i.test(title);
+    const esQuizOExamen = type === 'QUIZ' || type === 'EXAMEN' || /^(QUIZ|EXAMEN)\b/i.test(title);
+    if (esQuizOExamen || (!esTarea && !esPractica)) continue;
+
     if (seen.has(workId)) continue;
     seen.add(workId);
-    candidates.push({row: i + 1, title: title, workId: workId});
+    candidates.push({row: i + 1, title: title, type: type, workId: workId});
   }
 
   let calificadas100 = 0;
   let calificadas0 = 0;
   let yaCalificadas = 0;
-  let tareasNoPublicadas = 0;
+  let trabajosNoPublicados = 0;
   let entregasRevisadas = 0;
-  const tareas = [];
+  const trabajos = [];
   const errores = [];
 
   candidates.forEach(task => {
     try {
       const cw = Classroom.Courses.CourseWork.get(String(courseId), task.workId);
       if (String(cw.state || '').toUpperCase() !== 'PUBLISHED') {
-        tareasNoPublicadas++;
-        tareas.push({titulo: task.title, classroomId: task.workId, estado: cw.state, accion: 'OMITIDA_NO_PUBLICADA'});
+        trabajosNoPublicados++;
+        trabajos.push({titulo: task.title, tipo: task.type, classroomId: task.workId, estado: cw.state, accion: 'OMITIDA_NO_PUBLICADA'});
         return;
       }
       if (String(cw.workType || '').toUpperCase() !== 'ASSIGNMENT') {
-        tareas.push({titulo: task.title, classroomId: task.workId, estado: cw.state, accion: 'OMITIDA_NO_ASSIGNMENT'});
+        trabajos.push({titulo: task.title, tipo: task.type, classroomId: task.workId, estado: cw.state, accion: 'OMITIDA_NO_ASSIGNMENT'});
         return;
       }
 
@@ -148,8 +152,9 @@ function revisarTareasCurso_(courseId, aplicar) {
         }
       });
 
-      tareas.push({
+      trabajos.push({
         titulo: task.title,
+        tipo: task.type,
         classroomId: task.workId,
         estado: cw.state,
         alumnos: subs.length,
@@ -164,18 +169,18 @@ function revisarTareasCurso_(courseId, aplicar) {
   });
 
   if (errores.length) {
-    throw new Error('La revisión encontró errores en ' + errores.length + ' tarea(s): ' + JSON.stringify(errores).slice(0, 3000));
+    throw new Error('La revisión encontró errores en ' + errores.length + ' trabajo(s): ' + JSON.stringify(errores).slice(0, 3000));
   }
 
   return {
     courseId: String(courseId),
     aplicar: Boolean(aplicar),
-    tareasCandidatas: candidates.length,
-    tareasNoPublicadas: tareasNoPublicadas,
+    trabajosCandidatos: candidates.length,
+    trabajosNoPublicados: trabajosNoPublicados,
     entregasRevisadas: entregasRevisadas,
     calificadas100: calificadas100,
     calificadas0: calificadas0,
     yaCalificadas: yaCalificadas,
-    tareas: tareas
+    trabajos: trabajos
   };
 }
