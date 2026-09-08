@@ -15,6 +15,7 @@ const QUIZ_PIPELINE = Object.freeze({
 });
 
 const QUIZ_EMAIL_NOTICE = 'Importante: responde el cuestionario utilizando la misma cuenta de Google y el mismo correo electrónico con el que estás registrado en Google Classroom. Si utilizas otra cuenta, tu calificación no podrá asociarse automáticamente.';
+const QUIZ_NO_DESCRIPTION_SENTINEL = '__SIN_DESCRIPCION__';
 
 const H = Object.freeze({
   TITLE: 'Título',
@@ -25,9 +26,17 @@ const H = Object.freeze({
   OPTION_B: 'Opción B',
   OPTION_C: 'Opción C',
   OPTION_D: 'Opción D',
+  OPTION_E: 'Opción E',
+  OPTION_F: 'Opción F',
+  OPTION_G: 'Opción G',
+  OPTION_H: 'Opción H',
   GOOD_FEEDBACK: 'Retroalimentación correcta',
   BAD_FEEDBACK: 'Retroalimentación incorrecta'
 });
+
+function quizDescriptionForOutput_(value) {
+  return clean_(value) === QUIZ_NO_DESCRIPTION_SENTINEL ? '' : quizDescription_(value);
+}
 
 function instalarMonitorQuizzes() {
   ScriptApp.getProjectTriggers()
@@ -160,7 +169,7 @@ function processOneQuiz_(sheet, record, allQuestions) {
 
     const work = Classroom.Courses.CourseWork.create({
       title: clean_(q[H.TITLE]),
-      description: quizDescription_(q.Instrucciones),
+      description: quizDescriptionForOutput_(q.Instrucciones),
       workType: 'ASSIGNMENT',
       state: 'DRAFT',
       maxPoints: total,
@@ -221,7 +230,7 @@ function buildQuizForm_(quiz, items) {
   const showFeedback = validateQuizFeedbackRequirements_(quiz, items);
 
   const form = FormApp.create(clean_(quiz[H.TITLE]));
-  form.setDescription(quizDescription_(quiz.Instrucciones));
+  form.setDescription(quizDescriptionForOutput_(quiz.Instrucciones));
   form.setIsQuiz(true);
   form.setCollectEmail(true);
   configureVerifiedEmail_(form.getId(), true);
@@ -239,20 +248,23 @@ function buildQuizForm_(quiz, items) {
       return;
     }
 
-    const options = [H.OPTION_A, H.OPTION_B, H.OPTION_C, H.OPTION_D]
-      .map(header => clean_(x[header]))
-      .filter(Boolean);
+    const optionHeaders = [
+      H.OPTION_A, H.OPTION_B, H.OPTION_C, H.OPTION_D,
+      H.OPTION_E, H.OPTION_F, H.OPTION_G, H.OPTION_H
+    ];
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    const optionPairs = optionHeaders
+      .map((header, index) => ({letter: letters[index], value: clean_(x[header])}))
+      .filter(pair => Boolean(pair.value));
+    const options = optionPairs.map(pair => pair.value);
     if (options.length < 2) {
       throw new Error('La pregunta ' + x.Orden + ' necesita al menos 2 opciones.');
     }
 
     const keys = parseChoiceAnswerKeys_(x['Respuesta correcta']);
-    const letters = ['A', 'B', 'C', 'D'];
-    if (!keys.length || keys.some(key => letters.indexOf(key) < 0)) {
+    const availableLetters = optionPairs.map(pair => pair.letter);
+    if (!keys.length || keys.some(key => availableLetters.indexOf(key) < 0)) {
       throw new Error('Respuesta invalida en pregunta ' + x.Orden + ': ' + clean_(x['Respuesta correcta']));
-    }
-    if (keys.some(key => letters.indexOf(key) >= options.length)) {
-      throw new Error('La respuesta correcta de la pregunta ' + x.Orden + ' apunta a una opción vacía.');
     }
 
     let item;
@@ -275,8 +287,8 @@ function buildQuizForm_(quiz, items) {
     item.setTitle(clean_(x.Pregunta));
     item.setRequired(yes_(x.Obligatoria));
     item.setPoints(Number(x.Puntos));
-    item.setChoices(options.map((value, index) =>
-      item.createChoice(value, keys.indexOf(letters[index]) >= 0)
+    item.setChoices(optionPairs.map(pair =>
+      item.createChoice(pair.value, keys.indexOf(pair.letter) >= 0)
     ));
 
     if (showFeedback) {
