@@ -77,12 +77,46 @@ function reubicarCourseWorkSinUnidad_(ss, courseId, unidadActual) {
   const currentNo = extraerNumeroUnidad_(unidadActual);
   if (!currentNo) throw new Error('No se pudo identificar el número de ' + unidadActual + '.');
 
-  const topics = listarTopics_(courseId);
+  let topics = listarTopics_(courseId);
   const allWork = listarCourseWorkPublicacion_(courseId);
   const topicById = {};
   topics.forEach(t => topicById[String(t.topicId)] = t);
 
-  const unitNumbers = Array.from(new Set(topics.map(t => extraerNumeroUnidad_(t.name)).filter(n => n && n > currentNo))).sort((a, b) => a - b);
+  // La siguiente unidad puede existir todavía solo en las fuentes operativas,
+  // aunque Classroom no tenga creado su Topic. Por eso se auditan ambas fuentes.
+  const unitNumbersRaw = [];
+  topics.forEach(t => {
+    const n = extraerNumeroUnidad_(t.name);
+    if (n && n > currentNo) unitNumbersRaw.push(n);
+  });
+
+  const tareas = ss.getSheetByName('Tareas');
+  if (tareas && tareas.getLastRow() > 1) {
+    const data = tareas.getDataRange().getValues();
+    const h = {};
+    data[0].forEach((v, i) => h[String(v)] = i);
+    for (let i = 1; i < data.length; i++) {
+      const r = data[i];
+      if (String(r[h['ID curso']] || '').trim() !== String(courseId)) continue;
+      const n = extraerNumeroUnidad_(r[h['Tema']]);
+      if (n && n > currentNo) unitNumbersRaw.push(n);
+    }
+  }
+
+  const quizzes = ss.getSheetByName('Quizzes');
+  if (quizzes && quizzes.getLastRow() > 1) {
+    const data = quizzes.getDataRange().getValues();
+    const h = {};
+    data[0].forEach((v, i) => h[String(v)] = i);
+    for (let i = 1; i < data.length; i++) {
+      const r = data[i];
+      if (String(r[h['ID del curso']] || '').trim() !== String(courseId)) continue;
+      const n = extraerNumeroUnidad_(r[h['Unidad / tema']]);
+      if (n && n > currentNo) unitNumbersRaw.push(n);
+    }
+  }
+
+  const unitNumbers = Array.from(new Set(unitNumbersRaw)).sort((a, b) => a - b);
   let targetNo = null;
   let targetTopicId = null;
   for (const n of unitNumbers) {
@@ -92,18 +126,29 @@ function reubicarCourseWorkSinUnidad_(ss, courseId, unidadActual) {
     );
     if (!closed) {
       targetNo = n;
-      targetTopicId = buscarTopicIdUnidad_(courseId, 'Unidad ' + n);
       break;
     }
   }
-  if (!targetNo || !targetTopicId) {
+  if (!targetNo) {
     throw new Error('No existe una siguiente unidad verificable y no cerrada después de ' + unidadActual + '.');
   }
 
   const targetName = 'Unidad ' + targetNo;
+  try {
+    targetTopicId = buscarTopicIdUnidad_(courseId, targetName);
+  } catch (err) {
+    targetTopicId = null;
+  }
+  if (!targetTopicId) {
+    const created = Classroom.Courses.Topics.create({name: targetName}, String(courseId));
+    targetTopicId = String(created.topicId);
+    topics = listarTopics_(courseId);
+    Object.keys(topicById).forEach(k => delete topicById[k]);
+    topics.forEach(t => topicById[String(t.topicId)] = t);
+  }
+
   const candidates = [];
 
-  const tareas = ss.getSheetByName('Tareas');
   if (tareas && tareas.getLastRow() > 1) {
     const data = tareas.getDataRange().getValues();
     const h = {};
@@ -125,7 +170,6 @@ function reubicarCourseWorkSinUnidad_(ss, courseId, unidadActual) {
     }
   }
 
-  const quizzes = ss.getSheetByName('Quizzes');
   if (quizzes && quizzes.getLastRow() > 1) {
     const data = quizzes.getDataRange().getValues();
     const h = {};
