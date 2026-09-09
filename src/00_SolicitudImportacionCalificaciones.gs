@@ -31,6 +31,8 @@ function procesarSolicitudesImportacion() {
 
     try { procesarSolicitudRevisionTareas_(); }
     catch (taskErr) { console.error('Solicitud de revisión de tareas: ' + String(taskErr && taskErr.message ? taskErr.message : taskErr)); }
+    try { procesarSolicitudCalificarQuizzes100_(); }
+    catch (quiz100Err) { console.error('Solicitud Quiz 1-3 a 100: ' + String(quiz100Err && quiz100Err.message ? quiz100Err.message : quiz100Err)); }
     try { procesarSolicitudPromediosUnidad_(); }
     catch (avgErr) { console.error('Solicitud de promedios de unidad: ' + String(avgErr && avgErr.message ? avgErr.message : avgErr)); }
     try { procesarSolicitudPublicarCalificacionUnidad_(); }
