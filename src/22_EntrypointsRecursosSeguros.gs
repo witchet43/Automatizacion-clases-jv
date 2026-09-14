@@ -15,7 +15,11 @@ function crearTarea(params) {
   return ejecutarConNotificacionError_('CREAR_TAREA', params, function () {
     const tarea = aplicarReglaVencimientoTarea_(params);
     const result = crearCourseWorkDirecto_(normalizarCreacionDirecta_(tarea, 'TAREA'));
+    const due = asegurarVencimientoTareaCreada_(tarea.courseId, result.workId, tarea);
     verificarVencimientoTareaCreada_(tarea.courseId, result.workId, tarea);
+    result.vencimientoReparado = due.reparado === true;
+    result.fechaLimiteLocal = tarea.fechaLimiteLocal;
+    result.horaLimiteLocal = tarea.horaLimiteLocal;
     return result;
   });
 }
