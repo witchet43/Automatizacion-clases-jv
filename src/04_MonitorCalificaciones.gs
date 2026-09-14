@@ -69,7 +69,8 @@ function ejecutarMonitorCalificacionesQuizzes_(aplicar) {
         'Importación manual: ' + result.actualizadas + ' actualizadas; ' +
         result.yaCalificadas + ' ya calificadas; ' +
         result.sinCorrespondencia.length + ' sin correspondencia; ' +
-        result.noTurnedIn + ' no TURNED_IN.' +
+        result.noTurnedIn + ' no TURNED_IN; ' +
+        result.sinPuntajeForms.length + ' respuesta(s) sin puntaje completo en Forms.' +
         (result.ajuste ? ' Ajuste aplicado: +' + result.ajuste + ' puntos.' : '')
       );
     }
@@ -89,18 +90,20 @@ function procesarCalificacionesQuiz_(courseId, workId, formId, aplicar, quizId) 
     const email = String(r.getRespondentEmail() || '').trim().toLowerCase();
     if (!email) return;
 
-    const scoreForms = r.getGradableItemResponses().reduce((s, x) => {
-      const value = x.getScore();
-      return s + ((value === null || value === undefined) ? 0 : Number(value));
-    }, 0);
-
-    const scoreFinal = Math.min(maxPoints, scoreForms + ajuste);
+    const lectura = puntajeSeguroRespuestaForms_(r);
+    const scoreFinal = lectura.completo
+      ? Math.min(maxPoints, lectura.scoreForms + ajuste)
+      : null;
 
     if (!respuestas[email] || r.getTimestamp() > respuestas[email].fecha) {
       respuestas[email] = {
-        scoreForms: scoreForms,
+        scoreForms: lectura.completo ? lectura.scoreForms : null,
         score: scoreFinal,
-        fecha: r.getTimestamp()
+        fecha: r.getTimestamp(),
+        completo: lectura.completo,
+        reactivosConPuntaje: lectura.reactivosConPuntaje,
+        reactivosSinPuntaje: lectura.reactivosSinPuntaje,
+        reactivosGradables: lectura.reactivosGradables
       };
     }
   });
@@ -152,6 +155,7 @@ function procesarCalificacionesQuiz_(courseId, workId, formId, aplicar, quizId) 
 
   const pendientes = [];
   const sinCorrespondencia = [];
+  const sinPuntajeForms = [];
   let actualizadas = 0;
   let yaCalificadas = 0;
   let noTurnedIn = 0;
@@ -162,6 +166,19 @@ function procesarCalificacionesQuiz_(courseId, workId, formId, aplicar, quizId) 
 
     if (!alumno) {
       sinCorrespondencia.push({correoForms: fe, motivo: 'Alumno no encontrado'});
+      return;
+    }
+
+    const respuesta = respuestas[fe];
+    if (!respuesta.completo) {
+      sinPuntajeForms.push({
+        alumno: alumno.profile && alumno.profile.name ? alumno.profile.name.fullName : ce,
+        correoForms: fe,
+        reactivosGradables: respuesta.reactivosGradables,
+        reactivosConPuntaje: respuesta.reactivosConPuntaje,
+        reactivosSinPuntaje: respuesta.reactivosSinPuntaje,
+        motivo: 'Forms no devolvió puntaje para todos los reactivos gradables; no se convierte a 0.'
+      });
       return;
     }
 
@@ -191,9 +208,9 @@ function procesarCalificacionesQuiz_(courseId, workId, formId, aplicar, quizId) 
       alumno: alumno.profile.name.fullName,
       correoForms: fe,
       correoClassroom: ce,
-      puntosForms: respuestas[fe].scoreForms,
+      puntosForms: respuesta.scoreForms,
       ajuste: ajuste,
-      puntos: respuestas[fe].score,
+      puntos: respuesta.score,
       submissionId: sub.id,
       actividadAsociadaAlProyecto: Boolean(cw.associatedWithDeveloper)
     };
@@ -222,7 +239,8 @@ function procesarCalificacionesQuiz_(courseId, workId, formId, aplicar, quizId) 
     noTurnedIn: noTurnedIn,
     ajuste: ajuste,
     pendientes: pendientes,
-    sinCorrespondencia: sinCorrespondencia
+    sinCorrespondencia: sinCorrespondencia,
+    sinPuntajeForms: sinPuntajeForms
   };
 }
 
