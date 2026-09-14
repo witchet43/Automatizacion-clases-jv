@@ -29,6 +29,7 @@ function procesarSolicitudesImportacion() {
   try {
     ejecutarAdaptadorSolicitud_('revisión de tareas', procesarSolicitudRevisionTareas_);
     ejecutarAdaptadorSolicitud_('reparación de ceros erróneos', procesarSolicitudRepararCerosActividad_);
+    ejecutarAdaptadorSolicitud_('migración exclusiva de actividad a draft', procesarSolicitudMigrarActividadCalificacionDraft_);
     ejecutarAdaptadorSolicitud_('promedios de unidad', procesarSolicitudPromediosUnidad_);
     ejecutarAdaptadorSolicitud_('publicación de calificación de unidad', procesarSolicitudPublicarCalificacionUnidad_);
     ejecutarAdaptadorSolicitud_('recálculo final directo', procesarSolicitudRecalculoFinalUnidadCero_);
