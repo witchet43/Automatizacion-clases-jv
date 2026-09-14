@@ -1,12 +1,13 @@
 /**
  * Invariante global de calificaciones automáticas.
- * Toda calificación importada, calculada o corregida por automatización queda
- * exclusivamente en draftGrade. assignedGrade solo puede enviarse como null
- * para retirar una publicación automática previa; nunca recibe un valor.
+ * Los valores autorizados viven en ACADEMIC_POLICY.CLASSROOM.
  */
 function escribirCalificacionDraft_(courseId, workId, submissionId, grade) {
   const value = Number(grade);
   if (!Number.isFinite(value)) throw new Error('La calificación automática debe ser numérica.');
+  if (ACADEMIC_POLICY.CLASSROOM.AUTOMATIC_GRADE_FIELD !== 'draftGrade' || ACADEMIC_POLICY.CLASSROOM.AUTOMATIC_ASSIGNED_GRADE !== false) {
+    throw new Error('La política canónica no autoriza publicar calificaciones automáticas.');
+  }
 
   Classroom.Courses.CourseWork.StudentSubmissions.patch(
     {draftGrade: value, assignedGrade: null},
@@ -32,9 +33,9 @@ function verificarCalificacionDraft_(submission, expected) {
 
 function politicaCalificacionAutomaticaDraft_() {
   return Object.freeze({
-    campoEscritura: 'draftGrade',
-    assignedGradeAutomatico: false,
+    campoEscritura: ACADEMIC_POLICY.CLASSROOM.AUTOMATIC_GRADE_FIELD,
+    assignedGradeAutomatico: ACADEMIC_POLICY.CLASSROOM.AUTOMATIC_ASSIGNED_GRADE,
     assignedGradeSoloParaLimpiar: true,
-    returnAutomatico: false
+    returnAutomatico: ACADEMIC_POLICY.CLASSROOM.AUTOMATIC_RETURN
   });
 }
