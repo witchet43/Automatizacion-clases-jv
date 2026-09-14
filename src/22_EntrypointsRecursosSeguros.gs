@@ -6,7 +6,8 @@
  */
 function crearActividad(params) {
   return ejecutarConNotificacionError_('CREAR_ACTIVIDAD', params, function () {
-    return crearCourseWorkDirecto_(normalizarCreacionDirecta_(params, 'ACTIVIDAD'));
+    const actividad = aplicarReglaVencimientoActividadEnClase_(params);
+    return crearCourseWorkDirecto_(normalizarCreacionDirecta_(actividad, 'ACTIVIDAD'));
   });
 }
 
@@ -37,6 +38,7 @@ function crearExamen(params) {
 function validarEntrypointsRecursosSeguros() {
   validarContratoArquitectura_();
   validarPoliticasCanonicas_();
+  validarVencimientoActividadEnClaseCanonico();
   const names = ['crearActividad','crearTarea','crearPractica','crearQuiz','crearExamen'];
   names.forEach(function (name) {
     if (typeof this[name] !== 'function') throw new Error('Falta entrypoint canónico: ' + name);
@@ -44,5 +46,5 @@ function validarEntrypointsRecursosSeguros() {
   if (!ACADEMIC_POLICY.ERROR_REPORTING || ACADEMIC_POLICY.ERROR_REPORTING.NOTIFY_ON_ERROR !== true) {
     throw new Error('La notificación de errores debe estar activa.');
   }
-  return {ok:true, entrypoints:names, errorReporting:'REQUIRED'};
+  return {ok:true, entrypoints:names, errorReporting:'REQUIRED', activityDue:'SESSION_END_MAX'};
 }
