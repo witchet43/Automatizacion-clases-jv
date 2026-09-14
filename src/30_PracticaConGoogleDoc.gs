@@ -6,7 +6,7 @@
  * - requiere un Google Documento nativo;
  * - el documento se adjunta con STUDENT_COPY;
  * - si no se proporciona documentId, el propio script crea el Google Documento
- *   mediante Drive API usando el scope drive.file ya autorizado.
+ *   mediante el servicio avanzado Drive v3 con el scope drive.file.
  */
 function prepararPracticaConGoogleDoc_(params) {
   const p = params && typeof params === 'object' ? Object.assign({}, params) : {};
@@ -80,37 +80,18 @@ function crearGoogleDocumentoPractica_(params) {
   const descripcion = String(p.descripcion || p.description || '').trim();
   const contenido = normalizarContenidoPractica_(p.contenidoDocumento || p.googleDocContent || '');
   const html = construirHtmlPractica_(titulo, descripcion, contenido);
-  const boundary = 'practice_' + Utilities.getUuid().replace(/-/g, '');
-  const metadata = JSON.stringify({name:titulo, mimeType:policy.GOOGLE_DOCUMENT_MIME});
-  const payload = [
-    '--' + boundary,
-    'Content-Type: application/json; charset=UTF-8',
-    '',
-    metadata,
-    '--' + boundary,
-    'Content-Type: text/html; charset=UTF-8',
-    '',
-    html,
-    '--' + boundary + '--',
-    ''
-  ].join('\r\n');
+  const media = Utilities.newBlob(html, 'text/html', titulo + '.html');
 
-  const response = UrlFetchApp.fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType', {
-    method:'post',
-    contentType:'multipart/related; boundary=' + boundary,
-    headers:{Authorization:'Bearer ' + ScriptApp.getOAuthToken()},
-    payload:payload,
-    muteHttpExceptions:true
-  });
-  const code = Number(response.getResponseCode());
-  const raw = String(response.getContentText() || '');
-  if (code < 200 || code >= 300) {
-    throw new Error('No fue posible crear el Google Documento de la PRÁCTICA mediante Drive API. HTTP ' + code + ': ' + raw.slice(0,500));
-  }
   let created;
-  try { created = JSON.parse(raw); }
-  catch (err) { throw new Error('Drive API devolvió una respuesta inválida al crear el Google Documento.'); }
-  if (!created || !created.id) throw new Error('Drive API no devolvió id para el Google Documento de la PRÁCTICA.');
+  try {
+    created = Drive.Files.create({
+      name:titulo,
+      mimeType:policy.GOOGLE_DOCUMENT_MIME
+    }, media, {fields:'id,name,mimeType'});
+  } catch (err) {
+    throw new Error('No fue posible crear el Google Documento de la PRÁCTICA mediante Drive v3: ' + String(err && err.message ? err.message : err));
+  }
+  if (!created || !created.id) throw new Error('Drive v3 no devolvió id para el Google Documento de la PRÁCTICA.');
 
   const file = obtenerArchivoPracticaConReintento_(String(created.id));
   const mime = String(file.getMimeType() || '');
