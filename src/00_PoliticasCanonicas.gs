@@ -54,6 +54,16 @@ const ACADEMIC_POLICY = Object.freeze({
       NEXT_SESSION_START_PARAM: 'horaInicioSiguienteSesion',
       TIMEZONE: 'America/Mexico_City',
       UTC_OFFSET_MINUTES: -360
+    }),
+    PRACTICE: Object.freeze({
+      DUE_MODE: 'NONE',
+      DUE_ALLOWED: false,
+      WORD_DOCUMENT_REQUIRED: true,
+      WORD_MIME: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      WORD_EXTENSION: '.docx',
+      STUDENT_COPY_REQUIRED: true,
+      SHARE_MODE: 'STUDENT_COPY',
+      CREATE_WORD_IF_MISSING: true
     })
   }),
   UNIT_GRADING: Object.freeze({
@@ -89,6 +99,7 @@ const ACADEMIC_POLICY = Object.freeze({
   }),
   DOCUMENTS: Object.freeze({
     PRACTICE_STUDENT_COPY: true,
+    PRACTICE_DOCUMENT_FORMAT: 'DOCX',
     ACTIVITY_DOC_STUDENT_COPY: true,
     TASK_STUDENT_COPY_DEFAULT: false,
     PRACTICE_REFLECTION_COUNT: 3,
@@ -147,6 +158,9 @@ function validarPoliticasCanonicas_(){
   const taskDue=p.CLASSROOM.TASK_DUE;
   if(!taskDue||taskDue.REQUIRED!==true||taskDue.DEFAULT!=='NEXT_SESSION_START'||taskDue.MAXIMUM!=='NEXT_SESSION_START'||taskDue.REQUIRES_NEXT_SESSION_CONTEXT!==true||taskDue.PAST_NEXT_SESSION_CREATION!=='BLOCK'||taskDue.DUE_MUST_BE_FUTURE!==true) throw new Error('La política de vencimiento de TAREA debe exigir inicio de siguiente sesión, futuro válido y bloqueo posterior.');
   if(taskDue.TIMEZONE!=='America/Mexico_City'||taskDue.UTC_OFFSET_MINUTES!==-360) throw new Error('La conversión horaria canónica de TAREA no coincide con America/Mexico_City 2026.');
+  const practice=p.CLASSROOM.PRACTICE;
+  if(!practice||practice.DUE_MODE!=='NONE'||practice.DUE_ALLOWED!==false||practice.WORD_DOCUMENT_REQUIRED!==true||practice.WORD_MIME!=='application/vnd.openxmlformats-officedocument.wordprocessingml.document'||practice.WORD_EXTENSION!=='.docx'||practice.STUDENT_COPY_REQUIRED!==true||practice.SHARE_MODE!=='STUDENT_COPY'||practice.CREATE_WORD_IF_MISSING!==true) throw new Error('La política canónica de PRÁCTICA debe exigir DOCX, STUDENT_COPY y ausencia total de vencimiento.');
+  if(p.DOCUMENTS.PRACTICE_STUDENT_COPY!==true||p.DOCUMENTS.PRACTICE_DOCUMENT_FORMAT!=='DOCX') throw new Error('La política documental de PRÁCTICA debe permanecer en DOCX con copia individual.');
   if(p.UNIT_GRADING.MISSING_GRADE_VALUE!==0||p.UNIT_GRADING.TOUCH_OTHER_UNITS!==false) throw new Error('La política de cierre perdió aislamiento o tratamiento de faltantes.');
   if(redondearCalificacionFinalCanonica_(91.75)!==92||redondearCalificacionFinalCanonica_(64.18)!==64) throw new Error('La política de redondeo final no coincide con el contrato.');
   if(p.EXAM.STANDARD_ITEM_COUNT!==25||p.EXAM.STANDARD_TOTAL_POINTS!==100) throw new Error('Los parámetros estándar del examen formal cambiaron sin actualización explícita.');
