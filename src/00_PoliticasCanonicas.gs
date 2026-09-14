@@ -9,7 +9,17 @@ const ACADEMIC_POLICY = Object.freeze({
     SHEETS_ROLE: 'AUDIT_AND_CONFIGURATION_ONLY',
     MONITOR_REQUIRED_FOR_CREATION: false,
     LEGACY_MONITOR_COMPATIBILITY: true,
-    DIRECT_RESOURCE_TYPES: Object.freeze(['ACTIVIDAD','TAREA','PRACTICA','QUIZ','EXAMEN'])
+    DIRECT_RESOURCE_TYPES: Object.freeze(['ACTIVIDAD','TAREA','PRACTICA','QUIZ','EXAMEN']),
+    CANONICAL_RESOURCE_ENTRYPOINTS: Object.freeze(['crearActividad','crearTarea','crearPractica','crearQuiz','crearExamen'])
+  }),
+  ERROR_REPORTING: Object.freeze({
+    NOTIFY_ON_ERROR: true,
+    SILENT_FAILURE_ALLOWED: false,
+    PRIMARY_CHANNEL: 'EMAIL',
+    AUDIT_LOG: true,
+    SCRIPT_PROPERTY_EMAIL: 'ACADEMIC_ERROR_NOTIFICATION_EMAIL',
+    LEGACY_ERROR_WATCH: true,
+    PRESERVE_ORIGINAL_EXCEPTION: true
   }),
   CLASSROOM: Object.freeze({
     DEFAULT_COURSEWORK_STATE: 'DRAFT',
@@ -103,6 +113,7 @@ function redondearCalificacionFinalCanonica_(value){const n=Number(value);if(!Nu
 function validarPoliticasCanonicas_(){
   const p=ACADEMIC_POLICY;
   if(p.EXECUTION.RESOURCE_CREATION_MODE!=='DIRECT_SCRIPT'||p.EXECUTION.SHEETS_ROLE!=='AUDIT_AND_CONFIGURATION_ONLY'||p.EXECUTION.MONITOR_REQUIRED_FOR_CREATION!==false) throw new Error('La creación directa por script debe ser el camino canónico.');
+  if(!p.ERROR_REPORTING||p.ERROR_REPORTING.NOTIFY_ON_ERROR!==true||p.ERROR_REPORTING.SILENT_FAILURE_ALLOWED!==false||p.ERROR_REPORTING.PRIMARY_CHANNEL!=='EMAIL'||p.ERROR_REPORTING.PRESERVE_ORIGINAL_EXCEPTION!==true) throw new Error('La política de notificación de errores fue debilitada.');
   if(Math.abs((p.UNIT_GRADING.EXAM_WEIGHT+p.UNIT_GRADING.NON_EXAM_WEIGHT)-1)>0.000001) throw new Error('La ponderación canónica de unidad no suma 100%.');
   if(p.CLASSROOM.DEFAULT_COURSEWORK_STATE!=='DRAFT') throw new Error('El estado automático ordinario de Classroom debe ser DRAFT.');
   if(p.CLASSROOM.AUTOMATIC_GRADE_FIELD!=='draftGrade'||p.CLASSROOM.AUTOMATIC_ASSIGNED_GRADE!==false||p.CLASSROOM.AUTOMATIC_RETURN!==false) throw new Error('La política automática de calificaciones debe ser DRAFT_ONLY.');
