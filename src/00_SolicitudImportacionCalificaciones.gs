@@ -32,7 +32,7 @@ function procesarSolicitudesImportacion() {
 
     try { procesarSolicitudRevisionTareas_(); }
     catch (taskErr) { console.error('Solicitud de revisión de tareas: ' + String(taskErr && taskErr.message ? taskErr.message : taskErr)); }
-    try { procesarSolicitudPromediosUnidad_(); }
+    try { preclasificarSolicitudPromediosPorCortes_(); procesarSolicitudPromediosUnidad_(); }
     catch (avgErr) { console.error('Solicitud de promedios de unidad: ' + String(avgErr && avgErr.message ? avgErr.message : avgErr)); }
     try { procesarSolicitudPublicarCalificacionUnidad_(); }
     catch (pubErr) { console.error('Solicitud de publicación de calificación de unidad: ' + String(pubErr && pubErr.message ? pubErr.message : pubErr)); }
