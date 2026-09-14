@@ -46,6 +46,35 @@ jobs:
           done
           node -e "JSON.parse(require('fs').readFileSync('src/appsscript.json', 'utf8')); console.log('appsscript.json OK')"
 
+      - name: Enforce architecture contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const file = 'src/00_ContratoArquitectura.gs';
+          if (!fs.existsSync(file)) {
+            console.error('Missing architecture contract: ' + file);
+            process.exit(1);
+          }
+          const text = fs.readFileSync(file, 'utf8');
+          const required = [
+            /BEHAVIOR_SOURCE:\s*'CODE'/,
+            /AI_ROLE:\s*'INTENT_AND_MINIMAL_PARAMETERS'/,
+            /PROMPT_ALGORITHM_RECONSTRUCTION_ALLOWED:\s*false/,
+            /BEHAVIOR_CHANGE_REQUIRES_CODE:\s*true/,
+            /BEHAVIOR_CHANGE_REQUIRES_REGRESSION:\s*true/,
+            /DOCUMENTATION_IS_EXECUTION_SOURCE:\s*false/,
+            /DEPLOYMENT_VERIFICATION_REQUIRED:\s*true/
+          ];
+          const missing = required.filter(re => !re.test(text));
+          if (missing.length) {
+            console.error('Architecture contract is incomplete or weakened.');
+            process.exit(1);
+          }
+          console.log('Architecture contract OK');
+          NODE
+
       - name: Enforce draft-only automatic grading
         shell: bash
         run: |
