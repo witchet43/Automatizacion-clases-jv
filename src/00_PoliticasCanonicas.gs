@@ -36,6 +36,7 @@ const ACADEMIC_POLICY = Object.freeze({
       DEFAULT: 'SESSION_END',
       MAXIMUM: 'SESSION_END',
       REQUIRES_SESSION_CONTEXT: true,
+      PAST_SESSION_CREATION: 'BLOCK',
       SESSION_DATE_PARAM: 'fechaSesion',
       SESSION_END_PARAM: 'horaFinSesion',
       TIMEZONE: 'America/Mexico_City',
@@ -128,7 +129,7 @@ function validarPoliticasCanonicas_(){
   if(p.CLASSROOM.DEFAULT_COURSEWORK_STATE!=='DRAFT') throw new Error('El estado automático ordinario de Classroom debe ser DRAFT.');
   if(p.CLASSROOM.AUTOMATIC_GRADE_FIELD!=='draftGrade'||p.CLASSROOM.AUTOMATIC_ASSIGNED_GRADE!==false||p.CLASSROOM.AUTOMATIC_RETURN!==false) throw new Error('La política automática de calificaciones debe ser DRAFT_ONLY.');
   const activityDue=p.CLASSROOM.ACTIVITY_IN_CLASS_DUE;
-  if(!activityDue||activityDue.REQUIRED!==true||activityDue.DEFAULT!=='SESSION_END'||activityDue.MAXIMUM!=='SESSION_END'||activityDue.REQUIRES_SESSION_CONTEXT!==true) throw new Error('La política de vencimiento de ACTIVIDAD EN CLASE debe exigir y limitar al fin de sesión.');
+  if(!activityDue||activityDue.REQUIRED!==true||activityDue.DEFAULT!=='SESSION_END'||activityDue.MAXIMUM!=='SESSION_END'||activityDue.REQUIRES_SESSION_CONTEXT!==true||activityDue.PAST_SESSION_CREATION!=='BLOCK') throw new Error('La política de vencimiento de ACTIVIDAD EN CLASE debe exigir y limitar al fin de sesión y bloquear creación posterior.');
   if(activityDue.TIMEZONE!=='America/Mexico_City'||activityDue.UTC_OFFSET_MINUTES!==-360) throw new Error('La conversión horaria canónica de ACTIVIDAD EN CLASE no coincide con America/Mexico_City 2026.');
   if(p.UNIT_GRADING.MISSING_GRADE_VALUE!==0||p.UNIT_GRADING.TOUCH_OTHER_UNITS!==false) throw new Error('La política de cierre perdió aislamiento o tratamiento de faltantes.');
   if(redondearCalificacionFinalCanonica_(91.75)!==92||redondearCalificacionFinalCanonica_(64.18)!==64) throw new Error('La política de redondeo final no coincide con el contrato.');
