@@ -31,6 +31,7 @@ function procesarSolicitudesImportacion() {
     ejecutarAdaptadorSolicitud_('promedios de unidad', procesarSolicitudPromediosUnidad_);
     ejecutarAdaptadorSolicitud_('publicación de calificación de unidad', procesarSolicitudPublicarCalificacionUnidad_);
     ejecutarAdaptadorSolicitud_('recálculo final directo', procesarSolicitudRecalculoFinalUnidadCero_);
+    ejecutarAdaptadorSolicitud_('reconciliación de importación', procesarSolicitudReconciliarImportacion_);
     return procesarSolicitudImportacionCalificaciones_();
   } finally {
     lock.releaseLock();
