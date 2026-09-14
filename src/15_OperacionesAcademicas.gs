@@ -5,9 +5,11 @@
 
 /** Parámetro mínimo: {quizId}. courseId es opcional y actúa como assertion. */
 function importarCalificacionesExamen(params) {
-  const p = normalizarParametrosOperacion_(params);
-  if (!p.quizId) throw new Error('importarCalificacionesExamen requiere quizId.');
-  return importarCalificacionesInstrumento_({quizId:p.quizId, courseId:p.courseId, tipoEsperado:'EXAMEN'});
+  return ejecutarConNotificacionError_('IMPORTAR_CALIFICACIONES_EXAMEN', params, function () {
+    const p = normalizarParametrosOperacion_(params);
+    if (!p.quizId) throw new Error('importarCalificacionesExamen requiere quizId.');
+    return importarCalificacionesInstrumento_({quizId:p.quizId, courseId:p.courseId, tipoEsperado:'EXAMEN'});
+  });
 }
 
 /** Motor común. Resuelve Form ID y Classroom ID a partir del Quiz ID. */
@@ -43,33 +45,35 @@ function importarCalificacionesInstrumento_(params) {
  * ACADEMIC_POLICY.UNIT_GRADING y en los motores llamados por esta fachada.
  */
 function cerrarUnidad(params) {
-  const p = normalizarParametrosOperacion_(params);
-  if (!p.courseId) throw new Error('cerrarUnidad requiere courseId.');
-  const unidad = normalizarUnidadOperacion_(p.unidad);
-  const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
+  return ejecutarConNotificacionError_('CERRAR_UNIDAD', params, function () {
+    const p = normalizarParametrosOperacion_(params);
+    if (!p.courseId) throw new Error('cerrarUnidad requiere courseId.');
+    const unidad = normalizarUnidadOperacion_(p.unidad);
+    const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
 
-  const promedios = calcularPromediosDirectoClassroomConCeros_(ss, p.courseId, unidad);
-  const cierre = publicarCalificacionUnidadFinal_(
-    ss,
-    p.courseId,
-    unidad,
-    ACADEMIC_POLICY.CLASSROOM.FINAL_GRADE_PREFIX + extraerNumeroUnidad_(unidad)
-  );
+    const promedios = calcularPromediosDirectoClassroomConCeros_(ss, p.courseId, unidad);
+    const cierre = publicarCalificacionUnidadFinal_(
+      ss,
+      p.courseId,
+      unidad,
+      ACADEMIC_POLICY.CLASSROOM.FINAL_GRADE_PREFIX + extraerNumeroUnidad_(unidad)
+    );
 
-  return {
-    operacion:'CERRAR_UNIDAD',
-    modo:'UNIDAD_ESTRICTA_RECALCULABLE_DRAFT',
-    courseId:String(p.courseId),
-    unidad:unidad,
-    preclasificacion:{movidos:0,motivo:'NO_APLICA_EN_CIERRE_ESTRICTO'},
-    reubicacion:{movidos:0,motivo:'NO_APLICA_EN_CIERRE_ESTRICTO'},
-    preflight:{ok:true,modo:'LECTURA_UNIDAD_ESTRICTA'},
-    revision:{devueltas:0,trabajosCandidatos:0,motivo:'NO_SE_REVISA_EL_CURSO_COMPLETO'},
-    instrumentos:{instrumentos:promedios.examenes.length,motivo:'LECTURA_SIN_MODIFICAR_FUENTES'},
-    promedios:promedios,
-    cierre:cierre,
-    estadoCalificacion:'DRAFT_ONLY'
-  };
+    return {
+      operacion:'CERRAR_UNIDAD',
+      modo:'UNIDAD_ESTRICTA_RECALCULABLE_DRAFT',
+      courseId:String(p.courseId),
+      unidad:unidad,
+      preclasificacion:{movidos:0,motivo:'NO_APLICA_EN_CIERRE_ESTRICTO'},
+      reubicacion:{movidos:0,motivo:'NO_APLICA_EN_CIERRE_ESTRICTO'},
+      preflight:{ok:true,modo:'LECTURA_UNIDAD_ESTRICTA'},
+      revision:{devueltas:0,trabajosCandidatos:0,motivo:'NO_SE_REVISA_EL_CURSO_COMPLETO'},
+      instrumentos:{instrumentos:promedios.examenes.length,motivo:'LECTURA_SIN_MODIFICAR_FUENTES'},
+      promedios:promedios,
+      cierre:cierre,
+      estadoCalificacion:'DRAFT_ONLY'
+    };
+  });
 }
 
 function politicaCalificacionUnidad_(courseId) {
@@ -134,5 +138,5 @@ function validarContratoOperacionesAcademicas() {
   if(draftPolicy.campoEscritura!=='draftGrade'||draftPolicy.assignedGradeAutomatico!==false||draftPolicy.returnAutomatico!==false) {
     throw new Error('La política global DRAFT de calificaciones automáticas es inválida.');
   }
-  return {ok:true,operaciones:['importarCalificacionesExamen','cerrarUnidad'],politica:p,calificaciones:draftPolicy,cierre:'UNIDAD_ESTRICTA_RECALCULABLE_DRAFT',fuentePoliticas:'ACADEMIC_POLICY'};
+  return {ok:true,operaciones:['importarCalificacionesExamen','cerrarUnidad'],politica:p,calificaciones:draftPolicy,cierre:'UNIDAD_ESTRICTA_RECALCULABLE_DRAFT',fuentePoliticas:'ACADEMIC_POLICY',errorReporting:'REQUIRED'};
 }
