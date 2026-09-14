@@ -5,6 +5,7 @@ const UNIT_AVG_REQUEST = Object.freeze({
   REPORT_SHEET:'Promedios Unidad'
 });
 
+/** Adaptador de transporte: Sheets -> cerrarUnidad({courseId, unidad}). */
 function procesarSolicitudPromediosUnidad_() {
   const ss=SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
   const sh=ss.getSheetByName(UNIT_AVG_REQUEST.SHEET);
@@ -16,20 +17,25 @@ function procesarSolicitudPromediosUnidad_() {
   const estado=String(sh.getRange(row,2).getDisplayValue()||'').trim().toUpperCase();
   if(estado!==UNIT_AVG_REQUEST.REQUESTED) return {procesado:false,motivo:'SIN_SOLICITUD_PENDIENTE',estado:estado};
   const courseId=String(sh.getRange(row,4).getDisplayValue()||'').trim();
-  const unidad=String(sh.getRange(row,7).getDisplayValue()||'').trim()||'Unidad 1';
+  const unidad=String(sh.getRange(row,7).getDisplayValue()||'').trim();
   const unidadSiguienteVerificada=String(sh.getRange(row,8).getDisplayValue()||'').trim();
   if(!courseId) throw new Error('Falta el ID del curso objetivo para calcular promedios.');
+  if(!unidad) throw new Error('Falta la unidad objetivo para calcular promedios.');
   sh.getRange(row,2).setValue(UNIT_AVG_REQUEST.PROCESSING); sh.getRange(row,6).setValue(new Date()); SpreadsheetApp.flush();
   try {
-    const movidos=reubicarCourseWorkSinUnidad_(ss,courseId,unidad,unidadSiguienteVerificada);
-    const revision=revisarTareasCurso_(courseId,true);
-    const instrumentos=importarYConsolidarInstrumentosUnidad_(ss,courseId,unidad);
-    const result=calcularPromediosUnidad_(courseId,unidad,true);
-    const final=publicarCalificacionUnidadFinal_(ss,courseId,unidad,'Calificación '+unidad);
+    const result=cerrarUnidad({courseId:courseId,unidad:unidad,unidadSiguiente:unidadSiguienteVerificada});
     sh.getRange(row,2).setValue(UNIT_AVG_REQUEST.DONE);
-    sh.getRange(row,3).setValue('Cierre de '+unidad+' completado. '+movidos.movidos+' trabajo(s) sin unidad movidos a '+movidos.unidadDestino+'; '+revision.devueltas+' entregas devueltas; '+instrumentos.instrumentos+' quiz/examen procesados; '+result.alumnos+' promedios calculados; '+final.actualizadas+' calificaciones finales enviadas.');
+    sh.getRange(row,3).setValue(
+      'Cierre de '+result.unidad+' completado. '+
+      result.preclasificacion.movidos+' trabajo(s) categóricos clasificados; '+
+      result.reubicacion.movidos+' trabajo(s) sin unidad reubicados; '+
+      result.revision.devueltas+' entregas devueltas; '+
+      result.instrumentos.instrumentos+' quiz/examen procesados; '+
+      result.promedios.alumnos+' promedios calculados; '+
+      result.cierre.actualizadas+' calificaciones finales enviadas.'
+    );
     sh.getRange(row,5).setValue('ACTIVA'); sh.getRange(row,6).setValue(new Date());
-    return {reubicacion:movidos,revision:revision,instrumentos:instrumentos,promedios:result,cierre:final};
+    return result;
   } catch(err) {
     sh.getRange(row,2).setValue(UNIT_AVG_REQUEST.ERROR); sh.getRange(row,3).setValue(String(err&&err.message?err.message:err)); sh.getRange(row,6).setValue(new Date()); throw err;
   }
@@ -111,13 +117,13 @@ function importarYConsolidarInstrumentosUnidad_(ss,courseId,unidad){
 }
 
 function calcularPromediosUnidad_(courseId,unidad,exigirCalificacion){
-  const ss=SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID),candidatos=inventarioUnidadDesdeFuentes_(ss,courseId,unidad),publicados=[],seen=new Set();
+  const ss=SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID),candidatos=inventarioUnidadDesdeFuentes_(ss,courseId,unidad),publicados=[],seen=new Set(),policy=politicaCalificacionUnidad_(courseId);
   candidatos.forEach(x=>{if(!x.classroomId||seen.has(x.classroomId))return;const cw=Classroom.Courses.CourseWork.get(String(courseId),String(x.classroomId));if(String(cw.state||'').toUpperCase()!=='PUBLISHED'||!cw.maxPoints||Number(cw.maxPoints)<=0)return;seen.add(String(x.classroomId));publicados.push({classroomId:String(x.classroomId),titulo:String(cw.title||x.titulo||''),tipo:x.tipo,esExamen:Boolean(x.esExamen),maxPoints:Number(cw.maxPoints)});});
   const examenes=publicados.filter(x=>x.esExamen),noExamen=publicados.filter(x=>!x.esExamen);if(examenes.length!==1)throw new Error('Se esperaba exactamente 1 examen publicado para '+unidad+'; encontrados: '+examenes.length+'.');if(!noExamen.length)throw new Error('No hay trabajos no-examen publicados para '+unidad+'.');
   const grades={};publicados.forEach(w=>grades[w.classroomId]=entregasPorAlumnoPromedio_(courseId,w.classroomId));const students=listarAlumnosPromedio_(courseId),rows=[],faltantes=[];
-  students.forEach(student=>{const uid=String(student.userId),nombre=student.profile&&student.profile.name?student.profile.name.fullName:uid,email=student.profile&&student.profile.emailAddress?student.profile.emailAddress:'';publicados.forEach(w=>{if(!tieneNota_(grades[w.classroomId][uid]))faltantes.push({alumno:nombre,userId:uid,trabajo:w.titulo,classroomId:w.classroomId});});const ev=examenes.map(w=>normalizarNota_(grades[w.classroomId][uid],w.maxPoints)),nv=noExamen.map(w=>normalizarNota_(grades[w.classroomId][uid],w.maxPoints)),exam=promedioSimple_(ev),non=promedioSimple_(nv),final=redondearPromedio_(exam*.70+non*.30),mn=noExamen.reduce((n,w)=>n+(tieneNota_(grades[w.classroomId][uid])?0:1),0),me=examenes.reduce((n,w)=>n+(tieneNota_(grades[w.classroomId][uid])?0:1),0);rows.push([new Date(),String(courseId),unidad,uid,nombre,email,redondearPromedio_(exam),redondearPromedio_(exam*.70),redondearPromedio_(non),redondearPromedio_(non*.30),final,noExamen.length,mn,me]);});
+  students.forEach(student=>{const uid=String(student.userId),nombre=student.profile&&student.profile.name?student.profile.name.fullName:uid,email=student.profile&&student.profile.emailAddress?student.profile.emailAddress:'';publicados.forEach(w=>{if(!tieneNota_(grades[w.classroomId][uid]))faltantes.push({alumno:nombre,userId:uid,trabajo:w.titulo,classroomId:w.classroomId});});const ev=examenes.map(w=>normalizarNota_(grades[w.classroomId][uid],w.maxPoints)),nv=noExamen.map(w=>normalizarNota_(grades[w.classroomId][uid],w.maxPoints)),exam=promedioSimple_(ev),non=promedioSimple_(nv),final=redondearPromedio_(exam*policy.examWeight+non*policy.nonExamWeight),mn=noExamen.reduce((n,w)=>n+(tieneNota_(grades[w.classroomId][uid])?0:1),0),me=examenes.reduce((n,w)=>n+(tieneNota_(grades[w.classroomId][uid])?0:1),0);rows.push([new Date(),String(courseId),unidad,uid,nombre,email,redondearPromedio_(exam),redondearPromedio_(exam*policy.examWeight),redondearPromedio_(non),redondearPromedio_(non*policy.nonExamWeight),final,noExamen.length,mn,me]);});
   if(exigirCalificacion&&faltantes.length)throw new Error('El cierre se bloqueó: existen '+faltantes.length+' calificaciones faltantes después de la consolidación. '+JSON.stringify(faltantes).slice(0,3000));
-  escribirReportePromedios_(ss,courseId,unidad,rows);return {courseId:String(courseId),unidad:unidad,alumnos:rows.length,examenes:examenes,noExamen:noExamen,reporte:UNIT_AVG_REQUEST.REPORT_SHEET,faltantes:faltantes.length};
+  escribirReportePromedios_(ss,courseId,unidad,rows,policy);return {courseId:String(courseId),unidad:unidad,alumnos:rows.length,examenes:examenes,noExamen:noExamen,reporte:UNIT_AVG_REQUEST.REPORT_SHEET,faltantes:faltantes.length,politica:policy};
 }
 
 function inventarioUnidadDesdeFuentes_(ss,courseId,unidad){
@@ -133,4 +139,4 @@ function tieneNota_(s){return !!s&&((s.assignedGrade!==undefined&&s.assignedGrad
 function normalizarNota_(s,max){if(!tieneNota_(s))return 0;const g=s.assignedGrade!==undefined&&s.assignedGrade!==null?Number(s.assignedGrade):Number(s.draftGrade);return Math.max(0,Math.min(100,(g/Number(max))*100));}
 function promedioSimple_(v){return v.length?v.reduce((a,b)=>a+Number(b||0),0)/v.length:0;}
 function redondearPromedio_(v){return Math.round(Number(v)*100)/100;}
-function escribirReportePromedios_(ss,courseId,unidad,rows){let sh=ss.getSheetByName(UNIT_AVG_REQUEST.REPORT_SHEET);if(!sh)sh=ss.insertSheet(UNIT_AVG_REQUEST.REPORT_SHEET);const headers=['Fecha cálculo','ID curso','Unidad','User ID','Alumno','Correo','Examen (0-100)','Aporte examen 70%','Promedio no examen (0-100)','Aporte no examen 30%','Promedio final','Trabajos no examen incluidos','No examen sin calificación','Examen sin calificación'],data=sh.getDataRange().getValues(),keep=[];if(data.length>1)for(let i=1;i<data.length;i++){if(String(data[i][1]||'')===String(courseId)&&String(data[i][2]||'')===String(unidad))continue;if(data[i].some(v=>v!==''))keep.push(data[i].slice(0,headers.length));}sh.clearContents();sh.getRange(1,1,1,headers.length).setValues([headers]);const all=keep.concat(rows);if(all.length)sh.getRange(2,1,all.length,headers.length).setValues(all);sh.setFrozenRows(1);}
+function escribirReportePromedios_(ss,courseId,unidad,rows,policy){let sh=ss.getSheetByName(UNIT_AVG_REQUEST.REPORT_SHEET);if(!sh)sh=ss.insertSheet(UNIT_AVG_REQUEST.REPORT_SHEET);const examPct=Math.round(Number(policy.examWeight)*100),nonPct=Math.round(Number(policy.nonExamWeight)*100),headers=['Fecha cálculo','ID curso','Unidad','User ID','Alumno','Correo','Examen (0-100)','Aporte examen '+examPct+'%','Promedio no examen (0-100)','Aporte no examen '+nonPct+'%','Promedio final','Trabajos no examen incluidos','No examen sin calificación','Examen sin calificación'],data=sh.getDataRange().getValues(),keep=[];if(data.length>1)for(let i=1;i<data.length;i++){if(String(data[i][1]||'')===String(courseId)&&String(data[i][2]||'')===String(unidad))continue;if(data[i].some(v=>v!==''))keep.push(data[i].slice(0,headers.length));}sh.clearContents();sh.getRange(1,1,1,headers.length).setValues([headers]);const all=keep.concat(rows);if(all.length)sh.getRange(2,1,all.length,headers.length).setValues(all);sh.setFrozenRows(1);}
