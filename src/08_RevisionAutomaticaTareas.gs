@@ -38,10 +38,9 @@ function procesarSolicitudRevisionTareas_() {
     const result = revisarTareasCurso_(courseId, true);
     sh.getRange(row, 2).setValue(TASK_REVIEW_REQUEST.DONE);
     sh.getRange(row, 3).setValue(
-      'Revisión directa de Classroom ejecutada. ' + result.calificadas100 + ' con puntaje completo; ' +
-      result.calificadas0 + ' con 0; ' + result.borradoresFinalizados + ' borradores finalizados; ' +
-      result.devueltas + ' entregas devueltas; ' + result.yaAsignadas +
-      ' ya tenían assignedGrade sin cambios; ' + result.trabajosCandidatos + ' trabajos revisados.'
+      'Revisión directa de Classroom ejecutada en DRAFT. ' + result.calificadas100 + ' con puntaje completo; ' +
+      result.calificadas0 + ' con 0; ' + result.borradoresConservados + ' borradores existentes conservados; ' +
+      result.yaAsignadas + ' calificaciones ya publicadas preservadas; ' + result.trabajosCandidatos + ' trabajos revisados. Ninguna entrega fue devuelta automáticamente.'
     );
     sh.getRange(row, 5).setValue('ACTIVA');
     sh.getRange(row, 6).setValue(new Date());
@@ -56,16 +55,11 @@ function procesarSolicitudRevisionTareas_() {
 
 /**
  * Revisión transversal de cumplimiento directamente sobre Classroom.
- * No depende de que el trabajo exista en la hoja Tareas.
- * Incluye Tareas, Prácticas y Actividades publicadas.
- * Excluye quizzes, exámenes, proyectos y cierres de unidad.
+ * Incluye Tareas, Prácticas y Actividades publicadas; excluye quizzes,
+ * exámenes, proyectos y cierres de unidad.
  *
- * Reglas:
- * - assignedGrade existente: intocable; si sigue TURNED_IN, se devuelve.
- * - draftGrade sin assignedGrade: conserva el valor y lo finaliza.
- * - sin calificación: TURNED_IN/RETURNED = puntaje completo; resto = 0.
- * - escribe draftGrade + assignedGrade cuando falta assignedGrade.
- * - devuelve toda entrega TURNED_IN después de asegurar su calificación.
+ * Invariante: toda nota creada automáticamente queda solo en draftGrade.
+ * Nunca escribe assignedGrade y nunca devuelve automáticamente entregas.
  */
 function revisarTareasCurso_(courseId, aplicar) {
   const candidates = [];
@@ -78,7 +72,6 @@ function revisarTareasCurso_(courseId, aplicar) {
     });
     (page.courseWork || []).forEach(cw => {
       const title = String(cw.title || '').trim();
-      const upper = title.toUpperCase();
       const esAssignment = String(cw.workType || '').toUpperCase() === 'ASSIGNMENT';
       const esTarea = /^TAREA\b/i.test(title);
       const esPractica = /^PR[ÁA]CTICA\b/i.test(title);
@@ -93,9 +86,8 @@ function revisarTareasCurso_(courseId, aplicar) {
 
   let calificadas100 = 0;
   let calificadas0 = 0;
-  let borradoresFinalizados = 0;
+  let borradoresConservados = 0;
   let yaAsignadas = 0;
-  let devueltas = 0;
   let entregasRevisadas = 0;
   const trabajos = [];
   const errores = [];
@@ -115,7 +107,7 @@ function revisarTareasCurso_(courseId, aplicar) {
         st = page.nextPageToken;
       } while (st);
 
-      let t100 = 0, t0 = 0, tDraft = 0, tAssigned = 0, tReturned = 0;
+      let t100 = 0, t0 = 0, tDraft = 0, tAssigned = 0;
 
       subs.forEach(sub => {
         entregasRevisadas++;
@@ -123,37 +115,26 @@ function revisarTareasCurso_(courseId, aplicar) {
         const tieneAssigned = sub.assignedGrade !== undefined && sub.assignedGrade !== null;
         const state = String(sub.state || '').toUpperCase();
 
+        // Una nota ya publicada puede ser una decisión docente; esta revisión no la modifica.
         if (tieneAssigned) {
           yaAsignadas++;
           tAssigned++;
-          if (aplicar && state === 'TURNED_IN') {
-            Classroom.Courses.CourseWork.StudentSubmissions.return({}, String(courseId), task.workId, String(sub.id));
-            devueltas++;
-            tReturned++;
-          }
+          return;
+        }
+
+        // Un borrador existente se conserva sin finalizar/publicar.
+        if (tieneDraft) {
+          borradoresConservados++;
+          tDraft++;
           return;
         }
 
         const entregada = state === 'TURNED_IN' || state === 'RETURNED';
-        const score = tieneDraft ? Number(sub.draftGrade) : (entregada ? fullScore : 0);
+        const score = entregada ? fullScore : 0;
 
-        if (aplicar) {
-          Classroom.Courses.CourseWork.StudentSubmissions.patch(
-            {draftGrade: score, assignedGrade: score},
-            String(courseId), task.workId, String(sub.id),
-            {updateMask: 'draftGrade,assignedGrade'}
-          );
-          if (state === 'TURNED_IN') {
-            Classroom.Courses.CourseWork.StudentSubmissions.return({}, String(courseId), task.workId, String(sub.id));
-            devueltas++;
-            tReturned++;
-          }
-        }
+        if (aplicar) escribirCalificacionDraft_(courseId, task.workId, sub.id, score);
 
-        if (tieneDraft) {
-          borradoresFinalizados++;
-          tDraft++;
-        } else if (entregada) {
+        if (entregada) {
           calificadas100++;
           t100++;
         } else {
@@ -166,12 +147,12 @@ function revisarTareasCurso_(courseId, aplicar) {
         titulo: task.title,
         classroomId: task.workId,
         alumnos: subs.length,
-        conPuntajeCompleto: t100,
-        con0: t0,
-        borradoresFinalizados: tDraft,
-        yaAsignadas: tAssigned,
-        devueltas: tReturned,
-        accion: aplicar ? 'APLICADA_Y_FINALIZADA' : 'AUDITORIA'
+        conPuntajeCompletoDraft: t100,
+        con0Draft: t0,
+        borradoresConservados: tDraft,
+        yaAsignadasPreservadas: tAssigned,
+        devueltas: 0,
+        accion: aplicar ? 'DRAFT_ONLY' : 'AUDITORIA'
       });
     } catch (err) {
       errores.push({titulo: task.title, classroomId: task.workId, error: String(err && err.message ? err.message : err)});
@@ -189,9 +170,11 @@ function revisarTareasCurso_(courseId, aplicar) {
     entregasRevisadas: entregasRevisadas,
     calificadas100: calificadas100,
     calificadas0: calificadas0,
-    borradoresFinalizados: borradoresFinalizados,
+    borradoresConservados: borradoresConservados,
+    borradoresFinalizados: 0,
     yaAsignadas: yaAsignadas,
-    devueltas: devueltas,
+    devueltas: 0,
+    estadoCalificacion: 'DRAFT_ONLY',
     trabajos: trabajos
   };
 }
