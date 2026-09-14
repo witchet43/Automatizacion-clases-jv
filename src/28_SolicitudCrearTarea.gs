@@ -1,6 +1,6 @@
 /**
- * Adaptador de transporte para crear una TAREA mediante el entrypoint canónico
- * crearTarea(). No contiene reglas académicas.
+ * Adaptador de transporte para crear o reparar una TAREA mediante la política
+ * canónica. No contiene reglas académicas propias.
  *
  * Configuración Quizzes:
  * A Clave = SOLICITUD_CREAR_TAREA
@@ -44,7 +44,9 @@ function procesarSolicitudCrearTarea_() {
 
   try {
     params = resolverCursoTareaSolicitud_(params);
-    const result = crearTarea(params);
+    const result = params.workIdObjetivo
+      ? repararTareaSolicitudPorId_(params)
+      : crearTarea(params);
     const work = Classroom.Courses.CourseWork.get(String(params.courseId), String(result.workId));
     const resumen = {
       courseId:String(params.courseId),
@@ -55,7 +57,9 @@ function procesarSolicitudCrearTarea_() {
       dueDate:work.dueDate || null,
       dueTime:work.dueTime || null,
       topicId:String(work.topicId || ''),
-      alternateLink:String(work.alternateLink || '')
+      alternateLink:String(work.alternateLink || ''),
+      vencimientoReparado:result.vencimientoReparado === true,
+      duplicadoEliminado:String(result.duplicadoEliminado || '')
     };
     if (resumen.state.toUpperCase() !== 'DRAFT') throw new Error('La TAREA no quedó DRAFT.');
     if (!resumen.workId) throw new Error('La TAREA no devolvió workId.');
@@ -76,6 +80,40 @@ function procesarSolicitudCrearTarea_() {
     SpreadsheetApp.flush();
     throw err;
   }
+}
+
+function repararTareaSolicitudPorId_(params) {
+  const p = params && typeof params === 'object' ? Object.assign({}, params) : {};
+  const workId = String(p.workIdObjetivo || '').trim();
+  if (!workId) throw new Error('La reparación por ID requiere workIdObjetivo.');
+
+  const tarea = aplicarReglaVencimientoTarea_(p);
+  const actual = Classroom.Courses.CourseWork.get(String(tarea.courseId), workId);
+  if (String(actual.state || '').toUpperCase() !== 'DRAFT') throw new Error('La TAREA objetivo no está DRAFT: ' + workId + '.');
+  if (p.titulo && String(actual.title || '').trim() !== String(p.titulo).trim()) {
+    throw new Error('El workIdObjetivo no coincide con el título esperado.');
+  }
+
+  const asegurado = asegurarVencimientoTareaCreada_(tarea.courseId, workId, tarea);
+  verificarVencimientoTareaCreada_(tarea.courseId, workId, tarea);
+
+  let duplicadoEliminado = '';
+  const duplicateId = String(p.workIdDuplicadoEliminar || '').trim();
+  if (duplicateId && duplicateId !== workId) {
+    const duplicate = Classroom.Courses.CourseWork.get(String(tarea.courseId), duplicateId);
+    if (String(duplicate.state || '').toUpperCase() !== 'DRAFT') throw new Error('El duplicado no está DRAFT y no se eliminará automáticamente: ' + duplicateId + '.');
+    if (p.titulo && String(duplicate.title || '').trim() !== String(p.titulo).trim()) {
+      throw new Error('El recurso indicado como duplicado no coincide con el título esperado.');
+    }
+    Classroom.Courses.CourseWork.remove(String(tarea.courseId), duplicateId);
+    duplicadoEliminado = duplicateId;
+  }
+
+  return {
+    workId:workId,
+    vencimientoReparado:asegurado.reparado === true,
+    duplicadoEliminado:duplicadoEliminado
+  };
 }
 
 function resolverCursoTareaSolicitud_(params) {
