@@ -17,7 +17,7 @@ function instalarMonitorSolicitudesImportacion() {
     instalado: true,
     handler: 'procesarSolicitudesImportacion',
     frecuenciaMinutos: 1,
-    adaptadores: ['ACTIVIDAD_EN_CLASE','TAREA','PRACTICA']
+    adaptadores: ['ACTIVIDAD_EN_CLASE','TAREA','PRACTICA','ELIMINAR_COURSEWORK_BORRADOR']
   };
 }
 
@@ -39,6 +39,7 @@ function procesarSolicitudesImportacion() {
       ejecutarAdaptadorSolicitud_('creación de actividad en clase', procesarSolicitudCrearActividadClase_);
       ejecutarAdaptadorSolicitud_('creación de tarea', procesarSolicitudCrearTarea_);
       ejecutarAdaptadorSolicitud_('creación de práctica', procesarSolicitudCrearPractica_);
+      ejecutarAdaptadorSolicitud_('eliminación segura de CourseWork DRAFT', procesarSolicitudEliminarCourseWorkBorrador_);
       ejecutarAdaptadorSolicitud_('revisión de tareas', procesarSolicitudRevisionTareas_);
       ejecutarAdaptadorSolicitud_('reparación de ceros erróneos', procesarSolicitudRepararCerosActividad_);
       ejecutarAdaptadorSolicitud_('migración exclusiva de actividad a draft', procesarSolicitudMigrarActividadCalificacionDraft_);
