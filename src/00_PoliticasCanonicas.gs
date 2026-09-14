@@ -42,6 +42,18 @@ const ACADEMIC_POLICY = Object.freeze({
       SESSION_END_PARAM: 'horaFinSesion',
       TIMEZONE: 'America/Mexico_City',
       UTC_OFFSET_MINUTES: -360
+    }),
+    TASK_DUE: Object.freeze({
+      REQUIRED: true,
+      DEFAULT: 'NEXT_SESSION_START',
+      MAXIMUM: 'NEXT_SESSION_START',
+      REQUIRES_NEXT_SESSION_CONTEXT: true,
+      PAST_NEXT_SESSION_CREATION: 'BLOCK',
+      DUE_MUST_BE_FUTURE: true,
+      NEXT_SESSION_DATE_PARAM: 'fechaSiguienteSesion',
+      NEXT_SESSION_START_PARAM: 'horaInicioSiguienteSesion',
+      TIMEZONE: 'America/Mexico_City',
+      UTC_OFFSET_MINUTES: -360
     })
   }),
   UNIT_GRADING: Object.freeze({
@@ -132,6 +144,9 @@ function validarPoliticasCanonicas_(){
   const activityDue=p.CLASSROOM.ACTIVITY_IN_CLASS_DUE;
   if(!activityDue||activityDue.REQUIRED!==true||activityDue.DEFAULT!=='SESSION_END'||activityDue.MAXIMUM!=='SESSION_END'||activityDue.REQUIRES_SESSION_CONTEXT!==true||activityDue.PAST_SESSION_CREATION!=='BLOCK'||activityDue.DUE_MUST_BE_FUTURE!==true) throw new Error('La política de vencimiento de ACTIVIDAD EN CLASE debe exigir fin de sesión, futuro válido y bloqueo posterior.');
   if(activityDue.TIMEZONE!=='America/Mexico_City'||activityDue.UTC_OFFSET_MINUTES!==-360) throw new Error('La conversión horaria canónica de ACTIVIDAD EN CLASE no coincide con America/Mexico_City 2026.');
+  const taskDue=p.CLASSROOM.TASK_DUE;
+  if(!taskDue||taskDue.REQUIRED!==true||taskDue.DEFAULT!=='NEXT_SESSION_START'||taskDue.MAXIMUM!=='NEXT_SESSION_START'||taskDue.REQUIRES_NEXT_SESSION_CONTEXT!==true||taskDue.PAST_NEXT_SESSION_CREATION!=='BLOCK'||taskDue.DUE_MUST_BE_FUTURE!==true) throw new Error('La política de vencimiento de TAREA debe exigir inicio de siguiente sesión, futuro válido y bloqueo posterior.');
+  if(taskDue.TIMEZONE!=='America/Mexico_City'||taskDue.UTC_OFFSET_MINUTES!==-360) throw new Error('La conversión horaria canónica de TAREA no coincide con America/Mexico_City 2026.');
   if(p.UNIT_GRADING.MISSING_GRADE_VALUE!==0||p.UNIT_GRADING.TOUCH_OTHER_UNITS!==false) throw new Error('La política de cierre perdió aislamiento o tratamiento de faltantes.');
   if(redondearCalificacionFinalCanonica_(91.75)!==92||redondearCalificacionFinalCanonica_(64.18)!==64) throw new Error('La política de redondeo final no coincide con el contrato.');
   if(p.EXAM.STANDARD_ITEM_COUNT!==25||p.EXAM.STANDARD_TOTAL_POINTS!==100) throw new Error('Los parámetros estándar del examen formal cambiaron sin actualización explícita.');
