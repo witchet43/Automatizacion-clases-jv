@@ -1,11 +1,16 @@
 /**
  * POLÍTICAS CANÓNICAS EJECUTABLES
- *
- * Fuente única para parámetros y convenciones deterministas que no deben
- * reconstruirse desde prompts o documentos narrativos. El Maestro conserva
- * intención y política académica; este objeto concentra valores operables.
+ * Fuente única para parámetros deterministas. El Maestro conserva intención
+ * y política académica; el código contiene ejecución, validaciones e invariantes.
  */
 const ACADEMIC_POLICY = Object.freeze({
+  EXECUTION: Object.freeze({
+    RESOURCE_CREATION_MODE: 'DIRECT_SCRIPT',
+    SHEETS_ROLE: 'AUDIT_AND_CONFIGURATION_ONLY',
+    MONITOR_REQUIRED_FOR_CREATION: false,
+    LEGACY_MONITOR_COMPATIBILITY: true,
+    DIRECT_RESOURCE_TYPES: Object.freeze(['ACTIVIDAD','TAREA','PRACTICA','QUIZ','EXAMEN'])
+  }),
   CLASSROOM: Object.freeze({
     DEFAULT_COURSEWORK_STATE: 'DRAFT',
     DEFAULT_POINTS: 100,
@@ -17,7 +22,6 @@ const ACADEMIC_POLICY = Object.freeze({
     AUTOMATIC_RETURN: false,
     MANUAL_PUBLICATION_REQUIRED: true
   }),
-
   UNIT_GRADING: Object.freeze({
     EXAM_WEIGHT: 0.70,
     NON_EXAM_WEIGHT: 0.30,
@@ -29,14 +33,12 @@ const ACADEMIC_POLICY = Object.freeze({
     RECALC_OVERWRITES_FINAL_DRAFT: true,
     TOUCH_OTHER_UNITS: false
   }),
-
   FORMS: Object.freeze({
     VERIFIED_EMAIL: true,
     LIMIT_ONE_RESPONSE: true,
     MANUAL_EMAIL_QUESTION_ALLOWED: false,
     SEND_RESPONSE_COPY: false
   }),
-
   QUIZ: Object.freeze({
     FEEDBACK_REQUIRED: true,
     PRACTICE_QUIZ_MIN_ITEMS: 3,
@@ -44,7 +46,6 @@ const ACADEMIC_POLICY = Object.freeze({
     ENTRANCE_QUIZ_MIN_ITEMS: 3,
     ENTRANCE_QUIZ_MAX_ITEMS: 5
   }),
-
   EXAM: Object.freeze({
     STANDARD_ITEM_COUNT: 25,
     STANDARD_TOTAL_POINTS: 100,
@@ -52,14 +53,14 @@ const ACADEMIC_POLICY = Object.freeze({
     MIN_TRACEABLE_ITEMS: 13,
     MIN_APPLICATION_ANALYSIS_RATIO: 0.70
   }),
-
   DOCUMENTS: Object.freeze({
     PRACTICE_STUDENT_COPY: true,
+    ACTIVITY_DOC_STUDENT_COPY: true,
+    TASK_STUDENT_COPY_DEFAULT: false,
     PRACTICE_REFLECTION_COUNT: 3,
     CANONICAL_PRACTICE_ACTIVITY_FOLDER: 'Prácticas y Actividades',
     DUPLICATE_VERSION_FILES_ALLOWED: false
   }),
-
   NAMING: Object.freeze({
     INSTITUTIONS: Object.freeze(['ITQ', 'UMx', 'UAQ']),
     COURSE_FOLDER_PATTERN: '<SIGLA> - <Nombre oficial de la materia>',
@@ -68,7 +69,6 @@ const ACADEMIC_POLICY = Object.freeze({
     ACTIVITY_PREFIX: 'Actividad ',
     UNIT_PREFIX: 'Unidad '
   }),
-
   GAMMA: Object.freeze({
     TITLE_PATTERN: '<número del subtema> - <nombre del subtema>',
     MAX_SLIDES: 25,
@@ -76,30 +76,16 @@ const ACADEMIC_POLICY = Object.freeze({
     ORDINARY_MINUTES_MAX: 25,
     ONE_CANONICAL_PER_SESSION: true
   }),
-
   CALENDAR: Object.freeze({
     CANONICAL_SOURCE: 'CLASSROOM_COURSE_CALENDAR',
     PRIMARY_ALLOWED_AS_CANONICAL: false,
     EVENT_TITLE_PATTERN: '<SIGLA> | <Nombre oficial de la materia> | Aula <aula verificada>',
-    DESCRIPTION_FIELDS: Object.freeze([
-      'Unidad',
-      'Tema/Subtema',
-      'Tarea previa',
-      'Actividad en clase',
-      'Práctica formal',
-      'Evaluación/Proyecto',
-      'Tarea siguiente'
-    ])
+    DESCRIPTION_FIELDS: Object.freeze(['Unidad','Tema/Subtema','Tarea previa','Actividad en clase','Práctica formal','Evaluación/Proyecto','Tarea siguiente'])
   }),
-
   COURSE_OVERRIDES: Object.freeze({
     ITQ_SISTEMAS_OPERATIVOS: Object.freeze({
       PLATFORM: 'WINDOWS_10_11',
-      TOPICS: Object.freeze({
-        PRACTICE: 'Prácticas',
-        TASK: 'Tareas',
-        ACTIVITY: 'Actividades en Clase'
-      }),
+      TOPICS: Object.freeze({PRACTICE:'Prácticas',TASK:'Tareas',ACTIVITY:'Actividades en Clase'}),
       TASK_STUDENT_COPY: true
     }),
     UAQ_SISTEMAS_DISTRIBUIDOS: Object.freeze({
@@ -111,50 +97,19 @@ const ACADEMIC_POLICY = Object.freeze({
     })
   })
 });
-
-function politicaAcademicaCanonica_() {
-  return ACADEMIC_POLICY;
+function politicaAcademicaCanonica_(){return ACADEMIC_POLICY;}
+function politicaCurso_(courseKey){const key=String(courseKey||'').trim().toUpperCase();return ACADEMIC_POLICY.COURSE_OVERRIDES[key]||Object.freeze({});}
+function redondearCalificacionFinalCanonica_(value){const n=Number(value);if(!Number.isFinite(n))throw new Error('La calificación final debe ser numérica.');return Math.round(n);}
+function validarPoliticasCanonicas_(){
+  const p=ACADEMIC_POLICY;
+  if(p.EXECUTION.RESOURCE_CREATION_MODE!=='DIRECT_SCRIPT'||p.EXECUTION.SHEETS_ROLE!=='AUDIT_AND_CONFIGURATION_ONLY'||p.EXECUTION.MONITOR_REQUIRED_FOR_CREATION!==false) throw new Error('La creación directa por script debe ser el camino canónico.');
+  if(Math.abs((p.UNIT_GRADING.EXAM_WEIGHT+p.UNIT_GRADING.NON_EXAM_WEIGHT)-1)>0.000001) throw new Error('La ponderación canónica de unidad no suma 100%.');
+  if(p.CLASSROOM.DEFAULT_COURSEWORK_STATE!=='DRAFT') throw new Error('El estado automático ordinario de Classroom debe ser DRAFT.');
+  if(p.CLASSROOM.AUTOMATIC_GRADE_FIELD!=='draftGrade'||p.CLASSROOM.AUTOMATIC_ASSIGNED_GRADE!==false||p.CLASSROOM.AUTOMATIC_RETURN!==false) throw new Error('La política automática de calificaciones debe ser DRAFT_ONLY.');
+  if(p.UNIT_GRADING.MISSING_GRADE_VALUE!==0||p.UNIT_GRADING.TOUCH_OTHER_UNITS!==false) throw new Error('La política de cierre perdió aislamiento o tratamiento de faltantes.');
+  if(redondearCalificacionFinalCanonica_(91.75)!==92||redondearCalificacionFinalCanonica_(64.18)!==64) throw new Error('La política de redondeo final no coincide con el contrato.');
+  if(p.EXAM.STANDARD_ITEM_COUNT!==25||p.EXAM.STANDARD_TOTAL_POINTS!==100) throw new Error('Los parámetros estándar del examen formal cambiaron sin actualización explícita.');
+  if(p.DOCUMENTS.PRACTICE_REFLECTION_COUNT!==3||p.GAMMA.MAX_SLIDES!==25) throw new Error('Una convención académica determinista cambió sin actualización explícita.');
+  return {ok:true,source:'CODE',policy:p};
 }
-
-function politicaCurso_(courseKey) {
-  const key = String(courseKey || '').trim().toUpperCase();
-  return ACADEMIC_POLICY.COURSE_OVERRIDES[key] || Object.freeze({});
-}
-
-function redondearCalificacionFinalCanonica_(value) {
-  const n = Number(value);
-  if (!Number.isFinite(n)) throw new Error('La calificación final debe ser numérica.');
-  return Math.round(n);
-}
-
-function validarPoliticasCanonicas_() {
-  const p = ACADEMIC_POLICY;
-  if (Math.abs((p.UNIT_GRADING.EXAM_WEIGHT + p.UNIT_GRADING.NON_EXAM_WEIGHT) - 1) > 0.000001) {
-    throw new Error('La ponderación canónica de unidad no suma 100%.');
-  }
-  if (p.CLASSROOM.DEFAULT_COURSEWORK_STATE !== 'DRAFT') {
-    throw new Error('El estado automático ordinario de Classroom debe ser DRAFT.');
-  }
-  if (p.CLASSROOM.AUTOMATIC_GRADE_FIELD !== 'draftGrade' || p.CLASSROOM.AUTOMATIC_ASSIGNED_GRADE !== false || p.CLASSROOM.AUTOMATIC_RETURN !== false) {
-    throw new Error('La política automática de calificaciones debe ser DRAFT_ONLY.');
-  }
-  if (p.UNIT_GRADING.MISSING_GRADE_VALUE !== 0 || p.UNIT_GRADING.TOUCH_OTHER_UNITS !== false) {
-    throw new Error('La política de cierre de unidad perdió aislamiento o tratamiento de faltantes.');
-  }
-  if (redondearCalificacionFinalCanonica_(91.75) !== 92 || redondearCalificacionFinalCanonica_(64.18) !== 64) {
-    throw new Error('La política de redondeo final no coincide con el contrato.');
-  }
-  if (p.EXAM.STANDARD_ITEM_COUNT !== 25 || p.EXAM.STANDARD_TOTAL_POINTS !== 100) {
-    throw new Error('Los parámetros estándar del examen formal cambiaron sin actualización explícita.');
-  }
-  if (p.DOCUMENTS.PRACTICE_REFLECTION_COUNT !== 3 || p.GAMMA.MAX_SLIDES !== 25) {
-    throw new Error('Una convención académica determinista cambió sin actualización explícita.');
-  }
-  return {ok:true, source:'CODE', policy:p};
-}
-
-/** Interfaz pública de diagnóstico/configuración, sin datos sensibles. */
-function obtenerPoliticasAcademicasCanonicas() {
-  validarContratoArquitectura_();
-  return validarPoliticasCanonicas_();
-}
+function obtenerPoliticasAcademicasCanonicas(){validarContratoArquitectura_();return validarPoliticasCanonicas_();}
