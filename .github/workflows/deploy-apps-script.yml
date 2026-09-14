@@ -199,9 +199,17 @@ jobs:
 
       - name: Run isolated in-class activity rule test
         if: contains(github.event.head_commit.message, '[test-activity-class]')
+        shell: bash
         env:
           clasp_config_auth: .clasprc.json
-        run: npx clasp run probarActividadClaseHoyMiPruebaSO
+        run: |
+          set -euo pipefail
+          output="$(npx clasp run probarActividadClaseHoyMiPruebaSO 2>&1)"
+          printf '%s\n' "$output"
+          if ! printf '%s\n' "$output" | grep -q 'workId'; then
+            echo 'Classroom test did not return a real workId.' >&2
+            exit 1
+          fi
 
       - name: Install script-error monitor
         if: contains(github.event.head_commit.message, '[setup-error-monitor]')
