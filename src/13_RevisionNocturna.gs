@@ -190,47 +190,24 @@ function revisarCursoNocturno_(courseId, courseName, now) {
         const tieneDraft = sub.draftGrade !== undefined && sub.draftGrade !== null;
         const tieneAssigned = sub.assignedGrade !== undefined && sub.assignedGrade !== null;
 
-        if (tieneAssigned) {
-          if (state === 'TURNED_IN') {
-            Classroom.Courses.CourseWork.StudentSubmissions.return({}, String(courseId), workId, String(sub.id));
-            devueltas++;
-          }
-          return;
-        }
+        // assignedGrade existente se considera una decisión ya publicada y no se toca.
+        if (tieneAssigned) return;
 
+        // Un borrador existente ya cumple la política: se conserva sin finalizar ni devolver.
         if (tieneDraft) {
-          const score = Number(sub.draftGrade);
-          Classroom.Courses.CourseWork.StudentSubmissions.patch(
-            {draftGrade: score, assignedGrade: score},
-            String(courseId), workId, String(sub.id), {updateMask: 'draftGrade,assignedGrade'}
-          );
           borradoresFinalizados++;
-          if (state === 'TURNED_IN') {
-            Classroom.Courses.CourseWork.StudentSubmissions.return({}, String(courseId), workId, String(sub.id));
-            devueltas++;
-          }
           return;
         }
 
         const entregada = state === 'TURNED_IN' || state === 'RETURNED';
         if (entregada) {
-          Classroom.Courses.CourseWork.StudentSubmissions.patch(
-            {draftGrade: fullScore, assignedGrade: fullScore},
-            String(courseId), workId, String(sub.id), {updateMask: 'draftGrade,assignedGrade'}
-          );
+          escribirCalificacionDraft_(courseId, workId, sub.id, fullScore);
           completas++;
-          if (state === 'TURNED_IN') {
-            Classroom.Courses.CourseWork.StudentSubmissions.return({}, String(courseId), workId, String(sub.id));
-            devueltas++;
-          }
           return;
         }
 
         if (trabajoVencido_(cw, now)) {
-          Classroom.Courses.CourseWork.StudentSubmissions.patch(
-            {draftGrade: 0, assignedGrade: 0},
-            String(courseId), workId, String(sub.id), {updateMask: 'draftGrade,assignedGrade'}
-          );
+          escribirCalificacionDraft_(courseId, workId, sub.id, 0);
           ceros++;
         } else {
           pendientesSinVencer++;
@@ -239,7 +216,7 @@ function revisarCursoNocturno_(courseId, courseName, now) {
     } catch (err) {
       errores.push({
         curso: courseName, courseId: String(courseId), trabajo: title, classroomId: workId,
-        operacion: 'CALIFICAR/DEVOLVER', error: String(err && err.message ? err.message : err)
+        operacion: 'CALIFICAR EN DRAFT', error: String(err && err.message ? err.message : err)
       });
     }
   });
@@ -248,7 +225,8 @@ function revisarCursoNocturno_(courseId, courseName, now) {
     fecha: new Date(), curso: courseName, courseId: String(courseId),
     trabajosRevisados: candidates.length, temasReubicados: temasReubicados,
     completas: completas, ceros: ceros, borradoresFinalizados: borradoresFinalizados,
-    devueltas: devueltas, pendientesSinVencer: pendientesSinVencer, errores: errores
+    devueltas: devueltas, pendientesSinVencer: pendientesSinVencer, errores: errores,
+    estadoCalificacion: 'DRAFT_ONLY'
   };
 }
 
@@ -327,7 +305,7 @@ function registrarResumenNocturno_(result) {
     sh = ss.insertSheet(NIGHTLY_REVIEW.LOG_SHEET);
     sh.getRange(1, 1, 1, 11).setValues([[
       'Fecha', 'Curso', 'ID curso', 'Trabajos revisados', 'Temas reubicados',
-      'Puntaje completo', 'Ceros por vencimiento', 'Borradores finalizados',
+      'Puntaje completo', 'Ceros por vencimiento', 'Borradores conservados',
       'Entregas devueltas', 'Pendientes sin vencer', 'Errores'
     ]]);
     sh.setFrozenRows(1);
@@ -336,7 +314,7 @@ function registrarResumenNocturno_(result) {
     result.fecha || new Date(), result.curso || '', result.courseId || '',
     result.trabajosRevisados || 0, result.temasReubicados || 0,
     result.completas || 0, result.ceros || 0, result.borradoresFinalizados || 0,
-    result.devueltas || 0, result.pendientesSinVencer || 0,
+    0, result.pendientesSinVencer || 0,
     (result.errores || []).length
   ]);
 }
