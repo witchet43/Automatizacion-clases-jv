@@ -28,6 +28,7 @@ function procesarSolicitudesImportacion() {
   if (!lock.tryLock(1000)) return {procesado: false, motivo: 'LOCK'};
   try {
     ejecutarAdaptadorSolicitud_('revisión de tareas', procesarSolicitudRevisionTareas_);
+    ejecutarAdaptadorSolicitud_('reparación de ceros erróneos', procesarSolicitudRepararCerosActividad_);
     ejecutarAdaptadorSolicitud_('promedios de unidad', procesarSolicitudPromediosUnidad_);
     ejecutarAdaptadorSolicitud_('publicación de calificación de unidad', procesarSolicitudPublicarCalificacionUnidad_);
     ejecutarAdaptadorSolicitud_('recálculo final directo', procesarSolicitudRecalculoFinalUnidadCero_);
@@ -61,7 +62,7 @@ function procesarSolicitudImportacionCalificaciones_() {
   try {
     const result = importarCalificacionesInstrumento_({quizId: quizId});
     sh.getRange(row, 2).setValue(IMPORT_REQUEST.DONE);
-    sh.getRange(row, 3).setValue('Importación ejecutada bajo demanda para ' + quizId + '.');
+    sh.getRange(row, 3).setValue('Importación ejecutada bajo demanda para ' + quizId + ' en DRAFT.');
     sh.getRange(row, 6).setValue(new Date());
     return result;
   } catch (err) {
