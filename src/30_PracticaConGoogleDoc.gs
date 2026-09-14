@@ -6,7 +6,7 @@
  * - requiere un Google Documento nativo;
  * - el documento se adjunta con STUDENT_COPY;
  * - si no se proporciona documentId, el propio script crea el Google Documento
- *   mediante el servicio avanzado Drive v3 con el scope drive.file.
+ *   mediante Drive v3 con el scope drive.file.
  */
 function prepararPracticaConGoogleDoc_(params) {
   const p = params && typeof params === 'object' ? Object.assign({}, params) : {};
@@ -82,14 +82,22 @@ function crearGoogleDocumentoPractica_(params) {
   const html = construirHtmlPractica_(titulo, descripcion, contenido);
   const media = Utilities.newBlob(html, 'text/html', titulo + '.html');
 
-  let created;
+  let created = null;
+  let advancedError = null;
   try {
     created = Drive.Files.create({
       name:titulo,
       mimeType:policy.GOOGLE_DOCUMENT_MIME
     }, media, {fields:'id,name,mimeType'});
   } catch (err) {
-    throw new Error('No fue posible crear el Google Documento de la PRÁCTICA mediante Drive v3: ' + String(err && err.message ? err.message : err));
+    advancedError = err;
+  }
+  if (!created || !created.id) {
+    try {
+      created = crearGoogleDocumentoPracticaViaRest_(titulo, html, policy.GOOGLE_DOCUMENT_MIME);
+    } catch (restErr) {
+      throw new Error('No fue posible crear el Google Documento de la PRÁCTICA mediante Drive v3. Servicio avanzado: ' + String(advancedError && advancedError.message ? advancedError.message : advancedError || 'sin resultado') + '. REST: ' + String(restErr && restErr.message ? restErr.message : restErr));
+    }
   }
   if (!created || !created.id) throw new Error('Drive v3 no devolvió id para el Google Documento de la PRÁCTICA.');
 
@@ -100,6 +108,37 @@ function crearGoogleDocumentoPractica_(params) {
     throw new Error('El archivo creado para la PRÁCTICA no quedó como Google Documento nativo: ' + mime + '.');
   }
   return {id:String(file.getId()), name:String(file.getName()), mimeType:mime};
+}
+
+function crearGoogleDocumentoPracticaViaRest_(titulo, html, targetMime) {
+  const boundary = 'practice_' + Utilities.getUuid().replace(/-/g, '');
+  const metadata = JSON.stringify({name:titulo, mimeType:targetMime});
+  const payload = [
+    '--' + boundary,
+    'Content-Type: application/json; charset=UTF-8',
+    '',
+    metadata,
+    '--' + boundary,
+    'Content-Type: text/html; charset=UTF-8',
+    '',
+    html,
+    '--' + boundary + '--',
+    ''
+  ].join('\r\n');
+  const response = UrlFetchApp.fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,mimeType', {
+    method:'post',
+    contentType:'multipart/related; boundary=' + boundary,
+    headers:{Authorization:'Bearer ' + ScriptApp.getOAuthToken()},
+    payload:payload,
+    muteHttpExceptions:true
+  });
+  const code = Number(response.getResponseCode());
+  const raw = String(response.getContentText() || '');
+  if (code < 200 || code >= 300) throw new Error('HTTP ' + code + ': ' + raw.slice(0,500));
+  let created;
+  try { created = JSON.parse(raw); }
+  catch (err) { throw new Error('respuesta JSON inválida de Drive API'); }
+  return created;
 }
 
 function obtenerArchivoPracticaConReintento_(documentId) {
