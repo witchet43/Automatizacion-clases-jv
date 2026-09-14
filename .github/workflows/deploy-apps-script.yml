@@ -32,6 +32,20 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Validate Apps Script source
+        shell: bash
+        run: |
+          set -euo pipefail
+          tmp_dir="$(mktemp -d)"
+          trap 'rm -rf "$tmp_dir"' EXIT
+          for file in src/*.gs; do
+            test -f "$file" || continue
+            target="$tmp_dir/$(basename "$file").js"
+            cp "$file" "$target"
+            node --check "$target"
+          done
+          node -e "JSON.parse(require('fs').readFileSync('src/appsscript.json', 'utf8')); console.log('appsscript.json OK')"
+
       - name: Restore clasp credentials
         shell: bash
         run: |
