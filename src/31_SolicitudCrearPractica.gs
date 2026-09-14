@@ -71,7 +71,7 @@ function procesarSolicitudCrearPractica_() {
     if (!resumen.workId) throw new Error('La PRÁCTICA no devolvió workId.');
     if (resumen.dueDate || resumen.dueTime) throw new Error('La PRÁCTICA quedó con vencimiento y debe quedar sin fecha de entrega.');
     if (resumen.shareMode.toUpperCase() !== 'STUDENT_COPY') throw new Error('La PRÁCTICA no quedó con copia individual STUDENT_COPY.');
-    if (resumen.documentMime !== ACADEMIC_POLICY.CLASSROOM.PRACTICE.WORD_MIME) throw new Error('El adjunto de la PRÁCTICA no es DOCX.');
+    if (resumen.documentMime !== ACADEMIC_POLICY.CLASSROOM.PRACTICE.GOOGLE_DOCUMENT_MIME) throw new Error('El adjunto de la PRÁCTICA no es un Google Documento nativo.');
 
     sh.getRange(row, 2).setValue(PRACTICE_CREATE_REQUEST.DONE);
     sh.getRange(row, 3).setValue(JSON.stringify(resumen));
