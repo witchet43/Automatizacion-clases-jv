@@ -14,10 +14,7 @@ const ACADEMIC_OPERATIONS = Object.freeze({
   FINAL_GRADE_PREFIX: 'Calificación Unidad '
 });
 
-/**
- * Punto de entrada canónico para importar un examen concreto.
- * Parámetro mínimo: {quizId}. courseId es opcional y solo actúa como assertion.
- */
+/** Parámetro mínimo: {quizId}. courseId es opcional y actúa como assertion. */
 function importarCalificacionesExamen(params) {
   const p = normalizarParametrosOperacion_(params);
   if (!p.quizId) throw new Error('importarCalificacionesExamen requiere quizId.');
@@ -28,10 +25,7 @@ function importarCalificacionesExamen(params) {
   });
 }
 
-/**
- * Motor común para importación de un instrumento registrado en Quizzes.
- * No necesita Form ID ni Classroom ID como parámetros: los resuelve por Quiz ID.
- */
+/** Motor común. Resuelve Form ID y Classroom ID a partir del Quiz ID. */
 function importarCalificacionesInstrumento_(params) {
   const p = normalizarParametrosOperacion_(params);
   if (!p.quizId) throw new Error('La importación requiere quizId.');
@@ -70,25 +64,21 @@ function importarCalificacionesInstrumento_(params) {
   };
 }
 
-/**
- * Punto de entrada canónico para el cierre ordinario de una unidad.
- * Parámetros mínimos: {courseId, unidad}. La siguiente unidad es opcional; si
- * existe se usa únicamente como hint verificable para la clasificación.
- */
+/** Parámetros mínimos: {courseId, unidad}. */
 function cerrarUnidad(params) {
   const p = normalizarParametrosOperacion_(params);
   if (!p.courseId) throw new Error('cerrarUnidad requiere courseId.');
   const unidad = normalizarUnidadOperacion_(p.unidad);
   const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
 
-  // 1) Normalización estructural encapsulada. No modifica calificaciones.
+  // Normalización estructural. No modifica calificaciones.
   const preclasificacion = preclasificarCourseWorkPorCortes_(p.courseId);
-  const reubicacion = reubicarCourseWorkSinUnidad_(ss, p.courseId, unidad, p.unidadSiguiente || '');
+  const reubicacion = reubicarCourseWorkSinUnidadSiNecesario_(ss, p.courseId, unidad, p.unidadSiguiente || '');
 
-  // 2) Gate barato de estructura antes de tocar calificaciones.
+  // Gate estructural antes de tocar calificaciones.
   const preflight = preflightCierreUnidad_(ss, p.courseId, unidad);
 
-  // 3) Motores canónicos existentes. Cada uno mantiene su propia idempotencia.
+  // Motores canónicos; cada uno conserva su propia idempotencia.
   const revision = revisarTareasCurso_(p.courseId, true);
   const instrumentos = importarYConsolidarInstrumentosUnidad_(ss, p.courseId, unidad);
   const promedios = calcularPromediosUnidad_(p.courseId, unidad, true);
@@ -114,10 +104,37 @@ function cerrarUnidad(params) {
 }
 
 /**
- * Validación estructural previa al cierre. Solo lee.
- * Detecta temprano CourseWork no calificable, inventario inconsistente y
- * alumnos esperados sin StudentSubmission. No intenta resolverlos por heurística.
+ * Evita exigir una “siguiente unidad” cuando no existe ningún trabajo que deba
+ * reubicarse. Esto hace que el mismo cierre funcione también en la última unidad.
  */
+function reubicarCourseWorkSinUnidadSiNecesario_(ss, courseId, unidad, unidadSiguiente) {
+  const topics = listarTopics_(courseId);
+  const topicById = {};
+  topics.forEach(t => topicById[String(t.topicId)] = String(t.name || '').trim());
+
+  const pendientes = listarCourseWorkPublicacion_(courseId).filter(cw => {
+    if (String(cw.state || '').toUpperCase() !== 'PUBLISHED') return false;
+    const title = String(cw.title || '').trim();
+    if (/^(EXAMEN|PROYECTO|CALIFICACI[ÓO]N\s+UNIDAD)\b/i.test(title)) return false;
+    if (!/^(TAREA|PR[ÁA]CTICA|ACTIVIDAD|QUIZ)\b/i.test(title)) return false;
+    const topicName = topicById[String(cw.topicId || '')] || '';
+    return !extraerNumeroUnidad_(topicName);
+  });
+
+  if (!pendientes.length) {
+    return {
+      unidadActual: unidad,
+      unidadDestino: null,
+      topicIdDestino: null,
+      movidos: 0,
+      detalle: [],
+      motivo: 'SIN_TRABAJOS_PENDIENTES_DE_UNIDAD'
+    };
+  }
+  return reubicarCourseWorkSinUnidad_(ss, courseId, unidad, unidadSiguiente);
+}
+
+/** Solo lectura. Detecta problemas estructurales antes de calificar. */
 function preflightCierreUnidad_(ss, courseId, unidad) {
   const course = Classroom.Courses.get(String(courseId));
   if (!course || String(course.courseState || '').toUpperCase() !== 'ACTIVE') {
@@ -200,8 +217,7 @@ function usuariosEsperadosParaCourseWork_(cw, alumnos) {
 }
 
 function politicaCalificacionUnidad_(courseId) {
-  // Punto único de extensión para políticas por curso. Mientras no exista una
-  // excepción explícita, todos usan la política transversal 70/30.
+  // Único punto de extensión para políticas por curso.
   return ACADEMIC_OPERATIONS.GRADE_POLICY_DEFAULT;
 }
 
@@ -257,7 +273,7 @@ function normalizarUnidadOperacion_(unidad) {
   return 'Unidad ' + n;
 }
 
-/** Read-only smoke test del contrato ligero. No modifica Classroom ni Sheets. */
+/** Read-only smoke test del contrato ligero. */
 function validarContratoOperacionesAcademicas() {
   const p = politicaCalificacionUnidad_('');
   if (Math.abs((p.examWeight + p.nonExamWeight) - 1) > 0.000001) {
