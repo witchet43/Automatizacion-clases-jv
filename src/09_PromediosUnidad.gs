@@ -32,7 +32,7 @@ function procesarSolicitudPromediosUnidad_() {
       result.revision.devueltas+' entregas devueltas; '+
       result.instrumentos.instrumentos+' quiz/examen procesados; '+
       result.promedios.alumnos+' promedios calculados; '+
-      result.cierre.actualizadas+' calificaciones finales enviadas.'
+      result.cierre.actualizadas+' calificaciones finales en DRAFT.'
     );
     sh.getRange(row,5).setValue('ACTIVA'); sh.getRange(row,6).setValue(new Date());
     return result;
@@ -109,11 +109,11 @@ function importarYConsolidarInstrumentosUnidad_(ss,courseId,unidad){
     const r=d[i];if(String(r[h['ID del curso']]||'').trim()!==String(courseId)||String(r[h['Unidad / tema']]||'').trim().toLowerCase()!==un||String(r[h['Estado']]||'').trim().toUpperCase()!=='CREADA')continue;
     const workId=String(r[h['ID actividad Classroom']]||'').trim(),formId=String(r[h['ID del Form']]||'').trim(),quizId=String(r[h['Quiz ID']]||'').trim();if(!workId||!formId||!quizId)continue;
     const cw=Classroom.Courses.CourseWork.get(String(courseId),workId);if(String(cw.state||'').toUpperCase()!=='PUBLISHED')continue;
-    const imported=procesarCalificacionesQuiz_(String(courseId),workId,formId,true,quizId),subs=entregasPorAlumnoPromedio_(courseId,workId);let ceros=0,borradoresFinalizados=0;
-    Object.keys(subs).forEach(uid=>{const sub=subs[uid],ha=sub.assignedGrade!==undefined&&sub.assignedGrade!==null,hd=sub.draftGrade!==undefined&&sub.draftGrade!==null;if(ha)return;const grade=hd?Number(sub.draftGrade):0;Classroom.Courses.CourseWork.StudentSubmissions.patch({draftGrade:grade,assignedGrade:grade},String(courseId),workId,String(sub.id),{updateMask:'draftGrade,assignedGrade'});if(hd)borradoresFinalizados++;else ceros++;});
-    detalle.push({quizId:quizId,workId:workId,importadas:imported.actualizadas,ceros:ceros,borradoresFinalizados:borradoresFinalizados});
+    const imported=procesarCalificacionesQuiz_(String(courseId),workId,formId,true,quizId),subs=entregasPorAlumnoPromedio_(courseId,workId);let ceros=0,borradoresConservados=0;
+    Object.keys(subs).forEach(uid=>{const sub=subs[uid],ha=sub.assignedGrade!==undefined&&sub.assignedGrade!==null,hd=sub.draftGrade!==undefined&&sub.draftGrade!==null;if(ha)return;const grade=hd?Number(sub.draftGrade):0;escribirCalificacionDraft_(courseId,workId,sub.id,grade);if(hd)borradoresConservados++;else ceros++;});
+    detalle.push({quizId:quizId,workId:workId,importadas:imported.actualizadas,ceros:ceros,borradoresConservados:borradoresConservados,estadoCalificacion:'DRAFT_ONLY'});
   }
-  return {instrumentos:detalle.length,detalle:detalle};
+  return {instrumentos:detalle.length,detalle:detalle,estadoCalificacion:'DRAFT_ONLY'};
 }
 
 function calcularPromediosUnidad_(courseId,unidad,exigirCalificacion){
