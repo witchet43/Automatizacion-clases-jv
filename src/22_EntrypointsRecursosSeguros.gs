@@ -29,7 +29,7 @@ function crearPractica(params) {
     let practica = null;
     let result = null;
     try {
-      practica = prepararPracticaConWord_(params);
+      practica = prepararPracticaConGoogleDoc_(params);
       result = crearCourseWorkDirecto_(normalizarCreacionDirecta_(practica, 'PRACTICA'));
       const verificacion = verificarPracticaCreada_(practica.courseId, result.workId, practica);
       result.documentId = verificacion.documentId;
@@ -71,5 +71,5 @@ function validarEntrypointsRecursosSeguros() {
   if (!ACADEMIC_POLICY.ERROR_REPORTING || ACADEMIC_POLICY.ERROR_REPORTING.NOTIFY_ON_ERROR !== true) {
     throw new Error('La notificación de errores debe estar activa.');
   }
-  return {ok:true, entrypoints:names, errorReporting:'REQUIRED', activityDue:'SESSION_END_MAX', taskDue:'NEXT_SESSION_START_MAX', practice:'DOCX_STUDENT_COPY_NO_DUE'};
+  return {ok:true, entrypoints:names, errorReporting:'REQUIRED', activityDue:'SESSION_END_MAX', taskDue:'NEXT_SESSION_START_MAX', practice:'GOOGLE_DOC_STUDENT_COPY_NO_DUE'};
 }
