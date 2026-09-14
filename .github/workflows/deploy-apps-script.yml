@@ -59,8 +59,11 @@ jobs:
             const text = fs.readFileSync(path.join('src', file), 'utf8');
             const patches = text.match(/StudentSubmissions\.patch\s*\(\s*\{[\s\S]{0,700}?\}\s*,/gm) || [];
             for (const patch of patches) {
-              if (/assignedGrade\s*:\s*(?!null\b)/m.test(patch)) {
-                violations.push(`${file}: writes a non-null assignedGrade`);
+              const matches = [...patch.matchAll(/assignedGrade\s*:\s*([^,}\n]+)/g)];
+              for (const m of matches) {
+                if (String(m[1] || '').trim() !== 'null') {
+                  violations.push(`${file}: writes a non-null assignedGrade (${String(m[1] || '').trim()})`);
+                }
               }
             }
             if (/StudentSubmissions\.return\s*\(/m.test(text)) {
