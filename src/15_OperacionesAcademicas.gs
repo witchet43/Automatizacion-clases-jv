@@ -81,7 +81,7 @@ function cerrarUnidad(params) {
   // Motores canónicos; cada uno conserva su propia idempotencia.
   const revision = revisarTareasCurso_(p.courseId, true);
   const instrumentos = importarYConsolidarInstrumentosUnidad_(ss, p.courseId, unidad);
-  const promedios = calcularPromediosUnidad_(p.courseId, unidad, true);
+  const promedios = calcularPromediosUnidadPorAsignacion_(p.courseId, unidad, true);
   const cierre = publicarCalificacionUnidadFinal_(
     ss,
     p.courseId,
@@ -214,6 +214,102 @@ function usuariosEsperadosParaCourseWork_(cw, alumnos) {
     return (opts.studentIds || []).map(String);
   }
   return alumnos.map(s => String(s.userId));
+}
+
+/**
+ * Calcula la unidad respetando el alcance real de cada CourseWork.
+ * Un trabajo INDIVIDUAL_STUDENTS solo entra al promedio de los alumnos a quienes
+ * Classroom lo asignó; su ausencia para los demás no se considera 0 ni faltante.
+ */
+function calcularPromediosUnidadPorAsignacion_(courseId, unidad, exigirCalificacion) {
+  const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
+  const candidatos = inventarioUnidadDesdeFuentes_(ss, courseId, unidad);
+  const publicados = [];
+  const seen = new Set();
+  const policy = politicaCalificacionUnidad_(courseId);
+
+  candidatos.forEach(x => {
+    if (!x.classroomId || seen.has(String(x.classroomId))) return;
+    const cw = Classroom.Courses.CourseWork.get(String(courseId), String(x.classroomId));
+    if (String(cw.state || '').toUpperCase() !== 'PUBLISHED' || !cw.maxPoints || Number(cw.maxPoints) <= 0) return;
+    seen.add(String(x.classroomId));
+    publicados.push({
+      classroomId: String(x.classroomId),
+      titulo: String(cw.title || x.titulo || ''),
+      tipo: x.tipo,
+      esExamen: Boolean(x.esExamen),
+      maxPoints: Number(cw.maxPoints),
+      courseWork: cw
+    });
+  });
+
+  const examenes = publicados.filter(x => x.esExamen);
+  const noExamen = publicados.filter(x => !x.esExamen);
+  if (examenes.length !== 1) throw new Error('Se esperaba exactamente 1 examen publicado para ' + unidad + '; encontrados: ' + examenes.length + '.');
+  if (!noExamen.length) throw new Error('No hay trabajos no-examen publicados para ' + unidad + '.');
+
+  const students = listarAlumnosPromedio_(courseId);
+  const expectedByWork = {};
+  publicados.forEach(w => {
+    expectedByWork[w.classroomId] = new Set(usuariosEsperadosParaCourseWork_(w.courseWork, students));
+  });
+
+  const grades = {};
+  publicados.forEach(w => grades[w.classroomId] = entregasPorAlumnoPromedio_(courseId, w.classroomId));
+
+  const rows = [];
+  const faltantes = [];
+  students.forEach(student => {
+    const uid = String(student.userId);
+    const nombre = student.profile && student.profile.name ? student.profile.name.fullName : uid;
+    const email = student.profile && student.profile.emailAddress ? student.profile.emailAddress : '';
+    const examenesAsignados = examenes.filter(w => expectedByWork[w.classroomId].has(uid));
+    const noExamenAsignados = noExamen.filter(w => expectedByWork[w.classroomId].has(uid));
+
+    if (examenesAsignados.length !== 1) {
+      faltantes.push({alumno:nombre,userId:uid,trabajo:'EXAMEN DE ' + unidad,classroomId:'',motivo:'EXAMEN_NO_ASIGNADO_O_AMBIGUO'});
+    }
+    if (!noExamenAsignados.length) {
+      faltantes.push({alumno:nombre,userId:uid,trabajo:'NO-EXAMEN DE ' + unidad,classroomId:'',motivo:'SIN_INSTRUMENTOS_NO_EXAMEN_ASIGNADOS'});
+    }
+
+    examenesAsignados.concat(noExamenAsignados).forEach(w => {
+      if (!tieneNota_(grades[w.classroomId][uid])) {
+        faltantes.push({alumno:nombre,userId:uid,trabajo:w.titulo,classroomId:w.classroomId});
+      }
+    });
+
+    const ev = examenesAsignados.map(w => normalizarNota_(grades[w.classroomId][uid], w.maxPoints));
+    const nv = noExamenAsignados.map(w => normalizarNota_(grades[w.classroomId][uid], w.maxPoints));
+    const exam = promedioSimple_(ev);
+    const non = promedioSimple_(nv);
+    const final = redondearPromedio_(exam * policy.examWeight + non * policy.nonExamWeight);
+    const mn = noExamenAsignados.reduce((n,w) => n + (tieneNota_(grades[w.classroomId][uid]) ? 0 : 1), 0);
+    const me = examenesAsignados.reduce((n,w) => n + (tieneNota_(grades[w.classroomId][uid]) ? 0 : 1), 0);
+
+    rows.push([
+      new Date(), String(courseId), unidad, uid, nombre, email,
+      redondearPromedio_(exam), redondearPromedio_(exam * policy.examWeight),
+      redondearPromedio_(non), redondearPromedio_(non * policy.nonExamWeight),
+      final, noExamenAsignados.length, mn, me
+    ]);
+  });
+
+  if (exigirCalificacion && faltantes.length) {
+    throw new Error('El cierre se bloqueó: existen ' + faltantes.length + ' calificaciones o asignaciones faltantes después de la consolidación. ' + JSON.stringify(faltantes).slice(0,3000));
+  }
+
+  escribirReportePromedios_(ss, courseId, unidad, rows, policy);
+  return {
+    courseId: String(courseId),
+    unidad: unidad,
+    alumnos: rows.length,
+    examenes: examenes,
+    noExamen: noExamen,
+    reporte: UNIT_AVG_REQUEST.REPORT_SHEET,
+    faltantes: faltantes.length,
+    politica: policy
+  };
 }
 
 function politicaCalificacionUnidad_(courseId) {
