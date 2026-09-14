@@ -1,7 +1,8 @@
 /**
  * Crea/reutiliza la actividad sintética "Calificación Unidad N" como PUBLISHED
- * y carga draftGrade + assignedGrade desde el reporte auditable "Promedios Unidad".
- * Esta es la única excepción automática al DRAFT general del sistema.
+ * y carga únicamente draftGrade desde el reporte auditable "Promedios Unidad".
+ * La actividad puede ser visible, pero la nota automática nunca se publica:
+ * assignedGrade debe permanecer vacío para revisión docente.
  */
 const UNIT_GRADE_PUBLISH = Object.freeze({
   SHEET: 'Configuración Quizzes',
@@ -47,8 +48,8 @@ function procesarSolicitudPublicarCalificacionUnidad_() {
     const result = publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo);
     sh.getRange(row, 2).setValue(UNIT_GRADE_PUBLISH.DONE);
     sh.getRange(row, 3).setValue(
-      'Calificación de unidad enviada: ' + titulo + ' PUBLISHED; ' +
-      result.actualizadas + ' assignedGrade cargadas y verificadas.'
+      'Calificación de unidad calculada: ' + titulo + '; ' +
+      result.actualizadas + ' draftGrade cargadas y verificadas; assignedGrade no publicado.'
     );
     sh.getRange(row, 5).setValue('ACTIVA');
     sh.getRange(row, 6).setValue(new Date());
@@ -103,7 +104,7 @@ function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
     work = Classroom.Courses.CourseWork.create({
       title: canonicalTitle,
       description:
-        'Calificación final de ' + unidad + '. Cálculo: Examen 70% + promedio de tareas, actividades, quizzes y prácticas 30%.',
+        'Calificación final de ' + unidad + '. Cálculo: Examen 70% + promedio de tareas, actividades, quizzes y prácticas 30%. La nota queda en borrador para revisión docente.',
       workType: 'ASSIGNMENT',
       state: 'PUBLISHED',
       maxPoints: 100,
@@ -115,7 +116,6 @@ function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
     throw new Error('No se logró dejar PUBLISHED la actividad final.');
   }
 
-  // Classroom genera StudentSubmissions al publicar. Reintento breve por propagación.
   let submissions = {};
   for (let attempt = 0; attempt < 5; attempt++) {
     submissions = entregasPorAlumnoPublicacion_(courseId, work.id);
@@ -134,29 +134,20 @@ function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
     if (!uid || !Number.isFinite(grade)) throw new Error('Fila de promedio inválida para User ID ' + uid + '.');
     const sub = submissions[uid];
     if (!sub) throw new Error('No existe StudentSubmission final para User ID ' + uid + '.');
-    Classroom.Courses.CourseWork.StudentSubmissions.patch(
-      {draftGrade: grade, assignedGrade: grade},
-      String(courseId), String(work.id), String(sub.id),
-      {updateMask: 'draftGrade,assignedGrade'}
-    );
+    escribirCalificacionDraft_(courseId, work.id, sub.id, grade);
     updated++;
   });
 
-  // Verificación de cierre: todos los alumnos deben tener assignedGrade igual al reporte.
   const verify = entregasPorAlumnoPublicacion_(courseId, work.id);
   const mismatches = [];
   rows.forEach(r => {
     const uid = String(r[h['User ID']] || '').trim();
     const expected = Number(r[h['Promedio final']]);
-    const sub = verify[uid];
-    const assigned = sub && sub.assignedGrade !== undefined && sub.assignedGrade !== null
-      ? Number(sub.assignedGrade) : null;
-    if (assigned === null || Math.abs(assigned - expected) > 0.001) {
-      mismatches.push({userId: uid, esperado: expected, assignedGrade: assigned});
-    }
+    const check = verificarCalificacionDraft_(verify[uid], expected);
+    if (!check.ok) mismatches.push({userId: uid, verificacion: check});
   });
   if (mismatches.length) {
-    throw new Error('Falló verificación de assignedGrade final: ' + JSON.stringify(mismatches).slice(0, 3000));
+    throw new Error('Falló verificación de draftGrade final o existe assignedGrade automático: ' + JSON.stringify(mismatches).slice(0, 3000));
   }
 
   return {
@@ -166,7 +157,8 @@ function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
     titulo: canonicalTitle,
     actualizadas: updated,
     alumnosReporte: rows.length,
-    verificadas: rows.length
+    verificadas: rows.length,
+    estadoCalificacion: 'DRAFT_ONLY'
   };
 }
 
