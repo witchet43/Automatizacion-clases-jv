@@ -35,8 +35,11 @@ function prepararPracticaConGoogleDoc_(params) {
   }
 
   const file = obtenerArchivoPracticaConReintento_(documentId);
-  const mime = String(file.getMimeType() || '');
-  const name = String(file.getName() || '');
+  const mime = String(file.mimeType || '');
+  const name = String(file.name || '');
+  if (file.trashed === true) {
+    throw new Error('PRÁCTICA recibió un Google Documento enviado a la papelera: ' + documentId + '.');
+  }
   if (mime !== policy.GOOGLE_DOCUMENT_MIME) {
     throw new Error('PRÁCTICA requiere un Google Documento nativo. Archivo recibido: ' + name + ' (' + mime + ').');
   }
@@ -102,12 +105,12 @@ function crearGoogleDocumentoPractica_(params) {
   if (!created || !created.id) throw new Error('Drive v3 no devolvió id para el Google Documento de la PRÁCTICA.');
 
   const file = obtenerArchivoPracticaConReintento_(String(created.id));
-  const mime = String(file.getMimeType() || '');
+  const mime = String(file.mimeType || '');
   if (mime !== policy.GOOGLE_DOCUMENT_MIME) {
-    try { file.setTrashed(true); } catch (ignore) {}
+    try { enviarArchivoPracticaPapelera_(String(created.id)); } catch (ignore) {}
     throw new Error('El archivo creado para la PRÁCTICA no quedó como Google Documento nativo: ' + mime + '.');
   }
-  return {id:String(file.getId()), name:String(file.getName()), mimeType:mime};
+  return {id:String(file.id || created.id), name:String(file.name || titulo), mimeType:mime};
 }
 
 function crearGoogleDocumentoPracticaViaRest_(titulo, html, targetMime) {
@@ -144,13 +147,18 @@ function crearGoogleDocumentoPracticaViaRest_(titulo, html, targetMime) {
 function obtenerArchivoPracticaConReintento_(documentId) {
   let lastErr = null;
   for (let i = 0; i < 4; i++) {
-    try { return DriveApp.getFileById(String(documentId)); }
-    catch (err) {
+    try {
+      return Drive.Files.get(String(documentId), {fields:'id,name,mimeType,trashed'});
+    } catch (err) {
       lastErr = err;
       Utilities.sleep(250 * (i + 1));
     }
   }
-  throw lastErr || new Error('No fue posible resolver el Google Documento de la PRÁCTICA.');
+  throw lastErr || new Error('No fue posible resolver el Google Documento de la PRÁCTICA con Drive v3.');
+}
+
+function enviarArchivoPracticaPapelera_(documentId) {
+  return Drive.Files.update({trashed:true}, String(documentId), {fields:'id,trashed'});
 }
 
 function normalizarContenidoPractica_(value) {
@@ -209,8 +217,9 @@ function verificarPracticaCreada_(courseId, workId, practica) {
   if (shareMode !== policy.SHARE_MODE) throw new Error('La PRÁCTICA no quedó con STUDENT_COPY; modo encontrado: ' + shareMode + '.');
 
   const file = obtenerArchivoPracticaConReintento_(documentId);
-  if (String(file.getMimeType() || '') !== policy.GOOGLE_DOCUMENT_MIME) throw new Error('El adjunto verificado de la PRÁCTICA no es un Google Documento nativo.');
-  return {work:work,documentId:documentId,documentName:String(file.getName()),documentMime:String(file.getMimeType()),shareMode:shareMode,due:null};
+  if (file.trashed === true) throw new Error('El Google Documento de la PRÁCTICA quedó en la papelera.');
+  if (String(file.mimeType || '') !== policy.GOOGLE_DOCUMENT_MIME) throw new Error('El adjunto verificado de la PRÁCTICA no es un Google Documento nativo.');
+  return {work:work,documentId:documentId,documentName:String(file.name || ''),documentMime:String(file.mimeType || ''),shareMode:shareMode,due:null};
 }
 
 function limpiarPracticaFallida_(courseId, result, practica) {
@@ -218,7 +227,7 @@ function limpiarPracticaFallida_(courseId, result, practica) {
     try { Classroom.Courses.CourseWork.delete(String(courseId), String(result.workId)); } catch (ignoreWork) {}
   }
   if (practica && practica.documentoCreadoPorScript === true && practica.documentId) {
-    try { DriveApp.getFileById(String(practica.documentId)).setTrashed(true); } catch (ignoreFile) {}
+    try { enviarArchivoPracticaPapelera_(String(practica.documentId)); } catch (ignoreFile) {}
   }
 }
 
@@ -230,5 +239,5 @@ function validarPracticaCanonica() {
   catch (err) { bloqueoVencimiento = /no admite fecha ni hora de vencimiento/i.test(String(err && err.message || err)); }
   if (!bloqueoVencimiento) throw new Error('Regresión: una PRÁCTICA con vencimiento debe bloquearse.');
   if (resolverShareModeDirecto_({tipo:'PRACTICA'}) !== 'STUDENT_COPY') throw new Error('Regresión: PRÁCTICA debe resolver STUDENT_COPY por defecto.');
-  return {ok:true,tipo:'PRACTICA',due:'NONE',document:'GOOGLE_DOC',shareMode:'STUDENT_COPY'};
+  return {ok:true,tipo:'PRACTICA',due:'NONE',document:'GOOGLE_DOC',shareMode:'STUDENT_COPY',driveVerification:'DRIVE_V3'};
 }
