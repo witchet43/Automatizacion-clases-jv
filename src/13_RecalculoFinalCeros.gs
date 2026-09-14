@@ -1,4 +1,4 @@
-/** Cierre/recalculo final estricto: no modifica instrumentos fuente; faltantes o no asignados cuentan como 0. */
+/** Cierre/recalculo final estricto: no modifica instrumentos fuente; la política vive en ACADEMIC_POLICY. */
 function procesarSolicitudRecalculoFinalUnidadCero_() {
   const ss=SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
   const cfg=ss.getSheetByName('Configuración Quizzes');
@@ -10,16 +10,16 @@ function procesarSolicitudRecalculoFinalUnidadCero_() {
   const estado=String(cfg.getRange(row,2).getDisplayValue()||'').trim().toUpperCase();
   if(estado!=='SOLICITAR') return {procesado:false,motivo:'SIN_SOLICITUD_PENDIENTE',estado:estado};
   const courseId=String(cfg.getRange(row,4).getDisplayValue()||'').trim();
-  const unidad=String(cfg.getRange(row,7).getDisplayValue()||'').trim()||'Unidad 1';
+  const unidad=String(cfg.getRange(row,7).getDisplayValue()||'').trim()||ACADEMIC_POLICY.NAMING.UNIT_PREFIX+'1';
   if(!courseId) throw new Error('Falta ID curso.');
   cfg.getRange(row,2).setValue('PROCESANDO');
-  cfg.getRange(row,3).setValue('Recalculando solo '+unidad+'; ausencias/no asignaciones cuentan como 0; calificación final redondeada a entero; se sobrescribe la calificación final.');
+  cfg.getRange(row,3).setValue('Recalculando solo '+unidad+' con la política canónica de cierre de unidad.');
   cfg.getRange(row,6).setValue(new Date()); SpreadsheetApp.flush();
   try {
     const result=calcularPromediosDirectoClassroomConCeros_(ss,courseId,unidad);
-    const final=publicarCalificacionUnidadFinal_(ss,courseId,unidad,'Calificación '+unidad);
+    const final=publicarCalificacionUnidadFinal_(ss,courseId,unidad,ACADEMIC_POLICY.CLASSROOM.FINAL_GRADE_PREFIX+extraerNumeroUnidad_(unidad));
     cfg.getRange(row,2).setValue('PROCESADO');
-    cfg.getRange(row,3).setValue('Recalculo completado: '+result.alumnos+' alumnos; '+result.noExamen.length+' instrumentos no-examen; '+result.faltantesComoCero+' ausencias/no asignaciones contabilizadas como 0; calificaciones finales redondeadas a enteros; '+final.actualizadas+' calificaciones finales sobrescritas y verificadas.');
+    cfg.getRange(row,3).setValue('Recalculo completado: '+result.alumnos+' alumnos; '+result.noExamen.length+' instrumentos no-examen; '+result.faltantesComoCero+' ausencias/no asignaciones contabilizadas según política; '+final.actualizadas+' calificaciones finales DRAFT sobrescritas y verificadas.');
     cfg.getRange(row,6).setValue(new Date());
     return {promedios:result,cierre:final};
   } catch(err) {
@@ -27,14 +27,13 @@ function procesarSolicitudRecalculoFinalUnidadCero_() {
   }
 }
 
-/**
- * Único motor de cálculo de unidad.
- * Solo incluye CourseWork PUBLISHED del topic exacto Unidad N.
- * Cualquier alumno sin nota o sin StudentSubmission en un instrumento incluido recibe 0 en ese instrumento.
- * Los cálculos intermedios conservan decimales; la calificación final se redondea al entero más cercano.
- */
+/** Motor único de cálculo; su semántica se deriva de ACADEMIC_POLICY.UNIT_GRADING. */
 function calcularPromediosDirectoClassroomConCeros_(ss,courseId,unidad){
   const policy=politicaCalificacionUnidad_(courseId);
+  const unitPolicy=ACADEMIC_POLICY.UNIT_GRADING;
+  if(unitPolicy.SCOPE!=='EXACT_UNIT_PUBLISHED'||unitPolicy.TOUCH_OTHER_UNITS!==false){
+    throw new Error('La política canónica no autoriza el cierre estricto solicitado.');
+  }
   const topicId=String(buscarTopicIdUnidad_(courseId,unidad));
   const all=listarCourseWorkPublicacion_(courseId).filter(w=>
     String(w.state||'').toUpperCase()==='PUBLISHED'&&
@@ -76,13 +75,13 @@ function calcularPromediosDirectoClassroomConCeros_(ss,courseId,unidad){
       if(!tieneNota_(sub)){
         faltantesComoCero++;
         if(esExamen) faltExam++; else faltNoExam++;
-        return 0;
+        return unitPolicy.MISSING_GRADE_VALUE;
       }
       return normalizarNota_(sub,w.maxPoints);
     };
     const exam=promedioSimple_(examenes.map(w=>norm(w,true)));
     const non=promedioSimple_(noExamen.map(w=>norm(w,false)));
-    const final=Math.round(exam*policy.examWeight+non*policy.nonExamWeight);
+    const final=redondearCalificacionFinalCanonica_(exam*policy.examWeight+non*policy.nonExamWeight);
     rows.push([
       new Date(),String(courseId),unidad,uid,nombre,email,
       redondearPromedio_(exam),redondearPromedio_(exam*policy.examWeight),
@@ -94,6 +93,6 @@ function calcularPromediosDirectoClassroomConCeros_(ss,courseId,unidad){
   escribirReportePromedios_(ss,courseId,unidad,rows,policy);
   return {
     courseId:String(courseId),unidad:unidad,alumnos:rows.length,examenes:examenes,noExamen:noExamen,
-    reporte:'Promedios Unidad',faltantesComoCero:faltantesComoCero,politica:policy,modo:'UNIDAD_ESTRICTA',calificacionFinal:'ENTERO_REDONDEADO'
+    reporte:'Promedios Unidad',faltantesComoCero:faltantesComoCero,politica:policy,modo:unitPolicy.SCOPE,calificacionFinal:unitPolicy.FINAL_ROUNDING
   };
 }
