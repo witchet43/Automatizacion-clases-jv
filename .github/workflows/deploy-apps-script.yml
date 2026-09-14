@@ -74,7 +74,6 @@ jobs:
           node <<'NODE'
           const fs = require('fs');
           const text = fs.readFileSync('src/00_PoliticasCanonicas.gs', 'utf8');
-          const manifest = fs.readFileSync('src/appsscript.json', 'utf8');
           const required = [
             /RESOURCE_CREATION_MODE:\s*'DIRECT_SCRIPT'/,
             /SHEETS_ROLE:\s*'AUDIT_AND_CONFIGURATION_ONLY'/,
@@ -119,7 +118,6 @@ jobs:
             /PRIMARY_ALLOWED_AS_CANONICAL:\s*false/
           ];
           if (required.some(re => !re.test(text))) process.exit(1);
-          if (!/https:\/\/www\.googleapis\.com\/auth\/documents/.test(manifest)) process.exit(1);
           console.log('Canonical academic policy OK');
           NODE
 
@@ -191,7 +189,9 @@ jobs:
             /function\s+crearGoogleDocumentoPractica_\s*\(/,
             /function\s+verificarPracticaCreada_\s*\(/,
             /function\s+validarPracticaCanonica\s*\(/,
-            /DocumentApp\.create\s*\(/,
+            /UrlFetchApp\.fetch\s*\(/,
+            /ScriptApp\.getOAuthToken\s*\(/,
+            /googleapis\.com\/upload\/drive\/v3\/files/,
             /PRÁCTICA no admite fecha ni hora de vencimiento/,
             /STUDENT_COPY/,
             /application\/vnd\.google-apps\.document/
