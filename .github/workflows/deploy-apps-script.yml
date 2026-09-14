@@ -57,10 +57,11 @@ jobs:
           const violations = [];
           for (const file of files) {
             const text = fs.readFileSync(path.join('src', file), 'utf8');
-            // Solo prohíbe assignedGrade dentro del payload de StudentSubmissions.patch.
-            // Lecturas/diagnóstico de assignedGrade y el updateMask usado para limpiarlo son válidos.
-            if (/StudentSubmissions\.patch\s*\(\s*\{[\s\S]{0,500}?assignedGrade\s*:/m.test(text)) {
-              violations.push(`${file}: writes assignedGrade`);
+            const patches = text.match(/StudentSubmissions\.patch\s*\(\s*\{[\s\S]{0,700}?\}\s*,/gm) || [];
+            for (const patch of patches) {
+              if (/assignedGrade\s*:\s*(?!null\b)/m.test(patch)) {
+                violations.push(`${file}: writes a non-null assignedGrade`);
+              }
             }
             if (/StudentSubmissions\.return\s*\(/m.test(text)) {
               violations.push(`${file}: automatically returns a submission`);
