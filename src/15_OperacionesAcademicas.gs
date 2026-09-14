@@ -1,11 +1,7 @@
 /**
  * API interna ligera para operaciones académicas rutinarias.
- * La IA aporta intención + parámetros; las reglas viven aquí.
+ * La IA aporta intención + parámetros; las reglas viven en código canónico.
  */
-const ACADEMIC_OPERATIONS = Object.freeze({
-  GRADE_POLICY_DEFAULT: Object.freeze({examWeight: 0.70, nonExamWeight: 0.30}),
-  FINAL_GRADE_PREFIX: 'Calificación Unidad '
-});
 
 /** Parámetro mínimo: {quizId}. courseId es opcional y actúa como assertion. */
 function importarCalificacionesExamen(params) {
@@ -43,14 +39,8 @@ function importarCalificacionesInstrumento_(params) {
 }
 
 /**
- * Cierre estricto de una sola unidad.
- * REGLAS:
- * - Solo lee CourseWork PUBLISHED cuyo topic sea exactamente la Unidad solicitada.
- * - No revisa, mueve, reclasifica, devuelve ni califica trabajos de otras unidades.
- * - Para el cálculo, un instrumento de la unidad sin nota o sin StudentSubmission
- *   para un alumno vale 0 para ese alumno.
- * - Reescribe el reporte de esa unidad y sobrescribe el draft de Calificación
- *   Unidad N aunque ya existiera. Nunca escribe assignedGrade ni devuelve la nota.
+ * Cierre estricto de una sola unidad. El contrato detallado vive en
+ * ACADEMIC_POLICY.UNIT_GRADING y en los motores llamados por esta fachada.
  */
 function cerrarUnidad(params) {
   const p = normalizarParametrosOperacion_(params);
@@ -63,7 +53,7 @@ function cerrarUnidad(params) {
     ss,
     p.courseId,
     unidad,
-    ACADEMIC_OPERATIONS.FINAL_GRADE_PREFIX + extraerNumeroUnidad_(unidad)
+    ACADEMIC_POLICY.CLASSROOM.FINAL_GRADE_PREFIX + extraerNumeroUnidad_(unidad)
   );
 
   return {
@@ -83,7 +73,10 @@ function cerrarUnidad(params) {
 }
 
 function politicaCalificacionUnidad_(courseId) {
-  return ACADEMIC_OPERATIONS.GRADE_POLICY_DEFAULT;
+  return Object.freeze({
+    examWeight: ACADEMIC_POLICY.UNIT_GRADING.EXAM_WEIGHT,
+    nonExamWeight: ACADEMIC_POLICY.UNIT_GRADING.NON_EXAM_WEIGHT
+  });
 }
 
 function resolverInstrumentoPorQuizId_(ss, quizId) {
@@ -127,10 +120,12 @@ function normalizarUnidadOperacion_(unidad) {
   if(!raw) throw new Error('La operación requiere unidad.');
   const n=extraerNumeroUnidad_(raw);
   if(!n) throw new Error('No se pudo identificar el número de unidad en: '+raw+'.');
-  return 'Unidad '+n;
+  return ACADEMIC_POLICY.NAMING.UNIT_PREFIX+n;
 }
 
 function validarContratoOperacionesAcademicas() {
+  validarContratoArquitectura_();
+  validarPoliticasCanonicas_();
   const p=politicaCalificacionUnidad_('');
   const draftPolicy=politicaCalificacionAutomaticaDraft_();
   if(Math.abs((p.examWeight+p.nonExamWeight)-1)>0.000001) throw new Error('La política de calificación no suma 100%.');
@@ -139,5 +134,5 @@ function validarContratoOperacionesAcademicas() {
   if(draftPolicy.campoEscritura!=='draftGrade'||draftPolicy.assignedGradeAutomatico!==false||draftPolicy.returnAutomatico!==false) {
     throw new Error('La política global DRAFT de calificaciones automáticas es inválida.');
   }
-  return {ok:true,operaciones:['importarCalificacionesExamen','cerrarUnidad'],politica:p,calificaciones:draftPolicy,cierre:'UNIDAD_ESTRICTA_RECALCULABLE_DRAFT'};
+  return {ok:true,operaciones:['importarCalificacionesExamen','cerrarUnidad'],politica:p,calificaciones:draftPolicy,cierre:'UNIDAD_ESTRICTA_RECALCULABLE_DRAFT',fuentePoliticas:'ACADEMIC_POLICY'};
 }
