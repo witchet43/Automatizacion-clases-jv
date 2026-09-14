@@ -2,10 +2,14 @@
  * REGLA DE VENCIMIENTO PARA ACTIVIDAD EN CLASE
  *
  * Exclusiva de ACTIVIDAD. La fecha/hora máxima local es el fin de la sesión.
- * El motor de Classroom recibe dueDate/dueTime en UTC, por lo que esta capa
- * convierte explícitamente desde America/Mexico_City usando el offset canónico.
+ * Classroom exige que el vencimiento sea futuro; por ello una actividad no se
+ * crea después de que la sesión terminó ni con un vencimiento anterior al ahora.
  */
 function aplicarReglaVencimientoActividadEnClase_(params) {
+  return aplicarReglaVencimientoActividadEnClaseConAhora_(params, ahoraLocalActividad_());
+}
+
+function aplicarReglaVencimientoActividadEnClaseConAhora_(params, ahoraLocal) {
   const p = params && typeof params === 'object' ? Object.assign({}, params) : {};
   const policy = ACADEMIC_POLICY.CLASSROOM.ACTIVITY_IN_CLASS_DUE;
   validarPoliticaVencimientoActividadEnClase_(policy);
@@ -17,6 +21,14 @@ function aplicarReglaVencimientoActividadEnClase_(params) {
   }
 
   const finSesion = parseFechaHoraLocalActividad_(fechaSesion, horaFinSesion, 'fin de sesión');
+  const ahora = ahoraLocal && typeof ahoraLocal === 'object'
+    ? ahoraLocal
+    : parseFechaHoraLocalActividad_(String(ahoraLocal || '').slice(0,10), String(ahoraLocal || '').slice(11,16), 'hora actual');
+
+  if (policy.PAST_SESSION_CREATION === 'BLOCK' && ahora.localComparableMs >= finSesion.localComparableMs) {
+    throw new Error('No se puede crear una ACTIVIDAD EN CLASE después de que la sesión ha concluido (' + fechaSesion + ' ' + horaFinSesion + '). Classroom exige un vencimiento futuro y la política impide moverlo después del fin de clase.');
+  }
+
   const fechaSolicitada = primerValorTextoActividad_(p.fechaLimite, p.dueDate);
   const horaSolicitada = primerValorTextoActividad_(p.horaLimite, p.dueTime);
   if ((fechaSolicitada && !horaSolicitada) || (!fechaSolicitada && horaSolicitada)) {
@@ -30,6 +42,9 @@ function aplicarReglaVencimientoActividadEnClase_(params) {
   if (limiteLocal.localComparableMs > finSesion.localComparableMs) {
     throw new Error('El vencimiento de una ACTIVIDAD EN CLASE no puede ser posterior al final de la sesión (' + fechaSesion + ' ' + horaFinSesion + ').');
   }
+  if (policy.DUE_MUST_BE_FUTURE === true && limiteLocal.localComparableMs <= ahora.localComparableMs) {
+    throw new Error('El vencimiento de una ACTIVIDAD EN CLASE debe seguir estando en el futuro al momento de crearla. Límite solicitado: ' + limiteLocal.fecha + ' ' + limiteLocal.hora + '.');
+  }
 
   const utc = convertirFechaHoraLocalActividadAUtc_(limiteLocal, policy.UTC_OFFSET_MINUTES);
   p.fechaSesion = fechaSesion;
@@ -41,9 +56,15 @@ function aplicarReglaVencimientoActividadEnClase_(params) {
   return p;
 }
 
+function ahoraLocalActividad_() {
+  const policy = ACADEMIC_POLICY.CLASSROOM.ACTIVITY_IN_CLASS_DUE;
+  const value = Utilities.formatDate(new Date(), policy.TIMEZONE, 'yyyy-MM-dd HH:mm');
+  return parseFechaHoraLocalActividad_(value.slice(0,10), value.slice(11,16), 'hora actual');
+}
+
 function validarPoliticaVencimientoActividadEnClase_(policy) {
-  if (!policy || policy.REQUIRED !== true || policy.DEFAULT !== 'SESSION_END' || policy.MAXIMUM !== 'SESSION_END' || policy.REQUIRES_SESSION_CONTEXT !== true) {
-    throw new Error('La política canónica de ACTIVIDAD EN CLASE no exige correctamente el fin de sesión.');
+  if (!policy || policy.REQUIRED !== true || policy.DEFAULT !== 'SESSION_END' || policy.MAXIMUM !== 'SESSION_END' || policy.REQUIRES_SESSION_CONTEXT !== true || policy.PAST_SESSION_CREATION !== 'BLOCK' || policy.DUE_MUST_BE_FUTURE !== true) {
+    throw new Error('La política canónica de ACTIVIDAD EN CLASE no exige correctamente el fin de sesión y un vencimiento futuro.');
   }
   if (policy.TIMEZONE !== 'America/Mexico_City' || Number(policy.UTC_OFFSET_MINUTES) !== -360) {
     throw new Error('La política horaria de ACTIVIDAD EN CLASE no coincide con America/Mexico_City 2026.');
@@ -105,36 +126,55 @@ function formatearHoraActividad_(hours, minutes) {
 
 function validarVencimientoActividadEnClaseCanonico() {
   validarPoliticasCanonicas_();
+  const ahoraPrueba = parseFechaHoraLocalActividad_('2026-09-14', '07:00', 'ahora de prueba');
 
-  const fin = aplicarReglaVencimientoActividadEnClase_({fechaSesion:'2026-09-14', horaFinSesion:'19:00'});
+  const fin = aplicarReglaVencimientoActividadEnClaseConAhora_({fechaSesion:'2026-09-14', horaFinSesion:'19:00'}, ahoraPrueba);
   if (fin.fechaLimite !== '2026-09-15' || fin.horaLimite !== '01:00') {
     throw new Error('Regresión: el fin de sesión 19:00 local debe convertirse a 01:00 UTC del día siguiente.');
   }
 
-  const antes = aplicarReglaVencimientoActividadEnClase_({
+  const antes = aplicarReglaVencimientoActividadEnClaseConAhora_({
     fechaSesion:'2026-09-14', horaFinSesion:'19:00', fechaLimite:'2026-09-14', horaLimite:'18:30'
-  });
+  }, ahoraPrueba);
   if (antes.fechaLimite !== '2026-09-15' || antes.horaLimite !== '00:30') {
     throw new Error('Regresión: un vencimiento anterior explícito debe conservarse y convertirse a UTC.');
   }
 
   let bloqueoPosterior = false;
   try {
-    aplicarReglaVencimientoActividadEnClase_({
+    aplicarReglaVencimientoActividadEnClaseConAhora_({
       fechaSesion:'2026-09-14', horaFinSesion:'19:00', fechaLimite:'2026-09-14', horaLimite:'19:01'
-    });
+    }, ahoraPrueba);
   } catch (err) {
     bloqueoPosterior = /no puede ser posterior/i.test(String(err && err.message || err));
   }
   if (!bloqueoPosterior) throw new Error('Regresión: debe bloquearse un vencimiento posterior al fin de sesión.');
 
+  let bloqueoSesionTerminada = false;
+  try {
+    aplicarReglaVencimientoActividadEnClaseConAhora_({fechaSesion:'2026-09-14', horaFinSesion:'08:00'}, parseFechaHoraLocalActividad_('2026-09-14','08:01','ahora posterior'));
+  } catch (err) {
+    bloqueoSesionTerminada = /sesión ha concluido/i.test(String(err && err.message || err));
+  }
+  if (!bloqueoSesionTerminada) throw new Error('Regresión: debe bloquearse la creación cuando la sesión ya terminó.');
+
+  let bloqueoVencimientoPasado = false;
+  try {
+    aplicarReglaVencimientoActividadEnClaseConAhora_({
+      fechaSesion:'2026-09-14', horaFinSesion:'19:00', fechaLimite:'2026-09-14', horaLimite:'06:59'
+    }, ahoraPrueba);
+  } catch (err) {
+    bloqueoVencimientoPasado = /debe seguir estando en el futuro/i.test(String(err && err.message || err));
+  }
+  if (!bloqueoVencimientoPasado) throw new Error('Regresión: debe bloquearse un vencimiento que ya pasó.');
+
   let bloqueoSinContexto = false;
   try {
-    aplicarReglaVencimientoActividadEnClase_({fechaLimite:'2026-09-14', horaLimite:'19:00'});
+    aplicarReglaVencimientoActividadEnClaseConAhora_({fechaLimite:'2026-09-14', horaLimite:'19:00'}, ahoraPrueba);
   } catch (err) {
     bloqueoSinContexto = /requiere fechaSesion y horaFinSesion/i.test(String(err && err.message || err));
   }
   if (!bloqueoSinContexto) throw new Error('Regresión: una actividad sin contexto de sesión debe bloquearse.');
 
-  return {ok:true, tipo:'ACTIVIDAD', vencimiento:'SESSION_END_MAX', timezone:'America/Mexico_City'};
+  return {ok:true, tipo:'ACTIVIDAD', vencimiento:'SESSION_END_MAX_FUTURE', timezone:'America/Mexico_City'};
 }
