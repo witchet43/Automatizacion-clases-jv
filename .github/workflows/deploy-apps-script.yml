@@ -52,12 +52,7 @@ jobs:
           set -euo pipefail
           node <<'NODE'
           const fs = require('fs');
-          const file = 'src/00_ContratoArquitectura.gs';
-          if (!fs.existsSync(file)) {
-            console.error('Missing architecture contract: ' + file);
-            process.exit(1);
-          }
-          const text = fs.readFileSync(file, 'utf8');
+          const text = fs.readFileSync('src/00_ContratoArquitectura.gs', 'utf8');
           const required = [
             /BEHAVIOR_SOURCE:\s*'CODE'/,
             /AI_ROLE:\s*'INTENT_AND_MINIMAL_PARAMETERS'/,
@@ -67,10 +62,7 @@ jobs:
             /DOCUMENTATION_IS_EXECUTION_SOURCE:\s*false/,
             /DEPLOYMENT_VERIFICATION_REQUIRED:\s*true/
           ];
-          if (required.some(re => !re.test(text))) {
-            console.error('Architecture contract is incomplete or weakened.');
-            process.exit(1);
-          }
+          if (required.some(re => !re.test(text))) process.exit(1);
           console.log('Architecture contract OK');
           NODE
 
@@ -80,13 +72,11 @@ jobs:
           set -euo pipefail
           node <<'NODE'
           const fs = require('fs');
-          const file = 'src/00_PoliticasCanonicas.gs';
-          if (!fs.existsSync(file)) {
-            console.error('Missing canonical academic policy: ' + file);
-            process.exit(1);
-          }
-          const text = fs.readFileSync(file, 'utf8');
+          const text = fs.readFileSync('src/00_PoliticasCanonicas.gs', 'utf8');
           const required = [
+            /RESOURCE_CREATION_MODE:\s*'DIRECT_SCRIPT'/,
+            /SHEETS_ROLE:\s*'AUDIT_AND_CONFIGURATION_ONLY'/,
+            /MONITOR_REQUIRED_FOR_CREATION:\s*false/,
             /DEFAULT_COURSEWORK_STATE:\s*'DRAFT'/,
             /AUTOMATIC_GRADE_FIELD:\s*'draftGrade'/,
             /AUTOMATIC_ASSIGNED_GRADE:\s*false/,
@@ -104,12 +94,31 @@ jobs:
             /CANONICAL_SOURCE:\s*'CLASSROOM_COURSE_CALENDAR'/,
             /PRIMARY_ALLOWED_AS_CANONICAL:\s*false/
           ];
-          const missing = required.filter(re => !re.test(text));
-          if (missing.length) {
-            console.error('Canonical academic policy is incomplete or weakened.');
-            process.exit(1);
-          }
+          if (required.some(re => !re.test(text))) process.exit(1);
           console.log('Canonical academic policy OK');
+          NODE
+
+      - name: Enforce direct resource creation API
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const file = 'src/20_CreacionDirectaRecursos.gs';
+          if (!fs.existsSync(file)) process.exit(1);
+          const text = fs.readFileSync(file, 'utf8');
+          const required = [
+            /function\s+crearActividadDirecta\s*\(/,
+            /function\s+crearTareaDirecta\s*\(/,
+            /function\s+crearPracticaDirecta\s*\(/,
+            /function\s+crearQuizDirecto\s*\(/,
+            /function\s+crearExamenDirecto\s*\(/,
+            /registrarAuditoriaCourseWorkDirecto_/,
+            /registrarAuditoriaEvaluacionDirecta_/,
+            /verificarCourseWorkDraftDirecto_/
+          ];
+          if (required.some(re => !re.test(text))) process.exit(1);
+          console.log('Direct resource creation API OK');
           NODE
 
       - name: Enforce draft-only automatic grading
@@ -126,18 +135,12 @@ jobs:
             const patches = text.match(/StudentSubmissions\.patch\s*\(\s*\{[\s\S]{0,700}?\}\s*,/gm) || [];
             for (const patch of patches) {
               const matches = [...patch.matchAll(/assignedGrade\s*:\s*([^,}\n]+)/g)];
-              for (const m of matches) {
-                if (String(m[1] || '').trim() !== 'null') {
-                  violations.push(`${file}: writes a non-null assignedGrade (${String(m[1] || '').trim()})`);
-                }
-              }
+              for (const m of matches) if (String(m[1] || '').trim() !== 'null') violations.push(`${file}: writes non-null assignedGrade`);
             }
-            if (/StudentSubmissions\.return\s*\(/m.test(text)) {
-              violations.push(`${file}: automatically returns a submission`);
-            }
+            if (/StudentSubmissions\.return\s*\(/m.test(text)) violations.push(`${file}: automatically returns a submission`);
           }
           if (violations.length) {
-            console.error('Draft-only policy violations:\n' + violations.join('\n'));
+            console.error(violations.join('\n'));
             process.exit(1);
           }
           console.log('Draft-only grading policy OK');
