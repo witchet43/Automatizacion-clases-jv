@@ -67,12 +67,49 @@ jobs:
             /DOCUMENTATION_IS_EXECUTION_SOURCE:\s*false/,
             /DEPLOYMENT_VERIFICATION_REQUIRED:\s*true/
           ];
-          const missing = required.filter(re => !re.test(text));
-          if (missing.length) {
+          if (required.some(re => !re.test(text))) {
             console.error('Architecture contract is incomplete or weakened.');
             process.exit(1);
           }
           console.log('Architecture contract OK');
+          NODE
+
+      - name: Enforce canonical academic policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const file = 'src/00_PoliticasCanonicas.gs';
+          if (!fs.existsSync(file)) {
+            console.error('Missing canonical academic policy: ' + file);
+            process.exit(1);
+          }
+          const text = fs.readFileSync(file, 'utf8');
+          const required = [
+            /DEFAULT_COURSEWORK_STATE:\s*'DRAFT'/,
+            /AUTOMATIC_GRADE_FIELD:\s*'draftGrade'/,
+            /AUTOMATIC_ASSIGNED_GRADE:\s*false/,
+            /AUTOMATIC_RETURN:\s*false/,
+            /EXAM_WEIGHT:\s*0\.70/,
+            /NON_EXAM_WEIGHT:\s*0\.30/,
+            /MISSING_GRADE_VALUE:\s*0/,
+            /TOUCH_OTHER_UNITS:\s*false/,
+            /FINAL_ROUNDING:\s*'NEAREST_INTEGER'/,
+            /RECALC_OVERWRITES_FINAL_DRAFT:\s*true/,
+            /STANDARD_ITEM_COUNT:\s*25/,
+            /STANDARD_TOTAL_POINTS:\s*100/,
+            /PRACTICE_REFLECTION_COUNT:\s*3/,
+            /MAX_SLIDES:\s*25/,
+            /CANONICAL_SOURCE:\s*'CLASSROOM_COURSE_CALENDAR'/,
+            /PRIMARY_ALLOWED_AS_CANONICAL:\s*false/
+          ];
+          const missing = required.filter(re => !re.test(text));
+          if (missing.length) {
+            console.error('Canonical academic policy is incomplete or weakened.');
+            process.exit(1);
+          }
+          console.log('Canonical academic policy OK');
           NODE
 
       - name: Enforce draft-only automatic grading
