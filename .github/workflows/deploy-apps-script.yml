@@ -95,6 +95,14 @@ jobs:
             /MAXIMUM:\s*'NEXT_SESSION_START'/,
             /PAST_NEXT_SESSION_CREATION:\s*'BLOCK'/,
             /DUE_MUST_BE_FUTURE:\s*true/,
+            /PRACTICE:\s*Object\.freeze/,
+            /DUE_MODE:\s*'NONE'/,
+            /DUE_ALLOWED:\s*false/,
+            /WORD_DOCUMENT_REQUIRED:\s*true/,
+            /WORD_EXTENSION:\s*'\.docx'/,
+            /STUDENT_COPY_REQUIRED:\s*true/,
+            /SHARE_MODE:\s*'STUDENT_COPY'/,
+            /PRACTICE_DOCUMENT_FORMAT:\s*'DOCX'/,
             /EXAM_WEIGHT:\s*0\.70/,
             /NON_EXAM_WEIGHT:\s*0\.30/,
             /MISSING_GRADE_VALUE:\s*0/,
@@ -123,20 +131,27 @@ jobs:
           const activityDueFile = 'src/24_VencimientoActividadClase.gs';
           const taskDueFile = 'src/27_VencimientoTarea.gs';
           const taskAdapterFile = 'src/28_SolicitudCrearTarea.gs';
+          const practiceRuleFile = 'src/30_PracticaConWord.gs';
+          const practiceAdapterFile = 'src/31_SolicitudCrearPractica.gs';
           const dispatcherFile = 'src/00_SolicitudImportacionCalificaciones.gs';
-          if (!fs.existsSync(legacyFile) || !fs.existsSync(safeFile) || !fs.existsSync(activityDueFile) || !fs.existsSync(taskDueFile) || !fs.existsSync(taskAdapterFile) || !fs.existsSync(dispatcherFile)) process.exit(1);
+          const requiredFiles = [legacyFile,safeFile,activityDueFile,taskDueFile,taskAdapterFile,practiceRuleFile,practiceAdapterFile,dispatcherFile];
+          if (requiredFiles.some(file => !fs.existsSync(file))) process.exit(1);
           const direct = fs.readFileSync(legacyFile, 'utf8');
           const safe = fs.readFileSync(safeFile, 'utf8');
           const activityDue = fs.readFileSync(activityDueFile, 'utf8');
           const taskDue = fs.readFileSync(taskDueFile, 'utf8');
           const taskAdapter = fs.readFileSync(taskAdapterFile, 'utf8');
+          const practiceRule = fs.readFileSync(practiceRuleFile, 'utf8');
+          const practiceAdapter = fs.readFileSync(practiceAdapterFile, 'utf8');
           const dispatcher = fs.readFileSync(dispatcherFile, 'utf8');
           const engineRequired = [
             /crearCourseWorkDirecto_/,
             /crearEvaluacionDirecta_/,
             /registrarAuditoriaCourseWorkDirecto_/,
             /registrarAuditoriaEvaluacionDirecta_/,
-            /verificarCourseWorkDraftDirecto_/
+            /verificarCourseWorkDraftDirecto_/,
+            /construirMaterialesDirectos_/,
+            /STUDENT_COPY/
           ];
           const safeRequired = [
             /function\s+crearActividad\s*\(/,
@@ -145,6 +160,8 @@ jobs:
             /aplicarReglaVencimientoTarea_/,
             /verificarVencimientoTareaCreada_/,
             /function\s+crearPractica\s*\(/,
+            /prepararPracticaConWord_/,
+            /verificarPracticaCreada_/,
             /function\s+crearQuiz\s*\(/,
             /function\s+crearExamen\s*\(/,
             /ejecutarConNotificacionError_/
@@ -166,12 +183,37 @@ jobs:
             /no puede ser posterior al inicio de la siguiente clase/,
             /verificarVencimientoTareaCreada_/
           ];
+          const practiceRequired = [
+            /function\s+prepararPracticaConWord_\s*\(/,
+            /function\s+crearDocumentoWordPractica_\s*\(/,
+            /function\s+verificarPracticaCreada_\s*\(/,
+            /function\s+validarPracticaCanonica\s*\(/,
+            /Utilities\.zip\s*\(/,
+            /PRÁCTICA no admite fecha ni hora de vencimiento/,
+            /STUDENT_COPY/,
+            /application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document/
+          ];
           const taskTransportRequired = [
             /SOLICITUD_CREAR_TAREA/,
             /procesarSolicitudCrearTarea_/,
             /crearTarea\s*\(params\)/
           ];
-          if (engineRequired.some(re => !re.test(direct)) || safeRequired.some(re => !re.test(safe)) || activityDueRequired.some(re => !re.test(activityDue)) || taskDueRequired.some(re => !re.test(taskDue)) || taskTransportRequired.some(re => !re.test(taskAdapter)) || !/procesarSolicitudCrearTarea_/.test(dispatcher)) process.exit(1);
+          const practiceTransportRequired = [
+            /SOLICITUD_CREAR_PRACTICA/,
+            /procesarSolicitudCrearPractica_/,
+            /crearPractica\s*\(params\)/,
+            /STUDENT_COPY/
+          ];
+          const failed = engineRequired.some(re => !re.test(direct)) ||
+            safeRequired.some(re => !re.test(safe)) ||
+            activityDueRequired.some(re => !re.test(activityDue)) ||
+            taskDueRequired.some(re => !re.test(taskDue)) ||
+            practiceRequired.some(re => !re.test(practiceRule)) ||
+            taskTransportRequired.some(re => !re.test(taskAdapter)) ||
+            practiceTransportRequired.some(re => !re.test(practiceAdapter)) ||
+            !/procesarSolicitudCrearTarea_/.test(dispatcher) ||
+            !/procesarSolicitudCrearPractica_/.test(dispatcher);
+          if (failed) process.exit(1);
           console.log('Direct resource creation API OK');
           NODE
 
