@@ -39,7 +39,7 @@ function importarCalificacionesInstrumento_(params) {
   if (item.colUltimaActualizacion) item.sheet.getRange(item.row,item.colUltimaActualizacion).setValue(new Date());
   if (item.colResultado) item.sheet.getRange(item.row,item.colResultado).setValue(resumen);
   SpreadsheetApp.flush();
-  return {operacion:'IMPORTAR_CALIFICACIONES',quizId:p.quizId,courseId:item.courseId,workId:item.workId,tipo:item.tipo,resumen:resumen,detalle:result};
+  return {operacion:'IMPORTAR_CALIFICACIONES',quizId:p.quizId,courseId:item.courseId,workId:item.workId,tipo:item.tipo,resumen:resumen,detalle:result,estadoCalificacion:'DRAFT_ONLY'};
 }
 
 /**
@@ -49,8 +49,8 @@ function importarCalificacionesInstrumento_(params) {
  * - No revisa, mueve, reclasifica, devuelve ni califica trabajos de otras unidades.
  * - Para el cálculo, un instrumento de la unidad sin nota o sin StudentSubmission
  *   para un alumno vale 0 para ese alumno.
- * - Reescribe el reporte de esa unidad y sobrescribe Calificación Unidad N aun si
- *   ya tenía assignedGrade. Por ello la misma función sirve para recalcular.
+ * - Reescribe el reporte de esa unidad y sobrescribe el draft de Calificación
+ *   Unidad N aunque ya existiera. Nunca escribe assignedGrade ni devuelve la nota.
  */
 function cerrarUnidad(params) {
   const p = normalizarParametrosOperacion_(params);
@@ -66,10 +66,9 @@ function cerrarUnidad(params) {
     ACADEMIC_OPERATIONS.FINAL_GRADE_PREFIX + extraerNumeroUnidad_(unidad)
   );
 
-  // Campos de compatibilidad para adaptadores antiguos; no implican acciones.
   return {
     operacion:'CERRAR_UNIDAD',
-    modo:'UNIDAD_ESTRICTA_RECALCULABLE',
+    modo:'UNIDAD_ESTRICTA_RECALCULABLE_DRAFT',
     courseId:String(p.courseId),
     unidad:unidad,
     preclasificacion:{movidos:0,motivo:'NO_APLICA_EN_CIERRE_ESTRICTO'},
@@ -78,7 +77,8 @@ function cerrarUnidad(params) {
     revision:{devueltas:0,trabajosCandidatos:0,motivo:'NO_SE_REVISA_EL_CURSO_COMPLETO'},
     instrumentos:{instrumentos:promedios.examenes.length,motivo:'LECTURA_SIN_MODIFICAR_FUENTES'},
     promedios:promedios,
-    cierre:cierre
+    cierre:cierre,
+    estadoCalificacion:'DRAFT_ONLY'
   };
 }
 
@@ -113,7 +113,7 @@ function resolverInstrumentoPorQuizId_(ss, quizId) {
 }
 
 function resumenImportacionCalificaciones_(result) {
-  return 'Importación manual: '+result.actualizadas+' actualizadas; '+result.yaCalificadas+' ya calificadas; '+result.sinCorrespondencia.length+' sin correspondencia; '+result.noTurnedIn+' no TURNED_IN.'+(result.ajuste?' Ajuste aplicado: +'+result.ajuste+' puntos.':'');
+  return 'Importación manual en DRAFT: '+result.actualizadas+' actualizadas; '+result.yaCalificadas+' ya calificadas; '+result.sinCorrespondencia.length+' sin correspondencia; '+result.noTurnedIn+' no TURNED_IN.'+(result.ajuste?' Ajuste aplicado: +'+result.ajuste+' puntos.':'');
 }
 
 function normalizarParametrosOperacion_(params) {
@@ -132,8 +132,12 @@ function normalizarUnidadOperacion_(unidad) {
 
 function validarContratoOperacionesAcademicas() {
   const p=politicaCalificacionUnidad_('');
+  const draftPolicy=politicaCalificacionAutomaticaDraft_();
   if(Math.abs((p.examWeight+p.nonExamWeight)-1)>0.000001) throw new Error('La política de calificación no suma 100%.');
   if(normalizarUnidadOperacion_('1')!=='Unidad 1') throw new Error('Falló normalización de unidad numérica.');
   if(normalizarUnidadOperacion_('Unidad 2')!=='Unidad 2') throw new Error('Falló normalización de unidad textual.');
-  return {ok:true,operaciones:['importarCalificacionesExamen','cerrarUnidad'],politica:p,cierre:'UNIDAD_ESTRICTA_RECALCULABLE'};
+  if(draftPolicy.campoEscritura!=='draftGrade'||draftPolicy.assignedGradeAutomatico!==false||draftPolicy.returnAutomatico!==false) {
+    throw new Error('La política global DRAFT de calificaciones automáticas es inválida.');
+  }
+  return {ok:true,operaciones:['importarCalificacionesExamen','cerrarUnidad'],politica:p,calificaciones:draftPolicy,cierre:'UNIDAD_ESTRICTA_RECALCULABLE_DRAFT'};
 }
