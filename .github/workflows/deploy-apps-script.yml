@@ -197,6 +197,12 @@ jobs:
           clasp_config_auth: .clasprc.json
         run: npx clasp push --force
 
+      - name: Run isolated in-class activity rule test
+        if: contains(github.event.head_commit.message, '[test-activity-class]')
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp run probarActividadClaseHoyMiPruebaSO
+
       - name: Install script-error monitor
         if: contains(github.event.head_commit.message, '[setup-error-monitor]')
         env:
