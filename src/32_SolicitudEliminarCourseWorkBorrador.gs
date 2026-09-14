@@ -77,7 +77,7 @@ function procesarSolicitudEliminarCourseWorkBorrador_() {
       if (!sameDoc) throw new Error('El CourseWork no contiene el Google Documento esperado; se bloquea la eliminación.');
     }
 
-    Classroom.Courses.CourseWork.delete(courseId, workId);
+    Classroom.Courses.CourseWork.remove(courseId, workId);
 
     let sigueActivo = false;
     let token;
