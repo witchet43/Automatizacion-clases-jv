@@ -1,3 +1,4 @@
+// Operational recovery marker: trigger installation is performed by the deployment workflow.
 const IMPORT_REQUEST = Object.freeze({
   SHEET: 'Configuración Quizzes',
   KEY: 'SOLICITUD_IMPORTAR_CALIFICACIONES',
