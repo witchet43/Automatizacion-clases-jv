@@ -30,7 +30,17 @@ const ACADEMIC_POLICY = Object.freeze({
     AUTOMATIC_GRADE_FIELD: 'draftGrade',
     AUTOMATIC_ASSIGNED_GRADE: false,
     AUTOMATIC_RETURN: false,
-    MANUAL_PUBLICATION_REQUIRED: true
+    MANUAL_PUBLICATION_REQUIRED: true,
+    ACTIVITY_IN_CLASS_DUE: Object.freeze({
+      REQUIRED: true,
+      DEFAULT: 'SESSION_END',
+      MAXIMUM: 'SESSION_END',
+      REQUIRES_SESSION_CONTEXT: true,
+      SESSION_DATE_PARAM: 'fechaSesion',
+      SESSION_END_PARAM: 'horaFinSesion',
+      TIMEZONE: 'America/Mexico_City',
+      UTC_OFFSET_MINUTES: -360
+    })
   }),
   UNIT_GRADING: Object.freeze({
     EXAM_WEIGHT: 0.70,
@@ -101,7 +111,7 @@ const ACADEMIC_POLICY = Object.freeze({
     UAQ_SISTEMAS_DISTRIBUIDOS: Object.freeze({
       PRACTICE_DOMINANT: true,
       GAMMA_MINUTES_MIN: 15,
-      GAMMA_MINUTES_MAX: 20,
+      GAMMA_MAX_MINUTES: 20,
       GAMMA_REFLECTION_QUESTIONS_DEFAULT: 0,
       FORMAL_PRACTICE_MINUTES_TARGET: 60
     })
@@ -117,6 +127,9 @@ function validarPoliticasCanonicas_(){
   if(Math.abs((p.UNIT_GRADING.EXAM_WEIGHT+p.UNIT_GRADING.NON_EXAM_WEIGHT)-1)>0.000001) throw new Error('La ponderación canónica de unidad no suma 100%.');
   if(p.CLASSROOM.DEFAULT_COURSEWORK_STATE!=='DRAFT') throw new Error('El estado automático ordinario de Classroom debe ser DRAFT.');
   if(p.CLASSROOM.AUTOMATIC_GRADE_FIELD!=='draftGrade'||p.CLASSROOM.AUTOMATIC_ASSIGNED_GRADE!==false||p.CLASSROOM.AUTOMATIC_RETURN!==false) throw new Error('La política automática de calificaciones debe ser DRAFT_ONLY.');
+  const activityDue=p.CLASSROOM.ACTIVITY_IN_CLASS_DUE;
+  if(!activityDue||activityDue.REQUIRED!==true||activityDue.DEFAULT!=='SESSION_END'||activityDue.MAXIMUM!=='SESSION_END'||activityDue.REQUIRES_SESSION_CONTEXT!==true) throw new Error('La política de vencimiento de ACTIVIDAD EN CLASE debe exigir y limitar al fin de sesión.');
+  if(activityDue.TIMEZONE!=='America/Mexico_City'||activityDue.UTC_OFFSET_MINUTES!==-360) throw new Error('La conversión horaria canónica de ACTIVIDAD EN CLASE no coincide con America/Mexico_City 2026.');
   if(p.UNIT_GRADING.MISSING_GRADE_VALUE!==0||p.UNIT_GRADING.TOUCH_OTHER_UNITS!==false) throw new Error('La política de cierre perdió aislamiento o tratamiento de faltantes.');
   if(redondearCalificacionFinalCanonica_(91.75)!==92||redondearCalificacionFinalCanonica_(64.18)!==64) throw new Error('La política de redondeo final no coincide con el contrato.');
   if(p.EXAM.STANDARD_ITEM_COUNT!==25||p.EXAM.STANDARD_TOTAL_POINTS!==100) throw new Error('Los parámetros estándar del examen formal cambiaron sin actualización explícita.');
