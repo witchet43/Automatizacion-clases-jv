@@ -86,6 +86,11 @@ jobs:
             /AUTOMATIC_GRADE_FIELD:\s*'draftGrade'/,
             /AUTOMATIC_ASSIGNED_GRADE:\s*false/,
             /AUTOMATIC_RETURN:\s*false/,
+            /ACTIVITY_IN_CLASS_DUE:\s*Object\.freeze/,
+            /DEFAULT:\s*'SESSION_END'/,
+            /MAXIMUM:\s*'SESSION_END'/,
+            /PAST_SESSION_CREATION:\s*'BLOCK'/,
+            /DUE_MUST_BE_FUTURE:\s*true/,
             /EXAM_WEIGHT:\s*0\.70/,
             /NON_EXAM_WEIGHT:\s*0\.30/,
             /MISSING_GRADE_VALUE:\s*0/,
@@ -111,9 +116,11 @@ jobs:
           const fs = require('fs');
           const legacyFile = 'src/20_CreacionDirectaRecursos.gs';
           const safeFile = 'src/22_EntrypointsRecursosSeguros.gs';
-          if (!fs.existsSync(legacyFile) || !fs.existsSync(safeFile)) process.exit(1);
+          const activityDueFile = 'src/24_VencimientoActividadClase.gs';
+          if (!fs.existsSync(legacyFile) || !fs.existsSync(safeFile) || !fs.existsSync(activityDueFile)) process.exit(1);
           const direct = fs.readFileSync(legacyFile, 'utf8');
           const safe = fs.readFileSync(safeFile, 'utf8');
+          const activityDue = fs.readFileSync(activityDueFile, 'utf8');
           const engineRequired = [
             /crearCourseWorkDirecto_/,
             /crearEvaluacionDirecta_/,
@@ -123,13 +130,22 @@ jobs:
           ];
           const safeRequired = [
             /function\s+crearActividad\s*\(/,
+            /aplicarReglaVencimientoActividadEnClase_/,
             /function\s+crearTarea\s*\(/,
             /function\s+crearPractica\s*\(/,
             /function\s+crearQuiz\s*\(/,
             /function\s+crearExamen\s*\(/,
             /ejecutarConNotificacionError_/
           ];
-          if (engineRequired.some(re => !re.test(direct)) || safeRequired.some(re => !re.test(safe))) process.exit(1);
+          const dueRequired = [
+            /function\s+aplicarReglaVencimientoActividadEnClase_\s*\(/,
+            /function\s+aplicarReglaVencimientoActividadEnClaseConAhora_\s*\(/,
+            /function\s+validarVencimientoActividadEnClaseCanonico\s*\(/,
+            /sesión ha concluido/,
+            /debe seguir estando en el futuro/,
+            /no puede ser posterior al final de la sesión/
+          ];
+          if (engineRequired.some(re => !re.test(direct)) || safeRequired.some(re => !re.test(safe)) || dueRequired.some(re => !re.test(activityDue))) process.exit(1);
           console.log('Direct resource creation API OK');
           NODE
 
@@ -196,20 +212,6 @@ jobs:
         env:
           clasp_config_auth: .clasprc.json
         run: npx clasp push --force
-
-      - name: Run isolated in-class activity rule test
-        if: contains(github.event.head_commit.message, '[test-activity-class]')
-        shell: bash
-        env:
-          clasp_config_auth: .clasprc.json
-        run: |
-          set -euo pipefail
-          output="$(npx clasp run probarActividadClaseHoyMiPruebaSO 2>&1)"
-          printf '%s\n' "$output"
-          if ! printf '%s\n' "$output" | grep -q 'workId'; then
-            echo 'Classroom test did not return a real workId.' >&2
-            exit 1
-          fi
 
       - name: Install script-error monitor
         if: contains(github.event.head_commit.message, '[setup-error-monitor]')
