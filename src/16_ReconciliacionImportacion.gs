@@ -48,8 +48,8 @@ function respuestasFormsSegurasPorCorreo_(formId) {
 /**
  * Reconciliación explícita y acotada de calificaciones ya importadas.
  * Solo modifica los correos solicitados y únicamente cuando Forms devuelve
- * un puntaje completo y verificable. Sobrescribe draftGrade + assignedGrade
- * porque corrige una importación previa incorrecta, no una importación ordinaria.
+ * un puntaje completo y verificable. La corrección queda exclusivamente en
+ * draftGrade; cualquier assignedGrade automático previo se limpia.
  */
 function reconciliarCalificacionesImportadas(params) {
   const p = params || {};
@@ -106,21 +106,17 @@ function reconciliarCalificacionesImportadas(params) {
     const score = Math.min(maxPoints, Number(respuesta.scoreForms) + ajuste);
     const draftAnterior = sub.draftGrade === undefined || sub.draftGrade === null ? null : Number(sub.draftGrade);
     const assignedAnterior = sub.assignedGrade === undefined || sub.assignedGrade === null ? null : Number(sub.assignedGrade);
-    const necesitaCorreccion = draftAnterior !== score || assignedAnterior !== score;
+    const necesitaCorreccion = draftAnterior !== score || assignedAnterior !== null;
 
     if (necesitaCorreccion) {
-      Classroom.Courses.CourseWork.StudentSubmissions.patch(
-        {draftGrade: score, assignedGrade: score},
-        String(item.courseId), String(item.workId), String(sub.id),
-        {updateMask: 'draftGrade,assignedGrade'}
-      );
+      escribirCalificacionDraft_(item.courseId, item.workId, sub.id, score);
       corregidas++;
     }
 
     detalle.push({
       correo: email,
       alumno: alumno.profile.name.fullName,
-      estado: necesitaCorreccion ? 'CORREGIDA' : 'YA_COINCIDIA',
+      estado: necesitaCorreccion ? 'CORREGIDA_DRAFT' : 'YA_COINCIDIA_DRAFT',
       forms: score,
       draftAnterior: draftAnterior,
       assignedAnterior: assignedAnterior,
@@ -131,12 +127,11 @@ function reconciliarCalificacionesImportadas(params) {
 
   const verify = entregasPorAlumnoPromedio_(item.courseId, item.workId);
   detalle.forEach(d => {
-    if (d.estado !== 'CORREGIDA' && d.estado !== 'YA_COINCIDIA') return;
+    if (d.estado !== 'CORREGIDA_DRAFT' && d.estado !== 'YA_COINCIDIA_DRAFT') return;
     const alumno = byEmail[d.correo];
-    const sub = verify[String(alumno.userId)];
-    const assigned = sub && sub.assignedGrade !== undefined && sub.assignedGrade !== null ? Number(sub.assignedGrade) : null;
-    d.verificadoAssigned = assigned;
-    if (assigned !== d.forms) throw new Error('Falló verificación de reconciliación para ' + d.correo + '.');
+    const check = verificarCalificacionDraft_(verify[String(alumno.userId)], d.forms);
+    d.verificacion = check;
+    if (!check.ok) throw new Error('Falló verificación draft-only para ' + d.correo + '.');
   });
 
   return {
@@ -146,6 +141,7 @@ function reconciliarCalificacionesImportadas(params) {
     workId: item.workId,
     solicitadas: correos.length,
     corregidas: corregidas,
+    estadoCalificacion: 'DRAFT_ONLY',
     detalle: detalle
   };
 }
@@ -173,7 +169,7 @@ function procesarSolicitudReconciliarImportacion_() {
     const result = reconciliarCalificacionesImportadas({quizId:quizId, correos:correos});
     sh.getRange(row,2).setValue('PROCESADO');
     sh.getRange(row,3).setValue(
-      'Reconciliación completada: ' + result.corregidas + '/' + result.solicitadas +
+      'Reconciliación completada en DRAFT: ' + result.corregidas + '/' + result.solicitadas +
       ' corregidas. ' + JSON.stringify(result.detalle).slice(0,3500)
     );
     sh.getRange(row,5).setValue('ACTIVA');
