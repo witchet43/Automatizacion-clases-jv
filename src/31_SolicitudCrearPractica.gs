@@ -46,7 +46,7 @@ function procesarSolicitudCrearPractica_() {
     params = resolverCursoPracticaSolicitud_(params);
     const result = crearPractica(params);
     const work = Classroom.Courses.CourseWork.get(String(params.courseId), String(result.workId));
-    const doc = DriveApp.getFileById(String(result.documentId));
+    const doc = Drive.Files.get(String(result.documentId), {fields:'id,name,mimeType,trashed'});
     const materials = Array.isArray(work.materials) ? work.materials : [];
     const driveMaterial = materials.find(function(m) {
       return m && m.driveFile && m.driveFile.driveFile && String(m.driveFile.driveFile.id || '') === String(result.documentId);
@@ -60,9 +60,10 @@ function procesarSolicitudCrearPractica_() {
       dueDate:work.dueDate || null,
       dueTime:work.dueTime || null,
       topicId:String(work.topicId || ''),
-      documentId:String(doc.getId()),
-      documentName:String(doc.getName()),
-      documentMime:String(doc.getMimeType()),
+      documentId:String(doc.id || ''),
+      documentName:String(doc.name || ''),
+      documentMime:String(doc.mimeType || ''),
+      documentTrashed:doc.trashed === true,
       shareMode:String(driveMaterial && driveMaterial.driveFile ? driveMaterial.driveFile.shareMode || '' : ''),
       alternateLink:String(work.alternateLink || '')
     };
@@ -71,6 +72,7 @@ function procesarSolicitudCrearPractica_() {
     if (!resumen.workId) throw new Error('La PRÁCTICA no devolvió workId.');
     if (resumen.dueDate || resumen.dueTime) throw new Error('La PRÁCTICA quedó con vencimiento y debe quedar sin fecha de entrega.');
     if (resumen.shareMode.toUpperCase() !== 'STUDENT_COPY') throw new Error('La PRÁCTICA no quedó con copia individual STUDENT_COPY.');
+    if (resumen.documentTrashed) throw new Error('El Google Documento adjunto de la PRÁCTICA quedó en la papelera.');
     if (resumen.documentMime !== ACADEMIC_POLICY.CLASSROOM.PRACTICE.GOOGLE_DOCUMENT_MIME) throw new Error('El adjunto de la PRÁCTICA no es un Google Documento nativo.');
 
     sh.getRange(row, 2).setValue(PRACTICE_CREATE_REQUEST.DONE);
