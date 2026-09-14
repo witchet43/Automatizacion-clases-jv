@@ -46,6 +46,20 @@ jobs:
           done
           node -e "JSON.parse(require('fs').readFileSync('src/appsscript.json', 'utf8')); console.log('appsscript.json OK')"
 
+      - name: Enforce draft-only automatic grading
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -R -n -E 'assignedGrade[[:space:]]*:' src --include='*.gs'; then
+            echo 'ERROR: automatic code must never write assignedGrade.' >&2
+            exit 1
+          fi
+          if grep -R -n -E 'StudentSubmissions\.return[[:space:]]*\(' src --include='*.gs'; then
+            echo 'ERROR: automatic grading must never return submissions.' >&2
+            exit 1
+          fi
+          echo 'Draft-only grading policy OK'
+
       - name: Restore clasp credentials
         shell: bash
         run: |
@@ -75,14 +89,8 @@ jobs:
           clasp_config_auth: .clasprc.json
         run: npx clasp run cerrarUnidadConSiguienteVerificadaAhora
 
-      - name: Recalculate and publish unit grade only
+      - name: Recalculate unit grade draft only
         if: contains(github.event.head_commit.message, '[recalcular-publicar-unidad]')
         env:
           clasp_config_auth: .clasprc.json
         run: npx clasp run recalcularYPublicarUnidadSolicitadaAhora
-
-      - name: Repair erroneous Unit 2 zero grades
-        if: contains(github.event.head_commit.message, '[repair-u2-zeroes]')
-        env:
-          clasp_config_auth: .clasprc.json
-        run: npx clasp run repararCerosTareaUnidad2SOAhora
