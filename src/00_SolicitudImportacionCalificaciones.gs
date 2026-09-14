@@ -21,23 +21,28 @@ function instalarMonitorSolicitudesImportacion() {
  * traducir una fila de control a parámetros de una operación canónica.
  */
 function procesarSolicitudesImportacion() {
-  try { procesarRevisionNocturnaSiCorresponde_(); }
-  catch (nightErr) { console.error('Revisión nocturna: ' + mensajeErrorOperacion_(nightErr)); }
+  return ejecutarConNotificacionError_('MONITOR_SOLICITUDES_IMPORTACION', {}, function () {
+    try { procesarRevisionNocturnaSiCorresponde_(); }
+    catch (nightErr) {
+      notificarErrorScript_('REVISION_NOCTURNA_INFRAESTRUCTURA', nightErr, {});
+      console.error('Revisión nocturna: ' + mensajeErrorOperacion_(nightErr));
+    }
 
-  const lock = LockService.getScriptLock();
-  if (!lock.tryLock(1000)) return {procesado: false, motivo: 'LOCK'};
-  try {
-    ejecutarAdaptadorSolicitud_('revisión de tareas', procesarSolicitudRevisionTareas_);
-    ejecutarAdaptadorSolicitud_('reparación de ceros erróneos', procesarSolicitudRepararCerosActividad_);
-    ejecutarAdaptadorSolicitud_('migración exclusiva de actividad a draft', procesarSolicitudMigrarActividadCalificacionDraft_);
-    ejecutarAdaptadorSolicitud_('promedios de unidad', procesarSolicitudPromediosUnidad_);
-    ejecutarAdaptadorSolicitud_('publicación de calificación de unidad', procesarSolicitudPublicarCalificacionUnidad_);
-    ejecutarAdaptadorSolicitud_('recálculo final directo', procesarSolicitudRecalculoFinalUnidadCero_);
-    ejecutarAdaptadorSolicitud_('reconciliación de importación', procesarSolicitudReconciliarImportacion_);
-    return procesarSolicitudImportacionCalificaciones_();
-  } finally {
-    lock.releaseLock();
-  }
+    const lock = LockService.getScriptLock();
+    if (!lock.tryLock(1000)) return {procesado: false, motivo: 'LOCK'};
+    try {
+      ejecutarAdaptadorSolicitud_('revisión de tareas', procesarSolicitudRevisionTareas_);
+      ejecutarAdaptadorSolicitud_('reparación de ceros erróneos', procesarSolicitudRepararCerosActividad_);
+      ejecutarAdaptadorSolicitud_('migración exclusiva de actividad a draft', procesarSolicitudMigrarActividadCalificacionDraft_);
+      ejecutarAdaptadorSolicitud_('promedios de unidad', procesarSolicitudPromediosUnidad_);
+      ejecutarAdaptadorSolicitud_('publicación de calificación de unidad', procesarSolicitudPublicarCalificacionUnidad_);
+      ejecutarAdaptadorSolicitud_('recálculo final directo', procesarSolicitudRecalculoFinalUnidadCero_);
+      ejecutarAdaptadorSolicitud_('reconciliación de importación', procesarSolicitudReconciliarImportacion_);
+      return procesarSolicitudImportacionCalificaciones_();
+    } finally {
+      lock.releaseLock();
+    }
+  });
 }
 
 function procesarSolicitudImportacionCalificaciones_() {
@@ -77,6 +82,7 @@ function procesarSolicitudImportacionCalificaciones_() {
 function ejecutarAdaptadorSolicitud_(nombre, fn) {
   try { return fn(); }
   catch (err) {
+    notificarErrorScript_('ADAPTADOR_' + String(nombre || '').toUpperCase().replace(/\s+/g, '_'), err, {operacion:nombre});
     console.error('Solicitud de ' + nombre + ': ' + mensajeErrorOperacion_(err));
     return {procesado: false, error: mensajeErrorOperacion_(err)};
   }
