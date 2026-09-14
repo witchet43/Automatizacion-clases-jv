@@ -1,0 +1,38 @@
+name: Enable Drive API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.clasp.json'
+      - '.github/workflows/enable-drive-api.yml'
+  workflow_dispatch:
+
+jobs:
+  enable-drive-api:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Restore clasp credentials
+        shell: bash
+        run: |
+          printf '%s' '${{ secrets.CLASPRC_JSON }}' > .clasprc.json
+          chmod 600 .clasprc.json
+
+      - name: Enable Google Drive API
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp enable-api drive
