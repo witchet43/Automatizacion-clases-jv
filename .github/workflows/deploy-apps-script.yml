@@ -60,7 +60,8 @@ jobs:
             /BEHAVIOR_CHANGE_REQUIRES_CODE:\s*true/,
             /BEHAVIOR_CHANGE_REQUIRES_REGRESSION:\s*true/,
             /DOCUMENTATION_IS_EXECUTION_SOURCE:\s*false/,
-            /DEPLOYMENT_VERIFICATION_REQUIRED:\s*true/
+            /DEPLOYMENT_VERIFICATION_REQUIRED:\s*true/,
+            /SILENT_SCRIPT_FAILURE_ALLOWED:\s*false/
           ];
           if (required.some(re => !re.test(text))) process.exit(1);
           console.log('Architecture contract OK');
@@ -77,6 +78,10 @@ jobs:
             /RESOURCE_CREATION_MODE:\s*'DIRECT_SCRIPT'/,
             /SHEETS_ROLE:\s*'AUDIT_AND_CONFIGURATION_ONLY'/,
             /MONITOR_REQUIRED_FOR_CREATION:\s*false/,
+            /NOTIFY_ON_ERROR:\s*true/,
+            /SILENT_FAILURE_ALLOWED:\s*false/,
+            /PRIMARY_CHANNEL:\s*'EMAIL'/,
+            /PRESERVE_ORIGINAL_EXCEPTION:\s*true/,
             /DEFAULT_COURSEWORK_STATE:\s*'DRAFT'/,
             /AUTOMATIC_GRADE_FIELD:\s*'draftGrade'/,
             /AUTOMATIC_ASSIGNED_GRADE:\s*false/,
@@ -104,21 +109,56 @@ jobs:
           set -euo pipefail
           node <<'NODE'
           const fs = require('fs');
-          const file = 'src/20_CreacionDirectaRecursos.gs';
-          if (!fs.existsSync(file)) process.exit(1);
-          const text = fs.readFileSync(file, 'utf8');
-          const required = [
-            /function\s+crearActividadDirecta\s*\(/,
-            /function\s+crearTareaDirecta\s*\(/,
-            /function\s+crearPracticaDirecta\s*\(/,
-            /function\s+crearQuizDirecto\s*\(/,
-            /function\s+crearExamenDirecto\s*\(/,
+          const legacyFile = 'src/20_CreacionDirectaRecursos.gs';
+          const safeFile = 'src/22_EntrypointsRecursosSeguros.gs';
+          if (!fs.existsSync(legacyFile) || !fs.existsSync(safeFile)) process.exit(1);
+          const direct = fs.readFileSync(legacyFile, 'utf8');
+          const safe = fs.readFileSync(safeFile, 'utf8');
+          const engineRequired = [
+            /crearCourseWorkDirecto_/,
+            /crearEvaluacionDirecta_/,
             /registrarAuditoriaCourseWorkDirecto_/,
             /registrarAuditoriaEvaluacionDirecta_/,
             /verificarCourseWorkDraftDirecto_/
           ];
-          if (required.some(re => !re.test(text))) process.exit(1);
+          const safeRequired = [
+            /function\s+crearActividad\s*\(/,
+            /function\s+crearTarea\s*\(/,
+            /function\s+crearPractica\s*\(/,
+            /function\s+crearQuiz\s*\(/,
+            /function\s+crearExamen\s*\(/,
+            /ejecutarConNotificacionError_/
+          ];
+          if (engineRequired.some(re => !re.test(direct)) || safeRequired.some(re => !re.test(safe))) process.exit(1);
           console.log('Direct resource creation API OK');
+          NODE
+
+      - name: Enforce script error notification
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const notifier = fs.readFileSync('src/21_NotificacionErrores.gs', 'utf8');
+          const entrypoints = fs.readFileSync('src/22_EntrypointsRecursosSeguros.gs', 'utf8');
+          const operations = fs.readFileSync('src/15_OperacionesAcademicas.gs', 'utf8');
+          const dispatcher = fs.readFileSync('src/00_SolicitudImportacionCalificaciones.gs', 'utf8');
+          const requiredNotifier = [
+            /function\s+ejecutarConNotificacionError_\s*\(/,
+            /function\s+notificarErrorScript_\s*\(/,
+            /MailApp\.sendEmail\s*\(/,
+            /function\s+vigilarErroresOperativos\s*\(/,
+            /function\s+instalarMonitorErroresAcademicos\s*\(/,
+            /ERROR_NOTIFICATION\.LAST_ERROR_PROPERTY/,
+            /throw\s+err;/
+          ];
+          if (requiredNotifier.some(re => !re.test(notifier))) process.exit(1);
+          const fiveEntrypoints = ['crearActividad','crearTarea','crearPractica','crearQuiz','crearExamen'];
+          if (fiveEntrypoints.some(name => !new RegExp('function\\s+' + name + '\\s*\\(').test(entrypoints))) process.exit(1);
+          if (!/ejecutarConNotificacionError_/.test(entrypoints)) process.exit(1);
+          if (!/IMPORTAR_CALIFICACIONES_EXAMEN/.test(operations) || !/CERRAR_UNIDAD/.test(operations) || !/ejecutarConNotificacionError_/.test(operations)) process.exit(1);
+          if (!/notificarErrorScript_/.test(dispatcher)) process.exit(1);
+          console.log('Script error notification policy OK');
           NODE
 
       - name: Enforce draft-only automatic grading
@@ -156,6 +196,18 @@ jobs:
         env:
           clasp_config_auth: .clasprc.json
         run: npx clasp push --force
+
+      - name: Install script-error monitor
+        if: contains(github.event.head_commit.message, '[setup-error-monitor]')
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp run instalarMonitorErroresAcademicos
+
+      - name: Verify script-error notification configuration
+        if: contains(github.event.head_commit.message, '[setup-error-monitor]')
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp run validarConfiguracionNotificacionesErrores
 
       - name: Install grade-import request monitor
         if: contains(github.event.head_commit.message, '[setup-import-trigger]')
