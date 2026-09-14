@@ -90,6 +90,10 @@ jobs:
             /DEFAULT:\s*'SESSION_END'/,
             /MAXIMUM:\s*'SESSION_END'/,
             /PAST_SESSION_CREATION:\s*'BLOCK'/,
+            /TASK_DUE:\s*Object\.freeze/,
+            /DEFAULT:\s*'NEXT_SESSION_START'/,
+            /MAXIMUM:\s*'NEXT_SESSION_START'/,
+            /PAST_NEXT_SESSION_CREATION:\s*'BLOCK'/,
             /DUE_MUST_BE_FUTURE:\s*true/,
             /EXAM_WEIGHT:\s*0\.70/,
             /NON_EXAM_WEIGHT:\s*0\.30/,
@@ -117,10 +121,16 @@ jobs:
           const legacyFile = 'src/20_CreacionDirectaRecursos.gs';
           const safeFile = 'src/22_EntrypointsRecursosSeguros.gs';
           const activityDueFile = 'src/24_VencimientoActividadClase.gs';
-          if (!fs.existsSync(legacyFile) || !fs.existsSync(safeFile) || !fs.existsSync(activityDueFile)) process.exit(1);
+          const taskDueFile = 'src/27_VencimientoTarea.gs';
+          const taskAdapterFile = 'src/28_SolicitudCrearTarea.gs';
+          const dispatcherFile = 'src/00_SolicitudImportacionCalificaciones.gs';
+          if (!fs.existsSync(legacyFile) || !fs.existsSync(safeFile) || !fs.existsSync(activityDueFile) || !fs.existsSync(taskDueFile) || !fs.existsSync(taskAdapterFile) || !fs.existsSync(dispatcherFile)) process.exit(1);
           const direct = fs.readFileSync(legacyFile, 'utf8');
           const safe = fs.readFileSync(safeFile, 'utf8');
           const activityDue = fs.readFileSync(activityDueFile, 'utf8');
+          const taskDue = fs.readFileSync(taskDueFile, 'utf8');
+          const taskAdapter = fs.readFileSync(taskAdapterFile, 'utf8');
+          const dispatcher = fs.readFileSync(dispatcherFile, 'utf8');
           const engineRequired = [
             /crearCourseWorkDirecto_/,
             /crearEvaluacionDirecta_/,
@@ -132,12 +142,14 @@ jobs:
             /function\s+crearActividad\s*\(/,
             /aplicarReglaVencimientoActividadEnClase_/,
             /function\s+crearTarea\s*\(/,
+            /aplicarReglaVencimientoTarea_/,
+            /verificarVencimientoTareaCreada_/,
             /function\s+crearPractica\s*\(/,
             /function\s+crearQuiz\s*\(/,
             /function\s+crearExamen\s*\(/,
             /ejecutarConNotificacionError_/
           ];
-          const dueRequired = [
+          const activityDueRequired = [
             /function\s+aplicarReglaVencimientoActividadEnClase_\s*\(/,
             /function\s+aplicarReglaVencimientoActividadEnClaseConAhora_\s*\(/,
             /function\s+validarVencimientoActividadEnClaseCanonico\s*\(/,
@@ -145,7 +157,21 @@ jobs:
             /debe seguir estando en el futuro/,
             /no puede ser posterior al final de la sesión/
           ];
-          if (engineRequired.some(re => !re.test(direct)) || safeRequired.some(re => !re.test(safe)) || dueRequired.some(re => !re.test(activityDue))) process.exit(1);
+          const taskDueRequired = [
+            /function\s+aplicarReglaVencimientoTarea_\s*\(/,
+            /function\s+aplicarReglaVencimientoTareaConAhora_\s*\(/,
+            /function\s+validarVencimientoTareaCanonico\s*\(/,
+            /siguiente clase ha iniciado/,
+            /debe seguir estando en el futuro/,
+            /no puede ser posterior al inicio de la siguiente clase/,
+            /verificarVencimientoTareaCreada_/
+          ];
+          const taskTransportRequired = [
+            /SOLICITUD_CREAR_TAREA/,
+            /procesarSolicitudCrearTarea_/,
+            /crearTarea\s*\(params\)/
+          ];
+          if (engineRequired.some(re => !re.test(direct)) || safeRequired.some(re => !re.test(safe)) || activityDueRequired.some(re => !re.test(activityDue)) || taskDueRequired.some(re => !re.test(taskDue)) || taskTransportRequired.some(re => !re.test(taskAdapter)) || !/procesarSolicitudCrearTarea_/.test(dispatcher)) process.exit(1);
           console.log('Direct resource creation API OK');
           NODE
 
