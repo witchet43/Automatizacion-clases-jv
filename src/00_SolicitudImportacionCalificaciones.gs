@@ -1,4 +1,4 @@
-// Monitor de transporte. La lógica académica vive en operaciones canónicas.
+// Monitor de transporte: solo despacha solicitudes hacia operaciones canónicas.
 const IMPORT_REQUEST = Object.freeze({
   SHEET: 'Configuración Quizzes',
   KEY: 'SOLICITUD_IMPORTAR_CALIFICACIONES',
