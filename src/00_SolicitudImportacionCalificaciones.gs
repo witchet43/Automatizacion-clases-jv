@@ -17,7 +17,7 @@ function instalarMonitorSolicitudesImportacion() {
     instalado: true,
     handler: 'procesarSolicitudesImportacion',
     frecuenciaMinutos: 1,
-    adaptadores: ['ACTIVIDAD_EN_CLASE','TAREA','PRACTICA','ELIMINAR_COURSEWORK_BORRADOR']
+    adaptadores: ['ACTIVIDAD_EN_CLASE','TAREA','PRACTICA','QUIZ_SENCILLO','ELIMINAR_COURSEWORK_BORRADOR']
   };
 }
 
@@ -39,6 +39,7 @@ function procesarSolicitudesImportacion() {
       ejecutarAdaptadorSolicitud_('creación de actividad en clase', procesarSolicitudCrearActividadClase_);
       ejecutarAdaptadorSolicitud_('creación de tarea', procesarSolicitudCrearTarea_);
       ejecutarAdaptadorSolicitud_('creación de práctica', procesarSolicitudCrearPractica_);
+      ejecutarAdaptadorSolicitud_('creación de quiz sencillo', procesarSolicitudCrearQuizSencillo_);
       ejecutarAdaptadorSolicitud_('eliminación segura de CourseWork DRAFT', procesarSolicitudEliminarCourseWorkBorrador_);
       ejecutarAdaptadorSolicitud_('revisión de tareas', procesarSolicitudRevisionTareas_);
       ejecutarAdaptadorSolicitud_('reparación de ceros erróneos', procesarSolicitudRepararCerosActividad_);
@@ -64,7 +65,7 @@ function procesarSolicitudImportacionCalificaciones_() {
 
   const estado = String(sh.getRange(row, 2).getDisplayValue() || '').trim().toUpperCase();
   if (estado !== IMPORT_REQUEST.REQUESTED) {
-    return {procesado: false, motivo: 'SIN_SOLICITUD_PENDIENTE', estado: estado};
+    return {procesado: false, motivo:'SIN_SOLICITUD_PENDIENTE', estado:estado};
   }
 
   const quizId = String(sh.getRange(row, 4).getDisplayValue() || '').trim();
