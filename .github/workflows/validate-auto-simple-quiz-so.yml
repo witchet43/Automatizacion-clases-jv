@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'src/35_AutoQuizSencilloSO.gs'
+      - 'src/36_AutorizarAutoQuizSO.gs'
       - 'src/33_QuizSencillo.gs'
       - 'src/00_SolicitudImportacionCalificaciones.gs'
       - 'src/appsscript.json'
@@ -21,6 +22,8 @@ jobs:
           set -euo pipefail
           cp src/35_AutoQuizSencilloSO.gs /tmp/35_AutoQuizSencilloSO.js
           node --check /tmp/35_AutoQuizSencilloSO.js
+          cp src/36_AutorizarAutoQuizSO.gs /tmp/36_AutorizarAutoQuizSO.js
+          node --check /tmp/36_AutorizarAutoQuizSO.js
           cp src/00_SolicitudImportacionCalificaciones.gs /tmp/00_SolicitudImportacionCalificaciones.js
           node --check /tmp/00_SolicitudImportacionCalificaciones.js
           node -e "JSON.parse(require('fs').readFileSync('src/appsscript.json','utf8')); console.log('manifest OK')"
@@ -31,6 +34,7 @@ jobs:
           node <<'NODE'
           const fs=require('fs');
           const auto=fs.readFileSync('src/35_AutoQuizSencilloSO.gs','utf8');
+          const auth=fs.readFileSync('src/36_AutorizarAutoQuizSO.gs','utf8');
           const dispatch=fs.readFileSync('src/00_SolicitudImportacionCalificaciones.gs','utf8');
           const manifest=JSON.parse(fs.readFileSync('src/appsscript.json','utf8'));
           const required=[
@@ -43,11 +47,14 @@ jobs:
             /AUTO_SO_CALENDAR_EVENT/,
             /function\s+procesarAutoQuizSencilloSOSeguro_/,
             /function\s+verificarAccesoCalendarAutoQuizSO/,
-            /function\s+validarAutoQuizSencilloSOCanonico/
+            /function\s+validarAutoQuizSencilloSOCanonico/,
+            /function\s+registrarEstadoAutoQuizSO_/
           ];
           const failed=required.filter(re=>!re.test(auto));
           if(failed.length){console.error(failed.map(String).join('\n'));process.exit(1);}
           if(!/procesarAutoQuizSencilloSOSeguro_\(\)/.test(dispatch)) process.exit(1);
+          if(!/function\s+autorizarYActivarAutoQuizSO\s*\(/.test(auth)) process.exit(1);
+          if(!/verificarAccesoCalendarAutoQuizSO\(\)/.test(auth)||!/instalarMonitorSolicitudesImportacion\(\)/.test(auth)) process.exit(1);
           const scopes=manifest.oauthScopes||[];
           if(!scopes.includes('https://www.googleapis.com/auth/calendar.readonly')) process.exit(1);
           const services=((manifest.dependencies||{}).enabledAdvancedServices)||[];
