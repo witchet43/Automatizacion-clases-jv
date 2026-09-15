@@ -1,0 +1,52 @@
+name: Validate Simple Quiz
+
+on:
+  push:
+    paths:
+      - 'src/00_PoliticasCanonicas.gs'
+      - 'src/00_SolicitudImportacionCalificaciones.gs'
+      - 'src/22_EntrypointsRecursosSeguros.gs'
+      - 'src/33_QuizSencillo.gs'
+      - 'src/34_SolicitudCrearQuizSencillo.gs'
+      - '.github/workflows/validate-simple-quiz.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in src/00_PoliticasCanonicas.gs src/00_SolicitudImportacionCalificaciones.gs src/22_EntrypointsRecursosSeguros.gs src/33_QuizSencillo.gs src/34_SolicitudCrearQuizSencillo.gs; do
+            cp "$f" "/tmp/$(basename "$f").js"
+            node --check "/tmp/$(basename "$f").js"
+          done
+      - name: Enforce simple quiz contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const policy=fs.readFileSync('src/00_PoliticasCanonicas.gs','utf8');
+          const entry=fs.readFileSync('src/22_EntrypointsRecursosSeguros.gs','utf8');
+          const core=fs.readFileSync('src/33_QuizSencillo.gs','utf8');
+          const adapter=fs.readFileSync('src/34_SolicitudCrearQuizSencillo.gs','utf8');
+          const dispatcher=fs.readFileSync('src/00_SolicitudImportacionCalificaciones.gs','utf8');
+          const checks=[
+            [policy,/SIMPLE_QUIZ:\s*Object\.freeze/],[policy,/TITLE_PREFIX:\s*'Quiz '/],[policy,/SEQUENCE_SOURCE:\s*'CLASSROOM'/],
+            [policy,/EMPTY_ASSIGNMENT:\s*true/],[policy,/DUE_MODE:\s*'NEXT_NATURAL_HOUR'/],[policy,/DUE_STRICTLY_AFTER_REQUEST:\s*true/],
+            [entry,/function\s+crearQuizSencillo\s*\(/],[entry,/crearQuizSencilloCanonico_/],
+            [core,/function\s+obtenerSiguienteNumeroQuizSencillo_/],[core,/^Quiz\\s\+\(\\d\+\)\$/m],
+            [core,/function\s+calcularSiguienteHoraNaturalQuizSencillo_/],[core,/PAST_DUE_CREATION/],
+            [core,/workType:\s*'ASSIGNMENT'/],[core,/state:\s*policy\.STATE/],
+            [core,/function\s+validarQuizSencilloCanonico/],[core,/07:05:00/],[core,/09:15:00/],
+            [adapter,/SOLICITUD_CREAR_QUIZ_SENCILLO/],[adapter,/crearQuizSencillo\(params\)/],
+            [dispatcher,/procesarSolicitudCrearQuizSencillo_/]
+          ];
+          const failed=checks.filter(([text,re])=>!re.test(text)).map(([,re])=>String(re));
+          if(failed.length){console.error('Missing simple quiz invariants:\n'+failed.join('\n'));process.exit(1);}
+          console.log('Simple quiz contract OK');
+          NODE
