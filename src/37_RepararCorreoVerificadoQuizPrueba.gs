@@ -7,26 +7,53 @@ function repararQuizPruebaCorreoVerificado() {
     const records = readObjects_(sheet);
     const record = records.find(function(r) { return clean_(r.data['Quiz ID']) === quizId; });
     if (!record) throw new Error('No existe la fila del quiz de prueba ' + quizId + '.');
+
     const formId = required_(record.data, 'ID del Form');
     const result = repararCorreoVerificadoForm_(formId);
     const form = FormApp.openById(formId);
-    assertNoManualEmailQuestions_(form.getItems().map(function(item) { return item.getTitle(); }), 'Form reparado');
+
+    // Elimina cualquier pregunta manual de correo que haya quedado de una
+    // configuración anterior tipo RESPONDER_INPUT. La identidad debe provenir
+    // únicamente de la cuenta autenticada de Google (VERIFIED).
+    const allItems = form.getItems();
+    let eliminadas = 0;
+    for (let i = allItems.length - 1; i >= 0; i--) {
+      if (isManualEmailQuestion_(allItems[i].getTitle())) {
+        form.deleteItem(allItems[i]);
+        eliminadas++;
+      }
+    }
+
+    verifyVerifiedEmail_(formId);
+    assertNoManualEmailQuestions_(
+      form.getItems().map(function(item) { return item.getTitle(); }),
+      'Form reparado'
+    );
+
     const items = form.getItems().filter(function(item) {
       const type = item.getType();
-      return type === FormApp.ItemType.MULTIPLE_CHOICE || type === FormApp.ItemType.CHECKBOX || type === FormApp.ItemType.LIST || type === FormApp.ItemType.TEXT;
+      return type === FormApp.ItemType.MULTIPLE_CHOICE ||
+        type === FormApp.ItemType.CHECKBOX ||
+        type === FormApp.ItemType.LIST ||
+        type === FormApp.ItemType.TEXT;
     });
-    if (items.length !== 3) throw new Error('El Form reparado no contiene exactamente 3 reactivos calificables; encontrados: ' + items.length + '.');
+    if (items.length !== 3) {
+      throw new Error('El Form reparado no contiene exactamente 3 reactivos calificables; encontrados: ' + items.length + '.');
+    }
+
     writeOutputs_(sheet, record, {
       'Última actualización': new Date(),
-      'Resultado / error': 'CORREO_VERIFICADO; emailCollectionType=VERIFIED; una respuesta por usuario; 3 reactivos verificados.'
+      'Resultado / error': 'CORREO_VERIFICADO; emailCollectionType=VERIFIED; pregunta manual de correo eliminada=' + eliminadas + '; una respuesta por usuario; 3 reactivos verificados.'
     });
     SpreadsheetApp.flush();
+
     return {
       ok: true,
       quizId: quizId,
       formId: formId,
       emailCollectionType: result.emailCollectionType,
       limitOneResponse: result.limitOneResponse,
+      preguntasCorreoEliminadas: eliminadas,
       reactivos: items.length
     };
   });
