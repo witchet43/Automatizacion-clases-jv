@@ -55,21 +55,50 @@ function assertNoManualEmailQuestions_(titles, context) {
   }
 }
 
+function formsGet_(formId) {
+  const response = UrlFetchApp.fetch(
+    'https://forms.googleapis.com/v1/forms/' + encodeURIComponent(formId),
+    {
+      method: 'get',
+      headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()},
+      muteHttpExceptions: true
+    }
+  );
+  const code = response.getResponseCode();
+  if (code < 200 || code >= 300) {
+    throw new Error('Forms API get falló: HTTP ' + code + ' - ' + response.getContentText().slice(0, 500));
+  }
+  return JSON.parse(response.getContentText() || '{}');
+}
+
 function configureVerifiedEmail_(formId, enabled) {
   if (!enabled) return;
+  formsBatchUpdate_(formId, [{
+    updateSettings: {
+      settings: {emailCollectionType: 'VERIFIED'},
+      updateMask: 'emailCollectionType'
+    }
+  }]);
   const form = FormApp.openById(formId);
-  form.setCollectEmail(true);
   form.setLimitOneResponsePerUser(true);
 }
 
 function verifyVerifiedEmail_(formId) {
   const form = FormApp.openById(formId);
-  if (!form.collectsEmail()) {
-    throw new Error('El Form no quedó configurado para recopilar correo.');
+  const apiForm = formsGet_(formId);
+  const emailCollectionType = clean_(apiForm && apiForm.settings && apiForm.settings.emailCollectionType).toUpperCase();
+  if (emailCollectionType !== 'VERIFIED') {
+    throw new Error('El Form no quedó configurado con correo VERIFICADO; modo actual: ' + (emailCollectionType || 'SIN_CONFIGURAR') + '.');
   }
   if (!form.hasLimitOneResponsePerUser()) {
     throw new Error('El Form no quedó limitado a una respuesta por usuario.');
   }
+  return {ok:true,emailCollectionType:emailCollectionType,limitOneResponse:true};
+}
+
+function repararCorreoVerificadoForm_(formId) {
+  configureVerifiedEmail_(formId, true);
+  return verifyVerifiedEmail_(formId);
 }
 
 function resolveTopicId_(courseId, explicitId, topicName) {
