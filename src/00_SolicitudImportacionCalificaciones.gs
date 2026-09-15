@@ -17,7 +17,7 @@ function instalarMonitorSolicitudesImportacion() {
     instalado: true,
     handler: 'procesarSolicitudesImportacion',
     frecuenciaMinutos: 1,
-    adaptadores: ['ACTIVIDAD_EN_CLASE','TAREA','PRACTICA','QUIZ_SENCILLO','ELIMINAR_COURSEWORK_BORRADOR']
+    adaptadores: ['AUTO_QUIZ_SENCILLO_SO','ACTIVIDAD_EN_CLASE','TAREA','PRACTICA','QUIZ_SENCILLO','ELIMINAR_COURSEWORK_BORRADOR']
   };
 }
 
@@ -32,6 +32,10 @@ function procesarSolicitudesImportacion() {
       notificarErrorScript_('REVISION_NOCTURNA_INFRAESTRUCTURA', nightErr, {});
       console.error('Revisión nocturna: ' + mensajeErrorOperacion_(nightErr));
     }
+
+    // La revisión de Calendar se ejecuta fuera del lock general porque
+    // crearQuizSencillo() aplica su propio lock e idempotencia.
+    procesarAutoQuizSencilloSOSeguro_();
 
     const lock = LockService.getScriptLock();
     if (!lock.tryLock(1000)) return {procesado: false, motivo: 'LOCK'};
