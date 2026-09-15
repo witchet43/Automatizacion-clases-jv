@@ -16,7 +16,9 @@ const AUTO_SIMPLE_QUIZ_SO_POLICY = Object.freeze({
   START_GRACE_MINUTES: 5,
   LOOKAHEAD_SECONDS: 30,
   EVENT_PROPERTY_PREFIX: 'AUTO_SIMPLE_QUIZ_SO_EVENT_',
-  ERROR_COOLDOWN_MINUTES: 360
+  ERROR_COOLDOWN_MINUTES: 360,
+  HEARTBEAT_MINUTES: 5,
+  CONTROL_KEY: 'AUTO_QUIZ_SENCILLO_SO'
 });
 
 function procesarAutoQuizSencilloSO_() {
@@ -131,7 +133,8 @@ function validarPoliticaAutoQuizSencilloSO_(policy) {
       policy.CALENDAR_ID !== 'classroom105101248437356972360@group.calendar.google.com' ||
       policy.EVENT_TITLE !== 'ITQ | Sistemas Operativos | Aula LCF' ||
       policy.TIMEZONE !== 'America/Mexico_City' || Number(policy.START_GRACE_MINUTES) !== 5 ||
-      Number(policy.LOOKAHEAD_SECONDS) !== 30) {
+      Number(policy.LOOKAHEAD_SECONDS) !== 30 || Number(policy.HEARTBEAT_MINUTES) !== 5 ||
+      policy.CONTROL_KEY !== 'AUTO_QUIZ_SENCILLO_SO') {
     throw new Error('La política de automatización del Quiz Sencillo de Sistemas Operativos fue debilitada.');
   }
   return true;
@@ -141,6 +144,7 @@ function procesarAutoQuizSencilloSOSeguro_() {
   try {
     const result = procesarAutoQuizSencilloSO_();
     PropertiesService.getScriptProperties().deleteProperty('AUTO_SIMPLE_QUIZ_SO_LAST_ERROR_AT');
+    try { registrarEstadoAutoQuizSO_('OK', result, false); } catch (auditErr) { console.error('Heartbeat Auto Quiz SO: ' + mensajeErrorOperacion_(auditErr)); }
     return result;
   } catch (err) {
     const properties = PropertiesService.getScriptProperties();
@@ -148,6 +152,7 @@ function procesarAutoQuizSencilloSOSeguro_() {
     const previo = Number(properties.getProperty(key) || 0);
     const ahora = Date.now();
     const cooldown = AUTO_SIMPLE_QUIZ_SO_POLICY.ERROR_COOLDOWN_MINUTES * 60000;
+    try { registrarEstadoAutoQuizSO_('ERROR', {error:mensajeErrorOperacion_(err)}, true); } catch (auditErr) { console.error('Heartbeat Auto Quiz SO: ' + mensajeErrorOperacion_(auditErr)); }
     if (!previo || ahora - previo >= cooldown) {
       properties.setProperty(key, String(ahora));
       notificarErrorScript_('AUTO_QUIZ_SENCILLO_SO', err, {
@@ -158,6 +163,39 @@ function procesarAutoQuizSencilloSOSeguro_() {
     console.error('Auto Quiz Sencillo SO: ' + mensajeErrorOperacion_(err));
     return {procesado:false,motivo:'ERROR',error:mensajeErrorOperacion_(err)};
   }
+}
+
+function registrarEstadoAutoQuizSO_(estado, detalle, force) {
+  const p = AUTO_SIMPLE_QUIZ_SO_POLICY;
+  const properties = PropertiesService.getScriptProperties();
+  const heartbeatKey = 'AUTO_SIMPLE_QUIZ_SO_LAST_HEARTBEAT_AT';
+  const ahoraMs = Date.now();
+  const previo = Number(properties.getProperty(heartbeatKey) || 0);
+  if (force !== true && previo && ahoraMs - previo < p.HEARTBEAT_MINUTES * 60000) return {actualizado:false};
+
+  const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
+  const sh = ss.getSheetByName('Configuración Quizzes');
+  if (!sh) throw new Error('No existe la hoja Configuración Quizzes para heartbeat de Auto Quiz SO.');
+  const last = Math.max(sh.getLastRow(), 1);
+  const values = sh.getRange(1, 1, last, 1).getDisplayValues();
+  let row = -1;
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][0] || '').trim() === p.CONTROL_KEY) { row = i + 1; break; }
+  }
+  if (row < 0) row = sh.getLastRow() + 1;
+  sh.getRange(row, 1, 1, 8).setValues([[
+    p.CONTROL_KEY,
+    String(estado || ''),
+    JSON.stringify(detalle || {}),
+    p.COURSE_ID,
+    p.ENABLED ? 'ACTIVA' : 'INACTIVA',
+    new Date(),
+    p.CALENDAR_SUMMARY,
+    p.EVENT_TITLE
+  ]]);
+  SpreadsheetApp.flush();
+  properties.setProperty(heartbeatKey, String(ahoraMs));
+  return {actualizado:true,row:row};
 }
 
 function verificarAccesoCalendarAutoQuizSO() {
@@ -206,5 +244,5 @@ function validarAutoQuizSencilloSOCanonico() {
   if (due.fechaLocal !== '2026-09-15' || due.horaLocal !== '08:00') {
     throw new Error('Regresión: una clase a las 07:00 debe producir vencimiento 08:00.');
   }
-  return {ok:true,source:'CLASSROOM_CALENDAR',graceMinutes:p.START_GRACE_MINUTES,due:'NEXT_NATURAL_HOUR',state:'DRAFT'};
+  return {ok:true,source:'CLASSROOM_CALENDAR',graceMinutes:p.START_GRACE_MINUTES,due:'NEXT_NATURAL_HOUR',state:'DRAFT',heartbeatMinutes:p.HEARTBEAT_MINUTES};
 }
