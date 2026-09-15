@@ -280,13 +280,13 @@ jobs:
           printf '%s' '${{ secrets.CLASPRC_JSON }}' > .clasprc.json
           chmod 600 .clasprc.json
 
-      - name: Enable and list required Google APIs
+      - name: Enable and list manifest advanced services
         env:
           clasp_config_auth: .clasprc.json
         shell: bash
         run: |
           set -euo pipefail
-          for api in script drive forms classroom sheets calendar; do
+          for api in drive classroom calendar; do
             npx clasp enable-api "$api"
           done
           npx clasp apis
