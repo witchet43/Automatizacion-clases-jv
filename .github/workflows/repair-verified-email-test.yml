@@ -1,0 +1,32 @@
+name: Repair Verified Email Test Quiz
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/02_ValidacionYUtilidades.gs'
+      - 'src/37_RepararCorreoVerificadoQuizPrueba.gs'
+      - '.github/workflows/repair-verified-email-test.yml'
+  workflow_dispatch:
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - name: Restore clasp credentials
+        run: |
+          printf '%s' '${{ secrets.CLASPRC_JSON }}' > .clasprc.json
+          chmod 600 .clasprc.json
+      - name: Deploy current source
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp push --force
+      - name: Repair test quiz verified email
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp run repararQuizPruebaCorreoVerificado
