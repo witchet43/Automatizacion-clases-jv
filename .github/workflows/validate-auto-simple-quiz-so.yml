@@ -1,0 +1,56 @@
+name: Validate Auto Simple Quiz SO
+
+on:
+  push:
+    paths:
+      - 'src/35_AutoQuizSencilloSO.gs'
+      - 'src/33_QuizSencillo.gs'
+      - 'src/00_SolicitudImportacionCalificaciones.gs'
+      - 'src/appsscript.json'
+      - '.github/workflows/validate-auto-simple-quiz-so.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp src/35_AutoQuizSencilloSO.gs /tmp/35_AutoQuizSencilloSO.js
+          node --check /tmp/35_AutoQuizSencilloSO.js
+          cp src/00_SolicitudImportacionCalificaciones.gs /tmp/00_SolicitudImportacionCalificaciones.js
+          node --check /tmp/00_SolicitudImportacionCalificaciones.js
+          node -e "JSON.parse(require('fs').readFileSync('src/appsscript.json','utf8')); console.log('manifest OK')"
+      - name: Enforce automatic SO quiz contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const auto=fs.readFileSync('src/35_AutoQuizSencilloSO.gs','utf8');
+          const dispatch=fs.readFileSync('src/00_SolicitudImportacionCalificaciones.gs','utf8');
+          const manifest=JSON.parse(fs.readFileSync('src/appsscript.json','utf8'));
+          const required=[
+            /COURSE_ID:\s*'875776451793'/,
+            /CALENDAR_ID:\s*'classroom105101248437356972360@group\.calendar\.google\.com'/,
+            /EVENT_TITLE:\s*'ITQ \| Sistemas Operativos \| Aula LCF'/,
+            /START_GRACE_MINUTES:\s*5/,
+            /Calendar\.Events\.list/,
+            /crearQuizSencillo\s*\(/,
+            /AUTO_SO_CALENDAR_EVENT/,
+            /function\s+procesarAutoQuizSencilloSOSeguro_/,
+            /function\s+verificarAccesoCalendarAutoQuizSO/,
+            /function\s+validarAutoQuizSencilloSOCanonico/
+          ];
+          const failed=required.filter(re=>!re.test(auto));
+          if(failed.length){console.error(failed.map(String).join('\n'));process.exit(1);}
+          if(!/procesarAutoQuizSencilloSOSeguro_\(\)/.test(dispatch)) process.exit(1);
+          const scopes=manifest.oauthScopes||[];
+          if(!scopes.includes('https://www.googleapis.com/auth/calendar.readonly')) process.exit(1);
+          const services=((manifest.dependencies||{}).enabledAdvancedServices)||[];
+          if(!services.some(x=>x.serviceId==='calendar'&&x.version==='v3'&&x.userSymbol==='Calendar')) process.exit(1);
+          console.log('Automatic SO simple quiz contract OK');
+          NODE
