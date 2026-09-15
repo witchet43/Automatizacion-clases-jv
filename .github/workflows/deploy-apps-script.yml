@@ -280,6 +280,17 @@ jobs:
           printf '%s' '${{ secrets.CLASPRC_JSON }}' > .clasprc.json
           chmod 600 .clasprc.json
 
+      - name: Enable and list required Google APIs
+        env:
+          clasp_config_auth: .clasprc.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          for api in script drive forms classroom sheets calendar; do
+            npx clasp enable-api "$api"
+          done
+          npx clasp apis
+
       - name: Deploy to Google Apps Script
         env:
           clasp_config_auth: .clasprc.json
@@ -316,3 +327,17 @@ jobs:
           }
           console.log('No production dependency on clasp function execution.');
           NODE
+
+      - name: Run safe read-only diagnostic when OAuth is configured
+        env:
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$GOOGLE_OAUTH_CLIENT_ID" ] || [ -z "$GOOGLE_OAUTH_CLIENT_SECRET" ] || [ -z "$GOOGLE_OAUTH_REFRESH_TOKEN" ]; then
+            echo 'OAuth diagnostic deferred: one or more GOOGLE_OAUTH_* secrets are not configured.'
+            exit 0
+          fi
+          npm run apps-script:run -- --function diagnosticarInfraestructuraEjecucion
