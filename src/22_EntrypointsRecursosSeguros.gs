@@ -52,6 +52,12 @@ function crearQuiz(params) {
   });
 }
 
+function crearQuizSencillo(params) {
+  return ejecutarConNotificacionError_('CREAR_QUIZ_SENCILLO', params, function () {
+    return crearQuizSencilloCanonico_(params);
+  });
+}
+
 function crearExamen(params) {
   return ejecutarConNotificacionError_('CREAR_EXAMEN', params, function () {
     return crearEvaluacionDirecta_(normalizarCreacionDirecta_(params, 'EXAMEN'));
@@ -64,12 +70,13 @@ function validarEntrypointsRecursosSeguros() {
   validarVencimientoActividadEnClaseCanonico();
   validarVencimientoTareaCanonico();
   validarPracticaCanonica();
-  const names = ['crearActividad','crearTarea','crearPractica','crearQuiz','crearExamen'];
+  validarQuizSencilloCanonico();
+  const names = ['crearActividad','crearTarea','crearPractica','crearQuiz','crearQuizSencillo','crearExamen'];
   names.forEach(function (name) {
     if (typeof this[name] !== 'function') throw new Error('Falta entrypoint canónico: ' + name);
   }, this);
   if (!ACADEMIC_POLICY.ERROR_REPORTING || ACADEMIC_POLICY.ERROR_REPORTING.NOTIFY_ON_ERROR !== true) {
     throw new Error('La notificación de errores debe estar activa.');
   }
-  return {ok:true, entrypoints:names, errorReporting:'REQUIRED', activityDue:'SESSION_END_MAX', taskDue:'NEXT_SESSION_START_MAX', practice:'GOOGLE_DOC_STUDENT_COPY_NO_DUE'};
+  return {ok:true, entrypoints:names, errorReporting:'REQUIRED', activityDue:'SESSION_END_MAX', taskDue:'NEXT_SESSION_START_MAX', practice:'GOOGLE_DOC_STUDENT_COPY_NO_DUE', simpleQuiz:'CLASSROOM_SEQUENCE_NEXT_NATURAL_HOUR'};
 }
