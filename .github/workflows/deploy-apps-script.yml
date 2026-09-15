@@ -300,7 +300,7 @@ jobs:
             echo "Deployment ID: \`$deployment_id\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Assert clasp run is not used in production workflows
+      - name: Assert official execution transport
         run: |
           node <<'NODE'
           const fs = require('fs');
