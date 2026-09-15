@@ -1,0 +1,48 @@
+name: Activate Auto Simple Quiz SO
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/35_AutoQuizSencilloSO.gs'
+      - 'src/00_SolicitudImportacionCalificaciones.gs'
+      - 'src/appsscript.json'
+      - '.github/workflows/activate-auto-simple-quiz-so.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: auto-simple-quiz-so-production
+  cancel-in-progress: true
+
+jobs:
+  activate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - name: Restore clasp credentials
+        shell: bash
+        run: |
+          printf '%s' '${{ secrets.CLASPRC_JSON }}' > .clasprc.json
+          chmod 600 .clasprc.json
+      - name: Enable Calendar API
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp enable-api calendar
+      - name: Deploy current source
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp push --force
+      - name: Verify live Calendar access
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp run verificarAccesoCalendarAutoQuizSO
+      - name: Reinstall one-minute monitor
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp run instalarMonitorSolicitudesImportacion
