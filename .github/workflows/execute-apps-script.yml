@@ -1,0 +1,58 @@
+name: Execute Apps Script Canonical Entrypoint
+
+on:
+  workflow_dispatch:
+    inputs:
+      function_name:
+        description: Canonical Apps Script function
+        required: true
+        type: choice
+        options:
+          - diagnosticarInfraestructuraEjecucion
+          - verificarQuizPruebaCorreoVerificado
+          - repararQuizPruebaCorreoVerificado
+          - crearQuiz
+          - crearPractica
+          - crearTarea
+          - crearActividad
+          - crearQuizSencillo
+          - importarCalificacionesAhora
+          - cerrarUnidadConSiguienteVerificadaAhora
+          - recalcularYPublicarUnidadSolicitadaAhora
+          - instalarMonitorErroresAcademicos
+          - validarConfiguracionNotificacionesErrores
+          - instalarMonitorSolicitudesImportacion
+      parameters_json:
+        description: JSON array of function parameters
+        required: true
+        default: '[]'
+        type: string
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    concurrency:
+      group: apps-script-execution-${{ inputs.function_name }}
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - name: Invoke official Apps Script Execution API and verify resources
+        env:
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
+          FUNCTION_NAME: ${{ inputs.function_name }}
+          PARAMETERS_JSON: ${{ inputs.parameters_json }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run apps-script:run -- \
+            --function "$FUNCTION_NAME" \
+            --parameters-json "$PARAMETERS_JSON"

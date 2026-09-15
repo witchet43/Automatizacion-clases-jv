@@ -11,7 +11,9 @@
     "clasp:status": "clasp status",
     "clasp:pull": "clasp pull",
     "clasp:push": "clasp push",
-    "clasp:open": "clasp open-script"
+    "clasp:open": "clasp open-script",
+    "apps-script:deploy": "node scripts/deploy-api-executable.mjs",
+    "apps-script:run": "node scripts/run-apps-script.mjs"
   },
   "engines": {
     "node": ">=22"

@@ -8,6 +8,8 @@ Repositorio fuente del proyecto Google Apps Script **Pipeline Quizzes - Forms - 
 - El vínculo está definido en `.clasp.json`.
 - El código sincronizado vive en `src/`.
 - GitHub es la fuente de verdad; Apps Script es el entorno de ejecución.
+- Proyecto estándar de Google Cloud: `473915513985`.
+- El deployment API executable versionado se registra en `.apps-script-deployment.json`.
 
 ## Primera configuración en una computadora
 
@@ -36,6 +38,12 @@ Después del `push`, abre Apps Script y ejecuta primero:
 ```javascript
 validarSoporteTiposQuiz()
 ```
+
+Las ejecuciones remotas de GitHub Actions no usan `clasp run`. Usan el
+[Apps Script Execution API](https://developers.google.com/apps-script/api/reference/rest/v1/scripts/run),
+validan tanto el HTTP como el cuerpo de ejecución y después consultan los
+recursos reales antes de declarar éxito. La arquitectura y el alta OAuth están
+documentadas en [`docs/execution-api-architecture.md`](docs/execution-api-architecture.md).
 
 El monitor ya instalado seguirá invocando `procesarQuizzesAprobados()`; no es necesario reinstalarlo solo por actualizar código.
 

@@ -285,38 +285,34 @@ jobs:
           clasp_config_auth: .clasprc.json
         run: npx clasp push --force
 
-      - name: Install script-error monitor
-        if: contains(github.event.head_commit.message, '[setup-error-monitor]')
+      - name: Create or update API executable deployment
         env:
           clasp_config_auth: .clasprc.json
-        run: npx clasp run instalarMonitorErroresAcademicos
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run apps-script:deploy | tee deployment-output.txt
+          deployment_id="$(sed -n 's/^APPS_SCRIPT_DEPLOYMENT_ID=//p' deployment-output.txt | tail -n 1)"
+          test -n "$deployment_id"
+          {
+            echo '### Apps Script API executable'
+            echo
+            echo "Deployment ID: \`$deployment_id\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Verify script-error notification configuration
-        if: contains(github.event.head_commit.message, '[setup-error-monitor]')
-        env:
-          clasp_config_auth: .clasprc.json
-        run: npx clasp run validarConfiguracionNotificacionesErrores
-
-      - name: Install grade-import request monitor
-        if: contains(github.event.head_commit.message, '[setup-import-trigger]')
-        env:
-          clasp_config_auth: .clasprc.json
-        run: npx clasp run instalarMonitorSolicitudesImportacion
-
-      - name: Import quiz grades on demand
-        if: contains(github.event.head_commit.message, '[import-grades]')
-        env:
-          clasp_config_auth: .clasprc.json
-        run: npx clasp run importarCalificacionesAhora
-
-      - name: Close unit with verified next-unit hint
-        if: contains(github.event.head_commit.message, '[cerrar-unidad-hint]')
-        env:
-          clasp_config_auth: .clasprc.json
-        run: npx clasp run cerrarUnidadConSiguienteVerificadaAhora
-
-      - name: Recalculate unit grade draft only
-        if: contains(github.event.head_commit.message, '[recalcular-publicar-unidad]')
-        env:
-          clasp_config_auth: .clasprc.json
-        run: npx clasp run recalcularYPublicarUnidadSolicitadaAhora
+      - name: Assert clasp run is not used in production workflows
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const forbidden = 'clasp' + ' run';
+          const files = fs.readdirSync('.github/workflows')
+            .filter(name => /\.ya?ml$/.test(name));
+          const violations = files.filter(name =>
+            fs.readFileSync(path.join('.github/workflows', name), 'utf8').includes(forbidden));
+          if (violations.length) {
+            console.error('Execution must use the official Apps Script API:', violations.join(', '));
+            process.exit(1);
+          }
+          console.log('No production dependency on clasp function execution.');
+          NODE
