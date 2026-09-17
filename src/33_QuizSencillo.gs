@@ -153,22 +153,24 @@ function calcularSiguienteHoraNaturalQuizSencillo_(solicitud, policy) {
 
 function obtenerSiguienteNumeroQuizSencillo_(courseId, policy) {
   let max = 0;
-  let token;
   const re = /^Quiz\s+(\d+)$/i;
-  do {
-    const page = Classroom.Courses.CourseWork.list(String(courseId), {
-      pageSize:100,
-      pageToken:token,
-      courseWorkStates:['PUBLISHED','DRAFT']
-    });
-    (page.courseWork || []).forEach(function(work) {
-      const m = String(work.title || '').trim().match(re);
-      if (!m) return;
-      const n = Number(m[1]);
-      if (Number.isInteger(n) && n > max) max = n;
-    });
-    token = page.nextPageToken;
-  } while (token);
+  ['PUBLISHED','DRAFT'].forEach(function(state) {
+    let token;
+    do {
+      const page = Classroom.Courses.CourseWork.list(String(courseId), {
+        pageSize:100,
+        pageToken:token,
+        courseWorkStates:state
+      });
+      (page.courseWork || []).forEach(function(work) {
+        const m = String(work.title || '').trim().match(re);
+        if (!m) return;
+        const n = Number(m[1]);
+        if (Number.isInteger(n) && n > max) max = n;
+      });
+      token = page.nextPageToken;
+    } while (token);
+  });
   return max + 1;
 }
 
