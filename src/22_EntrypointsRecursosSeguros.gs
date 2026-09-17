@@ -1,35 +1,44 @@
 /**
  * ENTRYPOINTS CANÓNICOS PARA CREACIÓN DE RECURSOS.
  *
- * Estas son las funciones que debe invocar la IA. Los motores *Directo_ quedan
- * como implementación interna/compatibilidad; toda entrada canónica notifica errores.
+ * Toda creación pasa por guardrails del Documento Maestro antes de mutar
+ * Classroom/Forms/Drive y por postflight después de crear/reutilizar el recurso.
  */
 function crearActividad(params) {
   return ejecutarConNotificacionError_('CREAR_ACTIVIDAD', params, function () {
-    const actividad = aplicarReglaVencimientoActividadEnClase_(params);
-    return crearCourseWorkDirecto_(normalizarCreacionDirecta_(actividad, 'ACTIVIDAD'));
+    const ctx = prepararContextoGuardrailRecurso_(params, 'ACTIVIDAD');
+    preflightDocumentoMaestro(ctx.guardrailRequest);
+    const actividad = aplicarReglaVencimientoActividadEnClase_(ctx.params);
+    const result = crearCourseWorkDirecto_(normalizarCreacionDirecta_(actividad, 'ACTIVIDAD'));
+    postflightDocumentoMaestro(normalizarResultadoGuardrail_(result), ctx.guardrailRequest);
+    return result;
   });
 }
 
 function crearTarea(params) {
   return ejecutarConNotificacionError_('CREAR_TAREA', params, function () {
-    const tarea = aplicarReglaVencimientoTarea_(params);
+    const ctx = prepararContextoGuardrailRecurso_(params, 'TAREA');
+    preflightDocumentoMaestro(ctx.guardrailRequest);
+    const tarea = aplicarReglaVencimientoTarea_(ctx.params);
     const result = crearCourseWorkDirecto_(normalizarCreacionDirecta_(tarea, 'TAREA'));
     const due = asegurarVencimientoTareaCreada_(tarea.courseId, result.workId, tarea);
     verificarVencimientoTareaCreada_(tarea.courseId, result.workId, tarea);
     result.vencimientoReparado = due.reparado === true;
     result.fechaLimiteLocal = tarea.fechaLimiteLocal;
     result.horaLimiteLocal = tarea.horaLimiteLocal;
+    postflightDocumentoMaestro(normalizarResultadoGuardrail_(result), ctx.guardrailRequest);
     return result;
   });
 }
 
 function crearPractica(params) {
   return ejecutarConNotificacionError_('CREAR_PRACTICA', params, function () {
+    const ctx = prepararContextoGuardrailRecurso_(params, 'PRACTICA');
+    preflightDocumentoMaestro(ctx.guardrailRequest);
     let practica = null;
     let result = null;
     try {
-      practica = prepararPracticaConGoogleDoc_(params);
+      practica = prepararPracticaConGoogleDoc_(ctx.params);
       result = crearCourseWorkDirecto_(normalizarCreacionDirecta_(practica, 'PRACTICA'));
       const verificacion = verificarPracticaCreada_(practica.courseId, result.workId, practica);
       result.documentId = verificacion.documentId;
@@ -38,9 +47,10 @@ function crearPractica(params) {
       result.shareMode = verificacion.shareMode;
       result.fechaLimite = null;
       result.horaLimite = null;
+      postflightDocumentoMaestro(normalizarResultadoGuardrail_(result), ctx.guardrailRequest);
       return result;
     } catch (err) {
-      limpiarPracticaFallida_(String((practica && practica.courseId) || (params && params.courseId) || ''), result, practica);
+      limpiarPracticaFallida_(String((practica && practica.courseId) || (ctx.params && ctx.params.courseId) || ''), result, practica);
       throw err;
     }
   });
@@ -48,20 +58,78 @@ function crearPractica(params) {
 
 function crearQuiz(params) {
   return ejecutarConNotificacionError_('CREAR_QUIZ', params, function () {
-    return crearEvaluacionDirecta_(normalizarCreacionDirecta_(params, 'QUIZ'));
+    const ctx = prepararContextoGuardrailRecurso_(params, 'QUIZ');
+    preflightDocumentoMaestro(ctx.guardrailRequest);
+    const result = crearEvaluacionDirecta_(normalizarCreacionDirecta_(ctx.params, 'QUIZ'));
+    postflightDocumentoMaestro(normalizarResultadoGuardrail_(result), ctx.guardrailRequest);
+    return result;
   });
 }
 
 function crearQuizSencillo(params) {
   return ejecutarConNotificacionError_('CREAR_QUIZ_SENCILLO', params, function () {
-    return crearQuizSencilloCanonico_(params);
+    const ctx = prepararContextoGuardrailRecurso_(params, 'QUIZ');
+    preflightDocumentoMaestro(ctx.guardrailRequest);
+    const result = crearQuizSencilloCanonico_(ctx.params);
+    postflightDocumentoMaestro(normalizarResultadoGuardrail_(result), ctx.guardrailRequest);
+    return result;
   });
 }
 
 function crearExamen(params) {
   return ejecutarConNotificacionError_('CREAR_EXAMEN', params, function () {
-    return crearEvaluacionDirecta_(normalizarCreacionDirecta_(params, 'EXAMEN'));
+    const ctx = prepararContextoGuardrailRecurso_(params, 'EXAMEN');
+    preflightDocumentoMaestro(ctx.guardrailRequest);
+    const result = crearEvaluacionDirecta_(normalizarCreacionDirecta_(ctx.params, 'EXAMEN'));
+    postflightDocumentoMaestro(normalizarResultadoGuardrail_(result), ctx.guardrailRequest);
+    return result;
   });
+}
+
+/**
+ * Convierte cualquier solicitud de recurso en contexto académico verificable.
+ * materia puede inferirse únicamente del curso real de Classroom; el tema
+ * canónico nunca se infiere del título del recurso.
+ */
+function prepararContextoGuardrailRecurso_(params, tipo) {
+  const p = params && typeof params === 'object' ? Object.assign({}, params) : {};
+  const courseId = String(p.courseId || '').trim();
+  let materia = String(p.materia || '').trim();
+  if (!materia && courseId) {
+    const course = Classroom.Courses.get(courseId);
+    materia = String(course.name || '').trim();
+  }
+  const temaSubtema = String(p.temaSubtema || p.temaCanonico || '').trim();
+  if (!materia) throw new Error('BLOCKED_MASTER_CONTEXT: falta materia y no puede resolverse desde courseId.');
+  if (!temaSubtema) throw new Error('BLOCKED_MASTER_CONTEXT: falta temaSubtema/temaCanonico. No se permite inferirlo del título del recurso.');
+
+  p.materia = materia;
+  p.temaSubtema = temaSubtema;
+  p.resourceState = 'DRAFT';
+
+  return {
+    params: p,
+    guardrailRequest: {
+      operation: 'RESOURCE_CREATE',
+      materia: materia,
+      temaSubtema: temaSubtema,
+      resourceType: String(tipo || '').toUpperCase(),
+      resourceState: 'DRAFT',
+      modifyPlanning: false,
+      explicitPlanningAuthorization: false
+    }
+  };
+}
+
+function normalizarResultadoGuardrail_(result) {
+  const r = result && typeof result === 'object' ? result : {};
+  return {
+    ok: r.ok !== false,
+    state: String(r.state || r.estado || 'DRAFT'),
+    workId: String(r.workId || ''),
+    formId: String(r.formId || ''),
+    documentId: String(r.documentId || '')
+  };
 }
 
 function validarEntrypointsRecursosSeguros() {
@@ -71,6 +139,9 @@ function validarEntrypointsRecursosSeguros() {
   validarVencimientoTareaCanonico();
   validarPracticaCanonica();
   validarQuizSencilloCanonico();
+  if (typeof preflightDocumentoMaestro !== 'function' || typeof postflightDocumentoMaestro !== 'function') {
+    throw new Error('MASTER_GUARDRAILS_REQUIRED: faltan preflight/postflight del Documento Maestro.');
+  }
   const names = ['crearActividad','crearTarea','crearPractica','crearQuiz','crearQuizSencillo','crearExamen'];
   names.forEach(function (name) {
     if (typeof this[name] !== 'function') throw new Error('Falta entrypoint canónico: ' + name);
@@ -78,5 +149,16 @@ function validarEntrypointsRecursosSeguros() {
   if (!ACADEMIC_POLICY.ERROR_REPORTING || ACADEMIC_POLICY.ERROR_REPORTING.NOTIFY_ON_ERROR !== true) {
     throw new Error('La notificación de errores debe estar activa.');
   }
-  return {ok:true, entrypoints:names, errorReporting:'REQUIRED', activityDue:'SESSION_END_MAX', taskDue:'NEXT_SESSION_START_MAX', practice:'GOOGLE_DOC_STUDENT_COPY_NO_DUE', simpleQuiz:'CLASSROOM_SEQUENCE_NEXT_NATURAL_HOUR'};
+  return {
+    ok:true,
+    entrypoints:names,
+    masterGuardrails:'REQUIRED',
+    masterContext:'materia+temaSubtema',
+    resourceState:'DRAFT',
+    errorReporting:'REQUIRED',
+    activityDue:'SESSION_END_MAX',
+    taskDue:'NEXT_SESSION_START_MAX',
+    practice:'GOOGLE_DOC_STUDENT_COPY_NO_DUE',
+    simpleQuiz:'CLASSROOM_SEQUENCE_NEXT_NATURAL_HOUR'
+  };
 }
