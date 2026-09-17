@@ -156,9 +156,12 @@ function obtenerSiguienteNumeroQuizSencillo_(courseId, policy) {
   let token;
   const re = /^Quiz\s+(\d+)$/i;
   do {
-    const page = Classroom.Courses.CourseWork.list(String(courseId), {pageSize:100, pageToken:token});
+    const page = Classroom.Courses.CourseWork.list(String(courseId), {
+      pageSize:100,
+      pageToken:token,
+      courseWorkStates:['PUBLISHED','DRAFT']
+    });
     (page.courseWork || []).forEach(function(work) {
-      if (String(work.state || '').toUpperCase() === 'DELETED') return;
       const m = String(work.title || '').trim().match(re);
       if (!m) return;
       const n = Number(m[1]);
