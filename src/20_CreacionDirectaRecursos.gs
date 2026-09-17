@@ -1,14 +1,15 @@
 /**
  * CREACIÓN DIRECTA CANÓNICA DE RECURSOS ACADÉMICOS
  *
- * Camino normal: IA -> función directa -> Classroom/Forms -> verificación -> auditoría.
- * Sheets no es cola ni prerrequisito; solo recibe el registro final.
+ * Los nombres públicos *Directa se conservan solo por compatibilidad y redirigen
+ * obligatoriamente a los entrypoints seguros de 22_EntrypointsRecursosSeguros.gs.
+ * Los motores con sufijo _ permanecen internos.
  */
-function crearActividadDirecta(params){return crearCourseWorkDirecto_(normalizarCreacionDirecta_(params,'ACTIVIDAD'));}
-function crearTareaDirecta(params){return crearCourseWorkDirecto_(normalizarCreacionDirecta_(params,'TAREA'));}
-function crearPracticaDirecta(params){return crearCourseWorkDirecto_(normalizarCreacionDirecta_(params,'PRACTICA'));}
-function crearQuizDirecto(params){return crearEvaluacionDirecta_(normalizarCreacionDirecta_(params,'QUIZ'));}
-function crearExamenDirecto(params){return crearEvaluacionDirecta_(normalizarCreacionDirecta_(params,'EXAMEN'));}
+function crearActividadDirecta(params){return crearActividad(params);}
+function crearTareaDirecta(params){return crearTarea(params);}
+function crearPracticaDirecta(params){return crearPractica(params);}
+function crearQuizDirecto(params){return crearQuiz(params);}
+function crearExamenDirecto(params){return crearExamen(params);}
 
 function normalizarCreacionDirecta_(params,tipo){
   const p=params&&typeof params==='object'?Object.assign({},params):{};
@@ -349,5 +350,5 @@ function validarCreacionDirectaCanonica(){
   const tipos=ACADEMIC_POLICY.EXECUTION.DIRECT_RESOURCE_TYPES;
   ['ACTIVIDAD','TAREA','PRACTICA','QUIZ','EXAMEN'].forEach(x=>{if(tipos.indexOf(x)<0)throw new Error('Falta tipo directo '+x);});
   if(resolverShareModeDirecto_({tipo:'PRACTICA',courseKey:''})!=='STUDENT_COPY') throw new Error('Práctica debe usar STUDENT_COPY.');
-  return {ok:true,modo:'DIRECT_SCRIPT',sheets:'AUDIT_ONLY',monitorRequerido:false,funciones:['crearActividadDirecta','crearTareaDirecta','crearPracticaDirecta','crearQuizDirecto','crearExamenDirecto']};
+  return {ok:true,modo:'DIRECT_SCRIPT',sheets:'AUDIT_ONLY',monitorRequerido:false,guardrails:'CANONICAL_ENTRYPOINTS',funciones:['crearActividadDirecta','crearTareaDirecta','crearPracticaDirecta','crearQuizDirecto','crearExamenDirecto']};
 }
