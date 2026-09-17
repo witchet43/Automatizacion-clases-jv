@@ -28,7 +28,8 @@ function preflightDocumentoMaestro(request) {
   const planning = loadCanonicalPlanning_(materia);
   if (!planning.length) throw new Error('BLOCKED_MASTER_RULE: no se encontró planeación canónica para ' + materia + '.');
 
-  const targetIndex = planning.findIndex(function(x) { return normalizeGuard_(x.tema).indexOf(normalizeGuard_(tema)) >= 0; });
+  const targetKey = canonicalTopicKey_(tema);
+  const targetIndex = planning.findIndex(function(x) { return canonicalTopicKey_(x.tema) === targetKey; });
   if (targetIndex < 0) throw new Error('BLOCKED_MASTER_RULE: el tema solicitado no existe en la planeación canónica: ' + tema + '.');
 
   const expected = firstPendingCanonical_(planning, r.completedTopics || []);
@@ -97,20 +98,27 @@ function loadCanonicalPlanning_(materia) {
   const headers = values[0].map(normalizeGuard_);
   const subjectCol = findHeaderGuard_(headers, ['materia','asignatura']);
   const unitCol = findHeaderGuard_(headers, ['unidad']);
-  const topicCol = findHeaderGuard_(headers, ['tema/subtema','tema','subtema']);
-  if (topicCol < 0) throw new Error('La planeación no contiene columna Tema/Subtema reconocible.');
+  const topicCol = findHeaderGuard_(headers, ['tema / alcance','tema/alcance','tema / subtema','tema/subtema','tema','subtema']);
+  const classCol = findHeaderGuard_(headers, ['clase','sesion','sesión']);
+  if (topicCol < 0) throw new Error('La planeación no contiene columna Tema / alcance reconocible.');
 
   return values.slice(1).map(function(row, i) {
-    return {row: i + 2, materia: subjectCol >= 0 ? row[subjectCol] : materia, unidad: unitCol >= 0 ? row[unitCol] : '', tema: row[topicCol]};
+    return {
+      row: i + 2,
+      clase: classCol >= 0 ? row[classCol] : '',
+      materia: subjectCol >= 0 ? row[subjectCol] : materia,
+      unidad: unitCol >= 0 ? row[unitCol] : '',
+      tema: row[topicCol]
+    };
   }).filter(function(x) {
     return x.tema && (subjectCol < 0 || normalizeGuard_(x.materia) === normalizeGuard_(materia));
   });
 }
 
 function firstPendingCanonical_(planning, completedTopics) {
-  const completed = (completedTopics || []).map(normalizeGuard_);
+  const completed = (completedTopics || []).map(canonicalTopicKey_);
   for (var i = 0; i < planning.length; i += 1) {
-    if (completed.indexOf(normalizeGuard_(planning[i].tema)) < 0) return Object.assign({index:i}, planning[i]);
+    if (completed.indexOf(canonicalTopicKey_(planning[i].tema)) < 0) return Object.assign({index:i}, planning[i]);
   }
   return null;
 }
@@ -119,6 +127,13 @@ function findHeaderGuard_(headers, candidates) {
   const normalized = candidates.map(normalizeGuard_);
   for (var i = 0; i < headers.length; i += 1) if (normalized.indexOf(headers[i]) >= 0) return i;
   return -1;
+}
+
+function canonicalTopicKey_(value) {
+  return normalizeGuard_(value)
+    .replace(/^\d+(?:\.\d+)*(?:\s*[–—-]\s*|\s+)/, '')
+    .replace(/^evaluacion\s+u\d+\s*[–—-]?\s*/, 'evaluacion ')
+    .trim();
 }
 
 function requiredGuard_(value, name) {
