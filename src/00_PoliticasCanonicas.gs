@@ -69,6 +69,10 @@ const ACADEMIC_POLICY = Object.freeze({
       SEQUENCE_SOURCE: 'CLASSROOM',
       EMPTY_ASSIGNMENT: true,
       STATE: 'DRAFT',
+      UNIT_ASSIGNMENT_REQUIRED: true,
+      UNIT_SOURCE: 'LATEST_PUBLISHED_COURSEWORK_MATERIAL_WITHOUT_EXAM',
+      UNIT_MATERIAL_STATE: 'PUBLISHED',
+      UNIT_CLOSE_EXAM_STATES: Object.freeze(['DRAFT','PUBLISHED']),
       DUE_MODE: 'NEXT_NATURAL_HOUR',
       DUE_STRICTLY_AFTER_REQUEST: true,
       PAST_DUE_CREATION: 'BLOCK',
@@ -173,7 +177,7 @@ function validarPoliticasCanonicas_(){
   if(!practice||practice.DUE_MODE!=='NONE'||practice.DUE_ALLOWED!==false||practice.GOOGLE_DOCUMENT_REQUIRED!==true||practice.GOOGLE_DOCUMENT_MIME!=='application/vnd.google-apps.document'||practice.STUDENT_COPY_REQUIRED!==true||practice.SHARE_MODE!=='STUDENT_COPY'||practice.CREATE_GOOGLE_DOCUMENT_IF_MISSING!==true) throw new Error('La política canónica de PRÁCTICA debe exigir Google Documento, STUDENT_COPY y ausencia total de vencimiento.');
   if(p.DOCUMENTS.PRACTICE_STUDENT_COPY!==true||p.DOCUMENTS.PRACTICE_DOCUMENT_FORMAT!=='GOOGLE_DOC') throw new Error('La política documental de PRÁCTICA debe permanecer en Google Documento con copia individual.');
   const simpleQuiz=p.CLASSROOM.SIMPLE_QUIZ;
-  if(!simpleQuiz||simpleQuiz.TITLE_PREFIX!=='Quiz '||simpleQuiz.SEQUENCE_SOURCE!=='CLASSROOM'||simpleQuiz.EMPTY_ASSIGNMENT!==true||simpleQuiz.STATE!=='DRAFT'||simpleQuiz.DUE_MODE!=='NEXT_NATURAL_HOUR'||simpleQuiz.DUE_STRICTLY_AFTER_REQUEST!==true||simpleQuiz.PAST_DUE_CREATION!=='BLOCK') throw new Error('La política canónica de QUIZ SENCILLO debe exigir secuencia Classroom, tarea vacía, DRAFT y siguiente hora natural.');
+  if(!simpleQuiz||simpleQuiz.TITLE_PREFIX!=='Quiz '||simpleQuiz.SEQUENCE_SOURCE!=='CLASSROOM'||simpleQuiz.EMPTY_ASSIGNMENT!==true||simpleQuiz.STATE!=='DRAFT'||simpleQuiz.UNIT_ASSIGNMENT_REQUIRED!==true||simpleQuiz.UNIT_SOURCE!=='LATEST_PUBLISHED_COURSEWORK_MATERIAL_WITHOUT_EXAM'||simpleQuiz.UNIT_MATERIAL_STATE!=='PUBLISHED'||JSON.stringify(simpleQuiz.UNIT_CLOSE_EXAM_STATES)!==JSON.stringify(['DRAFT','PUBLISHED'])||simpleQuiz.DUE_MODE!=='NEXT_NATURAL_HOUR'||simpleQuiz.DUE_STRICTLY_AFTER_REQUEST!==true||simpleQuiz.PAST_DUE_CREATION!=='BLOCK') throw new Error('La política canónica de QUIZ SENCILLO debe exigir secuencia Classroom, unidad abierta verificable, tarea vacía, DRAFT y siguiente hora natural.');
   if(simpleQuiz.TIMEZONE!=='America/Mexico_City'||simpleQuiz.UTC_OFFSET_MINUTES!==-360) throw new Error('La conversión horaria de QUIZ SENCILLO no coincide con America/Mexico_City 2026.');
   if(p.UNIT_GRADING.MISSING_GRADE_VALUE!==0||p.UNIT_GRADING.TOUCH_OTHER_UNITS!==false) throw new Error('La política de cierre perdió aislamiento o tratamiento de faltantes.');
   if(redondearCalificacionFinalCanonica_(91.75)!==92||redondearCalificacionFinalCanonica_(64.18)!==64) throw new Error('La política de redondeo final no coincide con el contrato.');
