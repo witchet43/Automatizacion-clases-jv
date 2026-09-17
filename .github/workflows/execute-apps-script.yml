@@ -9,6 +9,7 @@ on:
         type: choice
         options:
           - diagnosticarInfraestructuraEjecucion
+          - diagnosticarQuizAsistenciaClaseActiva
           - generarSiguienteClase
           - generarSiguienteClaseSistemasDistribuidos
           - repararDraftsSesion15SistemasDistribuidos
@@ -19,6 +20,7 @@ on:
           - crearTarea
           - crearActividad
           - crearQuizSencillo
+          - crearQuizDeAsistencia
           - importarCalificacionesAhora
           - cerrarUnidadConSiguienteVerificadaAhora
           - recalcularYPublicarUnidadSolicitadaAhora
