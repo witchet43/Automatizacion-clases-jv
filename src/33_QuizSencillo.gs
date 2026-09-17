@@ -3,7 +3,8 @@
  *
  * Es una tarea vacía de Classroom:
  * - título automático Quiz N, donde N es consecutivo al mayor Quiz N activo del curso;
- * - sin descripción, materiales, puntos ni tema;
+ * - sin descripción, materiales ni puntos;
+ * - asignada obligatoriamente a la Unidad N actualmente abierta en Classroom;
  * - siempre DRAFT;
  * - vencimiento en la siguiente hora natural en punto, estrictamente posterior
  *   al instante de solicitud;
@@ -17,6 +18,7 @@ function crearQuizSencilloCanonico_(params) {
   p.courseId = String(p.courseId || '').trim();
   if (!p.courseId) throw new Error('QUIZ SENCILLO requiere courseId.');
 
+  const unidad = resolverUnidadAbiertaQuizSencillo_(p.courseId);
   const solicitud = resolverInstanteSolicitudQuizSencillo_(p.solicitadoEnLocal || p.requestedAtLocal, policy);
   const requestId = String(p.requestId || (p.courseId + '|' + solicitud.texto)).trim();
   const propertyKey = claveIdempotenciaQuizSencillo_(p.courseId, requestId);
@@ -57,6 +59,7 @@ function crearQuizSencilloCanonico_(params) {
       title: titulo,
       workType: 'ASSIGNMENT',
       state: policy.STATE,
+      topicId: unidad.topicId,
       dueDate: {
         year: vencimiento.utcYear,
         month: vencimiento.utcMonth,
@@ -76,6 +79,11 @@ function crearQuizSencilloCanonico_(params) {
       title:titulo,
       numero:numero,
       state:policy.STATE,
+      topicId:unidad.topicId,
+      unidad:unidad.unidadNombre,
+      unidadNumero:unidad.unidadNumero,
+      materialUnidadReferencia:unidad.materialId,
+      materialUnidadTitulo:unidad.materialTitle,
       fechaLimiteLocal:vencimiento.fechaLocal,
       horaLimiteLocal:vencimiento.horaLocal,
       fechaLimite:vencimiento.fechaUtc,
@@ -87,13 +95,13 @@ function crearQuizSencilloCanonico_(params) {
 
     registrarAuditoriaCourseWorkDirecto_({
       courseId:p.courseId,
-      unidad:'',
+      unidad:unidad.unidadNombre,
       titulo:titulo,
       descripcion:'',
       fechaLimite:vencimiento.fechaUtc,
       horaLimite:vencimiento.horaUtc,
       tipo:'QUIZ_SENCILLO'
-    }, work, '', 'CREADO');
+    }, work, unidad.unidadNombre, 'CREADO');
 
     const result = Object.assign({}, expected, verificado, {reutilizado:false});
     properties.setProperty(propertyKey, JSON.stringify(result));
@@ -108,6 +116,8 @@ function validarPoliticaQuizSencillo_(policy) {
       policy.EMPTY_ASSIGNMENT !== true || policy.STATE !== 'DRAFT' ||
       policy.DUE_MODE !== 'NEXT_NATURAL_HOUR' || policy.DUE_STRICTLY_AFTER_REQUEST !== true ||
       policy.PAST_DUE_CREATION !== 'BLOCK' || policy.TIMEZONE !== 'America/Mexico_City' ||
+      policy.UNIT_ASSIGNMENT_REQUIRED !== true ||
+      policy.UNIT_SOURCE !== 'LATEST_PUBLISHED_COURSEWORK_MATERIAL_WITHOUT_EXAM' ||
       Number(policy.UTC_OFFSET_MINUTES) !== -360) {
     throw new Error('La política canónica de QUIZ SENCILLO fue debilitada.');
   }
@@ -182,6 +192,9 @@ function verificarQuizSencilloCreado_(work, expected) {
   if (String(work.title || '').trim() !== String(expected.title || '').trim()) throw new Error('El título del QUIZ SENCILLO no coincide con la secuencia esperada.');
   if (String(work.description || '').trim()) throw new Error('QUIZ SENCILLO debe quedar sin descripción.');
   if (Array.isArray(work.materials) && work.materials.length) throw new Error('QUIZ SENCILLO debe quedar sin materiales.');
+  if (!String(expected.topicId || '').trim() || String(work.topicId || '') !== String(expected.topicId || '')) {
+    throw new Error('QUIZ SENCILLO no quedó asignado a la unidad abierta esperada.');
+  }
 
   const dd = work.dueDate || {};
   const dt = work.dueTime || {};
@@ -190,7 +203,7 @@ function verificarQuizSencilloCreado_(work, expected) {
   if (apiFecha !== String(expected.fechaLimite) || apiHora !== String(expected.horaLimite)) {
     throw new Error('El vencimiento del QUIZ SENCILLO no coincide con la siguiente hora natural solicitada.');
   }
-  return {workId:String(work.id),state:String(work.state),dueDate:work.dueDate,dueTime:work.dueTime};
+  return {workId:String(work.id),state:String(work.state),topicId:String(work.topicId || ''),dueDate:work.dueDate,dueTime:work.dueTime};
 }
 
 function claveIdempotenciaQuizSencillo_(courseId, requestId) {
@@ -210,6 +223,7 @@ function formatearHoraQuizSencillo_(hours, minutes) {
 function validarQuizSencilloCanonico() {
   validarPoliticasCanonicas_();
   validarPoliticaQuizSencillo_(ACADEMIC_POLICY.CLASSROOM.SIMPLE_QUIZ);
+  validarUnidadAbiertaQuizSencilloCanonica();
   const p = ACADEMIC_POLICY.CLASSROOM.SIMPLE_QUIZ;
   const a = calcularSiguienteHoraNaturalQuizSencillo_(resolverInstanteSolicitudQuizSencillo_('2026-09-14 07:05:00',p),p);
   if (a.fechaLocal!=='2026-09-14'||a.horaLocal!=='08:00') throw new Error('Regresión: 07:05 debe vencer 08:00.');
@@ -219,5 +233,5 @@ function validarQuizSencilloCanonico() {
   if (c.horaLocal!=='10:00') throw new Error('Regresión: una solicitud exactamente a las 09:00 debe vencer a las 10:00 por ser estrictamente posterior.');
   const d = calcularSiguienteHoraNaturalQuizSencillo_(resolverInstanteSolicitudQuizSencillo_('2026-09-14 23:30:00',p),p);
   if (d.fechaLocal!=='2026-09-15'||d.horaLocal!=='00:00') throw new Error('Regresión: 23:30 debe vencer 00:00 del día siguiente.');
-  return {ok:true,tipo:'QUIZ_SENCILLO',secuencia:'CLASSROOM_MAX_PLUS_ONE',vencimiento:'NEXT_NATURAL_HOUR',state:'DRAFT'};
+  return {ok:true,tipo:'QUIZ_SENCILLO',secuencia:'CLASSROOM_MAX_PLUS_ONE',unidad:'LATEST_PUBLISHED_MATERIAL_WITHOUT_EXAM',vencimiento:'NEXT_NATURAL_HOUR',state:'DRAFT'};
 }
