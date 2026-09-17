@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "authority": {
+    "humanMasterDocumentId": "1lH7ME10VRX472PP54BdeE9evRbbjAUYowov3-slM5v8",
+    "planningSpreadsheetId": "1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI",
+    "planningSheet": "Planeación maestra",
+    "rule": "El Documento Maestro manda. La configuración ejecutable bloquea operaciones que no puedan demostrarse compatibles con él."
+  },
+  "global": {
+    "classroomResourceDefaultState": "DRAFT",
+    "formsDefaultState": "DRAFT",
+    "calendarSource": "CLASSROOM",
+    "defaultRoom": "LCF",
+    "neverUseCurrentDateToSelectNextClass": true,
+    "detectPendingGapsBeforeGenerating": true,
+    "neverModifyPlanningUnlessExplicitlyRequired": true,
+    "reuseExistingResources": true,
+    "blockDuplicates": true,
+    "requirePreflight": true,
+    "requirePostflight": true
+  },
+  "requiredClassPackage": [
+    "unidad",
+    "temaSubtema",
+    "tareaPrevia",
+    "actividadEnClaseOPractica",
+    "evaluacionOProyectoCuandoCorresponda",
+    "tareaSiguiente"
+  ],
+  "calendarDescriptionRequiredFields": [
+    "Unidad",
+    "Tema/Subtema",
+    "Tarea previa",
+    "Actividad en clase y/o Práctica formal",
+    "Evaluación/Proyecto cuando corresponda",
+    "Tarea siguiente"
+  ],
+  "gamma": {
+    "titleMustUseCanonicalTopicNumberAndName": true,
+    "forbiddenTitleMetadata": ["Clase", "Sesión", "fecha", "día", "horario", "aula"],
+    "mustContinuePreviousTopic": true,
+    "mustPrepareAssociatedActivity": true,
+    "mustNotReplaceFullClassPackage": true
+  },
+  "subjects": {
+    "Sistemas Operativos": {
+      "institution": "ITQ",
+      "canonicalSequence": [
+        "1.1 Concepto, objetivo y función del SO",
+        "1.2 Componentes, funciones y servicios",
+        "1.3 Evolución histórica",
+        "1.4 Clasificación",
+        "1.5 Estructuras de diseño",
+        "1.6 Núcleo, modo usuario y llamadas al sistema",
+        "1.1–1.6 Integración de la Unidad 1",
+        "Evaluación U1",
+        "2.1 Programa vs proceso; concepto de proceso",
+        "2.2 Estados y transición de procesos",
+        "2.3 Control e información de procesos",
+        "2.4 Creación y terminación de procesos",
+        "2.5 Procesos e hilos",
+        "2.6 Fundamentos de planificación del procesador",
+        "2.7 FCFS y SJF",
+        "2.8 Round Robin y prioridades",
+        "2.9 Comunicación entre procesos (IPC)",
+        "2.10 Concurrencia y condiciones de carrera",
+        "2.11 Sincronización: mutex y semáforos",
+        "2.12 Interbloqueos: condiciones necesarias",
+        "2.13 Prevención, detección y recuperación de deadlock",
+        "Evaluación U2",
+        "3.1 Jerarquía y clasificación de memoria",
+        "3.2 Espacio de direcciones y administración de memoria"
+      ],
+      "grading": {
+        "unassignedOrAbsentScore": 0,
+        "recalculationOverwrites": true,
+        "onlyRequestedUnit": true,
+        "finalGradeIntegerRounded": true
+      }
+    }
+  }
+}
