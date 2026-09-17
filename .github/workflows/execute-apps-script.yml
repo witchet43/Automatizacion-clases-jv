@@ -9,6 +9,9 @@ on:
         type: choice
         options:
           - diagnosticarInfraestructuraEjecucion
+          - validarReadinessAcademicoCompleto
+          - validarPlaneacionesCanonicasReadOnly
+          - dryRunPreflightAcademico
           - diagnosticarQuizAsistenciaClaseActiva
           - generarSiguienteClase
           - generarSiguienteClaseSistemasDistribuidos
@@ -42,6 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
     concurrency:
       group: apps-script-execution
       cancel-in-progress: false
@@ -66,6 +70,29 @@ jobs:
             echo 'FUNCTION_NAME=${{ inputs.function_name }}' >> "$GITHUB_ENV"
             echo 'PARAMETERS_JSON=${{ inputs.parameters_json }}' >> "$GITHUB_ENV"
           fi
+      - name: Wait for successful Apps Script deployment
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/deploy-apps-script.yml/runs?branch=main&per_page=1"
+          for attempt in $(seq 1 60); do
+            payload="$(curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" -H "Accept: application/vnd.github+json" "$api")"
+            status="$(printf '%s' "$payload" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);process.stdout.write(j.workflow_runs?.[0]?.status||'missing')})")"
+            conclusion="$(printf '%s' "$payload" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);process.stdout.write(j.workflow_runs?.[0]?.conclusion||'')})")"
+            sha="$(printf '%s' "$payload" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);process.stdout.write(j.workflow_runs?.[0]?.head_sha||'')})")"
+            echo "Latest deploy: status=$status conclusion=$conclusion sha=$sha"
+            if [ "$status" = "completed" ]; then
+              test "$conclusion" = "success" || { echo "Latest Apps Script deployment did not succeed." >&2; exit 1; }
+              exit 0
+            fi
+            test "$status" != "missing" || { echo "No Apps Script deployment run found." >&2; exit 1; }
+            sleep 5
+          done
+          echo "Timed out waiting for Apps Script deployment." >&2
+          exit 1
+
       - name: Invoke official Apps Script Execution API and verify resources
         env:
           GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
