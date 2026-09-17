@@ -2,19 +2,25 @@
  * UNIDAD ABIERTA CANÓNICA PARA QUIZ SENCILLO / DE ASISTENCIA
  *
  * Fuente de verdad académica:
- * 1) último recurso didáctico PUBLISHED del curso en Google Classroom;
- * 2) el Topic de ese recurso debe identificar Unidad N;
- * 3) si existe CourseWork activo titulado exactamente Examen N, esa unidad se
- *    considera cerrada y no se permite crear/asignar un Quiz Sencillo.
+ * 1) último CourseWork académico ordinario PUBLISHED del curso en Classroom;
+ * 2) debe estar asignado a un Topic canónico Unidad N;
+ * 3) Quiz N de asistencia, Calificación Unidad N y exámenes no sirven como
+ *    evidencia para inferir la unidad, evitando razonamiento circular;
+ * 4) si existe un examen activo de esa Unidad N, la unidad está cerrada.
  */
 const QUIZ_SENCILLO_OPEN_UNIT_POLICY = Object.freeze({
-  MATERIAL_STATE: 'PUBLISHED',
+  RESOURCE_STATE: 'PUBLISHED',
   UNIT_TOPIC_PATTERN: '^Unidad\\s+(\\d+)$',
-  EXAM_TITLE_PREFIX: 'Examen ',
+  SIMPLE_QUIZ_PATTERN: '^Quiz\\s+\\d+$',
+  FINAL_GRADE_PATTERN: '^Calificaci[oó]n\\s+Unidad\\s+\\d+$',
+  EXAM_TITLE_PREFIX: 'Examen',
   CLOSED_BY_EXAM_STATES: Object.freeze(['DRAFT', 'PUBLISHED']),
-  MATERIAL_ORDER_FIELD: 'creationTime',
+  RESOURCE_ORDER_FIELD: 'creationTime',
   REQUIRE_TOPIC: true,
-  REQUIRE_OPEN_UNIT: true
+  REQUIRE_OPEN_UNIT: true,
+  EXCLUDE_SIMPLE_QUIZ_FROM_UNIT_EVIDENCE: true,
+  EXCLUDE_FINAL_GRADE_FROM_UNIT_EVIDENCE: true,
+  EXCLUDE_EXAM_FROM_UNIT_EVIDENCE: true
 });
 
 function resolverUnidadAbiertaQuizSencillo_(courseId) {
@@ -28,30 +34,32 @@ function resolverUnidadAbiertaQuizSencillo_(courseId) {
     topicById[String(topic.topicId || '')] = topic;
   });
 
-  const materiales = listarMaterialesPublicadosQuizSencillo_(id)
-    .map(function(material) {
-      const topicId = String(material.topicId || '').trim();
+  const recursos = listarCourseWorkPublicadoQuizSencillo_(id)
+    .map(function(work) {
+      const topicId = String(work.topicId || '').trim();
       const topic = topicById[topicId] || null;
       const unit = topic ? extraerNumeroUnidadTopicQuizSencillo_(topic.name) : null;
-      return { material: material, topic: topic, unit: unit };
+      return { work: work, topic: topic, unit: unit };
     })
-    .filter(function(x) { return x.topic && Number.isInteger(x.unit) && x.unit > 0; })
+    .filter(function(x) {
+      return x.topic && Number.isInteger(x.unit) && x.unit > 0 &&
+        esCourseWorkEvidenciaUnidadQuizSencillo_(x.work);
+    })
     .sort(function(a, b) {
-      const ta = Date.parse(String(a.material.creationTime || a.material.updateTime || '')) || 0;
-      const tb = Date.parse(String(b.material.creationTime || b.material.updateTime || '')) || 0;
+      const ta = Date.parse(String(a.work.creationTime || a.work.updateTime || '')) || 0;
+      const tb = Date.parse(String(b.work.creationTime || b.work.updateTime || '')) || 0;
       return tb - ta;
     });
 
-  if (!materiales.length) {
-    throw new Error('QUIZ_SIN_UNIDAD_ABIERTA: no existe material didáctico PUBLISHED asignado a un Topic canónico Unidad N. No se genera el quiz.');
+  if (!recursos.length) {
+    throw new Error('QUIZ_SIN_UNIDAD_ABIERTA: no existe CourseWork académico ordinario PUBLISHED asignado a un Topic Unidad N. No se genera el quiz.');
   }
 
-  const latest = materiales[0];
+  const latest = recursos[0];
   const unitNumber = latest.unit;
-  const expectedExamTitle = QUIZ_SENCILLO_OPEN_UNIT_POLICY.EXAM_TITLE_PREFIX + unitNumber;
-  const exam = buscarExamenCierreUnidadQuizSencillo_(id, expectedExamTitle);
+  const exam = buscarExamenCierreUnidadQuizSencillo_(id, unitNumber, String(latest.topic.topicId || ''));
   if (exam) {
-    throw new Error('QUIZ_UNIDAD_CERRADA: el último material publicado pertenece a Unidad ' + unitNumber + ' y ya existe ' + expectedExamTitle + ' activo (estado ' + String(exam.state || '') + '). No se genera el quiz.');
+    throw new Error('QUIZ_UNIDAD_CERRADA: el último recurso académico publicado pertenece a Unidad ' + unitNumber + ' y ya existe un examen activo de esa unidad (' + String(exam.title || '') + ', estado ' + String(exam.state || '') + '). No se genera el quiz.');
   }
 
   return {
@@ -59,13 +67,13 @@ function resolverUnidadAbiertaQuizSencillo_(courseId) {
     unidadNumero: unitNumber,
     unidadNombre: String(latest.topic.name || '').trim(),
     topicId: String(latest.topic.topicId || '').trim(),
-    materialId: String(latest.material.id || '').trim(),
-    materialTitle: String(latest.material.title || '').trim(),
-    materialCreationTime: String(latest.material.creationTime || ''),
-    materialState: String(latest.material.state || QUIZ_SENCILLO_OPEN_UNIT_POLICY.MATERIAL_STATE),
-    examenCierreEsperado: expectedExamTitle,
+    materialId: String(latest.work.id || '').trim(),
+    materialTitle: String(latest.work.title || '').trim(),
+    materialCreationTime: String(latest.work.creationTime || ''),
+    materialState: String(latest.work.state || QUIZ_SENCILLO_OPEN_UNIT_POLICY.RESOURCE_STATE),
+    examenCierreEsperado: 'Examen ' + unitNumber + ' / Examen Unidad ' + unitNumber,
     examenCierreEncontrado: false,
-    source: 'LATEST_PUBLISHED_COURSEWORK_MATERIAL_WITHOUT_EXAM'
+    source: 'LATEST_PUBLISHED_ACADEMIC_COURSEWORK_WITHOUT_UNIT_EXAM'
   };
 }
 
@@ -83,23 +91,6 @@ function listarTopicsCursoQuizSencillo_(courseId) {
   return out;
 }
 
-function listarMaterialesPublicadosQuizSencillo_(courseId) {
-  let token;
-  const out = [];
-  do {
-    const page = Classroom.Courses.CourseWorkMaterials.list(String(courseId), {
-      pageSize: 100,
-      pageToken: token,
-      courseWorkMaterialStates: [QUIZ_SENCILLO_OPEN_UNIT_POLICY.MATERIAL_STATE]
-    });
-    (page.courseWorkMaterial || []).forEach(function(material) {
-      if (String(material.state || '').toUpperCase() === QUIZ_SENCILLO_OPEN_UNIT_POLICY.MATERIAL_STATE) out.push(material);
-    });
-    token = page.nextPageToken;
-  } while (token);
-  return out;
-}
-
 function listarCourseWorkPublicadoQuizSencillo_(courseId) {
   let token;
   const out = [];
@@ -107,14 +98,61 @@ function listarCourseWorkPublicadoQuizSencillo_(courseId) {
     const page = Classroom.Courses.CourseWork.list(String(courseId), {
       pageSize: 100,
       pageToken: token,
-      courseWorkStates: 'PUBLISHED'
+      courseWorkStates: QUIZ_SENCILLO_OPEN_UNIT_POLICY.RESOURCE_STATE
     });
     (page.courseWork || []).forEach(function(work) {
-      if (String(work.state || '').toUpperCase() === 'PUBLISHED') out.push(work);
+      if (String(work.state || '').toUpperCase() === QUIZ_SENCILLO_OPEN_UNIT_POLICY.RESOURCE_STATE) out.push(work);
     });
     token = page.nextPageToken;
   } while (token);
   return out;
+}
+
+function esCourseWorkEvidenciaUnidadQuizSencillo_(work) {
+  const title = String(work && work.title || '').trim();
+  if (!title) return false;
+  if (new RegExp(QUIZ_SENCILLO_OPEN_UNIT_POLICY.SIMPLE_QUIZ_PATTERN, 'i').test(title)) return false;
+  if (new RegExp(QUIZ_SENCILLO_OPEN_UNIT_POLICY.FINAL_GRADE_PATTERN, 'i').test(title)) return false;
+  if (/^Examen\b/i.test(title)) return false;
+  return true;
+}
+
+function extraerNumeroUnidadTopicQuizSencillo_(topicName) {
+  const normalized = String(topicName || '').trim();
+  const re = new RegExp(QUIZ_SENCILLO_OPEN_UNIT_POLICY.UNIT_TOPIC_PATTERN, 'i');
+  const m = normalized.match(re);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+function buscarExamenCierreUnidadQuizSencillo_(courseId, unitNumber, topicId) {
+  const n = Number(unitNumber);
+  if (!Number.isInteger(n) || n <= 0) throw new Error('Número de unidad inválido para comprobar examen de cierre.');
+  const wantedTopic = String(topicId || '').trim();
+  const exact = new RegExp('^Examen\\s+' + n + '$', 'i');
+  const explicitUnit = new RegExp('^Examen\\s+(?:de\\s+(?:la\\s+)?)?Unidad\\s+' + n + '(?:\\b|\\s*[-–—:])', 'i');
+  const states = QUIZ_SENCILLO_OPEN_UNIT_POLICY.CLOSED_BY_EXAM_STATES;
+
+  for (let s = 0; s < states.length; s++) {
+    let token;
+    do {
+      const page = Classroom.Courses.CourseWork.list(String(courseId), {
+        pageSize: 100,
+        pageToken: token,
+        courseWorkStates: states[s]
+      });
+      const hit = (page.courseWork || []).find(function(work) {
+        if (String(work.state || '').toUpperCase() === 'DELETED') return false;
+        const title = String(work.title || '').trim();
+        const sameTopicExam = wantedTopic && String(work.topicId || '') === wantedTopic && /^Examen\b/i.test(title);
+        return exact.test(title) || explicitUnit.test(title) || sameTopicExam;
+      });
+      if (hit) return hit;
+      token = page.nextPageToken;
+    } while (token);
+  }
+  return null;
 }
 
 function diagnosticarCourseWorkPublicadoUnidadQuizSencillo(courseId) {
@@ -133,6 +171,7 @@ function diagnosticarCourseWorkPublicadoUnidadQuizSencillo(courseId) {
         workType: String(work.workType || ''),
         topicId: topicId,
         topicName: topicById[topicId] || '',
+        unitEvidence: esCourseWorkEvidenciaUnidadQuizSencillo_(work),
         creationTime: String(work.creationTime || ''),
         updateTime: String(work.updateTime || ''),
         dueDate: work.dueDate || null,
@@ -152,73 +191,20 @@ function diagnosticarCourseWorkPublicadoUnidadQuizSencillo(courseId) {
   };
 }
 
-function extraerNumeroUnidadTopicQuizSencillo_(topicName) {
-  const normalized = String(topicName || '').trim();
-  const re = new RegExp(QUIZ_SENCILLO_OPEN_UNIT_POLICY.UNIT_TOPIC_PATTERN, 'i');
-  const m = normalized.match(re);
-  if (!m) return null;
-  const n = Number(m[1]);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
-function buscarExamenCierreUnidadQuizSencillo_(courseId, expectedTitle) {
-  const wanted = String(expectedTitle || '').trim().toLowerCase();
-  const states = QUIZ_SENCILLO_OPEN_UNIT_POLICY.CLOSED_BY_EXAM_STATES;
-  for (let s = 0; s < states.length; s++) {
-    let token;
-    do {
-      const page = Classroom.Courses.CourseWork.list(String(courseId), {
-        pageSize: 100,
-        pageToken: token,
-        courseWorkStates: states[s]
-      });
-      const hit = (page.courseWork || []).find(function(work) {
-        return String(work.title || '').trim().toLowerCase() === wanted &&
-          String(work.state || '').toUpperCase() !== 'DELETED';
-      });
-      if (hit) return hit;
-      token = page.nextPageToken;
-    } while (token);
-  }
-  return null;
-}
-
 function diagnosticarEstructuraMaterialesQuizSencillo_(courseId) {
-  const id = String(courseId || '').trim();
-  const topics = listarTopicsCursoQuizSencillo_(id);
-  const topicById = {};
-  topics.forEach(function(topic) { topicById[String(topic.topicId || '')] = String(topic.name || ''); });
-  const materials = listarMaterialesPublicadosQuizSencillo_(id)
-    .map(function(material) {
-      const topicId = String(material.topicId || '').trim();
-      return {
-        id: String(material.id || ''),
-        title: String(material.title || ''),
-        state: String(material.state || ''),
-        topicId: topicId,
-        topicName: topicById[topicId] || '',
-        creationTime: String(material.creationTime || ''),
-        updateTime: String(material.updateTime || '')
-      };
-    })
-    .sort(function(a,b){
-      return (Date.parse(b.creationTime || b.updateTime || '') || 0) - (Date.parse(a.creationTime || a.updateTime || '') || 0);
-    });
-  return {
-    courseId:id,
-    topicCount:topics.length,
-    topics:topics.map(function(topic){ return {topicId:String(topic.topicId || ''),name:String(topic.name || '')}; }),
-    publishedMaterialCount:materials.length,
-    publishedMaterials:materials.slice(0,30)
-  };
+  return diagnosticarCourseWorkPublicadoUnidadQuizSencillo(courseId);
 }
 
 function validarPoliticaUnidadAbiertaQuizSencillo_(policy) {
-  if (!policy || policy.MATERIAL_STATE !== 'PUBLISHED' ||
+  if (!policy || policy.RESOURCE_STATE !== 'PUBLISHED' ||
       policy.UNIT_TOPIC_PATTERN !== '^Unidad\\s+(\\d+)$' ||
-      policy.EXAM_TITLE_PREFIX !== 'Examen ' ||
-      policy.MATERIAL_ORDER_FIELD !== 'creationTime' ||
+      policy.SIMPLE_QUIZ_PATTERN !== '^Quiz\\s+\\d+$' ||
+      policy.EXAM_TITLE_PREFIX !== 'Examen' ||
+      policy.RESOURCE_ORDER_FIELD !== 'creationTime' ||
       policy.REQUIRE_TOPIC !== true || policy.REQUIRE_OPEN_UNIT !== true ||
+      policy.EXCLUDE_SIMPLE_QUIZ_FROM_UNIT_EVIDENCE !== true ||
+      policy.EXCLUDE_FINAL_GRADE_FROM_UNIT_EVIDENCE !== true ||
+      policy.EXCLUDE_EXAM_FROM_UNIT_EVIDENCE !== true ||
       JSON.stringify(policy.CLOSED_BY_EXAM_STATES) !== JSON.stringify(['DRAFT','PUBLISHED'])) {
     throw new Error('La política canónica de unidad abierta para Quiz Sencillo fue debilitada.');
   }
@@ -227,18 +213,6 @@ function validarPoliticaUnidadAbiertaQuizSencillo_(policy) {
 
 function diagnosticarUnidadAbiertaQuizSencillo(courseId) {
   return {ok:true, unidad:resolverUnidadAbiertaQuizSencillo_(courseId)};
-}
-
-function diagnosticarAutorizacionMaterialesClassroom() {
-  const info = ScriptApp.getAuthorizationInfo(ScriptApp.AuthMode.FULL);
-  const status = info.getAuthorizationStatus();
-  return {
-    ok:true,
-    authorizationStatus:String(status),
-    authorizationRequired:String(status) === 'REQUIRED',
-    authorizationUrl:String(info.getAuthorizationUrl() || ''),
-    scope:'https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly'
-  };
 }
 
 function asignarUnidadAQuizSencilloExistente(courseId, workId) {
@@ -267,10 +241,14 @@ function validarUnidadAbiertaQuizSencilloCanonica() {
   validarPoliticaUnidadAbiertaQuizSencillo_(QUIZ_SENCILLO_OPEN_UNIT_POLICY);
   if (extraerNumeroUnidadTopicQuizSencillo_('Unidad 2') !== 2) throw new Error('Regresión: Unidad 2 debe resolverse como unidad 2.');
   if (extraerNumeroUnidadTopicQuizSencillo_('Prácticas') !== null) throw new Error('Regresión: un Topic no unitario no puede convertirse en unidad.');
+  if (esCourseWorkEvidenciaUnidadQuizSencillo_({title:'Quiz 2'})) throw new Error('Regresión: Quiz N no puede inferir su propia unidad.');
+  if (esCourseWorkEvidenciaUnidadQuizSencillo_({title:'Calificación Unidad 1'})) throw new Error('Regresión: Calificación Unidad N no puede inferir unidad activa.');
+  if (esCourseWorkEvidenciaUnidadQuizSencillo_({title:'Examen Unidad 1 - Sistemas Distribuidos'})) throw new Error('Regresión: un examen no puede usarse como material de apertura de unidad.');
+  if (!esCourseWorkEvidenciaUnidadQuizSencillo_({title:'Práctica 06 - Ejecutar un cliente de red sencillo'})) throw new Error('Regresión: una práctica publicada sí debe aportar evidencia de unidad.');
   return {
     ok:true,
-    materialState:'PUBLISHED',
-    source:'LATEST_PUBLISHED_COURSEWORK_MATERIAL',
+    resourceState:'PUBLISHED',
+    source:'LATEST_PUBLISHED_ACADEMIC_COURSEWORK',
     closedByExamStates:['DRAFT','PUBLISHED'],
     assignment:'REQUIRED'
   };
