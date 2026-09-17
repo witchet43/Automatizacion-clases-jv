@@ -1,0 +1,60 @@
+name: Validate Hourly Simple Quiz
+
+on:
+  push:
+    paths:
+      - 'src/00_SolicitudImportacionCalificaciones.gs'
+      - 'src/33_QuizSencillo.gs'
+      - 'src/45_QuizAsistenciaClaseActiva.gs'
+      - 'src/46_UnidadAbiertaQuizSencillo.gs'
+      - 'src/47_AutoQuizSencilloHorario.gs'
+      - '.github/workflows/validate-auto-simple-quiz-hourly.yml'
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          for f in src/00_SolicitudImportacionCalificaciones.gs src/33_QuizSencillo.gs src/45_QuizAsistenciaClaseActiva.gs src/46_UnidadAbiertaQuizSencillo.gs src/47_AutoQuizSencilloHorario.gs; do
+            cp "$f" "/tmp/$(basename "$f").js"
+            node --check "/tmp/$(basename "$f").js"
+          done
+      - name: Enforce hourly draft-aware contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs=require('fs');
+          const hourly=fs.readFileSync('src/47_AutoQuizSencilloHorario.gs','utf8');
+          const dispatch=fs.readFileSync('src/00_SolicitudImportacionCalificaciones.gs','utf8');
+          const checks=[
+            [hourly,/ENABLED:\s*true/],
+            [hourly,/SLOT_MODE:\s*'NATURAL_HOUR'/],
+            [hourly,/DECISION_WINDOW_MINUTES:\s*5/],
+            [hourly,/MAX_ONE_DECISION_PER_SLOT:\s*true/],
+            [hourly,/NO_ACTIVE_CLASS:\s*'SKIP'/],
+            [hourly,/DRAFT_BLOCK_MODE:\s*'ANY_DRAFT_SIMPLE_QUIZ_IN_ACTIVE_COURSE'/],
+            [hourly,/DRAFT_TITLE_PATTERN:\s*'\^Quiz\\\\s\+\(\\\\d\+\)\$'/],
+            [hourly,/resolverClaseActivaQuizAsistencia_\(ahora\)/],
+            [hourly,/courseWorkStates:\s*\['DRAFT'\]/],
+            [hourly,/BLOQUEADO_DRAFT_EXISTENTE/],
+            [hourly,/crearQuizSencillo\s*\(/],
+            [hourly,/AUTO_HOURLY/],
+            [hourly,/function\s+validarAutoQuizSencilloHorarioCanonico/],
+            [dispatch,/procesarAutoQuizSencilloHorarioSeguro_\(\)/],
+            [dispatch,/AUTO_QUIZ_SENCILLO_HORARIO/],
+            [dispatch,/everyMinutes\(1\)/]
+          ];
+          const failed=checks.filter(([text,re])=>!re.test(text)).map(([,re])=>String(re));
+          if(failed.length){console.error('Missing hourly simple quiz invariants:\n'+failed.join('\n'));process.exit(1);}
+          if(/procesarAutoQuizSencilloSOSeguro_\(\)/.test(dispatch)) {
+            console.error('Legacy SO automatic quiz is still dispatcher-bound.');
+            process.exit(1);
+          }
+          console.log('Hourly draft-aware simple quiz contract OK');
+          NODE
