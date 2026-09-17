@@ -11,6 +11,7 @@ on:
           - diagnosticarInfraestructuraEjecucion
           - generarSiguienteClase
           - generarSiguienteClaseSistemasDistribuidos
+          - repararDraftsSesion15SistemasDistribuidos
           - verificarQuizPruebaCorreoVerificado
           - repararQuizPruebaCorreoVerificado
           - crearQuiz
@@ -44,6 +45,8 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -53,7 +56,8 @@ jobs:
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "push" ]; then
-            request="$(ls -1t .automation/requests/*.json | head -n1)"
+            request="$(git diff-tree --no-commit-id --name-only -r HEAD -- '.automation/requests/*.json' | tail -n1)"
+            test -n "$request" || { echo 'No request file changed in triggering commit.' >&2; exit 1; }
             echo "FUNCTION_NAME=$(node -p "require('./${request}').function")" >> "$GITHUB_ENV"
             echo "PARAMETERS_JSON=$(node -p "JSON.stringify(require('./${request}').parameters || [])")" >> "$GITHUB_ENV"
           else
