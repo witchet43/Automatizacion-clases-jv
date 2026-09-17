@@ -14,6 +14,7 @@ function instalarMonitorSolicitudesImportacion() {
     .forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('procesarSolicitudesImportacion').timeBased().everyMinutes(1).create();
   return {
+    ok: true,
     instalado: true,
     handler: 'procesarSolicitudesImportacion',
     frecuenciaMinutos: 1,
