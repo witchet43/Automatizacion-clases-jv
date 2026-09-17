@@ -8,6 +8,7 @@ on:
       - 'src/22_EntrypointsRecursosSeguros.gs'
       - 'src/33_QuizSencillo.gs'
       - 'src/34_SolicitudCrearQuizSencillo.gs'
+      - 'src/46_UnidadAbiertaQuizSencillo.gs'
       - '.github/workflows/validate-simple-quiz.yml'
   workflow_dispatch:
 
@@ -20,7 +21,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for f in src/00_PoliticasCanonicas.gs src/00_SolicitudImportacionCalificaciones.gs src/22_EntrypointsRecursosSeguros.gs src/33_QuizSencillo.gs src/34_SolicitudCrearQuizSencillo.gs; do
+          for f in src/00_PoliticasCanonicas.gs src/00_SolicitudImportacionCalificaciones.gs src/22_EntrypointsRecursosSeguros.gs src/33_QuizSencillo.gs src/34_SolicitudCrearQuizSencillo.gs src/46_UnidadAbiertaQuizSencillo.gs; do
             cp "$f" "/tmp/$(basename "$f").js"
             node --check "/tmp/$(basename "$f").js"
           done
@@ -33,20 +34,27 @@ jobs:
           const policy=fs.readFileSync('src/00_PoliticasCanonicas.gs','utf8');
           const entry=fs.readFileSync('src/22_EntrypointsRecursosSeguros.gs','utf8');
           const core=fs.readFileSync('src/33_QuizSencillo.gs','utf8');
+          const unit=fs.readFileSync('src/46_UnidadAbiertaQuizSencillo.gs','utf8');
           const adapter=fs.readFileSync('src/34_SolicitudCrearQuizSencillo.gs','utf8');
           const dispatcher=fs.readFileSync('src/00_SolicitudImportacionCalificaciones.gs','utf8');
           const checks=[
             [policy,/SIMPLE_QUIZ:\s*Object\.freeze/],[policy,/TITLE_PREFIX:\s*'Quiz '/],[policy,/SEQUENCE_SOURCE:\s*'CLASSROOM'/],
-            [policy,/EMPTY_ASSIGNMENT:\s*true/],[policy,/DUE_MODE:\s*'NEXT_NATURAL_HOUR'/],[policy,/DUE_STRICTLY_AFTER_REQUEST:\s*true/],
+            [policy,/EMPTY_ASSIGNMENT:\s*true/],[policy,/UNIT_ASSIGNMENT_REQUIRED:\s*true/],[policy,/UNIT_SOURCE:\s*'LATEST_PUBLISHED_COURSEWORK_MATERIAL_WITHOUT_EXAM'/],
+            [policy,/DUE_MODE:\s*'NEXT_NATURAL_HOUR'/],[policy,/DUE_STRICTLY_AFTER_REQUEST:\s*true/],
             [entry,/function\s+crearQuizSencillo\s*\(/],[entry,/crearQuizSencilloCanonico_/],
+            [core,/resolverUnidadAbiertaQuizSencillo_\(p\.courseId\)/],[core,/topicId:\s*unidad\.topicId/],
             [core,/function\s+obtenerSiguienteNumeroQuizSencillo_/],[core,/const re = \/\^Quiz\\s\+\(\\d\+\)\$\/i;/],
             [core,/function\s+calcularSiguienteHoraNaturalQuizSencillo_/],[core,/PAST_DUE_CREATION/],
             [core,/workType:\s*'ASSIGNMENT'/],[core,/state:\s*policy\.STATE/],
+            [unit,/function\s+resolverUnidadAbiertaQuizSencillo_/],[unit,/CourseWorkMaterials\.list/],
+            [unit,/MATERIAL_STATE:\s*'PUBLISHED'/],[unit,/EXAM_TITLE_PREFIX:\s*'Examen '/],
+            [unit,/CLOSED_BY_EXAM_STATES:\s*Object\.freeze\(\['DRAFT',\s*'PUBLISHED'\]\)/],
+            [unit,/function\s+asignarUnidadAQuizSencilloExistente/],
             [core,/function\s+validarQuizSencilloCanonico/],[core,/07:05:00/],[core,/09:15:00/],
             [adapter,/SOLICITUD_CREAR_QUIZ_SENCILLO/],[adapter,/crearQuizSencillo\(params\)/],
             [dispatcher,/procesarSolicitudCrearQuizSencillo_/]
           ];
           const failed=checks.filter(([text,re])=>!re.test(text)).map(([,re])=>String(re));
           if(failed.length){console.error('Missing simple quiz invariants:\n'+failed.join('\n'));process.exit(1);}
-          console.log('Simple quiz contract OK');
+          console.log('Simple quiz contract with open-unit assignment OK');
           NODE
