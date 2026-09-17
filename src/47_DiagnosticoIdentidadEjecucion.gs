@@ -1,9 +1,11 @@
 /** Diagnóstico mínimo de identidad de ejecución para autorizaciones incrementales. */
 function diagnosticarIdentidadEjecucion() {
+  const profile = Classroom.UserProfiles.get('me');
   return {
     ok: true,
-    effectiveUser: String(Session.getEffectiveUser().getEmail() || ''),
-    activeUser: String(Session.getActiveUser().getEmail() || ''),
+    classroomUserId: String(profile && profile.id || ''),
+    classroomEmail: String(profile && profile.emailAddress || ''),
+    classroomName: String(profile && profile.name && profile.name.fullName || ''),
     timezone: Session.getScriptTimeZone()
   };
 }
