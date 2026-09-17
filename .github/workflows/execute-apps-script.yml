@@ -8,6 +8,8 @@ on:
         required: true
         type: choice
         options:
+          - generarSiguienteClase
+          - resolverSiguienteClase
           - diagnosticarInfraestructuraEjecucion
           - verificarQuizPruebaCorreoVerificado
           - repararQuizPruebaCorreoVerificado
@@ -36,7 +38,6 @@ jobs:
     concurrency:
       group: apps-script-execution-${{ inputs.function_name }}
       cancel-in-progress: false
-
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
