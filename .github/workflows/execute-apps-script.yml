@@ -9,6 +9,8 @@ on:
         type: choice
         options:
           - diagnosticarInfraestructuraEjecucion
+          - generarSiguienteClase
+          - generarSiguienteClaseSistemasDistribuidos
           - verificarQuizPruebaCorreoVerificado
           - repararQuizPruebaCorreoVerificado
           - crearQuiz
@@ -27,6 +29,10 @@ on:
         required: true
         default: '[]'
         type: string
+  push:
+    branches: [main]
+    paths:
+      - '.automation/requests/**'
 
 jobs:
   execute:
@@ -34,25 +40,32 @@ jobs:
     permissions:
       contents: read
     concurrency:
-      group: apps-script-execution-${{ inputs.function_name }}
+      group: apps-script-execution
       cancel-in-progress: false
-
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: npm install
+      - name: Resolve request
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "push" ]; then
+            request="$(ls -1t .automation/requests/*.json | head -n1)"
+            echo "FUNCTION_NAME=$(node -p "require('./${request}').function")" >> "$GITHUB_ENV"
+            echo "PARAMETERS_JSON=$(node -p "JSON.stringify(require('./${request}').parameters || [])")" >> "$GITHUB_ENV"
+          else
+            echo 'FUNCTION_NAME=${{ inputs.function_name }}' >> "$GITHUB_ENV"
+            echo 'PARAMETERS_JSON=${{ inputs.parameters_json }}' >> "$GITHUB_ENV"
+          fi
       - name: Invoke official Apps Script Execution API and verify resources
         env:
           GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
           GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
           GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
-          FUNCTION_NAME: ${{ inputs.function_name }}
-          PARAMETERS_JSON: ${{ inputs.parameters_json }}
         shell: bash
         run: |
           set -euo pipefail
-          npm run apps-script:run -- \
-            --function "$FUNCTION_NAME" \
-            --parameters-json "$PARAMETERS_JSON"
+          npm run apps-script:run -- --function "$FUNCTION_NAME" --parameters-json "$PARAMETERS_JSON"
