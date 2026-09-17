@@ -67,3 +67,26 @@ function leerResultadoAsignacionUnidadQuizSencillo() {
   if (!raw) return {ok:true,status:'PENDING'};
   return JSON.parse(raw);
 }
+
+function diagnosticarAsignacionUnidadQuizTrigger() {
+  const props = PropertiesService.getScriptProperties();
+  const rawRequest = props.getProperty(QUIZ_UNIT_TRIGGER_REQUEST_KEY);
+  const rawResult = props.getProperty(QUIZ_UNIT_TRIGGER_RESULT_KEY);
+  const triggers = ScriptApp.getProjectTriggers()
+    .filter(function(trigger) { return trigger.getHandlerFunction() === QUIZ_UNIT_TRIGGER_HANDLER; })
+    .map(function(trigger) {
+      return {
+        handler: trigger.getHandlerFunction(),
+        eventType: String(trigger.getEventType()),
+        source: String(trigger.getTriggerSource()),
+        uniqueId: String(trigger.getUniqueId() || '')
+      };
+    });
+  return {
+    ok:true,
+    request: rawRequest ? JSON.parse(rawRequest) : null,
+    result: rawResult ? JSON.parse(rawResult) : null,
+    triggerCount: triggers.length,
+    triggers: triggers
+  };
+}
