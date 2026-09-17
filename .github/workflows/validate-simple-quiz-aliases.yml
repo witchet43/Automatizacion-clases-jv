@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'src/01_QuizSencilloIntentAliases.gs'
+      - 'src/45_QuizAsistenciaClaseActiva.gs'
       - '.github/workflows/validate-simple-quiz-aliases.yml'
   workflow_dispatch:
 
@@ -12,6 +13,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Syntax check
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp src/01_QuizSencilloIntentAliases.gs /tmp/aliases.js
+          cp src/45_QuizAsistenciaClaseActiva.gs /tmp/attendance.js
+          node --check /tmp/aliases.js
+          node --check /tmp/attendance.js
       - name: Validate canonical aliases
         shell: bash
         run: |
@@ -20,21 +29,40 @@ jobs:
           const fs = require('fs');
           const vm = require('vm');
           const code = fs.readFileSync('src/01_QuizSencilloIntentAliases.gs', 'utf8');
+          const attendanceCode = fs.readFileSync('src/45_QuizAsistenciaClaseActiva.gs', 'utf8');
           const context = {};
           vm.createContext(context);
           vm.runInContext(code, context);
 
-          const expected = ['Quiz Sencillo', 'Quiz Simple', 'Quiz de Asistencia'];
-          for (const alias of expected) {
+          for (const alias of ['Quiz Sencillo', 'Quiz Simple']) {
             const resolved = context.resolverIntentoRecursoCanonico_(alias);
-            if (!resolved || resolved.tipo !== 'QUIZ_SENCILLO' || resolved.entrypoint !== 'crearQuizSencillo') {
-              throw new Error(`Alias no resuelto al flujo canónico: ${alias}`);
+            if (!resolved || resolved.tipo !== 'QUIZ_SENCILLO' || resolved.entrypoint !== 'crearQuizSencillo' || resolved.requiereClaseActiva !== false) {
+              throw new Error(`Alias simple no resuelto al flujo canónico: ${alias}`);
             }
+          }
+
+          const attendance = context.resolverIntentoRecursoCanonico_('Quiz de Asistencia');
+          if (!attendance || attendance.tipo !== 'QUIZ_SENCILLO' || attendance.entrypoint !== 'crearQuizDeAsistencia' || attendance.requiereClaseActiva !== true || attendance.fuenteContexto !== 'CLASSROOM_COURSE_CALENDAR') {
+            throw new Error('Quiz de Asistencia no exige resolución de clase activa.');
           }
 
           if (context.resolverIntentoRecursoCanonico_('Quiz') !== null) {
             throw new Error('"Quiz" a secas no debe mapearse a QUIZ_SENCILLO.');
           }
 
-          console.log('Simple quiz aliases OK');
+          const required = [
+            /function\s+crearQuizDeAsistencia\s*\(/,
+            /function\s+resolverClaseActivaQuizAsistencia_\s*\(/,
+            /Classroom\.Courses\.list/,
+            /Calendar\.Events\.list/,
+            /QUIZ_ASISTENCIA_SIN_CLASE_ACTIVA/,
+            /QUIZ_ASISTENCIA_CLASE_AMBIGUA/,
+            /QUIZ_ASISTENCIA_CLASE_ACTIVA_SIN_TEMA/,
+            /ACTIVE_INTERVAL:\s*'\[START,END\)'/,
+            /Tema\/Subtema/
+          ];
+          const missing = required.filter(re => !re.test(attendanceCode));
+          if (missing.length) throw new Error('Faltan invariantes de Quiz de Asistencia: ' + missing.join(', '));
+
+          console.log('Simple/attendance quiz routing OK');
           NODE
