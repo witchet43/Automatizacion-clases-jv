@@ -117,7 +117,10 @@ function validarPoliticaQuizSencillo_(policy) {
       policy.DUE_MODE !== 'NEXT_NATURAL_HOUR' || policy.DUE_STRICTLY_AFTER_REQUEST !== true ||
       policy.PAST_DUE_CREATION !== 'BLOCK' || policy.TIMEZONE !== 'America/Mexico_City' ||
       policy.UNIT_ASSIGNMENT_REQUIRED !== true ||
-      policy.UNIT_SOURCE !== 'LATEST_PUBLISHED_COURSEWORK_MATERIAL_WITHOUT_EXAM' ||
+      policy.UNIT_SOURCE !== 'LATEST_PUBLISHED_ACADEMIC_COURSEWORK_WITHOUT_UNIT_EXAM' ||
+      policy.UNIT_RESOURCE_STATE !== 'PUBLISHED' ||
+      policy.UNIT_EXCLUDE_SIMPLE_QUIZ !== true || policy.UNIT_EXCLUDE_FINAL_GRADE !== true ||
+      policy.UNIT_EXCLUDE_EXAM !== true ||
       Number(policy.UTC_OFFSET_MINUTES) !== -360) {
     throw new Error('La política canónica de QUIZ SENCILLO fue debilitada.');
   }
@@ -233,5 +236,5 @@ function validarQuizSencilloCanonico() {
   if (c.horaLocal!=='10:00') throw new Error('Regresión: una solicitud exactamente a las 09:00 debe vencer a las 10:00 por ser estrictamente posterior.');
   const d = calcularSiguienteHoraNaturalQuizSencillo_(resolverInstanteSolicitudQuizSencillo_('2026-09-14 23:30:00',p),p);
   if (d.fechaLocal!=='2026-09-15'||d.horaLocal!=='00:00') throw new Error('Regresión: 23:30 debe vencer 00:00 del día siguiente.');
-  return {ok:true,tipo:'QUIZ_SENCILLO',secuencia:'CLASSROOM_MAX_PLUS_ONE',unidad:'LATEST_PUBLISHED_MATERIAL_WITHOUT_EXAM',vencimiento:'NEXT_NATURAL_HOUR',state:'DRAFT'};
+  return {ok:true,tipo:'QUIZ_SENCILLO',secuencia:'CLASSROOM_MAX_PLUS_ONE',unidad:'LATEST_PUBLISHED_ACADEMIC_COURSEWORK_WITHOUT_UNIT_EXAM',vencimiento:'NEXT_NATURAL_HOUR',state:'DRAFT'};
 }
