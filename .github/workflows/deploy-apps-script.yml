@@ -341,3 +341,4 @@ jobs:
             exit 0
           fi
           npm run apps-script:run -- --function diagnosticarInfraestructuraEjecucion
+          npm run apps-script:run -- --function validarReadinessAcademicoCompleto
