@@ -8,6 +8,7 @@ function crearActividad(params) {
   return ejecutarConNotificacionError_('CREAR_ACTIVIDAD', params, function () {
     const ctx = prepararContextoGuardrailRecurso_(params, 'ACTIVIDAD');
     preflightDocumentoMaestro(ctx.guardrailRequest);
+    assertAcademicAutomationWriteEnabled_();
     const actividad = aplicarReglaVencimientoActividadEnClase_(ctx.params);
     const result = crearCourseWorkDirecto_(normalizarCreacionDirecta_(actividad, 'ACTIVIDAD'));
     postflightDocumentoMaestro(normalizarResultadoGuardrail_(result), ctx.guardrailRequest);
@@ -19,6 +20,7 @@ function crearTarea(params) {
   return ejecutarConNotificacionError_('CREAR_TAREA', params, function () {
     const ctx = prepararContextoGuardrailRecurso_(params, 'TAREA');
     preflightDocumentoMaestro(ctx.guardrailRequest);
+    assertAcademicAutomationWriteEnabled_();
     const tarea = aplicarReglaVencimientoTarea_(ctx.params);
     const result = crearCourseWorkDirecto_(normalizarCreacionDirecta_(tarea, 'TAREA'));
     const due = asegurarVencimientoTareaCreada_(tarea.courseId, result.workId, tarea);
@@ -35,6 +37,7 @@ function crearPractica(params) {
   return ejecutarConNotificacionError_('CREAR_PRACTICA', params, function () {
     const ctx = prepararContextoGuardrailRecurso_(params, 'PRACTICA');
     preflightDocumentoMaestro(ctx.guardrailRequest);
+    assertAcademicAutomationWriteEnabled_();
     let practica = null;
     let result = null;
     try {
@@ -60,6 +63,7 @@ function crearQuiz(params) {
   return ejecutarConNotificacionError_('CREAR_QUIZ', params, function () {
     const ctx = prepararContextoGuardrailRecurso_(params, 'QUIZ');
     preflightDocumentoMaestro(ctx.guardrailRequest);
+    assertAcademicAutomationWriteEnabled_();
     const result = crearEvaluacionDirecta_(normalizarCreacionDirecta_(ctx.params, 'QUIZ'));
     postflightDocumentoMaestro(normalizarResultadoGuardrail_(result), ctx.guardrailRequest);
     return result;
@@ -70,6 +74,7 @@ function crearQuizSencillo(params) {
   return ejecutarConNotificacionError_('CREAR_QUIZ_SENCILLO', params, function () {
     const ctx = prepararContextoGuardrailRecurso_(params, 'QUIZ');
     preflightDocumentoMaestro(ctx.guardrailRequest);
+    assertAcademicAutomationWriteEnabled_();
     const result = crearQuizSencilloCanonico_(ctx.params);
     postflightDocumentoMaestro(normalizarResultadoGuardrail_(result), ctx.guardrailRequest);
     return result;
@@ -80,6 +85,7 @@ function crearExamen(params) {
   return ejecutarConNotificacionError_('CREAR_EXAMEN', params, function () {
     const ctx = prepararContextoGuardrailRecurso_(params, 'EXAMEN');
     preflightDocumentoMaestro(ctx.guardrailRequest);
+    assertAcademicAutomationWriteEnabled_();
     const result = crearEvaluacionDirecta_(normalizarCreacionDirecta_(ctx.params, 'EXAMEN'));
     postflightDocumentoMaestro(normalizarResultadoGuardrail_(result), ctx.guardrailRequest);
     return result;
@@ -153,6 +159,7 @@ function validarEntrypointsRecursosSeguros() {
     ok:true,
     entrypoints:names,
     masterGuardrails:'REQUIRED',
+    academicReadinessGate:'8_PLANNINGS_READ_ONLY_REQUIRED',
     masterContext:'materia+temaSubtema',
     resourceState:'DRAFT',
     errorReporting:'REQUIRED',
