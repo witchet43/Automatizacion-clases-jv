@@ -7,6 +7,24 @@ const MASTER_GUARDRAILS = Object.freeze({
   MASTER_DOCUMENT_ID: '1lH7ME10VRX472PP54BdeE9evRbbjAUYowov3-slM5v8',
   PLANNING_SPREADSHEET_ID: '1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI',
   PLANNING_SHEET: 'Planeación maestra',
+  PLANNING_SOURCES: Object.freeze({
+    'itq - sistemas operativos': Object.freeze({spreadsheetId:'1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI', preferredSheet:'Planeación maestra'}),
+    'sistemas operativos': Object.freeze({spreadsheetId:'1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI', preferredSheet:'Planeación maestra'}),
+    'uaq - sistemas distribuidos': Object.freeze({spreadsheetId:'11QQnAbMCCoebc2o6Tm2_lROZvyfjFnVM89ZAcgBbr6I', preferredSheet:'Planeación'}),
+    'sistemas distribuidos': Object.freeze({spreadsheetId:'11QQnAbMCCoebc2o6Tm2_lROZvyfjFnVM89ZAcgBbr6I', preferredSheet:'Planeación'}),
+    'uaq - administracion': Object.freeze({spreadsheetId:'1G1MTtP9dRN8fM7vG7uOQoHkjbK2uOEoca3Aa2SxJqr4', preferredSheet:'Planeación'}),
+    'administracion': Object.freeze({spreadsheetId:'1G1MTtP9dRN8fM7vG7uOQoHkjbK2uOEoca3Aa2SxJqr4', preferredSheet:'Planeación'}),
+    'uaq - algoritmos y estructuras de datos': Object.freeze({spreadsheetId:'1Ujb02-K9k9xkEu7rPMsdV2v3E8MIFAUyP-yAmAwZwWc', preferredSheet:'Planeación'}),
+    'algoritmos y estructuras de datos': Object.freeze({spreadsheetId:'1Ujb02-K9k9xkEu7rPMsdV2v3E8MIFAUyP-yAmAwZwWc', preferredSheet:'Planeación'}),
+    'uaq - analisis y diseno de sistemas computacionales': Object.freeze({spreadsheetId:'1a7Icsnxciy2cK9xHOEBWBt_RbE0v9sM8ioRCfp95YAA', preferredSheet:'Planeación'}),
+    'analisis y diseno de sistemas computacionales': Object.freeze({spreadsheetId:'1a7Icsnxciy2cK9xHOEBWBt_RbE0v9sM8ioRCfp95YAA', preferredSheet:'Planeación'}),
+    'uaq - etica y legislacion informatica': Object.freeze({spreadsheetId:'16XoGCp7vPMD5dgvhMgQz_MUDfSvgLPrs9KfXKXwU-bQ', preferredSheet:'Planeación'}),
+    'etica y legislacion informatica': Object.freeze({spreadsheetId:'16XoGCp7vPMD5dgvhMgQz_MUDfSvgLPrs9KfXKXwU-bQ', preferredSheet:'Planeación'}),
+    'uaq - introduccion a las tecnologias de informacion': Object.freeze({spreadsheetId:'1j8_Qq0esbBhYOIqbkU9DywV-Zl3l-FW71KlKNRW8aS0', preferredSheet:'Planeación'}),
+    'introduccion a las tecnologias de informacion': Object.freeze({spreadsheetId:'1j8_Qq0esbBhYOIqbkU9DywV-Zl3l-FW71KlKNRW8aS0', preferredSheet:'Planeación'}),
+    'uaq - topico i': Object.freeze({spreadsheetId:'1Q-aVBDOli2ccjR3hgyZcpnXF5Uo6Nlh3yfW8Y7sEs5M', preferredSheet:'Planeación'}),
+    'topico i': Object.freeze({spreadsheetId:'1Q-aVBDOli2ccjR3hgyZcpnXF5Uo6Nlh3yfW8Y7sEs5M', preferredSheet:'Planeación'})
+  }),
   DEFAULT_STATE: 'DRAFT',
   DEFAULT_ROOM: 'LCF',
   REQUIRED_PACKAGE: ['unidad','temaSubtema','tareaPrevia','actividadEnClaseOPractica','tareaSiguiente']
@@ -89,22 +107,49 @@ function validateClassPackageRequest_(r) {
   }
 }
 
+function resolvePlanningSource_(materia) {
+  const key = normalizeGuard_(materia);
+  const source = MASTER_GUARDRAILS.PLANNING_SOURCES[key];
+  if (!source) {
+    throw new Error('BLOCKED_MASTER_RULE: no existe una fuente de planeación canónica configurada para ' + materia + '.');
+  }
+  return source;
+}
+
 function loadCanonicalPlanning_(materia) {
-  const ss = SpreadsheetApp.openById(MASTER_GUARDRAILS.PLANNING_SPREADSHEET_ID);
-  const sheet = ss.getSheetByName(MASTER_GUARDRAILS.PLANNING_SHEET);
-  if (!sheet) throw new Error('No existe hoja de planeación: ' + MASTER_GUARDRAILS.PLANNING_SHEET);
+  const source = resolvePlanningSource_(materia);
+  const ss = SpreadsheetApp.openById(source.spreadsheetId);
+  let sheet = ss.getSheetByName(source.preferredSheet);
+  if (!sheet) {
+    const sheets = ss.getSheets();
+    if (sheets.length === 1) sheet = sheets[0];
+  }
+  if (!sheet) throw new Error('No existe hoja de planeación canónica para ' + materia + '.');
+
   const values = sheet.getDataRange().getDisplayValues();
   if (values.length < 2) return [];
-  const headers = values[0].map(normalizeGuard_);
+
+  let headerIndex = -1;
+  const scanLimit = Math.min(values.length, 12);
+  for (let i = 0; i < scanLimit; i += 1) {
+    const candidateHeaders = values[i].map(normalizeGuard_);
+    if (findHeaderGuard_(candidateHeaders, ['tema / alcance','tema/alcance','tema / subtema','tema/subtema','tema','subtema']) >= 0) {
+      headerIndex = i;
+      break;
+    }
+  }
+  if (headerIndex < 0) throw new Error('La planeación no contiene una fila de encabezados con Tema / alcance reconocible.');
+
+  const headers = values[headerIndex].map(normalizeGuard_);
   const subjectCol = findHeaderGuard_(headers, ['materia','asignatura']);
   const unitCol = findHeaderGuard_(headers, ['unidad']);
   const topicCol = findHeaderGuard_(headers, ['tema / alcance','tema/alcance','tema / subtema','tema/subtema','tema','subtema']);
   const classCol = findHeaderGuard_(headers, ['clase','sesion','sesión']);
   if (topicCol < 0) throw new Error('La planeación no contiene columna Tema / alcance reconocible.');
 
-  return values.slice(1).map(function(row, i) {
+  return values.slice(headerIndex + 1).map(function(row, i) {
     return {
-      row: i + 2,
+      row: headerIndex + i + 2,
       clase: classCol >= 0 ? row[classCol] : '',
       materia: subjectCol >= 0 ? row[subjectCol] : materia,
       unidad: unitCol >= 0 ? row[unitCol] : '',
@@ -144,4 +189,12 @@ function requiredGuard_(value, name) {
 
 function normalizeGuard_(value) {
   return String(value == null ? '' : value).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+}
+
+function validarFuentesPlaneacionGuardrail_() {
+  const sd = resolvePlanningSource_('UAQ - Sistemas Distribuidos');
+  const so = resolvePlanningSource_('ITQ - Sistemas Operativos');
+  if (sd.spreadsheetId !== '11QQnAbMCCoebc2o6Tm2_lROZvyfjFnVM89ZAcgBbr6I') throw new Error('Regresión: fuente de Sistemas Distribuidos incorrecta.');
+  if (so.spreadsheetId !== '1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI') throw new Error('Regresión: fuente de Sistemas Operativos incorrecta.');
+  return {ok:true, materiasConfiguradas:Object.keys(MASTER_GUARDRAILS.PLANNING_SOURCES).length};
 }
