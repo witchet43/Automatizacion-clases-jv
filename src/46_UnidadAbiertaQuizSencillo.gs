@@ -3,7 +3,7 @@
  *
  * Fuente de verdad:
  * 1) último material didáctico PUBLISHED del curso en Google Classroom;
- * 2) el Topic de ese material debe ser exactamente Unidad N;
+ * 2) el Topic de ese material debe identificar Unidad N;
  * 3) si existe CourseWork activo titulado exactamente Examen N, esa unidad se
  *    considera cerrada y no se permite crear/asignar un Quiz Sencillo.
  */
@@ -129,6 +129,36 @@ function buscarExamenCierreUnidadQuizSencillo_(courseId, expectedTitle) {
     } while (token);
   }
   return null;
+}
+
+function diagnosticarEstructuraMaterialesQuizSencillo_(courseId) {
+  const id = String(courseId || '').trim();
+  const topics = listarTopicsCursoQuizSencillo_(id);
+  const topicById = {};
+  topics.forEach(function(topic) { topicById[String(topic.topicId || '')] = String(topic.name || ''); });
+  const materials = listarMaterialesPublicadosQuizSencillo_(id)
+    .map(function(material) {
+      const topicId = String(material.topicId || '').trim();
+      return {
+        id: String(material.id || ''),
+        title: String(material.title || ''),
+        state: String(material.state || ''),
+        topicId: topicId,
+        topicName: topicById[topicId] || '',
+        creationTime: String(material.creationTime || ''),
+        updateTime: String(material.updateTime || '')
+      };
+    })
+    .sort(function(a,b){
+      return (Date.parse(b.creationTime || b.updateTime || '') || 0) - (Date.parse(a.creationTime || a.updateTime || '') || 0);
+    });
+  return {
+    courseId:id,
+    topicCount:topics.length,
+    topics:topics.map(function(topic){ return {topicId:String(topic.topicId || ''),name:String(topic.name || '')}; }),
+    publishedMaterialCount:materials.length,
+    publishedMaterials:materials.slice(0,30)
+  };
 }
 
 function validarPoliticaUnidadAbiertaQuizSencillo_(policy) {
