@@ -1,9 +1,9 @@
 /**
  * UNIDAD ABIERTA CANÓNICA PARA QUIZ SENCILLO / DE ASISTENCIA
  *
- * Fuente de verdad:
- * 1) último material didáctico PUBLISHED del curso en Google Classroom;
- * 2) el Topic de ese material debe identificar Unidad N;
+ * Fuente de verdad académica:
+ * 1) último recurso didáctico PUBLISHED del curso en Google Classroom;
+ * 2) el Topic de ese recurso debe identificar Unidad N;
  * 3) si existe CourseWork activo titulado exactamente Examen N, esa unidad se
  *    considera cerrada y no se permite crear/asignar un Quiz Sencillo.
  */
@@ -98,6 +98,58 @@ function listarMaterialesPublicadosQuizSencillo_(courseId) {
     token = page.nextPageToken;
   } while (token);
   return out;
+}
+
+function listarCourseWorkPublicadoQuizSencillo_(courseId) {
+  let token;
+  const out = [];
+  do {
+    const page = Classroom.Courses.CourseWork.list(String(courseId), {
+      pageSize: 100,
+      pageToken: token,
+      courseWorkStates: 'PUBLISHED'
+    });
+    (page.courseWork || []).forEach(function(work) {
+      if (String(work.state || '').toUpperCase() === 'PUBLISHED') out.push(work);
+    });
+    token = page.nextPageToken;
+  } while (token);
+  return out;
+}
+
+function diagnosticarCourseWorkPublicadoUnidadQuizSencillo(courseId) {
+  const id = String(courseId || '').trim();
+  if (!id) throw new Error('courseId es obligatorio.');
+  const topics = listarTopicsCursoQuizSencillo_(id);
+  const topicById = {};
+  topics.forEach(function(topic) { topicById[String(topic.topicId || '')] = String(topic.name || ''); });
+  const works = listarCourseWorkPublicadoQuizSencillo_(id)
+    .map(function(work) {
+      const topicId = String(work.topicId || '').trim();
+      return {
+        id: String(work.id || ''),
+        title: String(work.title || ''),
+        state: String(work.state || ''),
+        workType: String(work.workType || ''),
+        topicId: topicId,
+        topicName: topicById[topicId] || '',
+        creationTime: String(work.creationTime || ''),
+        updateTime: String(work.updateTime || ''),
+        dueDate: work.dueDate || null,
+        dueTime: work.dueTime || null
+      };
+    })
+    .sort(function(a,b){
+      return (Date.parse(b.creationTime || b.updateTime || '') || 0) - (Date.parse(a.creationTime || a.updateTime || '') || 0);
+    });
+  return {
+    ok:true,
+    courseId:id,
+    topicCount:topics.length,
+    topics:topics.map(function(topic){ return {topicId:String(topic.topicId || ''),name:String(topic.name || '')}; }),
+    publishedCourseWorkCount:works.length,
+    publishedCourseWork:works.slice(0,100)
+  };
 }
 
 function extraerNumeroUnidadTopicQuizSencillo_(topicName) {
