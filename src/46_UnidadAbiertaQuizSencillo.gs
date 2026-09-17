@@ -147,6 +147,18 @@ function diagnosticarUnidadAbiertaQuizSencillo(courseId) {
   return {ok:true, unidad:resolverUnidadAbiertaQuizSencillo_(courseId)};
 }
 
+function diagnosticarAutorizacionMaterialesClassroom() {
+  const info = ScriptApp.getAuthorizationInfo(ScriptApp.AuthMode.FULL);
+  const status = info.getAuthorizationStatus();
+  return {
+    ok:true,
+    authorizationStatus:String(status),
+    authorizationRequired:String(status) === 'REQUIRED',
+    authorizationUrl:String(info.getAuthorizationUrl() || ''),
+    scope:'https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly'
+  };
+}
+
 function asignarUnidadAQuizSencilloExistente(courseId, workId) {
   const id = String(courseId || '').trim();
   const wid = String(workId || '').trim();
