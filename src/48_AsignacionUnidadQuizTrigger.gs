@@ -47,12 +47,19 @@ function ejecutarAsignacionUnidadQuizSencilloTrigger_() {
       assigned:assigned
     };
   } catch (err) {
+    let diagnostic = null;
+    try {
+      if (request && request.courseId) diagnostic = diagnosticarEstructuraMaterialesQuizSencillo_(request.courseId);
+    } catch (diagnosticErr) {
+      diagnostic = {error:String(diagnosticErr && diagnosticErr.message || diagnosticErr)};
+    }
     result = {
       ok:false,
       status:'ERROR',
       requestId:String(request && request.requestId || ''),
       completedAt:new Date().toISOString(),
-      error:String(err && err.message || err)
+      error:String(err && err.message || err),
+      diagnostic:diagnostic
     };
   } finally {
     props.setProperty(QUIZ_UNIT_TRIGGER_RESULT_KEY, JSON.stringify(result));
