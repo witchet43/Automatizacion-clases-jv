@@ -24,8 +24,9 @@ const DIDACTICA_TRANSVERSAL = Object.freeze({
 function limpiarMetadatosAdministrativos_(text){
   return String(text == null ? '' : text)
     .replace(/\bTrabajo individual\s*\.\s*Duraci[oó]n estimada\s*:\s*\d+\s*(?:[–—-]\s*\d+\s*)?(?:minutos?|mins?|horas?)\s*\.?/gi,'')
-    .replace(/(?:^|\n)\s*Trabajo individual\s*\.\s*(?=\n|$)/gim,'')
+    .replace(/\bTrabajo individual\s*\.\s*/gi,'')
     .replace(/(?:^|\n)\s*Duraci[oó]n estimada\s*:\s*\d+\s*(?:[–—-]\s*\d+\s*)?(?:minutos?|mins?|horas?)\s*\.?\s*(?=\n|$)/gim,'')
+    .replace(/\b(?:tu equipo personal o el equipo del laboratorio|tu equipo personal o equipo del laboratorio)\b/gi,'tu computadora personal con Windows')
     .replace(/\b(?:tu equipo o laboratorio|tu equipo o el laboratorio|el equipo o laboratorio|el equipo o el laboratorio|el equipo del laboratorio|equipo institucional|equipo asignado)\b/gi,'tu computadora personal con Windows')
     .replace(/\n{3,}/g,'\n\n').trim();
 }
@@ -47,6 +48,50 @@ function asegurarGuiaComandos_(text){
     }
   });
   return out;
+}
+/**
+ * Classroom description acepta texto y saltos de línea, no estilos ricos por API.
+ * Estructura legible e idempotente; nunca envía Markdown/HTML literal.
+ */
+function formatearDescripcionClassroom_(text,tipo){
+  const kind=String(tipo||'').toUpperCase();
+  let raw=String(text||'').replace(/\r\n?/g,'\n').trim();
+  if(DIDACTICA_TRANSVERSAL.TIPOS.indexOf(kind)<0||!raw) return raw;
+  if(/^INDICACIONES PARA EL ALUMNO\n/m.test(raw)) return raw;
+  raw=raw.replace(/\s+(?=(?:[1-9]|[12]\d)\.\s+(?=[A-ZÁÉÍÓÚÑ¿]))/g,'\n');
+  raw=raw.replace(/\s+(?=Evidencia(?:s)?\s*:\s*)/gi,'\n');
+  const lines=raw.split(/\n+/).map(function(v){return v.trim();}).filter(Boolean);
+  const intro=[],steps=[],evidence=[],notes=[];
+  let section='intro';
+  lines.forEach(function(line){
+    if(/^Evidencia(?:s)?\s*:/i.test(line)){
+      section='evidence';
+      evidence.push(line.replace(/^Evidencia(?:s)?\s*:\s*/i,'').trim());
+    }else if(/^\d+\.\s+/.test(line)){
+      section='steps';steps.push(line);
+    }else if(/^Guía didáctica\s*—/i.test(line)){
+      notes.push(line);
+    }else if(section==='steps'){steps.push(line);}
+    else if(section==='evidence'){evidence.push(line);}
+    else intro.push(line);
+  });
+  // Una guía insertada inmediatamente antes de un paso debe conservarse junto
+  // a ese paso: no se pierden instrucciones ni se rehace el algoritmo académico.
+  const result=['INDICACIONES PARA EL ALUMNO'];
+  if(intro.length)result.push('',intro.join('\n\n'));
+  if(steps.length)result.push('','DESARROLLO', '',steps.join('\n\n'));
+  if(evidence.length)result.push('','EVIDENCIA DE ENTREGA','',evidence.join('\n\n'));
+  if(notes.length)result.push('','GUÍA DE LOS COMANDOS','',notes.join('\n\n'));
+  return result.join('\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+function validarFormatoDescripcionClassroom_(text,tipo){
+  const s=String(text||'');
+  if(DIDACTICA_TRANSVERSAL.TIPOS.indexOf(String(tipo||'').toUpperCase())<0||!s)return true;
+  if(!s.startsWith('INDICACIONES PARA EL ALUMNO\n')) throw new Error('BLOCKED_CLASSROOM_FORMAT: falta encabezado canónico.');
+  if(!/\n\nDESARROLLO\n\n/.test(s)&&/\b\d+\.\s+/.test(s))throw new Error('BLOCKED_CLASSROOM_FORMAT: faltan pasos en líneas separadas.');
+  if(/\bTrabajo individual\s*\.|Duraci[oó]n estimada\s*:/i.test(s))throw new Error('BLOCKED_CLASSROOM_FORMAT: persisten metadatos administrativos.');
+  if(formatearDescripcionClassroom_(s,tipo)!==s)throw new Error('BLOCKED_CLASSROOM_FORMAT: formato no idempotente.');
+  return true;
 }
 function normalizarSolicitudDidactica_(params,tipo){
   const p=params&&typeof params==='object'?Object.assign({},params):{};
@@ -85,5 +130,11 @@ function validarDidacticaTransversal(){
   if(pract.indexOf('No reportado')<0)throw new Error('REGRESION_DIDACTICA: falta lectura didáctica de Get-PhysicalDisk.');
   let blocked=false;try{normalizarInstruccionesDidacticas_('Ejecuta Set-Something -Force','TAREA');}catch(e){blocked=/BLOCKED_DIDACTICA_COMANDO/.test(String(e));}
   if(!blocked)throw new Error('REGRESION_DIDACTICA: comando no documentado no se bloqueó.');
+  const flat='Preparación para 2.1.4 Periféricos. Trabajo individual. 1. Identifica ocho periféricos. 2. Clasifica cada uno. Evidencia: tabla y captura.';
+  const formatted=formatearDescripcionClassroom_(normalizarInstruccionesDidacticas_(flat,'TAREA'),'TAREA');
+  validarFormatoDescripcionClassroom_(formatted,'TAREA');
+  if(!/DESARROLLO\n\n1\. Identifica ocho periféricos\.\n\n2\. Clasifica cada uno\./.test(formatted)||!/EVIDENCIA DE ENTREGA/.test(formatted)||/Trabajo individual/.test(formatted))throw new Error('REGRESION_FORMATO: se perdieron pasos o evidencia.');
+  if(formatearDescripcionClassroom_(formatted,'TAREA')!==formatted)throw new Error('REGRESION_FORMATO: no idempotente.');
+
   return {ok:true,types:DIDACTICA_TRANSVERSAL.TIPOS,personalWindows:true,adminTextRemoved:true,commandGuides:true,idempotent:true,mutation:false};
 }
