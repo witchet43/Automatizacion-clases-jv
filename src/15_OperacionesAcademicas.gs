@@ -128,8 +128,12 @@ function normalizarParametrosOperacion_(params) {
 function normalizarUnidadOperacion_(unidad) {
   const raw=String(unidad===undefined||unidad===null?'':unidad).trim();
   if(!raw) throw new Error('La operación requiere unidad.');
-  const n=extraerNumeroUnidad_(raw);
-  if(!n) throw new Error('No se pudo identificar el número de unidad en: '+raw+'.');
+  // La intención mínima "unidad: 2" y la forma "Unidad 2" son equivalentes.
+  // No convertir etiquetas ambiguas ni admitir cero, negativos o decimales.
+  const bare=raw.match(/^[1-9]\d*$/);
+  const n=bare?Number(bare[0]):extraerNumeroUnidad_(raw);
+  if(!Number.isSafeInteger(n)||n<=0)
+    throw new Error('No se pudo identificar el número de unidad en: '+raw+'.');
   return ACADEMIC_POLICY.NAMING.UNIT_PREFIX+n;
 }
 
