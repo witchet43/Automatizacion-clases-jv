@@ -1,7 +1,7 @@
 /** Auditoría de solo lectura contra Classroom real: ITQ Sistemas Operativos, sesiones 9–16. No crea ni publica recursos. */
 function auditarClassroomSistemasOperativosITQ() {
-  const courseId = '105101248437356972360';
-  const course = Classroom.Courses.get(courseId);
+  const course = resolverCursoClassroomPorMateria_('Sistemas Operativos');
+  const courseId = String(course.id);
   const works = [];
   let pageToken;
   do {
