@@ -13,4 +13,14 @@ const verify=x=>vm.runInContext('assertQuizFormNotPublished_',sandbox)(x);
 assert.equal(verify({supportsAdvancedResponderPermissions:()=>true,isPublished:()=>false}),true);
 assert.throws(()=>verify({supportsAdvancedResponderPermissions:()=>true,isPublished:()=>true}),/BLOCKED_FORMS_DRAFT/);
 assert.throws(()=>verify({supportsAdvancedResponderPermissions:()=>false,isPublished:()=>false}),/BLOCKED_FORMS_DRAFT/);
+const execution=fs.readFileSync('src/38_ExecutionApi.gs','utf8');
+const linkHelper=execution.match(/function formularioVinculadoPorUrlReal_\(materials,responderUrl\)\s*\{[\s\S]*?\n\}/);
+assert.ok(linkHelper,'La verificación remota debe comparar la URL de respuesta real.');
+vm.runInContext(linkHelper[0],sandbox);
+const linked=(materials,url)=>vm.runInContext('formularioVinculadoPorUrlReal_',sandbox)(materials,url);
+const responderUrl='https://docs.google.com/forms/d/e/1FAIpQL_example/viewform';
+assert.equal(linked([{link:{url:responderUrl}}],responderUrl),true,
+  'La URL de respuesta /d/e/ no contiene el ID de edición y aun así debe verificarse.');
+assert.equal(linked([{link:{url:'https://docs.google.com/forms/d/otro/viewform'}}],responderUrl),false);
+assert.match(execution,/assertQuizFormNotPublished_\(form\)/);
 console.log('PASS: el Form nace sin publicar, se verifica antes de Classroom, un Form publicado o no verificable queda bloqueado.');
