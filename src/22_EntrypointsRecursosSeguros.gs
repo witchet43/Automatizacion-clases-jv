@@ -147,7 +147,9 @@ function normalizarResultadoGuardrail_(result) {
     state: String(r.state || r.estado || 'DRAFT'),
     workId: String(r.workId || ''),
     formId: String(r.formId || ''),
-    documentId: String(r.documentId || '')
+    courseId: String(r.courseId || ''),
+    documentId: String(r.documentId || ''),
+    shareMode: String(r.shareMode || '')
   };
 }
 
