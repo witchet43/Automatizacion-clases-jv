@@ -41,7 +41,7 @@ function crearPractica(params) {
     let practica = null;
     let result = null;
     try {
-      practica = prepararPracticaConGoogleDoc_(ctx.params);
+      practica = prepararPracticaConGoogleDoc_(normalizarSolicitudDidactica_(ctx.params,'PRACTICA'));
       result = crearCourseWorkDirecto_(normalizarCreacionDirecta_(practica, 'PRACTICA'));
       const verificacion = verificarPracticaCreada_(practica.courseId, result.workId, practica);
       result.documentId = verificacion.documentId;
@@ -158,6 +158,7 @@ function validarEntrypointsRecursosSeguros() {
   validarVencimientoTareaCanonico();
   validarPracticaCanonica();
   validarQuizSencilloCanonico();
+  validarDidacticaTransversal();
   if (typeof preflightDocumentoMaestro !== 'function' || typeof postflightDocumentoMaestro !== 'function') {
     throw new Error('MASTER_GUARDRAILS_REQUIRED: faltan preflight/postflight del Documento Maestro.');
   }
