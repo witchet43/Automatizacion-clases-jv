@@ -1,0 +1,13 @@
+{
+  "function": "reconciliarCalificacionesImportadas",
+  "parameters": [
+    {
+      "quizId": "EXAM-20260909-ADM-U2-001",
+      "correos": [
+        "darckisoul568@gmail.com",
+        "urielalexis4010@gmail.com",
+        "andresmanuelbernal2002@gmail.com"
+      ]
+    }
+  ]
+}
