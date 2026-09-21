@@ -31,6 +31,21 @@ function idsGoogleDocumentosSolicitados_(p) {
   return ids;
 }
 
+/** Obtiene únicamente Google Docs nativos YA adjuntos al CourseWork real. */
+function idsGoogleDocumentosAdjuntos_(materials) {
+  const ids=[];
+  (Array.isArray(materials)?materials:[]).forEach(function(m){
+    const id=m&&m.driveFile&&m.driveFile.driveFile?
+      String(m.driveFile.driveFile.id||'').trim():m&&m.link?
+      extraerIdGoogleDocumentoDeUrl_(m.link.url):'';
+    if(!id||ids.indexOf(id)>=0)return;
+    const f=Drive.Files.get(id,{fields:'id,mimeType,trashed'});
+    if(f.trashed)throw new Error('BLOCKED_GOOGLE_DOC: documento adjunto en la papelera: '+id);
+    if(String(f.mimeType)===DOCUMENTO_EDITABLE_CLASSROOM.MIME)ids.push(id);
+  });
+  return ids;
+}
+
 function requiereDocumentoEditableClassroom_(p) {
   const tipo=String(p&&p.tipo||'').toUpperCase();
   if(DOCUMENTO_EDITABLE_CLASSROOM.TIPOS.indexOf(tipo)<0)return false;
