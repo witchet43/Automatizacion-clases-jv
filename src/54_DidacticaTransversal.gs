@@ -43,6 +43,13 @@ function asegurarGuiaComandos_(text){
   });
   return out;
 }
+function normalizarSolicitudDidactica_(params,tipo){
+  const p=params&&typeof params==='object'?Object.assign({},params):{};
+  p.descripcion=normalizarInstruccionesDidacticas_(p.descripcion||p.description||'',tipo);
+  if(p.contenidoDocumento!==undefined) p.contenidoDocumento=normalizarInstruccionesDidacticas_(p.contenidoDocumento,tipo);
+  if(p.googleDocContent!==undefined) p.googleDocContent=normalizarInstruccionesDidacticas_(p.googleDocContent,tipo);
+  return p;
+}
 function normalizarInstruccionesDidacticas_(text,tipo){
   const policy=ACADEMIC_POLICY.CLASSROOM.DIDACTIC_INSTRUCTIONS;
   if(!policy||policy.PERSONAL_WINDOWS_DEVICE!==true||policy.EXPLAIN_COMMANDS!==true||policy.REMOVE_ADMINISTRATIVE_TEXT!==true){
