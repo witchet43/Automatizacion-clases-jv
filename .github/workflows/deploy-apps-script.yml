@@ -49,6 +49,9 @@ jobs:
       - name: Regression - every Google Doc gives each student an editable copy
         run: node scripts/test-google-doc-student-copy.mjs
 
+      - name: Regression - Google Forms must remain unpublished drafts
+        run: node scripts/test-forms-draft.mjs
+
       - name: Enforce architecture contract
         shell: bash
         run: |
