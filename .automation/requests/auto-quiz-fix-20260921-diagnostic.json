@@ -1,0 +1,9 @@
+{
+  "function": "verificarCorreccionAutoQuizHorario",
+  "parameters": [
+    {
+      "courseId": "871156334717",
+      "eventId": "cbaqq9obom542uu36sojhu2p2s_20260921T170000Z"
+    }
+  ]
+}
