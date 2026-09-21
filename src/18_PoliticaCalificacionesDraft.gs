@@ -9,10 +9,12 @@ function escribirCalificacionDraft_(courseId, workId, submissionId, grade) {
     throw new Error('La política canónica no autoriza publicar calificaciones automáticas.');
   }
 
+  // Nunca borrar ni alterar la nota publicada por el profesor; el único
+  // campo que escribe la automatización es draftGrade.
   Classroom.Courses.CourseWork.StudentSubmissions.patch(
-    {draftGrade: value, assignedGrade: null},
+    {draftGrade: value},
     String(courseId), String(workId), String(submissionId),
-    {updateMask: 'draftGrade,assignedGrade'}
+    {updateMask: 'draftGrade'}
   );
   return value;
 }
@@ -35,7 +37,7 @@ function politicaCalificacionAutomaticaDraft_() {
   return Object.freeze({
     campoEscritura: ACADEMIC_POLICY.CLASSROOM.AUTOMATIC_GRADE_FIELD,
     assignedGradeAutomatico: ACADEMIC_POLICY.CLASSROOM.AUTOMATIC_ASSIGNED_GRADE,
-    assignedGradeSoloParaLimpiar: true,
+    assignedGradeSoloParaLimpiar: false,
     returnAutomatico: ACADEMIC_POLICY.CLASSROOM.AUTOMATIC_RETURN
   });
 }
