@@ -106,11 +106,17 @@ function procesarAutoQuizSencilloHorario_() {
       return bloqueado;
     }
 
+    // El texto académico de Calendar es contexto visible, no una clave de
+    // planeación: puede incluir rangos y etiquetas históricas. Resolver por
+    // curso + fecha + sesión del evento y conservar el guardrail del Maestro.
+    const contextoCanonico = resolverTemaCanonicoAutoQuizHorario_(clase);
     const requestId = 'AUTO_HOURLY|' + slot.id + '|' + String(clase.courseId || '') + '|' + String(clase.eventId || '');
     const creado = crearQuizSencillo({
       courseId: clase.courseId,
       materia: clase.courseName,
-      temaSubtema: clase.temaSubtema,
+      temaSubtema: contextoCanonico.temaSubtema,
+      sesionCanonica: contextoCanonico.sesion,
+      explicitSequenceOverride: true,
       solicitadoEnLocal: slot.solicitadoEnLocal,
       requestId: requestId
     });
@@ -127,7 +133,9 @@ function procesarAutoQuizSencilloHorario_() {
       courseName:String(clase.courseName || ''),
       eventId:String(clase.eventId || ''),
       eventTitle:String(clase.eventTitle || ''),
-      temaSubtema:String(clase.temaSubtema || ''),
+      temaSubtema:String(contextoCanonico.temaSubtema || ''),
+      temaCalendar:String(clase.temaSubtema || ''),
+      sesionCanonica:contextoCanonico.sesion,
       workId:String(creado.workId || ''),
       title:String(creado.title || ''),
       state:String(creado.state || ''),
@@ -150,6 +158,40 @@ function procesarAutoQuizSencilloHorario_() {
     guardarResultadoAutoQuizHorario_(props, policy, fallo);
     throw err;
   }
+}
+
+/** Vincula el evento real a UNA sesión oficial, sin alterar la planeación. */
+function resolverTemaCanonicoAutoQuizHorario_(clase) {
+  const c = clase && typeof clase === 'object' ? clase : {};
+  const courseName = String(c.courseName || '').trim();
+  const calendarId = String(c.calendarId || '').trim();
+  const eventId = String(c.eventId || '').trim();
+  const start = new Date(String(c.inicio || ''));
+  if (!courseName || !calendarId || !eventId || !Number.isFinite(start.getTime())) {
+    throw new Error('AUTO_QUIZ_CONTEXT_INVALIDO: faltan curso, evento o fecha verificable.');
+  }
+  const evento = Calendar.Events.get(calendarId, eventId);
+  const fecha = Utilities.formatDate(start, AUTO_SIMPLE_QUIZ_HOURLY_POLICY.TIMEZONE, 'dd/MM/yyyy');
+  const plan = leerPlaneacionSiguienteClase_(courseName);
+  const filas = plan.rows.filter(function(row) { return String(row.date || '').trim() === fecha; });
+  if (filas.length !== 1) throw new Error('AUTO_QUIZ_PLANEACION_AMBIGUA: '+courseName+' '+fecha+' tiene '+filas.length+' sesiones; no se genera Quiz.');
+  const fila = filas[0];
+  // Si el calendario expone el número de clase, verificarlo también. Los
+  // eventos históricos pueden tener campos aplanados en una sola línea.
+  const numeroEvento = String(evento.description || '').match(/(?:^|\\n)\\s*Clase:\\s*(\\d+)\\b/i);
+  if (numeroEvento && Number(numeroEvento[1]) !== Number(fila.session)) {
+    throw new Error('AUTO_QUIZ_SESION_NO_COINCIDE: Calendar indica '+numeroEvento[1]+' y la planeación '+fila.session+'.');
+  }
+  const temaSubtema = String(fila.topic || '').trim();
+  if (!temaSubtema || !Number.isInteger(Number(fila.session))) {
+    throw new Error('AUTO_QUIZ_TEMA_CANONICO_FALTANTE: '+courseName+' '+fecha+'.');
+  }
+  const unidadCalendario = String(c.unidad || '').match(/\\b(\\d+)\\b/);
+  const unidadPlaneacion = String(fila.unit || '').match(/\\b(\\d+)\\b/);
+  if (unidadCalendario && unidadPlaneacion && unidadCalendario[1] !== unidadPlaneacion[1]) {
+    throw new Error('AUTO_QUIZ_UNIDAD_NO_COINCIDE: Calendar y planeación discrepan en '+fecha+'.');
+  }
+  return {sesion:Number(fila.session),temaSubtema:temaSubtema,fecha:fecha,temaCalendar:String(c.temaSubtema || '')};
 }
 
 function procesarAutoQuizSencilloHorarioSeguro_() {
