@@ -137,6 +137,20 @@ function verificarEjecucionRemota(envelope) {
 
   if (functionName === 'cerrarUnidad') {
     const requested = parameters[0] || {};
+    if (result.modo === 'OMITIDO_POR_NOTAS_ASIGNADAS') {
+      const courseId=String(requested.courseId||'');
+      const unidad=normalizarUnidadOperacion_(requested.unidad);
+      if(result.ok!==true||result.noWrites!==true||
+          String(result.courseId)!==courseId||String(result.unidad)!==unidad)
+        throw new Error('El cierre protegido no confirmó curso/unidad y ausencia de escrituras.');
+      const actual=detectarCierreConNotasAsignadas_(courseId,unidad);
+      if(actual.assignedGrades<1||String(actual.workId)!==String(result.finalCourseWorkId)||
+          Number(actual.assignedGrades)!==Number(result.assignedGrades))
+        throw new Error('No se confirmó la omisión del cierre por notas previamente asignadas.');
+      return {ok:true,verification:'CLOSE_MANUAL_GRADES_PROTECTED',
+        courseId:courseId,unidad:unidad,assignedGrades:actual.assignedGrades,
+        noWrites:true,requiresTeacherReview:true};
+    }
     const courseId = String(result.courseId || '');
     const unidad = normalizarUnidadOperacion_(requested.unidad);
     const cierre = result.cierre || {};
