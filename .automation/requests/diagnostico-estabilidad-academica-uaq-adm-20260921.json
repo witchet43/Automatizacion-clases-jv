@@ -1,0 +1,14 @@
+{
+  "function": "diagnosticarEstabilidadAcademicaReadOnly",
+  "parameters": [
+    {
+      "courseId": "871158187513",
+      "unidad": "Unidad 2",
+      "courseWorkIds": [
+        "886431237686",
+        "886436472377"
+      ],
+      "formId": "1FCNMAE4rbJpX2FHOqkf90EFRigf1YC9JNnzZ7Wx2yvE"
+    }
+  ]
+}
