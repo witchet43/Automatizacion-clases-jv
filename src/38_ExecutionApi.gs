@@ -45,6 +45,36 @@ function verificarEjecucionRemota(envelope) {
     return verificarQuizPruebaCorreoVerificado();
   }
 
+  if (functionName === 'diagnosticarTarea02EticaFormato') {
+    const courseId='871149624583',workId='869495257435';
+    const actual=Classroom.Courses.CourseWork.get(courseId,workId);
+    if(result.ok!==true||result.readOnly!==true||
+        String(result.courseId)!==courseId||String(result.workId)!==workId||
+        String(result.title)!==String(actual.title)||
+        String(result.state)!==String(actual.state)||
+        String(result.description)!==String(actual.description))
+      throw new Error('DIAGNOSTICO_TAREA02_ETICA: la lectura no coincide con el recurso real.');
+    return {ok:true,verification:'TASK02_ETHICS_READ_ONLY',courseId:courseId,workId:workId,
+      state:String(actual.state),title:String(actual.title),points:Number(actual.maxPoints)};
+  }
+  if (functionName === 'corregirFormatoTarea02Etica') {
+    const courseId='871149624583',workId='869495257435';
+    const actual=Classroom.Courses.CourseWork.get(courseId,workId);
+    if(result.ok!==true||result.courseId!==courseId||result.workId!==workId||
+        result.formatVerified!==true||result.auditVerified!==true||
+        result.noNewCourseWork!==true||String(actual.state)!==String(result.state)||
+        String(actual.title)!==String(result.title)||
+        String(actual.description||'').indexOf('INDICACIONES PARA EL ALUMNO')!==0||
+        String(actual.description||'').indexOf('DESARROLLO')<0||
+        String(actual.description||'').indexOf('EVIDENCIA DE ENTREGA')<0)
+      throw new Error('TAREA02_ETICA_POSTFLIGHT: la tarea real no conserva formato e identidad.');
+    validarFormatoDescripcionClassroom_(actual.description,'TAREA');
+    verificarAuditoriaRemota_(result,courseId,workId);
+    return {ok:true,verification:'TASK02_ETHICS_FORMAT_SAME_RESOURCE',
+      courseId:courseId,workId:workId,state:String(actual.state),
+      title:String(actual.title),formatVerified:true,auditVerified:true,noNewCourseWork:true};
+  }
+
   // Las operaciones académicas leen CourseWork PUBLISHED y nunca publican notas.
   // No aplicarles la verificación DRAFT exclusiva de CREACIÓN DE RECURSOS.
   if (functionName === 'importarCalificacionesExamen') {
