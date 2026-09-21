@@ -46,6 +46,9 @@ jobs:
           done
           node -e "JSON.parse(require('fs').readFileSync('src/appsscript.json', 'utf8')); console.log('appsscript.json OK')"
 
+      - name: Regression - every Google Doc gives each student an editable copy
+        run: node scripts/test-google-doc-student-copy.mjs
+
       - name: Enforce architecture contract
         shell: bash
         run: |
