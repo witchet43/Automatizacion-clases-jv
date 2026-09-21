@@ -44,15 +44,20 @@ function crearCourseWorkDirecto_(p){
 
   if(existente){
     let verificado=verificarCourseWorkDraftDirecto_(p.courseId,existente.id);
-    if(requiereDocumentoEditableClassroom_(p)){
-      const attached=(verificado.materials||[]).find(function(m){
-        return m&&m.driveFile&&m.driveFile.driveFile&&
-          String(m.driveFile.shareMode||'').toUpperCase()==='STUDENT_COPY';
-      });
-      if(!attached)throw new Error('BLOCKED_LEGACY_DOC: recurso DRAFT preexistente sin Google Doc STUDENT_COPY. Reconciliar su ID exacto antes de reutilizarlo; no crear duplicados.');
-      verificarAdjuntoDocumentoEditable_(verificado,attached.driveFile.driveFile.id);
-      p.documentId=attached.driveFile.driveFile.id;
+    const adjuntosExistentes=Array.isArray(verificado.materials)?verificado.materials:[];
+    if(requiereDocumentoEditableClassroom_(p)&&
+        !idsGoogleDocumentosSolicitados_(p).length&&!adjuntosExistentes.some(function(m){
+          return m&&((m.driveFile&&m.driveFile.driveFile)||(m.link&&extraerIdGoogleDocumentoDeUrl_(m.link.url)));
+        }))prepararRecursoConDocumentoEditable_(p);
+    // Reutilizar el mismo ID de Classroom y reparar solamente materiales del DRAFT.
+    // No dejar un Google Doc en VIEW ni como enlace, incluso en un borrador anterior.
+    verificado=asegurarCopiasDocumentosBorrador_(p.courseId,verificado,idsGoogleDocumentosSolicitados_(p));
+    const docsAdjuntos=verificarTodosLosGoogleDocsEnClassroom_(verificado,idsGoogleDocumentosSolicitados_(p));
+    if(docsAdjuntos.length){
+      p.documentId=docsAdjuntos[0];
+      p.documentIds=docsAdjuntos;
       p.shareMode='STUDENT_COPY';
+      p.studentCopy=true;
     }
     if(['ACTIVIDAD','TAREA','PRACTICA'].indexOf(String(p.tipo||'').toUpperCase())>=0){
       const original=String(verificado.description||'');
@@ -90,6 +95,7 @@ function crearCourseWorkDirecto_(p){
   const work=Classroom.Courses.CourseWork.create(body,p.courseId);
   const verificado=verificarCourseWorkDraftDirecto_(p.courseId,work.id);
   if(requiereDocumentoEditableClassroom_(p))verificarAdjuntoDocumentoEditable_(verificado,p.documentId);
+  verificarTodosLosGoogleDocsEnClassroom_(verificado,idsGoogleDocumentosSolicitados_(p));
   registrarAuditoriaCourseWorkDirecto_(p,verificado,topicName,'CREADO');
   return resultadoCreacionCourseWorkDirecto_(p,verificado,topicName,false);
 }
@@ -192,30 +198,31 @@ function construirVencimientoDirecto_(dateValue,timeValue){
 
 function construirMaterialesDirectos_(p){
   const out=[];
-  const docId=String(p.documentId||p.googleDocId||'').trim();
-  if(docId){
-    const shareMode=resolverShareModeDirecto_(p);
-    out.push({driveFile:{driveFile:{id:docId},shareMode:shareMode}});
-  }
+  const ids=idsGoogleDocumentosSolicitados_(p);
+  ids.forEach(function(docId){
+    const file=Drive.Files.get(docId,{fields:'id,mimeType,trashed'});
+    if(file.trashed||String(file.mimeType)!=='application/vnd.google-apps.document')
+      throw new Error('BLOCKED_GOOGLE_DOC: el documento solicitado no es un Google Documento nativo vigente: '+docId);
+    out.push({driveFile:{driveFile:{id:docId},shareMode:'STUDENT_COPY'}});
+  });
   const links=Array.isArray(p.links)?p.links:[];
-  links.forEach(x=>{
+  links.forEach(function(x){
     const url=String((x&&x.url)||'').trim();
-    if(url) out.push({link:{url:url,title:String((x&&x.title)||url)}});
+    if(!url||extraerIdGoogleDocumentoDeUrl_(url))return;
+    out.push({link:{url:url,title:String((x&&x.title)||url)}});
   });
   return out;
 }
 
 function resolverShareModeDirecto_(p){
-  if(p.shareMode) return String(p.shareMode).trim().toUpperCase();
-  if(p.studentCopy===true) return 'STUDENT_COPY';
-  if(p.studentCopy===false) return 'VIEW';
-  if(p.tipo==='PRACTICA'&&ACADEMIC_POLICY.DOCUMENTS.PRACTICE_STUDENT_COPY) return 'STUDENT_COPY';
-  if(p.tipo==='ACTIVIDAD'&&ACADEMIC_POLICY.DOCUMENTS.ACTIVITY_DOC_STUDENT_COPY) return 'STUDENT_COPY';
-  if(p.tipo==='TAREA'){
-    const override=politicaCurso_(p.courseKey);
-    if(override.TASK_STUDENT_COPY===true) return 'STUDENT_COPY';
-    if(ACADEMIC_POLICY.DOCUMENTS.TASK_STUDENT_COPY_DEFAULT===true) return 'STUDENT_COPY';
-  }
+  // La selección VIEW/EDIT de una solicitud antigua nunca prevalece
+  // si hay un documento de Google. No exigir studentCopy:true al docente.
+  if(idsGoogleDocumentosSolicitados_(p).length>0)return 'STUDENT_COPY';
+  if(String(p&&p.tipo||'').toUpperCase()==='PRACTICA')return 'STUDENT_COPY';
+  if(p&&p.shareMode)return String(p.shareMode).trim().toUpperCase();
+  if(p&&p.studentCopy===true)return 'STUDENT_COPY';
+  if(p&&p.tipo==='TAREA'&&ACADEMIC_POLICY.DOCUMENTS.TASK_STUDENT_COPY_DEFAULT===true)return 'STUDENT_COPY';
+  if(p&&p.tipo==='ACTIVIDAD'&&ACADEMIC_POLICY.DOCUMENTS.ACTIVITY_DOC_STUDENT_COPY===true)return 'STUDENT_COPY';
   return 'VIEW';
 }
 
@@ -237,7 +244,7 @@ function verificarCourseWorkDraftDirecto_(courseId,workId){
 }
 
 function resultadoCreacionCourseWorkDirecto_(p,work,topicName,reutilizado){
-  return {operacion:'CREACION_DIRECTA',tipo:p.tipo,reutilizado:reutilizado,courseId:p.courseId,workId:String(work.id),classroomUrl:work.alternateLink||'',estado:work.state,tema:topicName,puntos:Number(work.maxPoints||0)};
+  return {operacion:'CREACION_DIRECTA',tipo:p.tipo,reutilizado:reutilizado,courseId:p.courseId,workId:String(work.id),classroomUrl:work.alternateLink||'',estado:work.state,tema:topicName,puntos:Number(work.maxPoints||0),documentId:String(p.documentId||''),shareMode:p.documentId?'STUDENT_COPY':''};
 }
 
 function normalizarPreguntasDirectas_(questions){
