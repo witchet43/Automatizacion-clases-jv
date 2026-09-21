@@ -45,6 +45,84 @@ function verificarEjecucionRemota(envelope) {
     return verificarQuizPruebaCorreoVerificado();
   }
 
+  // Las operaciones académicas leen CourseWork PUBLISHED y nunca publican notas.
+  // No aplicarles la verificación DRAFT exclusiva de CREACIÓN DE RECURSOS.
+  if (functionName === 'importarCalificacionesExamen') {
+    const requested = parameters[0] && parameters[0].quizId ? String(parameters[0].quizId) : '';
+    const courseId = String(parameters[0] && parameters[0].courseId || result.courseId || '');
+    if (result.operacion !== 'IMPORTAR_CALIFICACIONES' ||
+        result.tipo !== 'EXAMEN' || result.estadoCalificacion !== 'DRAFT_ONLY' ||
+        !requested || String(result.quizId) !== requested ||
+        !courseId || String(result.courseId) !== courseId || !result.workId) {
+      throw new Error('La importación no confirmó identidad, curso y política DRAFT_ONLY.');
+    }
+    const work = Classroom.Courses.CourseWork.get(courseId, String(result.workId));
+    if (String(work.state || '').toUpperCase() !== 'PUBLISHED') {
+      throw new Error('El examen objetivo no está PUBLISHED: ' + result.workId + '.');
+    }
+    const details = result.detalle || {};
+    const expected = Number(details.actualizadas || 0) + Number(details.yaCalificadas || 0);
+    const submissions = entregasPorAlumnoPromedio_(courseId, String(result.workId));
+    const draftCount = Object.keys(submissions).filter(function(uid) {
+      const sub = submissions[uid];
+      return sub.draftGrade !== undefined && sub.draftGrade !== null &&
+        (sub.assignedGrade === undefined || sub.assignedGrade === null);
+    }).length;
+    if (!Number.isFinite(expected) || draftCount < expected) {
+      throw new Error('La lectura de Classroom no confirma las calificaciones de examen en DRAFT: ' + draftCount + '/' + expected + '.');
+    }
+    return {ok:true, verification:'EXAM_IMPORT_DRAFT', courseId:courseId,
+      workId:String(result.workId), state:String(work.state || ''),
+      confirmedDraftGrades:draftCount, expectedImportedOrPreviouslyGraded:expected,
+      noTurnedIn:Number(details.noTurnedIn || 0)};
+  }
+
+  if (functionName === 'cerrarUnidad') {
+    const requested = parameters[0] || {};
+    const courseId = String(result.courseId || '');
+    const unidad = normalizarUnidadOperacion_(requested.unidad);
+    const cierre = result.cierre || {};
+    if (result.operacion !== 'CERRAR_UNIDAD' ||
+        result.estadoCalificacion !== 'DRAFT_ONLY' ||
+        cierre.estadoCalificacion !== 'DRAFT_ONLY' ||
+        !courseId || courseId !== String(requested.courseId || '') ||
+        String(result.unidad) !== unidad || !cierre.courseWorkId ||
+        String(cierre.titulo) !== 'Calificación ' + unidad ||
+        Number(cierre.verificadas || 0) !== Number(result.promedios && result.promedios.alumnos || -1)) {
+      throw new Error('El cierre no confirmó curso, unidad, alumnos y DRAFT_ONLY.');
+    }
+    const work = Classroom.Courses.CourseWork.get(courseId, String(cierre.courseWorkId));
+    if (String(work.state || '').toUpperCase() !== 'PUBLISHED' ||
+        String(work.topicId || '') !== String(buscarTopicIdUnidad_(courseId, unidad))) {
+      throw new Error('La actividad final no está publicada en la unidad correcta.');
+    }
+    const report = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID).getSheetByName('Promedios Unidad');
+    if (!report) throw new Error('No existe reporte de promedios de unidad.');
+    const data = report.getDataRange().getValues();
+    const headers = {};
+    data[0].forEach(function(value, index) {headers[String(value)] = index;});
+    const rows = data.slice(1).filter(function(row) {
+      return String(row[headers['ID curso']] || '') === courseId &&
+        String(row[headers['Unidad']] || '') === unidad;
+    });
+    if (!rows.length || rows.length !== Number(cierre.verificadas)) {
+      throw new Error('El reporte final no contiene el número de alumnos verificados.');
+    }
+    const submissions = entregasPorAlumnoPublicacion_(courseId, String(cierre.courseWorkId));
+    const mismatches = rows.filter(function(row) {
+      const uid = String(row[headers['User ID']] || '');
+      const grade = Number(row[headers['Promedio final']]);
+      return !uid || !Number.isFinite(grade) ||
+        !verificarCalificacionDraft_(submissions[uid], grade).ok;
+    });
+    if (mismatches.length) {
+      throw new Error('Falló la lectura final de draftGrade/assignedGrade para ' + mismatches.length + ' alumnos.');
+    }
+    return {ok:true, verification:'UNIT_CLOSURE_DRAFT', courseId:courseId,
+      unidad:unidad, workId:String(cierre.courseWorkId), state:String(work.state || ''),
+      verifiedDraftGrades:rows.length, assignedGradePublished:false};
+  }
+
   const courseId = String(result.courseId || (parameters[0] && parameters[0].courseId) || '').trim();
   const workId = String(result.workId || '').trim();
   if (courseId && workId) {
