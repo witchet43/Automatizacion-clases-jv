@@ -70,7 +70,7 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
     }
   }
   const target=plan[index], evidence=seen[index];
-  if(evidence.gammaUrl&&!evidence.gammaVerificada)
+  if(/^https?:\/\//i.test(evidence.gammaUrl)&&!evidence.gammaVerificada)
     throw new Error('BLOCKED_GAMMA_UNVERIFIED: existe URL Gamma sin estado de verificación; comprobar y reutilizar antes de generar.');
   return {complete:false,target:target,evidence:evidence,source:'CLASSROOM_GAMMA_REAL_STATE',
     lastPrepared:lastPrepared,lastPublished:lastPublished,inferredSession:String(plan[inferred].session),
