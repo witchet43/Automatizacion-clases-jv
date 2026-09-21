@@ -115,6 +115,8 @@ function normalizarInstruccionesDidacticas_(text,tipo){
   if(/\bTrabajo individual\s*\.\s*Duraci[oó]n estimada\s*:/i.test(out)){
     throw new Error('BLOCKED_DIDACTICA_ADMIN: texto administrativo no permitido.');
   }
+  out=formatearDescripcionClassroom_(out,kind);
+  validarFormatoDescripcionClassroom_(out,kind);
   return out;
 }
 /** No crea Classroom ni documentos: regresiones puras, además de idempotencia. */
@@ -135,6 +137,10 @@ function validarDidacticaTransversal(){
   validarFormatoDescripcionClassroom_(formatted,'TAREA');
   if(!/DESARROLLO\n\n1\. Identifica ocho periféricos\.\n\n2\. Clasifica cada uno\./.test(formatted)||!/EVIDENCIA DE ENTREGA/.test(formatted)||/Trabajo individual/.test(formatted))throw new Error('REGRESION_FORMATO: se perdieron pasos o evidencia.');
   if(formatearDescripcionClassroom_(formatted,'TAREA')!==formatted)throw new Error('REGRESION_FORMATO: no idempotente.');
+  const sample='Preparación para 2.1.4 Periféricos. Trabajo individual. 1. Observa tu equipo personal o el equipo del laboratorio e identifica 8 periféricos. 2. Clasifica cada uno. Evidencia: tabla y captura.';
+  const formatted2=normalizarInstruccionesDidacticas_(sample,'TAREA');
+  if(!formatted2.includes('DESARROLLO\n\n1. Observa')||!formatted2.includes('\n\n2. Clasifica')||/laboratorio|Trabajo individual/.test(formatted2))throw new Error('REGRESION_FORMATO: falla de normalización de la tarea real.');
+  if(normalizarInstruccionesDidacticas_(formatted2,'TAREA')!==formatted2)throw new Error('REGRESION_FORMATO: normalización doble no idempotente.');
 
   return {ok:true,types:DIDACTICA_TRANSVERSAL.TIPOS,personalWindows:true,adminTextRemoved:true,commandGuides:true,idempotent:true,mutation:false};
 }
