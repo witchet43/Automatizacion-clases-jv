@@ -110,7 +110,7 @@ function resolverInstrumentoPorQuizId_(ss, quizId) {
 }
 
 function resumenImportacionCalificaciones_(result) {
-  return 'Importación manual en DRAFT: '+result.actualizadas+' actualizadas; '+result.yaCalificadas+' ya calificadas; '+result.sinCorrespondencia.length+' sin correspondencia; '+result.noTurnedIn+' no TURNED_IN.'+(result.ajuste?' Ajuste aplicado: +'+result.ajuste+' puntos.':'');
+  return 'Importación manual en DRAFT: '+result.actualizadas+' actualizadas; '+result.yaCalificadas+' ya calificadas; '+result.sinCorrespondencia.length+' sin correspondencia; '+result.noTurnedIn+' sin marcar entregado en Classroom (no bloquean importación).'+(result.ajuste?' Ajuste aplicado: +'+result.ajuste+' puntos.':'');
 }
 
 function normalizarParametrosOperacion_(params) {
