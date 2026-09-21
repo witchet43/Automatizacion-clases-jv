@@ -52,6 +52,16 @@ function cerrarUnidad(params) {
     const lock=LockService.getScriptLock();
     if(!lock.tryLock(30000))throw new Error('CLOSE_BUSY: otro cierre académico está en curso; este intento no modificó notas.');
     try {
+    const publicado=detectarCierreConNotasAsignadas_(p.courseId,unidad);
+    if(publicado.assignedGrades>0){
+      // Omitir el recálculo si el docente ya asignó alguna nota final.
+      // No reescribir ni el reporte ni una sola StudentSubmission.
+      return {ok:true,operacion:'CERRAR_UNIDAD',modo:'OMITIDO_POR_NOTAS_ASIGNADAS',
+        courseId:String(p.courseId),unidad:unidad,noWrites:true,
+        motivo:'EXISTEN_NOTAS_ASIGNADAS',
+        finalCourseWorkId:publicado.workId,assignedGrades:publicado.assignedGrades,
+        requiereRevisionDocente:true};
+    }
     const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
 
     const promedios = calcularPromediosDirectoClassroomConCeros_(ss, p.courseId, unidad);
@@ -80,6 +90,23 @@ function cerrarUnidad(params) {
       lock.releaseLock();
     }
   });
+}
+
+/** Inspección de solo lectura para preservar notas publicadas por el docente. */
+function detectarCierreConNotasAsignadas_(courseId,unidad) {
+  const title=ACADEMIC_POLICY.CLASSROOM.FINAL_GRADE_PREFIX+extraerNumeroUnidad_(unidad);
+  const candidates=listarCourseWorkPublicacion_(courseId).filter(function(w){
+    return String(w.title||'').trim()===title&&String(w.state||'').toUpperCase()!=='DELETED';
+  });
+  if(candidates.length>1)throw new Error('CLOSE_DUPLICATE_FINAL: varias actividades finales activas para '+unidad);
+  if(candidates.length===0)return {assignedGrades:0,workId:''};
+  const work=candidates[0];
+  const subs=entregasPorAlumnoPublicacion_(courseId,String(work.id));
+  const count=Object.keys(subs).filter(function(uid){
+    const grade=subs[uid].assignedGrade;
+    return grade!==undefined&&grade!==null;
+  }).length;
+  return {assignedGrades:count,workId:String(work.id),state:String(work.state||'')};
 }
 
 function politicaCalificacionUnidad_(courseId) {
