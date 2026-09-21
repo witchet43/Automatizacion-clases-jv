@@ -11,11 +11,15 @@ function diagnosticarEstabilidadAcademicaReadOnly(params) {
     throw new Error('READ_ONLY_DIAGNOSTIC: indique courseId y unidad canónica.');
   const docs=(Array.isArray(p.courseWorkIds)?p.courseWorkIds:[]).map(function(workId){
     const cw=Classroom.Courses.CourseWork.get(courseId,String(workId));
-    if(String(cw.state||'')!=='DRAFT')
-      throw new Error('READ_ONLY_DIAGNOSTIC: el recurso ordinario '+workId+' no está DRAFT.');
+    const state=String(cw.state||'');
+    // El docente puede haber PUBLICADO o eliminado manualmente un borrador
+    // después de crearlo. Diagnosticar el estado real, sin imponer DRAFT
+    // retrospectivamente ni convertir acciones legítimas en falsos errores.
+    if(state==='DELETED')
+      return {workId:String(workId),state:state,documentCount:0,teacherDeleted:true};
     const docIds=verificarTodosLosGoogleDocsEnClassroom_(cw,[]);
-    if(docIds.length===0)throw new Error('READ_ONLY_DIAGNOSTIC: falta el Google Doc individual en '+workId);
-    return {workId:String(workId),state:cw.state,documentCount:docIds.length,shareMode:'STUDENT_COPY'};
+    return {workId:String(workId),state:state,documentCount:docIds.length,
+      shareMode:docIds.length?'STUDENT_COPY':'SIN_GOOGLE_DOC'};
   });
   const ss=SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
   const sh=ss.getSheetByName('Promedios Unidad');
