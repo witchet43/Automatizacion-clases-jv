@@ -16,8 +16,5 @@ function auditarClassroomSistemasOperativosITQ() {
   const plan=SpreadsheetApp.openById('1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI');
   const sheets=plan.getSheets();
   const planning=sheets.map(function(sh){return {sheet:sh.getName(),rows:sh.getDataRange().getDisplayValues().filter(function(row){return row.some(function(cell){return /^(?:9|10|11|12|13|14|15|16)$/.test(String(cell).trim());});})};});
-  const report=DocumentApp.create('AUDITORIA CLASSROOM SO ITQ 9-16 '+new Date().toISOString());
-  report.getBody().setText(JSON.stringify({course:{id:String(course.id),name:String(course.name||'')},courseWork:works,topics:topics,planning:planning},null,2));
-  report.saveAndClose();
-  return {ok:true,readOnly:true,reportUrl:report.getUrl(),course:{id:String(course.id),name:String(course.name||'')},courseWork:works,topics:topics,planning:planning};
+  return {ok:true,readOnly:true,course:{id:String(course.id),name:String(course.name||'')},courseWork:works,topics:topics,planning:planning};
 }
