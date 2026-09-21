@@ -45,7 +45,7 @@ base.submissions.bob.assignedGrade=90;
 assert.throws(()=>execute('verificarYReintentarCalificacionUnidad_("course","work",work)'),/CLOSE_MANUAL_GRADE_PRESENT/);
 assert.equal(base.submissions.bob.assignedGrade,90);
 base.ACADEMIC_POLICY.NAMING={UNIT_PREFIX:'Unidad '};
-base.extraerNumeroUnidad_=text=>{const m=String(text||'').match(/^Unidad\\s+(\\d+)$/);return m?Number(m[1]):null;};
+base.extraerNumeroUnidad_=text=>{const m=String(text||'').match(/^Unidad\s+(\d+)$/);return m?Number(m[1]):null;};
 vm.runInContext(extract(facade,'normalizarUnidadOperacion_'),base);
 assert.equal(execute('normalizarUnidadOperacion_(2)'),'Unidad 2');
 assert.equal(execute('normalizarUnidadOperacion_("2")'),'Unidad 2');
