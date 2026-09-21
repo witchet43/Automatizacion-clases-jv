@@ -58,6 +58,9 @@ jobs:
       - name: Regression - academic error alerts are not duplicated
         run: node scripts/test-academic-error-notifications.mjs
 
+      - name: Regression - closure drafts retry and preserve manual grades
+        run: node scripts/test-grade-closure-resilience.mjs
+
       - name: Enforce architecture contract
         shell: bash
         run: |
