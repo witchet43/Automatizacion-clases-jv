@@ -72,7 +72,7 @@ vm.runInContext(extract(monitor,'procesarCalificacionesQuiz_'),sandbox);
 const result = vm.runInContext("procesarCalificacionesQuiz_('course','exam','form',true,'quiz')",sandbox);
 assert.equal(result.actualizadas,2,'Debe importar CREATED y TURNED_IN.');
 assert.equal(result.yaCalificadas,1,'No debe sobrescribir la nota preexistente.');
-assert.equal(result.noTurnedIn,3,'Debe auditar entregas no TURNED_IN, sin bloquear.');
+assert.equal(result.noTurnedIn,2,'Debe auditar las dos entregas con puntaje elegible sin TURNED_IN, sin bloquear; una respuesta incompleta se excluye antes.');
 assert.equal(result.noTurnedInNoBloqueaImportacion,true);
 assert.equal(result.sinPuntajeForms.length,1,'Puntaje incompleto no se importa.');
 assert.equal(result.sinCorrespondencia.length,1,'Correo sin correspondencia no se importa.');
