@@ -120,7 +120,9 @@ const ACADEMIC_POLICY = Object.freeze({
     PRACTICE_STUDENT_COPY: true,
     PRACTICE_DOCUMENT_FORMAT: 'GOOGLE_DOC',
     ACTIVITY_DOC_STUDENT_COPY: true,
-    TASK_STUDENT_COPY_DEFAULT: false,
+    TASK_STUDENT_COPY_DEFAULT: true,
+    ALL_GOOGLE_DOCS_STUDENT_COPY: true,
+    AUTO_DETECT_GOOGLE_DOC_ATTACHMENTS: true,
     PRACTICE_REFLECTION_COUNT: 3,
     CANONICAL_PRACTICE_ACTIVITY_FOLDER: 'Prácticas y Actividades',
     DUPLICATE_VERSION_FILES_ALLOWED: false
@@ -182,6 +184,7 @@ function validarPoliticasCanonicas_(){
   const practice=p.CLASSROOM.PRACTICE;
   if(!practice||practice.DUE_MODE!=='NONE'||practice.DUE_ALLOWED!==false||practice.GOOGLE_DOCUMENT_REQUIRED!==true||practice.GOOGLE_DOCUMENT_MIME!=='application/vnd.google-apps.document'||practice.STUDENT_COPY_REQUIRED!==true||practice.SHARE_MODE!=='STUDENT_COPY'||practice.CREATE_GOOGLE_DOCUMENT_IF_MISSING!==true) throw new Error('La política canónica de PRÁCTICA debe exigir Google Documento, STUDENT_COPY y ausencia total de vencimiento.');
   if(p.DOCUMENTS.PRACTICE_STUDENT_COPY!==true||p.DOCUMENTS.PRACTICE_DOCUMENT_FORMAT!=='GOOGLE_DOC') throw new Error('La política documental de PRÁCTICA debe permanecer en Google Documento con copia individual.');
+  if(p.DOCUMENTS.TASK_STUDENT_COPY_DEFAULT!==true||p.DOCUMENTS.ACTIVITY_DOC_STUDENT_COPY!==true||p.DOCUMENTS.ALL_GOOGLE_DOCS_STUDENT_COPY!==true||p.DOCUMENTS.AUTO_DETECT_GOOGLE_DOC_ATTACHMENTS!==true) throw new Error('Todo Google Documento adjunto a Classroom debe generar una copia editable para cada alumno, sin importar la materia.');
   const simpleQuiz=p.CLASSROOM.SIMPLE_QUIZ;
   if(!simpleQuiz||simpleQuiz.TITLE_PREFIX!=='Quiz '||simpleQuiz.SEQUENCE_SOURCE!=='CLASSROOM'||simpleQuiz.EMPTY_ASSIGNMENT!==true||simpleQuiz.STATE!=='DRAFT'||simpleQuiz.UNIT_ASSIGNMENT_REQUIRED!==true||simpleQuiz.UNIT_SOURCE!=='LATEST_PUBLISHED_ACADEMIC_COURSEWORK_WITHOUT_UNIT_EXAM'||simpleQuiz.UNIT_RESOURCE_STATE!=='PUBLISHED'||simpleQuiz.UNIT_EXCLUDE_SIMPLE_QUIZ!==true||simpleQuiz.UNIT_EXCLUDE_FINAL_GRADE!==true||simpleQuiz.UNIT_EXCLUDE_EXAM!==true||JSON.stringify(simpleQuiz.UNIT_CLOSE_EXAM_STATES)!==JSON.stringify(['DRAFT','PUBLISHED'])||simpleQuiz.DUE_MODE!=='NEXT_NATURAL_HOUR'||simpleQuiz.DUE_STRICTLY_AFTER_REQUEST!==true||simpleQuiz.PAST_DUE_CREATION!=='BLOCK') throw new Error('La política canónica de QUIZ SENCILLO debe exigir secuencia Classroom, unidad abierta por recurso académico publicado, tarea vacía, DRAFT y siguiente hora natural.');
   if(simpleQuiz.TIMEZONE!=='America/Mexico_City'||simpleQuiz.UTC_OFFSET_MINUTES!==-360) throw new Error('La conversión horaria de QUIZ SENCILLO no coincide con America/Mexico_City 2026.');
