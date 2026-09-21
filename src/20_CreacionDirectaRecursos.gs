@@ -44,6 +44,16 @@ function crearCourseWorkDirecto_(p){
 
   if(existente){
     let verificado=verificarCourseWorkDraftDirecto_(p.courseId,existente.id);
+    if(requiereDocumentoEditableClassroom_(p)){
+      const attached=(verificado.materials||[]).find(function(m){
+        return m&&m.driveFile&&m.driveFile.driveFile&&
+          String(m.driveFile.shareMode||'').toUpperCase()==='STUDENT_COPY';
+      });
+      if(!attached)throw new Error('BLOCKED_LEGACY_DOC: recurso DRAFT preexistente sin Google Doc STUDENT_COPY. Reconciliar su ID exacto antes de reutilizarlo; no crear duplicados.');
+      verificarAdjuntoDocumentoEditable_(verificado,attached.driveFile.driveFile.id);
+      p.documentId=attached.driveFile.driveFile.id;
+      p.shareMode='STUDENT_COPY';
+    }
     if(['ACTIVIDAD','TAREA','PRACTICA'].indexOf(String(p.tipo||'').toUpperCase())>=0){
       const original=String(verificado.description||'');
       const conforme=normalizarInstruccionesDidacticas_(original,p.tipo);
@@ -59,6 +69,7 @@ function crearCourseWorkDirecto_(p){
     return resultadoCreacionCourseWorkDirecto_(p,verificado,topicName,true);
   }
 
+  if(requiereDocumentoEditableClassroom_(p))prepararRecursoConDocumentoEditable_(p);
   if(['ACTIVIDAD','TAREA','PRACTICA'].indexOf(String(p.tipo||'').toUpperCase())>=0) {
     validarFormatoDescripcionClassroom_(p.descripcion,p.tipo);
   }
@@ -78,6 +89,7 @@ function crearCourseWorkDirecto_(p){
 
   const work=Classroom.Courses.CourseWork.create(body,p.courseId);
   const verificado=verificarCourseWorkDraftDirecto_(p.courseId,work.id);
+  if(requiereDocumentoEditableClassroom_(p))verificarAdjuntoDocumentoEditable_(verificado,p.documentId);
   registrarAuditoriaCourseWorkDirecto_(p,verificado,topicName,'CREADO');
   return resultadoCreacionCourseWorkDirecto_(p,verificado,topicName,false);
 }
