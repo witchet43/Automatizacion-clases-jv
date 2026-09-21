@@ -39,7 +39,12 @@ function asegurarGuiaComandos_(text){
     if(comandos.indexOf(key)<0) comandos.push(key);
   });
   comandos.forEach(function(k){
-    if(out.indexOf('Guía didáctica — '+k+':')<0) out+='\n\nGuía didáctica — '+k+': '+DIDACTICA_TRANSVERSAL.GUIAS[k];
+    if(out.indexOf('Guía didáctica — '+k+':')<0) {
+      const at=out.toLowerCase().indexOf(k.toLowerCase());
+      const start=at<0?out.length:out.lastIndexOf('\n',at-1)+1;
+      const guide='Guía didáctica — '+k+': '+DIDACTICA_TRANSVERSAL.GUIAS[k]+'\n';
+      out=out.slice(0,start)+guide+out.slice(start);
+    }
   });
   return out;
 }
