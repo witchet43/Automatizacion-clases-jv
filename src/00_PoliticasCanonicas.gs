@@ -12,6 +12,18 @@ const ACADEMIC_POLICY = Object.freeze({
     DIRECT_RESOURCE_TYPES: Object.freeze(['ACTIVIDAD','TAREA','PRACTICA','QUIZ','QUIZ_SENCILLO','EXAMEN']),
     CANONICAL_RESOURCE_ENTRYPOINTS: Object.freeze(['crearActividad','crearTarea','crearPractica','crearQuiz','crearQuizSencillo','crearExamen'])
   }),
+  CLASS_SEQUENCE: Object.freeze({
+    SOURCE: 'CLASSROOM_GAMMA_REAL_STATE',
+    SYSTEM_DATE_AS_PROGRESS: false,
+    PLANNING_DATE_AS_PROGRESS: false,
+    SAVED_COUNTER_AS_PROGRESS: false,
+    CLASSROOM_PUBLISHED_COUNTS_AS_PUBLISHED: true,
+    CLASSROOM_DRAFT_COUNTS_AS_ONLY_PREPARED: true,
+    REQUIRE_VERIFIED_GAMMA_LINK: true,
+    REQUIRE_REAL_CLASSROOM_ACTIVITY: true,
+    FAIL_CLOSED_WITHOUT_EVIDENCE: true,
+    RECONCILIATION_REQUIRES_EXPLICIT_REASON: true
+  }),
   ERROR_REPORTING: Object.freeze({
     NOTIFY_ON_ERROR: true,
     SILENT_FAILURE_ALLOWED: false,
@@ -177,6 +189,14 @@ function redondearCalificacionFinalCanonica_(value){const n=Number(value);if(!Nu
 function validarPoliticasCanonicas_(){
   const p=ACADEMIC_POLICY;
   if(p.EXECUTION.RESOURCE_CREATION_MODE!=='DIRECT_SCRIPT'||p.EXECUTION.SHEETS_ROLE!=='AUDIT_AND_CONFIGURATION_ONLY'||p.EXECUTION.MONITOR_REQUIRED_FOR_CREATION!==false) throw new Error('La creación directa por script debe ser el camino canónico.');
+  const seq=p.CLASS_SEQUENCE;
+  if(!seq||seq.SOURCE!=='CLASSROOM_GAMMA_REAL_STATE'||seq.SYSTEM_DATE_AS_PROGRESS!==false||
+    seq.PLANNING_DATE_AS_PROGRESS!==false||seq.SAVED_COUNTER_AS_PROGRESS!==false||
+    seq.CLASSROOM_PUBLISHED_COUNTS_AS_PUBLISHED!==true||
+    seq.CLASSROOM_DRAFT_COUNTS_AS_ONLY_PREPARED!==true||
+    seq.REQUIRE_VERIFIED_GAMMA_LINK!==true||seq.REQUIRE_REAL_CLASSROOM_ACTIVITY!==true||
+    seq.FAIL_CLOSED_WITHOUT_EVIDENCE!==true||seq.RECONCILIATION_REQUIRES_EXPLICIT_REASON!==true)
+      throw new Error('La siguiente clase debe resolverse por estado real Classroom/Gamma, nunca por fecha, contador guardado ni memoria.');
   if(!p.ERROR_REPORTING||p.ERROR_REPORTING.NOTIFY_ON_ERROR!==true||p.ERROR_REPORTING.SILENT_FAILURE_ALLOWED!==false||p.ERROR_REPORTING.PRIMARY_CHANNEL!=='EMAIL'||p.ERROR_REPORTING.PRESERVE_ORIGINAL_EXCEPTION!==true) throw new Error('La política de notificación de errores fue debilitada.');
   if(Math.abs((p.UNIT_GRADING.EXAM_WEIGHT+p.UNIT_GRADING.NON_EXAM_WEIGHT)-1)>0.000001) throw new Error('La ponderación canónica de unidad no suma 100%.');
   if(p.CLASSROOM.DEFAULT_COURSEWORK_STATE!=='DRAFT') throw new Error('El estado automático ordinario de Classroom debe ser DRAFT.');
