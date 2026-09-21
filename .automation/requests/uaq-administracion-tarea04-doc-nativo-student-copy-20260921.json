@@ -1,0 +1,22 @@
+{
+  "function": "crearTarea",
+  "parameters": [
+    {
+      "courseId": "871158187513",
+      "materia": "UAQ - Administración",
+      "temaSubtema": "3.1 La Administración en una sociedad plural",
+      "sesionCanonica": 16,
+      "explicitSequenceOverride": true,
+      "unidad": "Unidad 3",
+      "topicName": "Unidad 3",
+      "titulo": "Tarea 04 - Actores e intereses en una sociedad plural",
+      "descripcion": "LECTURA: LA ADMINISTRACIÓN EN UNA SOCIEDAD PLURAL\nUna sociedad plural incluye personas y grupos con necesidades y objetivos diferentes. Las organizaciones dependen de trabajadores, clientes, proveedores, autoridades y comunidades. Estos grupos de interés pueden verse afectados de formas distintas por una decisión empresarial. Administrar significa coordinar recursos para alcanzar objetivos, pero también reconocer consecuencias económicas, sociales y ambientales. La responsabilidad social y la ética administrativa exigen comparar alternativas, escuchar a los grupos involucrados y justificar las decisiones cuando sus intereses entran en conflicto.\n\nCASO: TEXTILES DEL CENTRO\nLa empresa emplea a 180 personas en Querétaro. Para reducir costos considera automatizar su producción y eliminar 35 puestos. Los trabajadores quieren conservar su empleo, los clientes esperan precios accesibles y la comunidad denuncia contaminación de un arroyo. Las autoridades exigen medidas ambientales. Los propietarios consideran costoso atender todos los problemas al mismo tiempo.\n\nACTIVIDAD: completa en tu copia personal del Google Documento.\n1. Identifica tres grupos de interés del caso, sus necesidades y cómo les afectaría una decisión de la empresa.\n2. Explica dos intereses en tensión e indica qué decisiones los provocan.\n3. Propón una acción administrativa inicial y justifica el beneficio, las limitaciones y los grupos involucrados.\nEvidencia: Completa tus respuestas directamente en la copia individual del Google Documento y entrégala mediante Classroom.",
+      "requiereDocumentoEditable": true,
+      "studentCopy": true,
+      "shareMode": "STUDENT_COPY",
+      "puntos": 100,
+      "fechaSiguienteSesion": "2026-09-23",
+      "horaInicioSiguienteSesion": "15:00"
+    }
+  ]
+}
