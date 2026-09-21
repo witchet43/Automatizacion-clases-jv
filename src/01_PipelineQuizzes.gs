@@ -155,6 +155,7 @@ function processOneQuiz_(sheet, record, allQuestions) {
       form = buildQuizForm_(q, items);
     }
 
+    assertQuizFormNotPublished_(form);
     assertNoManualEmailQuestions_(
       form.getItems().map(item => item.getTitle()),
       'Form creado'
@@ -229,7 +230,10 @@ function validateQuizFeedbackRequirements_(quiz, items) {
 function buildQuizForm_(quiz, items) {
   const showFeedback = validateQuizFeedbackRequirements_(quiz, items);
 
-  const form = FormApp.create(clean_(quiz[H.TITLE]));
+  // Un Form nuevo se crea SIN publicar desde el primer instante: un Classroom
+  // DRAFT por sí solo no impide que se abra directamente el enlace del Form.
+  const form = FormApp.create(clean_(quiz[H.TITLE]), false);
+  assertQuizFormNotPublished_(form);
   form.setDescription(quizDescriptionForOutput_(quiz.Instrucciones));
   form.setIsQuiz(true);
   form.setCollectEmail(true);
@@ -303,7 +307,17 @@ function buildQuizForm_(quiz, items) {
     }
   });
 
+  assertQuizFormNotPublished_(form);
   return form;
+}
+
+/** Bloquea un quiz creado/publicado por omisión antes de adjuntarlo a Classroom. */
+function assertQuizFormNotPublished_(form) {
+  if(!form || !form.supportsAdvancedResponderPermissions ||
+      form.supportsAdvancedResponderPermissions()!==true ||
+      !form.isPublished || form.isPublished()!==false)
+    throw new Error('BLOCKED_FORMS_DRAFT: el Google Form del quiz debe estar sin publicar antes de crear Classroom.');
+  return true;
 }
 
 function normalizeQuizQuestionType_(value) {
