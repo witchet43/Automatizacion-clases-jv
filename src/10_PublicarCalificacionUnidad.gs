@@ -127,28 +127,29 @@ function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
     throw new Error('Classroom no generó StudentSubmissions para todos los alumnos: ' + Object.keys(submissions).length + '/' + rows.length + '.');
   }
 
-  let updated = 0;
-  rows.forEach(r => {
-    const uid = String(r[h['User ID']] || '').trim();
-    const grade = Number(r[h['Promedio final']]);
-    if (!uid || !Number.isFinite(grade)) throw new Error('Fila de promedio inválida para User ID ' + uid + '.');
-    const sub = submissions[uid];
-    if (!sub) throw new Error('No existe StudentSubmission final para User ID ' + uid + '.');
-    escribirCalificacionDraft_(courseId, work.id, sub.id, grade);
-    updated++;
+  // Verificar el reporte y la identidad ANTES de escribir; jamás modificar
+  // assignedGrade si el docente ya publicó una nota.
+  const objetivos=rows.map(function(r){
+    const uid=String(r[h['User ID']]||'').trim();
+    const grade=Number(r[h['Promedio final']]);
+    if(!uid||!Number.isFinite(grade)||grade<0||grade>100)
+      throw new Error('CLOSE_INVALID_REPORT: hay una fila con identidad o promedio inválido.');
+    const sub=submissions[uid];
+    if(!sub)throw new Error('CLOSE_MISSING_SUBMISSION: falta una entrega de Classroom para el alumno del reporte.');
+    if(sub.assignedGrade!==undefined&&sub.assignedGrade!==null)
+      throw new Error('CLOSE_MANUAL_GRADE_PRESENT: existe una calificación asignada por el docente; se protege y se detiene el recálculo.');
+    return {uid:uid,submissionId:String(sub.id),grade:grade};
   });
-
-  const verify = entregasPorAlumnoPublicacion_(courseId, work.id);
-  const mismatches = [];
-  rows.forEach(r => {
-    const uid = String(r[h['User ID']] || '').trim();
-    const expected = Number(r[h['Promedio final']]);
-    const check = verificarCalificacionDraft_(verify[uid], expected);
-    if (!check.ok) mismatches.push({userId: uid, verificacion: check});
+  objetivos.forEach(function(x){
+    escribirCalificacionDraft_(courseId,work.id,x.submissionId,x.grade);
   });
-  if (mismatches.length) {
-    throw new Error('Falló verificación de draftGrade final o existe assignedGrade automático: ' + JSON.stringify(mismatches).slice(0, 3000));
+  const pendientes=verificarYReintentarCalificacionUnidad_(courseId,work.id,objetivos);
+  if(pendientes.length){
+    // No se exponen identidades individuales en correos automáticos.
+    throw new Error('CLOSE_VERIFY_PENDING: '+pendientes.length+
+      ' borradores de '+objetivos.length+' no coincidieron tras relecturas; no se ha publicado ninguna nota. Revisar cambios concurrentes en Classroom.');
   }
+  const updated=objetivos.length;
 
   return {
     courseWorkId: String(work.id),
@@ -160,6 +161,34 @@ function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
     verificadas: rows.length,
     estadoCalificacion: 'DRAFT_ONLY'
   };
+}
+
+/**
+ * Lecturas posteriores a escritura pueden observar datos anteriores. Releer
+ * con espera acotada; solo reescribir pendientes sin assignedGrade, nunca
+ * tocar otros alumnos ni otro CourseWork.
+ */
+function verificarYReintentarCalificacionUnidad_(courseId,workId,objetivos) {
+  let pendientes=objetivos.slice();
+  for(let intento=0;intento<4;intento++){
+    if(intento>0)Utilities.sleep(500*intento);
+    const actuales=entregasPorAlumnoPublicacion_(courseId,workId);
+    pendientes=objetivos.filter(function(x){
+      const actual=actuales[x.uid];
+      if(actual&&actual.assignedGrade!==undefined&&actual.assignedGrade!==null)
+        throw new Error('CLOSE_MANUAL_GRADE_PRESENT: una calificación fue asignada por el docente durante el cierre; no se modificará.');
+      return !verificarCalificacionDraft_(actual,x.grade).ok;
+    });
+    if(!pendientes.length)return [];
+    if(intento<3){
+      pendientes.forEach(function(x){
+        // No repetir escritos que todavía puedan estar propagándose salvo
+        // después de dos lecturas: Classroom a veces devuelve estado anterior.
+        if(intento>=1)escribirCalificacionDraft_(courseId,workId,x.submissionId,x.grade);
+      });
+    }
+  }
+  return pendientes;
 }
 
 function buscarTopicIdUnidad_(courseId, unidad) {
