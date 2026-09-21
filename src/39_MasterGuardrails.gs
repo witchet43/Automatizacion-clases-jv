@@ -56,7 +56,11 @@ function preflightDocumentoMaestro(request) {
   if (r.modifyPlanning === true && r.explicitPlanningAuthorization !== true) throw new Error('BLOCKED_MASTER_RULE: la planeación no puede modificarse sin autorización explícita.');
   if (r.resourceState && String(r.resourceState).toUpperCase() !== MASTER_GUARDRAILS.DEFAULT_STATE) throw new Error('BLOCKED_MASTER_RULE: Classroom/Forms debe crearse en DRAFT.');
   const planning = loadCanonicalPlanning_(materia);
-  const target = findPlanningTopic_(planning, tema);
+  const sessionRequested=String(r.sesionCanonica||r.sesion||'').trim();
+  const target = sessionRequested && (operation==='GENERATE_CLASS'||operation==='GENERATE_CLASS_PACKAGE')
+    ? planning.find(function(x){return String(x.clase||'').trim()===sessionRequested &&
+        normalizeGuard_(x.tema)===normalizeGuard_(tema);})||null
+    : findPlanningTopic_(planning, tema);
   if (!target) throw new Error('BLOCKED_MASTER_RULE: el tema no existe en la planeación canónica: ' + tema + '.');
   const isClassPackage = operation === 'GENERATE_CLASS' || operation === 'GENERATE_CLASS_PACKAGE';
   // Para generar una CLASE, la secuencia jamás depende de completedTopics
