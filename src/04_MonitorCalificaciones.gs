@@ -23,7 +23,8 @@ function auditarMonitorCalificacionesQuizzes() {
 /**
  * Punto de entrada canónico para una importación solicitada por el docente.
  * Procesa todos los quizzes en estado CREADA, empata exclusivamente por correo
- * exacto, escribe solo draftGrade y no devuelve ni publica entregas.
+ * exacto, importa aunque no se haya marcado TURNED_IN en Classroom,
+ * escribe solo draftGrade y no devuelve ni publica entregas.
  */
 function importarCalificacionesAhora() {
   return ejecutarMonitorCalificacionesQuizzes_(true);
@@ -69,7 +70,7 @@ function ejecutarMonitorCalificacionesQuizzes_(aplicar) {
         'Importación manual: ' + result.actualizadas + ' actualizadas; ' +
         result.yaCalificadas + ' ya calificadas; ' +
         result.sinCorrespondencia.length + ' sin correspondencia; ' +
-        result.noTurnedIn + ' no TURNED_IN; ' +
+        result.noTurnedIn + ' sin marcar entregado (no bloquean importación); ' +
         result.sinPuntajeForms.length + ' respuesta(s) sin puntaje completo en Forms.' +
         (result.ajuste ? ' Ajuste aplicado: +' + result.ajuste + ' puntos.' : '')
       );
@@ -82,6 +83,18 @@ function ejecutarMonitorCalificacionesQuizzes_(aplicar) {
 
 function procesarCalificacionesQuiz_(courseId, workId, formId, aplicar, quizId) {
   const cw = Classroom.Courses.CourseWork.get(courseId, workId);
+  // Una respuesta de Forms con puntaje verificable no depende de que el alumno
+  // haya pulsado "Entregar" en Classroom. Esta política es transversal para
+  // los instrumentos importados desde Google Forms (quizzes y exámenes).
+  const importPolicy = ACADEMIC_POLICY.FORMS_GRADE_IMPORT;
+  if (importPolicy.REQUIRE_CLASSROOM_TURNED_IN !== false ||
+      importPolicy.REQUIRE_COMPLETE_FORMS_SCORE !== true ||
+      importPolicy.REQUIRE_EXACT_EMAIL_IDENTITY !== true ||
+      importPolicy.WRITE_ONLY_DRAFT_GRADE !== true ||
+      importPolicy.PRESERVE_EXISTING_GRADE !== true ||
+      importPolicy.NEVER_RETURN_SUBMISSION !== true) {
+    throw new Error('La política canónica de importación Forms→Classroom es inválida.');
+  }
   const ajuste = obtenerAjusteCalificacionQuiz_(quizId);
   const maxPoints = Number(cw.maxPoints || 100);
   const respuestas = {};
@@ -192,10 +205,8 @@ function procesarCalificacionesQuiz_(courseId, workId, formId, aplicar, quizId) 
       return;
     }
 
-    if (String(sub.state || '').toUpperCase() !== 'TURNED_IN') {
-      noTurnedIn++;
-      return;
-    }
+    // La falta de TURNED_IN se registra para auditoría; nunca impide importar.
+    if (String(sub.state || '').toUpperCase() !== 'TURNED_IN') noTurnedIn++;
 
     const tieneDraft = sub.draftGrade !== undefined && sub.draftGrade !== null;
     const tieneAssigned = sub.assignedGrade !== undefined && sub.assignedGrade !== null;
@@ -237,6 +248,7 @@ function procesarCalificacionesQuiz_(courseId, workId, formId, aplicar, quizId) 
     actualizadas: actualizadas,
     yaCalificadas: yaCalificadas,
     noTurnedIn: noTurnedIn,
+    noTurnedInNoBloqueaImportacion: true,
     ajuste: ajuste,
     pendientes: pendientes,
     sinCorrespondencia: sinCorrespondencia,
