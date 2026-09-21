@@ -56,6 +56,13 @@ assert.equal(created.documentId,'docNew');
 assert.equal(created.shareMode,'STUDENT_COPY');
 assert.equal(generated,1);
 
+const attached=run('idsGoogleDocumentosAdjuntos_([{driveFile:{driveFile:{id:"doc1"},shareMode:"STUDENT_COPY"}},{driveFile:{driveFile:{id:"pdf1"},shareMode:"VIEW"}}])');
+assert.equal(attached.length,1);
+assert.equal(attached[0],'doc1');
+const creator=fs.readFileSync('src/20_CreacionDirectaRecursos.gs','utf8');
+assert.match(creator,/const docsAdjuntosExistentes=idsGoogleDocumentosAdjuntos_\(adjuntosExistentes\)/);
+assert.match(creator,/p\.googleDocId='';/);
+assert.match(creator,/p\.documentId=docsAdjuntosExistentes\[0\]/);
 const oldWork={
   id:'work1',state:'DRAFT',
   materials:[
