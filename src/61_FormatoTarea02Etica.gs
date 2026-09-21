@@ -8,8 +8,8 @@ function corregirFormatoTarea02Etica(){
   const title='Tarea 02 - Reconocimiento inicial de riesgos informáticos';
   const old=Classroom.Courses.CourseWork.get(courseId,workId);
   if(String(old.id)!==workId||String(old.title||'').trim()!==title||
-      String(old.state||'').toUpperCase()!=='DRAFT'||Number(old.maxPoints)!==100)
-    throw new Error('TAREA02_ETICA_IDENTITY: solo se permite reformatear el borrador exacto de 100 puntos.');
+      ['DRAFT','PUBLISHED'].indexOf(String(old.state||'').toUpperCase())<0||Number(old.maxPoints)!==100)
+    throw new Error('TAREA02_ETICA_IDENTITY: solo se permite reformatear la Tarea 02 exacta de 100 puntos, sin cambiar su estado actual.');
 
   const source=String(old.description||'').trim();
   const expected=[
@@ -75,7 +75,7 @@ function corregirFormatoTarea02Etica(){
     return JSON.stringify(now[key]===undefined?null:now[key])===
       JSON.stringify(old[key]===undefined?null:old[key]);
   };
-  if(String(now.description||'')!==formatted||String(now.state||'').toUpperCase()!=='DRAFT'||
+  if(String(now.description||'')!==formatted||String(now.state||'')!==String(old.state||'')||
       ['id','title','workType','topicId','maxPoints','dueDate','dueTime','materials','assignment'].some(function(k){return !same(k);}))
     throw new Error('TAREA02_ETICA_POSTFLIGHT: no se confirmó formato nuevo o preservación de los demás campos.');
   const ss=SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
@@ -92,7 +92,7 @@ function corregirFormatoTarea02Etica(){
     sh.getRange(records[0].row,descCol+1).setValue(formatted);
   if(String(sh.getRange(records[0].row,descCol+1).getDisplayValue())!==formatted)
     throw new Error('TAREA02_ETICA_AUDIT: no coincidió la descripción de Sheets con Classroom.');
-  return {ok:true,courseId:courseId,workId:workId,title:title,state:'DRAFT',
+  return {ok:true,courseId:courseId,workId:workId,title:title,state:String(now.state),
     changed:source!==formatted,formatVerified:true,auditVerified:true,
     alteredFields:['description'],noNewCourseWork:true};
 }
