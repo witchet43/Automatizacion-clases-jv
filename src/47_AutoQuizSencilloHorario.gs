@@ -273,6 +273,35 @@ function leerResultadoAutoQuizHorario_(props, policy) {
   catch (err) { return {procesado:false,motivo:'RESULTADO_ILEGIBLE',raw:raw}; }
 }
 
+/** Diagnóstico de una sesión histórica sin crear Quiz ni alterar slots. */
+function verificarCorreccionAutoQuizHorario(params) {
+  const p=params&&typeof params==='object'?params:{};
+  const courseId=String(p.courseId||'871156334717').trim();
+  const eventId=String(p.eventId||'cbaqq9obom542uu36sojhu2p2s_20260921T170000Z').trim();
+  const course=Classroom.Courses.get(courseId);
+  const calendarId=String(course.calendarId||'').trim();
+  if(!calendarId)throw new Error('DIAG_AUTO_QUIZ_NO_CLASSROOM_CALENDAR');
+  const event=Calendar.Events.get(calendarId,eventId);
+  const start=String(event.start&&event.start.dateTime||'').trim();
+  const end=String(event.end&&event.end.dateTime||'').trim();
+  if(!start||!end||!eventoPareceClaseCanonica_(event))throw new Error('DIAG_AUTO_QUIZ_EVENTO_INVALIDO');
+  const clase={courseId:courseId,courseName:String(course.name||''),calendarId:calendarId,eventId:eventId,
+    eventTitle:String(event.summary||''),inicio:start,fin:end,
+    unidad:extraerCampoDescripcionClase_(event.description,'Unidad'),
+    temaSubtema:extraerCampoDescripcionClase_(event.description,'Tema/Subtema')};
+  const canonical=resolverTemaCanonicoAutoQuizHorario_(clase);
+  // Reproduce el guardrail de secuencia, sin crear recurso ni alterar su estado.
+  const result=preflightDocumentoMaestro({operation:'DRY_RUN',materia:clase.courseName,
+    temaSubtema:canonical.temaSubtema,explicitSequenceOverride:true,
+    resourceState:'DRAFT',modifyPlanning:false,explicitPlanningAuthorization:false});
+  if(!result.ok||normalizeGuard_(result.target.tema)!==normalizeGuard_(canonical.temaSubtema)){
+    throw new Error('DIAG_AUTO_QUIZ_PREFLIGHT_NO_COINCIDE');
+  }
+  return {ok:true,writes:false,courseId:courseId,eventId:eventId,fecha:canonical.fecha,
+    sesionCanonica:canonical.sesion,temaCalendar:clase.temaSubtema,temaPlaneacion:canonical.temaSubtema,
+    preflight:'OK',resourceState:'DRAFT',quizCreated:false};
+}
+
 function diagnosticarAutoQuizSencilloHorario() {
   const p = AUTO_SIMPLE_QUIZ_HOURLY_POLICY;
   validarPoliticaAutoQuizSencilloHorario_(p);
