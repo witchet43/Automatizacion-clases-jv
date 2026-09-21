@@ -26,7 +26,7 @@ function corregirFormatoTarea02Etica(){
     'Conserva la ficha para la comprobación de entrada'
   ];
   expected.forEach(function(phrase){
-    if(source.indexOf(phrase)<0)throw new Error('TAREA02_ETICA_CONTENT: falta elemento original "'+phrase+'"; no se reescribe la tarea.');
+    if(source.toLowerCase().indexOf(phrase.toLowerCase())<0)throw new Error('TAREA02_ETICA_CONTENT: falta elemento original "'+phrase+'"; no se reescribe la tarea.');
   });
   const formatted=[
     'INDICACIONES PARA EL ALUMNO',
