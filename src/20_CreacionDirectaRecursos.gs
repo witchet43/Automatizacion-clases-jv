@@ -45,12 +45,21 @@ function crearCourseWorkDirecto_(p){
   if(existente){
     let verificado=verificarCourseWorkDraftDirecto_(p.courseId,existente.id);
     const adjuntosExistentes=Array.isArray(verificado.materials)?verificado.materials:[];
-    if(requiereDocumentoEditableClassroom_(p)&&
-        !idsGoogleDocumentosSolicitados_(p).length&&!adjuntosExistentes.some(function(m){
-          return m&&((m.driveFile&&m.driveFile.driveFile)||(m.link&&extraerIdGoogleDocumentoDeUrl_(m.link.url)));
-        }))prepararRecursoConDocumentoEditable_(p);
+    // Si el borrador canónico ya tiene Google Docs válidos, se reutilizan SUS
+    // archivos; un ID de consulta viejo o inaccesible no provoca otra creación
+    // ni reemplaza el documento personal ya verificado en Classroom.
+    const docsAdjuntosExistentes=idsGoogleDocumentosAdjuntos_(adjuntosExistentes);
+    if(docsAdjuntosExistentes.length){
+      p.documentId=docsAdjuntosExistentes[0];
+      p.documentIds=docsAdjuntosExistentes;
+      p.links=(Array.isArray(p.links)?p.links:[]).filter(function(link){
+        return !extraerIdGoogleDocumentoDeUrl_(link&&link.url);
+      });
+    } else if(requiereDocumentoEditableClassroom_(p)&&
+        !idsGoogleDocumentosSolicitados_(p).length) {
+      prepararRecursoConDocumentoEditable_(p);
+    }
     // Reutilizar el mismo ID de Classroom y reparar solamente materiales del DRAFT.
-    // No dejar un Google Doc en VIEW ni como enlace, incluso en un borrador anterior.
     verificado=asegurarCopiasDocumentosBorrador_(p.courseId,verificado,idsGoogleDocumentosSolicitados_(p));
     const docsAdjuntos=verificarTodosLosGoogleDocsEnClassroom_(verificado,idsGoogleDocumentosSolicitados_(p));
     if(docsAdjuntos.length){
