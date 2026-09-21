@@ -49,6 +49,9 @@ function cerrarUnidad(params) {
     const p = normalizarParametrosOperacion_(params);
     if (!p.courseId) throw new Error('cerrarUnidad requiere courseId.');
     const unidad = normalizarUnidadOperacion_(p.unidad);
+    const lock=LockService.getScriptLock();
+    if(!lock.tryLock(30000))throw new Error('CLOSE_BUSY: otro cierre académico está en curso; este intento no modificó notas.');
+    try {
     const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
 
     const promedios = calcularPromediosDirectoClassroomConCeros_(ss, p.courseId, unidad);
@@ -73,6 +76,9 @@ function cerrarUnidad(params) {
       cierre:cierre,
       estadoCalificacion:'DRAFT_ONLY'
     };
+    } finally {
+      lock.releaseLock();
+    }
   });
 }
 
