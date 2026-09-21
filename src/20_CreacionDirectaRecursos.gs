@@ -28,6 +28,9 @@ function normalizarCreacionDirecta_(params,tipo){
   p.courseKey=String(p.courseKey||'').trim().toUpperCase();
   if(!p.courseId) throw new Error('La creación directa requiere courseId.');
   if(!p.titulo) throw new Error('La creación directa requiere titulo.');
+  if(['ACTIVIDAD','TAREA','PRACTICA'].indexOf(String(tipo||'').toUpperCase())>=0){
+    validarFormatoDescripcionClassroom_(p.descripcion,tipo);
+  }
   return p;
 }
 
@@ -45,6 +48,9 @@ function crearCourseWorkDirecto_(p){
     return resultadoCreacionCourseWorkDirecto_(p,verificado,topicName,true);
   }
 
+  if(['ACTIVIDAD','TAREA','PRACTICA'].indexOf(String(p.tipo||'').toUpperCase())>=0) {
+    validarFormatoDescripcionClassroom_(p.descripcion,p.tipo);
+  }
   const body={
     title:p.titulo,
     description:p.descripcion,
