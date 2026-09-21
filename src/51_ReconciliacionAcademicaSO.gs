@@ -7,8 +7,23 @@
 function crearRecursoReconciliacionSO_(spec) {
   const courseId='875776451793';
   const works=listarCourseWorkClase_(courseId);
-  const exact=works.find(function(w){return String(w.title||'').trim()===spec.titulo;});
-  if(exact) return {reutilizado:true,workId:String(exact.id),estado:String(exact.state||''),title:String(exact.title||''),documentId:(exact.materials||[]).map(function(m){return m.driveFile&&m.driveFile.driveFile?String(m.driveFile.driveFile.id||''):'';}).filter(Boolean)[0]||''};
+  let exact=works.find(function(w){return String(w.title||'').trim()===spec.titulo;});
+  if(exact){
+    const existingDoc=(exact.materials||[]).map(function(m){return m.driveFile&&m.driveFile.driveFile?String(m.driveFile.driveFile.id||''):'';}).filter(Boolean)[0]||'';
+    let existingDocOk=!spec.requiereDocumento;
+    if(existingDoc){
+      try{const f=Drive.Files.get(existingDoc,{fields:'id,mimeType,trashed'});existingDocOk=f.trashed!==true&&String(f.mimeType||'')==='application/vnd.google-apps.document';}catch(ignore){existingDocOk=false;}
+    }
+    if(String(exact.state||'').toUpperCase()==='DRAFT'&&(!spec.requiereDocumento||existingDocOk)){
+      return {reutilizado:true,workId:String(exact.id),estado:String(exact.state||''),title:String(exact.title||''),documentId:existingDoc};
+    }
+    if(String(exact.state||'').toUpperCase()==='DRAFT'&&!existingDocOk){
+      borrarDraftPorId_(courseId,String(exact.id));
+      exact=null;
+    } else if(exact) {
+      return {reutilizado:true,workId:String(exact.id),estado:String(exact.state||''),title:String(exact.title||''),documentId:existingDoc};
+    }
+  }
 
   const req={operation:'RESOURCE_CREATE',materia:'Sistemas Operativos',temaSubtema:spec.tema,resourceType:spec.tipo,resourceState:'DRAFT',explicitSequenceOverride:true,reconciliation:true};
   preflightDocumentoMaestro(req);
@@ -16,8 +31,13 @@ function crearRecursoReconciliacionSO_(spec) {
 
   let documentId=String(spec.documentId||'').trim();
   let documentoCreado=false;
+  if(documentId){
+    try{const f=Drive.Files.get(documentId,{fields:'id,mimeType,trashed'});if(f.trashed===true||String(f.mimeType||'')!=='application/vnd.google-apps.document')documentId='';}
+    catch(ignore){documentId='';}
+  }
   if(spec.requiereDocumento===true && !documentId){
-    const creado=crearGoogleDocumentoPractica_({titulo:spec.titulo,descripcion:spec.descripcion,contenidoDocumento:spec.contenido.join('\n')});
+    const contenido=(spec.contenido&&spec.contenido.length?spec.contenido:contenidoFallbackReconciliacionSO_(spec.titulo));
+    const creado=crearGoogleDocumentoPractica_({titulo:spec.titulo,descripcion:spec.descripcion,contenidoDocumento:contenido.join('\n')});
     documentId=String(creado.id);
     documentoCreado=true;
   }
@@ -50,6 +70,17 @@ function crearRecursoReconciliacionSO_(spec) {
   }
   postflightDocumentoMaestro({ok:true,state:'DRAFT',workId:String(result.workId),documentId:documentId},req);
   return {reutilizado:false,workId:String(result.workId),estado:'DRAFT',title:spec.titulo,documentId:documentId,documentoCreado:documentoCreado};
+}
+
+function contenidoFallbackReconciliacionSO_(titulo){
+  const t=String(titulo||'');
+  if(/^Tarea 08 /.test(t)) return ['Revisa Microsoft Learn — Processes and Threads: https://learn.microsoft.com/windows/win32/procthread/about-processes-and-threads','Distingue programa, proceso e hilo con un ejemplo propio.','Identifica PID y dos recursos asociados a un proceso.','Producto: tabla comparativa programa/proceso/hilo y una observación obtenida con Administrador de tareas.'];
+  if(/^Actividad 05 /.test(t)) return ['Analiza los estados Running, Ready y Blocked y las transiciones provocadas por despacho, interrupción, espera de E/S y finalización.','Resuelve al menos cinco secuencias de eventos; para cada paso indica estado inicial, evento y estado resultante.','Construye un diagrama final de transiciones y justifica dos transiciones que no serían válidas directamente.','Evidencia: secuencias resueltas + diagrama final.'];
+  if(/^Actividad 06 /.test(t)) return ['Usa un conjunto de procesos con llegada y ráfaga definidos por el profesor.','Calcula turnaround, response, throughput observado y comenta fairness.','Representa la ejecución en una línea temporal y explica qué métrica cambiaría si se altera el orden.','Evidencia: tabla de métricas y conclusión técnica.'];
+  if(/^Actividad 07 /.test(t)) return ['Resuelve el mismo conjunto de procesos con FCFS y SJF.','Construye un diagrama de Gantt para cada política.','Calcula espera, retorno y respuesta por proceso y promedios.','Identifica convoy effect cuando corresponda y explica qué supuesto de SJF puede ser difícil conocer en un sistema real.','Evidencia: dos Gantt, tabla de métricas y comparación razonada.'];
+  if(/^Tarea 15 /.test(t)) return ['Revisa OSTEP — CPU Scheduling: https://pages.cs.wisc.edu/~remzi/OSTEP/','Define quantum, apropiación (preemption), prioridad y starvation.','Explica qué esperas que ocurra si el quantum es demasiado pequeño o demasiado grande.','Producto: cuatro definiciones y una predicción justificada sobre dos valores de quantum.'];
+  if(/^Actividad 08 /.test(t)) return ['Simula Round Robin sobre un conjunto de procesos con al menos dos valores distintos de quantum.','Construye los diagramas de Gantt y calcula response y turnaround para cada configuración.','Compara mejora de respuesta contra mayor número de cambios de contexto.','Añade prioridades y describe un escenario de starvation y una medida de mitigación como aging.','Evidencia: tabla comparativa quantum / response / turnaround / cambios de contexto y conclusión.'];
+  return ['Revisa el material previo indicado en la planeación.','Resume los conceptos esenciales con redacción propia.','Incluye la evidencia solicitada en la planeación y una conclusión técnica breve.'];
 }
 
 function reconciliarMaterialAcademicoSistemasOperativosITQ(){
