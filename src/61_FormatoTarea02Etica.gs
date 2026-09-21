@@ -96,3 +96,13 @@ function corregirFormatoTarea02Etica(){
     changed:source!==formatted,formatVerified:true,auditVerified:true,
     alteredFields:['description'],noNewCourseWork:true};
 }
+
+/** Diagnóstico de solo lectura para evitar modificar una versión equivocada. */
+function diagnosticarTarea02EticaFormato(){
+ const courseId='871149624583',workId='869495257435';
+ const w=Classroom.Courses.CourseWork.get(courseId,workId);
+ return {ok:true,readOnly:true,courseId:courseId,workId:String(w.id||''),
+ title:String(w.title||''),state:String(w.state||''),points:Number(w.maxPoints||0),
+ topicId:String(w.topicId||''),description:String(w.description||''),
+ dueDate:w.dueDate||null,dueTime:w.dueTime||null,materials:w.materials||[]};
+}
