@@ -77,6 +77,64 @@ function verificarEjecucionRemota(envelope) {
       noTurnedIn:Number(details.noTurnedIn || 0)};
   }
 
+  if (functionName === 'reconciliarCalificacionesImportadas') {
+    const requested = parameters[0] || {};
+    const emails = (requested.correos || []).map(function(email) {
+      return String(email || '').trim().toLowerCase();
+    });
+    if (result.operacion !== 'RECONCILIAR_IMPORTACION' ||
+        result.estadoCalificacion !== 'DRAFT_ONLY' ||
+        String(result.quizId || '') !== String(requested.quizId || '') ||
+        String(result.courseId || '') !== '871158187513' ||
+        String(result.workId || '') !== '878628301908' ||
+        emails.length !== 3 || new Set(emails).size !== 3 ||
+        Number(result.solicitadas) !== emails.length) {
+      throw new Error('La reconciliación no corresponde a los tres alumnos y examen solicitado.');
+    }
+    const expectedEmails = [
+      'darckisoul568@gmail.com', 'urielalexis4010@gmail.com',
+      'andresmanuelbernal2002@gmail.com'
+    ];
+    if (emails.some(function(email) {return expectedEmails.indexOf(email) < 0;})) {
+      throw new Error('La solicitud contiene un alumno fuera de los tres autorizados.');
+    }
+    const detail = result.detalle || [];
+    if (detail.length !== emails.length || detail.some(function(entry) {
+      return emails.indexOf(String(entry.correo || '').toLowerCase()) < 0 ||
+        (entry.estado !== 'CORREGIDA_DRAFT' && entry.estado !== 'YA_COINCIDIA_DRAFT') ||
+        !entry.verificacion || entry.verificacion.ok !== true ||
+        entry.verificacion.assignedGrade !== null ||
+        Number(entry.verificacion.draftGrade) !== Number(entry.forms);
+    })) {
+      throw new Error('Forms/Classroom no confirmó las tres notas completas en DRAFT.');
+    }
+    const work = Classroom.Courses.CourseWork.get(String(result.courseId), String(result.workId));
+    if (String(work.state || '').toUpperCase() !== 'PUBLISHED') {
+      throw new Error('El examen original no está PUBLISHED.');
+    }
+    const students = listarAlumnosPromedio_(result.courseId);
+    const subs = entregasPorAlumnoPromedio_(result.courseId, result.workId);
+    const byEmail = {};
+    students.forEach(function(student) {
+      const email = String(student.profile && student.profile.emailAddress || '').trim().toLowerCase();
+      if (email) byEmail[email] = String(student.userId);
+    });
+    detail.forEach(function(entry) {
+      const sub = subs[byEmail[entry.correo]];
+      if (!sub || !verificarCalificacionDraft_(sub, Number(entry.forms)).ok) {
+        throw new Error('La calificación no está en draftGrade para ' + entry.correo + '.');
+      }
+    });
+    return {ok:true, verification:'TARGETED_EXAM_RECONCILIATION_DRAFT',
+      courseId:String(result.courseId), workId:String(result.workId),
+      verifiedStudents:detail.length, corrected:Number(result.corregidas),
+      results:detail.map(function(entry) {
+        return {alumno:entry.alumno,correo:entry.correo,
+          score:Number(entry.forms),draftGrade:Number(entry.verificacion.draftGrade),
+          assignedGrade:entry.verificacion.assignedGrade};
+      })};
+  }
+
   if (functionName === 'cerrarUnidad') {
     const requested = parameters[0] || {};
     const courseId = String(result.courseId || '');
