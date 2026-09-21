@@ -133,6 +133,7 @@ function crearEvaluacionDirecta_(p){
   let form=null;
   try{
     form=buildQuizForm_(quiz,preguntas);
+    assertQuizFormNotPublished_(form);
     assertNoManualEmailQuestions_(form.getItems().map(x=>x.getTitle()),'Form directo');
     verifyVerifiedEmail_(form.getId());
     const work=Classroom.Courses.CourseWork.create({
