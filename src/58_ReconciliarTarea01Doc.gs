@@ -114,3 +114,35 @@ function reconciliarTarea01PerifericosConDoc(){
       state:'DRAFT',shareMode:'STUDENT_COPY',nativeDocVerified:true,duplicateActive:false};
   }finally{lock.releaseLock();}
 }
+
+/** Estado real de reconciliación, solo lectura; muestra IDs persistidos. */
+function diagnosticarTarea01DocReadOnly(){
+  const courseId='871156721160',oldId='886405170097';
+  const props=PropertiesService.getScriptProperties();
+  const prefix='RECONCILIAR_DOC_TAREA01_'+oldId+'_';
+  const docId=String(props.getProperty(prefix+'DOC')||'');
+  const newId=String(props.getProperty(prefix+'WORK')||'');
+  const result={ok:true,courseId,previousId:oldId,documentId:docId,workId:newId};
+  for(const pair of [['previous',oldId],['new',newId]]){
+    if(!pair[1])continue;
+    try{
+      const w=Classroom.Courses.CourseWork.get(courseId,pair[1]);
+      result[pair[0]]={id:String(w.id||''),state:String(w.state||''),title:String(w.title||''),
+        topicId:String(w.topicId||''),maxPoints:w.maxPoints,
+        materials:(w.materials||[]).map(function(m){return {documentId:String(m&&m.driveFile&&m.driveFile.driveFile&&m.driveFile.driveFile.id||''),shareMode:String(m&&m.driveFile&&m.driveFile.shareMode||'')};})};
+    }catch(e){result[pair[0]]={error:String(e&&e.message||e)};}
+  }
+  if(docId){
+    try{const f=Drive.Files.get(docId,{fields:'id,name,mimeType,trashed,webViewLink'});result.document={id:f.id,name:f.name,mimeType:f.mimeType,trashed:f.trashed||false};}
+    catch(e){result.document={error:String(e&&e.message||e)};}
+  }
+  const ss=SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
+  const sh=requireSheet_(ss,'Tareas'),rows=readObjects_(sh);
+  result.audit=rows.filter(function(row){
+    return String(row.data['ID Classroom']||'')===oldId||String(row.data['ID Classroom']||'')===newId;
+  }).map(function(row){
+    return {row:row.row,id:row.data['ID Classroom'],state:row.data['Estado solicitud'],
+      documentId:row.data['Archivo adjunto (Google Doc)'],shareMode:row.data['Modo de copia'],result:row.data['Resultado']};
+  });
+  return result;
+}
