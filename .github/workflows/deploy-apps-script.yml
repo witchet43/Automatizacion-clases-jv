@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/**'
+      - 'scripts/test-*.mjs'
       - '.clasp.json'
       - 'package.json'
       - '.github/workflows/deploy-apps-script.yml'
