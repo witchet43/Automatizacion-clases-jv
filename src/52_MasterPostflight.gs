@@ -19,6 +19,10 @@ function postflightDocumentoMaestro(result, request) {
     if(file.trashed===true) throw new Error('POSTFLIGHT_MASTER: documento adjunto está en papelera.');
     const material=(work.materials||[]).find(function(m){return m.driveFile&&m.driveFile.driveFile&&String(m.driveFile.driveFile.id||'')===documentId;});
     if(!material) throw new Error('POSTFLIGHT_MASTER: Classroom no conserva el documento esperado.');
+    verificarAdjuntoDocumentoEditable_(work,documentId);
   }
-  return {ok:true,courseId:courseId,workId:workId,state:String(work.state||''),documentId:documentId};
+  // Gate transversal: incluso los Docs añadidos por un flujo alterno no pueden
+  // quedar como VIEW, EDIT ni como enlace simple dentro de un CourseWork.
+  const docsVerificados=verificarTodosLosGoogleDocsEnClassroom_(work,documentId?[documentId]:[]);
+  return {ok:true,courseId:courseId,workId:workId,state:String(work.state||''),documentId:documentId,documentosConCopiaIndividual:docsVerificados};
 }
