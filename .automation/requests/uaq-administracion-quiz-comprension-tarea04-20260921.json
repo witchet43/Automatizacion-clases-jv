@@ -1,0 +1,94 @@
+{
+  "function": "crearQuiz",
+  "parameters": [
+    {
+      "courseId": "871158187513",
+      "materia": "UAQ - Administración",
+      "temaSubtema": "3.1 La Administración en una sociedad plural",
+      "sesionCanonica": 16,
+      "explicitSequenceOverride": true,
+      "unidad": "Unidad 3",
+      "topicName": "Unidad 3",
+      "titulo": "Quiz de comprensión - Tarea 04: La Administración en una sociedad plural",
+      "descripcion": "Comprobación de comprensión de la lectura y el caso «Textiles del Centro» trabajados en la Tarea 04. Selecciona una respuesta en cada pregunta; considera los intereses y las consecuencias para los grupos involucrados.",
+      "barajarPreguntas": false,
+      "preguntas": [
+        {
+          "pregunta": "La dirección de Textiles del Centro considera automatizar la producción y eliminar 35 puestos. ¿Qué tensión entre grupos de interés muestra directamente esa propuesta?",
+          "opciones": [
+            "Los propietarios buscan reducir costos y los trabajadores necesitan conservar sus ingresos.",
+            "Los clientes quieren proteger el arroyo y las autoridades buscan conservar los empleos.",
+            "Los proveedores exigen automatización y la comunidad quiere aumentar los precios.",
+            "Los trabajadores quieren reducir precios y los propietarios solicitan más regulación ambiental."
+          ],
+          "respuestaCorrecta": "A",
+          "retroalimentacionCorrecta": "Identificaste la tensión señalada en el caso: la reducción de costos de la dirección puede comprometer el empleo y los ingresos de 35 trabajadores.",
+          "retroalimentacionIncorrecta": "Vuelve al fragmento de la automatización: distingue el objetivo económico de los propietarios del efecto sobre los puestos de trabajo.",
+          "tipo": "OPCION_MULTIPLE",
+          "puntos": 20,
+          "obligatoria": true
+        },
+        {
+          "pregunta": "La comunidad denuncia afectaciones al arroyo y las autoridades exigen medidas ambientales. ¿Por qué ambos grupos deben considerarse en la decisión administrativa?",
+          "opciones": [
+            "Porque únicamente los grupos que trabajan dentro de la empresa pueden afectar su operación.",
+            "Porque la comunidad puede verse afectada por la empresa y las autoridades intervienen en el cumplimiento ambiental, aunque sus funciones sean distintas.",
+            "Porque ambos grupos deciden directamente cuántos puestos de trabajo debe eliminar la empresa.",
+            "Porque la empresa solo debe responder a sus clientes y accionistas, no a actores externos."
+          ],
+          "respuestaCorrecta": "B",
+          "retroalimentacionCorrecta": "La sociedad plural incluye actores externos: la comunidad recibe impactos ambientales y las autoridades exigen cumplimiento normativo, con intereses y funciones diferentes.",
+          "retroalimentacionIncorrecta": "La lectura define como grupos de interés también a quienes están fuera de la empresa y pueden influir en ella o resultar afectados por sus acciones.",
+          "tipo": "OPCION_MULTIPLE",
+          "puntos": 20,
+          "obligatoria": true
+        },
+        {
+          "pregunta": "Según la lectura, ¿qué información faltaría si la dirección justificara la automatización únicamente por el ahorro económico inmediato?",
+          "opciones": [
+            "Únicamente la cantidad de productos que compran los clientes.",
+            "Solo la opinión de quienes poseen la empresa, pues asumen todos los costos.",
+            "Las consecuencias para el empleo, la comunidad y el medio ambiente, así como los costos o conflictos que podrían surgir después.",
+            "Ninguna, porque una decisión rentable a corto plazo satisface por definición a todos los grupos."
+          ],
+          "respuestaCorrecta": "C",
+          "retroalimentacionCorrecta": "Comprendiste el argumento de la lectura: un beneficio económico inmediato no sustituye evaluar efectos sociales, ambientales y consecuencias posteriores.",
+          "retroalimentacionIncorrecta": "Revisa el párrafo sobre responsabilidad social y ética: la lectura advierte que una opción rentable a corto plazo puede generar daños y costos posteriores.",
+          "tipo": "OPCION_MULTIPLE",
+          "puntos": 20,
+          "obligatoria": true
+        },
+        {
+          "pregunta": "Si Textiles del Centro debe invertir en tratar sus aguas residuales y al mismo tiempo mantener precios accesibles, ¿qué tensión describe mejor esa situación?",
+          "opciones": [
+            "Los trabajadores necesitan reducir la contaminación y las autoridades quieren bajar los salarios.",
+            "Los propietarios buscan elevar precios por obligación y los clientes exigen despedir empleados.",
+            "Los proveedores quieren ampliar la automatización y la comunidad exige mejorar los uniformes.",
+            "La empresa necesita destinar recursos al cumplimiento ambiental mientras los clientes esperan que los costos no se trasladen a precios más altos."
+          ],
+          "respuestaCorrecta": "D",
+          "retroalimentacionCorrecta": "Identificaste un conflicto entre destinar recursos a atender el impacto ambiental y mantener precios accesibles; gestionar esa tensión requiere comparar alternativas.",
+          "retroalimentacionIncorrecta": "Relaciona dos datos explícitos del caso: la exigencia de medidas ambientales y la expectativa de precios accesibles de los clientes.",
+          "tipo": "OPCION_MULTIPLE",
+          "puntos": 20,
+          "obligatoria": true
+        },
+        {
+          "pregunta": "¿Cuál de las siguientes decisiones iniciales aplica mejor la administración en una sociedad plural al caso de Textiles del Centro?",
+          "opciones": [
+            "Automatizar toda la producción sin consultar a los trabajadores y posponer el tratamiento de aguas residuales.",
+            "Dialogar con trabajadores y comunidad, evaluar una automatización gradual con alternativas laborales y planear las medidas ambientales, reconociendo sus costos y límites.",
+            "Cancelar permanentemente todas las mejoras productivas y ambientales para evitar cualquier desacuerdo.",
+            "Reducir precios de inmediato y dejar que cada grupo resuelva por su cuenta las consecuencias."
+          ],
+          "respuestaCorrecta": "B",
+          "retroalimentacionCorrecta": "La opción considera a los grupos afectados, compara alternativas y reconoce costos y límites; no supone que todos los intereses puedan satisfacerse simultáneamente.",
+          "retroalimentacionIncorrecta": "La lectura propone identificar afectados, escuchar sus necesidades y justificar prioridades. Una decisión que ignore a grupos relevantes o prometa evitar toda tensión no aplica ese enfoque.",
+          "tipo": "OPCION_MULTIPLE",
+          "puntos": 20,
+          "obligatoria": true
+        }
+      ]
+    }
+  ]
+}
