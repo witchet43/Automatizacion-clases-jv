@@ -17,6 +17,11 @@ function normalizarCreacionDirecta_(params,tipo){
   p.courseId=String(p.courseId||'').trim();
   p.titulo=String(p.titulo||p.title||'').trim();
   p.descripcion=String(p.descripcion||p.description||'').trim();
+  if(['ACTIVIDAD','TAREA','PRACTICA'].indexOf(String(tipo||'').toUpperCase())>=0){
+    p.descripcion=normalizarInstruccionesDidacticas_(p.descripcion,tipo);
+    if(p.contenidoDocumento!==undefined) p.contenidoDocumento=normalizarInstruccionesDidacticas_(p.contenidoDocumento,tipo);
+    if(p.googleDocContent!==undefined) p.googleDocContent=normalizarInstruccionesDidacticas_(p.googleDocContent,tipo);
+  }
   p.unidad=String(p.unidad||'').trim();
   p.topicName=String(p.topicName||p.tema||'').trim();
   p.topicId=String(p.topicId||'').trim();
@@ -31,6 +36,9 @@ function crearCourseWorkDirecto_(p){
   const topicName=resolverNombreTemaDirecto_(p);
   const topicId=resolveTopicId_(p.courseId,p.topicId,topicName);
   const existente=buscarCourseWorkDirectoExacto_(p.courseId,p.titulo,topicId);
+  // No reutilizar borradores antiguos con descripciones no conformes:
+  // jamás se crea un duplicado ni se modifica el existente por implicación.
+
   if(existente){
     const verificado=verificarCourseWorkDraftDirecto_(p.courseId,existente.id);
     registrarAuditoriaCourseWorkDirecto_(p,verificado,topicName,'REUTILIZADO');
