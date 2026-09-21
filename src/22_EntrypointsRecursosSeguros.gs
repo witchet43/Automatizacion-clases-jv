@@ -109,6 +109,18 @@ function prepararContextoGuardrailRecurso_(params, tipo) {
   if (!materia) throw new Error('BLOCKED_MASTER_CONTEXT: falta materia y no puede resolverse desde courseId.');
   if (!temaSubtema) throw new Error('BLOCKED_MASTER_CONTEXT: falta temaSubtema/temaCanonico. No se permite inferirlo del título del recurso.');
 
+  // La reconciliación retrospectiva o la preparación de una sesión futura puede
+  // pedir una excepción de secuencia SOLO con sesión explícita y concordancia
+  // exacta contra la planeación; no acredita impartición histórica.
+  const requestedOverride = p.explicitSequenceOverride === true;
+  if (requestedOverride) {
+    const n = Number(p.sesionCanonica);
+    if (!Number.isInteger(n) || n < 1) throw new Error('BLOCKED_SEQUENCE: reconciliación exige sesionCanonica entera explícita.');
+    const match = loadCanonicalPlanning_(materia).find(function(row) { return Number(row.clase) === n; });
+    if (!match || normalizeGuard_(match.tema) !== normalizeGuard_(temaSubtema)) {
+      throw new Error('BLOCKED_SEQUENCE: sesionCanonica y temaSubtema no coinciden exactamente con la planeación.');
+    }
+  }
   p.materia = materia;
   p.temaSubtema = temaSubtema;
   p.resourceState = 'DRAFT';
@@ -122,7 +134,8 @@ function prepararContextoGuardrailRecurso_(params, tipo) {
       resourceType: String(tipo || '').toUpperCase(),
       resourceState: 'DRAFT',
       modifyPlanning: false,
-      explicitPlanningAuthorization: false
+      explicitPlanningAuthorization: false,
+      explicitSequenceOverride: requestedOverride
     }
   };
 }
