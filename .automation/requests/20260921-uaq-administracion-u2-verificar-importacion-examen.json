@@ -1,0 +1,9 @@
+{
+  "function": "importarCalificacionesExamen",
+  "parameters": [
+    {
+      "quizId": "EXAM-20260909-ADM-U2-001",
+      "courseId": "871158187513"
+    }
+  ]
+}
