@@ -117,7 +117,7 @@ function procesarAutoQuizSencilloHorario_() {
       resolverUnidadAbiertaQuizSencillo_(clase.courseId);
     } catch (errUnidad) {
       const motivoUnidad=mensajeErrorOperacion_(errUnidad);
-      if (/^(?:QUIZ_UNIDAD_CERRADA|QUIZ_SIN_UNIDAD_ABIERTA):/.test(motivoUnidad)) {
+      if (esUnidadSinQuizHorario_(motivoUnidad)) {
         const omitido={
           procesado:false,estado:'OMITIDO_UNIDAD_NO_ABIERTA',
           motivo:'UNIDAD_NO_ABIERTA_O_CERRADA',
@@ -212,6 +212,10 @@ function resolverTemaCanonicoAutoQuizHorario_(clase) {
     throw new Error('AUTO_QUIZ_UNIDAD_NO_COINCIDE: Calendar y planeación discrepan en '+fecha+'.');
   }
   return {sesion:Number(fila.session),temaSubtema:temaSubtema,fecha:fecha,temaCalendar:String(c.temaSubtema || '')};
+}
+
+function esUnidadSinQuizHorario_(mensaje) {
+  return /^(?:QUIZ_UNIDAD_CERRADA|QUIZ_SIN_UNIDAD_ABIERTA):/.test(String(mensaje||''));
 }
 
 function procesarAutoQuizSencilloHorarioSeguro_() {
