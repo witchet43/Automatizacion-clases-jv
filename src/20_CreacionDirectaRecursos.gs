@@ -43,7 +43,18 @@ function crearCourseWorkDirecto_(p){
   // jamás se crea un duplicado ni se modifica el existente por implicación.
 
   if(existente){
-    const verificado=verificarCourseWorkDraftDirecto_(p.courseId,existente.id);
+    let verificado=verificarCourseWorkDraftDirecto_(p.courseId,existente.id);
+    if(['ACTIVIDAD','TAREA','PRACTICA'].indexOf(String(p.tipo||'').toUpperCase())>=0){
+      const original=String(verificado.description||'');
+      const conforme=normalizarInstruccionesDidacticas_(original,p.tipo);
+      validarFormatoDescripcionClassroom_(conforme,p.tipo);
+      // Nunca duplicar el recurso; corregir únicamente la descripción del DRAFT.
+      if(conforme!==original){
+        Classroom.Courses.CourseWork.patch({description:conforme},String(p.courseId),String(verificado.id),{updateMask:'description'});
+        verificado=verificarCourseWorkDraftDirecto_(p.courseId,verificado.id);
+        if(String(verificado.description||'')!==conforme)throw new Error('BLOCKED_CLASSROOM_FORMAT: la reparación del borrador reutilizado no fue verificada.');
+      }
+    }
     registrarAuditoriaCourseWorkDirecto_(p,verificado,topicName,'REUTILIZADO');
     return resultadoCreacionCourseWorkDirecto_(p,verificado,topicName,true);
   }
