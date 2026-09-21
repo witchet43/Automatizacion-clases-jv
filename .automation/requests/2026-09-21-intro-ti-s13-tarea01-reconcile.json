@@ -1,0 +1,19 @@
+{
+  "function": "crearTareaReconciliacionHistorica",
+  "parameters": [
+    {
+      "courseId": "871156721160",
+      "materia": "UAQ - Introducción a las Tecnologías de Información",
+      "temaSubtema": "2.1.3 Dispositivos de almacenamiento",
+      "sesionCanonica": 13,
+      "explicitSequenceOverride": true,
+      "reconciliationMode": true,
+      "reconciliationReason": "Completar el paquete histórico de la sesión 13 sin inventar un vencimiento posterior a la sesión 14 ya ocurrida.",
+      "unidad": "Unidad 2",
+      "topicName": "Unidad 2",
+      "titulo": "Tarea 01 - Inventario previo de periféricos",
+      "descripcion": "Preparación para 2.1.4 Periféricos. Trabajo individual. 1. Observa tu equipo personal o el equipo del laboratorio e identifica 8 periféricos reales o claramente disponibles para ese entorno. 2. Para cada periférico registra en una tabla: nombre del dispositivo, función principal, clasificación preliminar como entrada/salida/entrada-salida y forma de conexión observable (USB, Bluetooth, HDMI/DisplayPort, audio, red u otra). 3. No desinstales, deshabilites ni actualices controladores; la tarea es únicamente de observación. 4. Para dos dispositivos escribe con tus propias palabras qué problema podría presentarse si el sistema operativo no tuviera el controlador adecuado. 5. Conserva una captura segura del Administrador de dispositivos donde se observen al menos tres de los periféricos registrados; oculta identificadores sensibles si aparecieran. 6. Cierra con dos preguntas que quieras resolver en la clase sobre la relación entre periférico, interfaz, driver y sistema operativo. Evidencia: tabla de 8 periféricos, captura técnica y dos preguntas. Redacta con palabras propias y basa la evidencia en dispositivos realmente observados.",
+      "puntos": 100
+    }
+  ]
+}
