@@ -47,7 +47,10 @@ jobs:
           done
           node -e "JSON.parse(require('fs').readFileSync('src/appsscript.json', 'utf8')); console.log('appsscript.json OK')"
 
-      - name: Regression - next class follows real Classroom and verified Gamma, never today\n        run: node scripts/test-next-class-real-state.mjs\n\n      - name: Regression - every Google Doc gives each student an editable copy
+      - name: Regression - next class follows real Classroom and verified Gamma, never today
+        run: node scripts/test-next-class-real-state.mjs
+
+      - name: Regression - every Google Doc gives each student an editable copy
         run: node scripts/test-google-doc-student-copy.mjs
 
       - name: Regression - Google Forms must remain unpublished drafts
