@@ -1,0 +1,16 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+import assert from 'node:assert/strict';
+const pipeline=fs.readFileSync('src/01_PipelineQuizzes.gs','utf8');
+const direct=fs.readFileSync('src/20_CreacionDirectaRecursos.gs','utf8');
+assert.match(pipeline,/FormApp\.create\(clean_\(quiz\[H\.TITLE\]\),\s*false\)/,'Los Forms deben nacer SIN publicar.');
+assert.match(pipeline,/assertQuizFormNotPublished_\(form\);[\s\S]*?return form;/);
+assert.match(direct,/form=buildQuizForm_\(quiz,preguntas\);\s*assertQuizFormNotPublished_\(form\);/);
+const helper=pipeline.match(/function assertQuizFormNotPublished_\(form\)\s*\{[\s\S]*?\n\}/);
+assert.ok(helper,'Falta la función de protección contra Forms publicados.');
+const sandbox={};vm.createContext(sandbox);vm.runInContext(helper[0],sandbox);
+const verify=x=>vm.runInContext('assertQuizFormNotPublished_',sandbox)(x);
+assert.equal(verify({supportsAdvancedResponderPermissions:()=>true,isPublished:()=>false}),true);
+assert.throws(()=>verify({supportsAdvancedResponderPermissions:()=>true,isPublished:()=>true}),/BLOCKED_FORMS_DRAFT/);
+assert.throws(()=>verify({supportsAdvancedResponderPermissions:()=>false,isPublished:()=>false}),/BLOCKED_FORMS_DRAFT/);
+console.log('PASS: el Form nace sin publicar, se verifica antes de Classroom, un Form publicado o no verificable queda bloqueado.');
