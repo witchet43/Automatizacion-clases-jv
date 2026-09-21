@@ -51,6 +51,7 @@ function crearCourseWorkDirecto_(p){
     const docsAdjuntosExistentes=idsGoogleDocumentosAdjuntos_(adjuntosExistentes);
     if(docsAdjuntosExistentes.length){
       p.documentId=docsAdjuntosExistentes[0];
+      p.googleDocId='';
       p.documentIds=docsAdjuntosExistentes;
       p.links=(Array.isArray(p.links)?p.links:[]).filter(function(link){
         return !extraerIdGoogleDocumentoDeUrl_(link&&link.url);
