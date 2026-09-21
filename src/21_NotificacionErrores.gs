@@ -17,8 +17,23 @@ function ejecutarConNotificacionError_(operacion, contexto, fn) {
   try {
     return fn();
   } catch (err) {
-    notificarErrorScript_(operacion, err, contexto);
+    // Una misma excepción puede atravesar entrypoints anidados. Conservar
+    // notificación y excepción original, pero emitir solo UN correo por fallo.
+    if (!errorAcademicoYaNotificadoEnEstaEjecucion_(err)) {
+      notificarErrorScript_(operacion, err, contexto);
+      marcarErrorAcademicoNotificadoEnEstaEjecucion_(err);
+    }
     throw err;
+  }
+}
+
+function errorAcademicoYaNotificadoEnEstaEjecucion_(err) {
+  return Boolean(err && typeof err === 'object' && err.__academicEmailNotified === true);
+}
+function marcarErrorAcademicoNotificadoEnEstaEjecucion_(err) {
+  if (err && typeof err === 'object') {
+    try { Object.defineProperty(err,'__academicEmailNotified',{value:true,configurable:true}); }
+    catch (ignored) { err.__academicEmailNotified = true; }
   }
 }
 
