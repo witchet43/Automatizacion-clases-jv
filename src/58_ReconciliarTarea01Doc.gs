@@ -122,7 +122,7 @@ function diagnosticarTarea01DocReadOnly(){
   const prefix='RECONCILIAR_DOC_TAREA01_'+oldId+'_';
   const docId=String(props.getProperty(prefix+'DOC')||'');
   const newId=String(props.getProperty(prefix+'WORK')||'');
-  const result={ok:true,courseId,previousId:oldId,documentId:docId,workId:newId};
+  const result={ok:true,courseId,previousId:oldId,documentId:docId,replacementId:newId,readOnly:true};
   for(const pair of [['previous',oldId],['new',newId]]){
     if(!pair[1])continue;
     try{
