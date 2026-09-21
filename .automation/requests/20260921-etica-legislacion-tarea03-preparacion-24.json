@@ -1,0 +1,19 @@
+{
+  "function": "crearTarea",
+  "parameters": [
+    {
+      "courseId": "871149624583",
+      "materia": "UAQ - Ética y Legislación Informática",
+      "temaSubtema": "2.4 Clasificación de los riesgos",
+      "explicitSequenceOverride": true,
+      "sesionCanonica": 15,
+      "unidad": "Unidad 2",
+      "topicName": "Unidad 2",
+      "titulo": "Tarea 03 - Criterios preliminares para clasificar riesgos informáticos",
+      "descripcion": "Prepárate para el tema 2.4 Clasificación de los riesgos. Retoma tres riesgos que hayas identificado en tu registro del tema 2.3. Para cada uno, conserva el enunciado de riesgo y elabora una ficha preliminar con: 1) origen principal de la amenaza o condición de riesgo; 2) activo principalmente afectado; 3) naturaleza del efecto esperado; 4) una estimación cualitativa inicial de probabilidad y de impacto, explicando en una oración qué evidencia o supuesto utilizaste para cada estimación. No construyas todavía una matriz ni asignes una prioridad final; esas decisiones se trabajarán y validarán en clase. Cierra con 4 a 6 líneas explicando por qué dos personas podrían clasificar de manera distinta el mismo riesgo si parten de información o supuestos diferentes. Evidencia: tres fichas preliminares y una explicación final. Conserva la evidencia para utilizarla al inicio de la siguiente sesión.",
+      "fechaSiguienteSesion": "2026-09-21",
+      "horaInicioSiguienteSesion": "17:00",
+      "puntos": 100
+    }
+  ]
+}
