@@ -204,12 +204,17 @@ function verificarEjecucionRemota(envelope) {
       if (driveForm.trashed === true || String(driveForm.mimeType) !== 'application/vnd.google-apps.form') {
         throw new Error('Drive no confirmó un Google Form activo: ' + formId + '.');
       }
-      const linked = (work.materials || []).some(function(material) {
-        return material.link && String(material.link.url || '').indexOf(formId) >= 0;
-      });
-      if (!linked) throw new Error('Classroom no contiene el enlace al Form creado.');
+      const form=FormApp.openById(formId);
+      const responderUrl=String(form.getPublishedUrl() || apiForm.responderUri || '').trim();
+      // Las URLs de respuesta /d/e/<responder-token>/viewform no contienen
+      // necesariamente el ID editable /d/<formId>/edit. Comparar la URL real.
+      if(!formularioVinculadoPorUrlReal_(work.materials || [],responderUrl))
+        throw new Error('Classroom no contiene el enlace de respuesta del Form verificado.');
+      if(functionName==='crearQuiz'||functionName==='crearExamen')
+        assertQuizFormNotPublished_(form);
       verification.formId = String(apiForm.formId || '');
       verification.formVerified = true;
+      verification.formPublished = form.supportsAdvancedResponderPermissions() ? form.isPublished() : null;
     }
 
     const documentId = String(result.documentId || '').trim();
@@ -235,6 +240,14 @@ function verificarEjecucionRemota(envelope) {
 
   if (result.ok !== true) throw new Error('La función no devolvió un recurso verificable ni ok=true: ' + functionName + '.');
   return {ok:true, verification:'RESULT_CONTRACT', functionName:functionName};
+}
+
+/** Comprueba el enlace de respuesta real y no el ID de edición del Form. */
+function formularioVinculadoPorUrlReal_(materials,responderUrl) {
+  const esperado=String(responderUrl||'').trim();
+  return Boolean(esperado)&&Array.isArray(materials)&&materials.some(function(material){
+    return material&&material.link&&String(material.link.url||'').trim()===esperado;
+  });
 }
 
 function verificarAuditoriaRemota_(result, courseId, workId) {
