@@ -58,9 +58,26 @@ function preflightDocumentoMaestro(request) {
   const planning = loadCanonicalPlanning_(materia);
   const target = findPlanningTopic_(planning, tema);
   if (!target) throw new Error('BLOCKED_MASTER_RULE: el tema no existe en la planeación canónica: ' + tema + '.');
-  const expected = firstPendingCanonical_(planning, r.completedTopics || []);
-  if (expected && normalizeGuard_(expected.tema) !== normalizeGuard_(target.tema) && r.explicitSequenceOverride !== true) throw new Error('BLOCKED_SEQUENCE: el siguiente tema canónico es "' + expected.tema + '", no "' + target.tema + '".');
-  if (operation === 'GENERATE_CLASS' || operation === 'GENERATE_CLASS_PACKAGE') validateClassPackageRequest_(r);
+  const isClassPackage = operation === 'GENERATE_CLASS' || operation === 'GENERATE_CLASS_PACKAGE';
+  // Para generar una CLASE, la secuencia jamás depende de completedTopics
+  // informados por el prompt, de la fecha de hoy ni de la propiedad de progreso.
+  // Se coteja el CourseWork real y la Gamma verificada ANTES de cualquier escritura.
+  const real = isClassPackage ? resolverSiguienteClase(materia,r.sesionCanonica||r.sesion,{
+    reconciliationMode:r.reconciliationMode===true,
+    reconciliationReason:r.reconciliationReason
+  }) : null;
+  if(isClassPackage && real.complete)throw new Error('BLOCKED_SEQUENCE_REAL_STATE: no queda una sesión canónica pendiente.');
+  const expected = isClassPackage
+    ? {tema:real.target.topic,clase:real.target.session,unidad:real.target.unit}
+    : firstPendingCanonical_(planning, r.completedTopics || []);
+  if(expected && normalizeGuard_(expected.tema)!==normalizeGuard_(target.tema) &&
+     (isClassPackage || r.explicitSequenceOverride!==true))
+    throw new Error('BLOCKED_SEQUENCE: el siguiente tema canónico por estado real es "'+expected.tema+'", no "'+target.tema+'".');
+  if(isClassPackage) {
+    if(real.sequenceSource!=='CLASSROOM_GAMMA_REAL_STATE'||String(real.target.session)!==String(target.clase))
+      throw new Error('BLOCKED_SEQUENCE_REAL_STATE: sesión canónica o evidencia de progreso incongruente.');
+    validateClassPackageRequest_(r);
+  }
   const source = resolvePlanningSource_(materia);
   return {ok:true,masterDocumentId:MASTER_GUARDRAILS.MASTER_DOCUMENT_ID,planningSpreadsheetId:source.spreadsheetId,planningSheet:source.preferredSheet,target:target,canonicalNext:expected||target,resourceState:MASTER_GUARDRAILS.DEFAULT_STATE,room:r.room||MASTER_GUARDRAILS.DEFAULT_ROOM};
 }
@@ -134,7 +151,14 @@ function dryRunPreflightAcademico(params){
   const planning=loadCanonicalPlanning_(materia);
   let target=null;
   if(String(p.temaSubtema||'').trim())target=findPlanningTopic_(planning,p.temaSubtema);
-  else target=firstPendingCanonical_(planning,p.completedTopics||[]);
+  else {
+    const real=resolverSiguienteClase(materia,p.sesionCanonica||p.sesion,{
+      reconciliationMode:p.reconciliationMode===true,
+      reconciliationReason:p.reconciliationReason
+    });
+    if(real.complete)throw new Error('DRY_RUN_NO_TARGET: todas las sesiones tienen evidencia real.');
+    target=findPlanningTopic_(planning,real.target.topic);
+  }
   if(!target)throw new Error('DRY_RUN_NO_TARGET: no se pudo resolver sesión objetivo para '+materia+'.');
   const preflight=preflightDocumentoMaestro({
     operation:'DRY_RUN',
