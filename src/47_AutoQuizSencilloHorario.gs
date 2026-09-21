@@ -110,6 +110,26 @@ function procesarAutoQuizSencilloHorario_() {
     // planeación: puede incluir rangos y etiquetas históricas. Resolver por
     // curso + fecha + sesión del evento y conservar el guardrail del Maestro.
     const contextoCanonico = resolverTemaCanonicoAutoQuizHorario_(clase);
+    // No hay error operativo cuando la política académica prohíbe crear
+    // un Quiz Sencillo en una unidad ya cerrada o aún no abierta.
+    // Registrar el motivo en la bitácora del slot sin enviar correo.
+    try {
+      resolverUnidadAbiertaQuizSencillo_(clase.courseId);
+    } catch (errUnidad) {
+      const motivoUnidad=mensajeErrorOperacion_(errUnidad);
+      if (/^(?:QUIZ_UNIDAD_CERRADA|QUIZ_SIN_UNIDAD_ABIERTA):/.test(motivoUnidad)) {
+        const omitido={
+          procesado:false,estado:'OMITIDO_UNIDAD_NO_ABIERTA',
+          motivo:'UNIDAD_NO_ABIERTA_O_CERRADA',
+          slot:slot.id,courseId:String(clase.courseId||''),
+          solicitadoEnLocal:slot.solicitadoEnLocal,
+          detalle:motivoUnidad
+        };
+        guardarResultadoAutoQuizHorario_(props,policy,omitido);
+        return omitido;
+      }
+      throw errUnidad;
+    }
     const requestId = 'AUTO_HOURLY|' + slot.id + '|' + String(clase.courseId || '') + '|' + String(clase.eventId || '');
     const creado = crearQuizSencillo({
       courseId: clase.courseId,
@@ -199,10 +219,13 @@ function procesarAutoQuizSencilloHorarioSeguro_() {
     return procesarAutoQuizSencilloHorario_();
   } catch (err) {
     try {
+      if (!errorAcademicoYaNotificadoEnEstaEjecucion_(err)) {
       notificarErrorScript_('AUTO_QUIZ_SENCILLO_HORARIO', err, {
         source:AUTO_SIMPLE_QUIZ_HOURLY_POLICY.SOURCE,
         slot:String(PropertiesService.getScriptProperties().getProperty(AUTO_SIMPLE_QUIZ_HOURLY_POLICY.LAST_SLOT_PROPERTY) || '')
       });
+      marcarErrorAcademicoNotificadoEnEstaEjecucion_(err);
+      }
     } catch (notifyErr) {
       console.error('No fue posible notificar error de Auto Quiz Horario: ' + mensajeErrorOperacion_(notifyErr));
     }
