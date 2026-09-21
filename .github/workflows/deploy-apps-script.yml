@@ -55,6 +55,9 @@ jobs:
       - name: Regression - Google Forms grades import without TURNED_IN
         run: node scripts/test-forms-import-without-turnedin.mjs
 
+      - name: Regression - academic error alerts are not duplicated
+        run: node scripts/test-academic-error-notifications.mjs
+
       - name: Enforce architecture contract
         shell: bash
         run: |
