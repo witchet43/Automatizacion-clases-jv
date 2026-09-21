@@ -16,7 +16,7 @@ function diagnosticarEstabilidadAcademicaReadOnly(params) {
     // después de crearlo. Diagnosticar el estado real, sin imponer DRAFT
     // retrospectivamente ni convertir acciones legítimas en falsos errores.
     if(state==='DELETED')
-      return {workId:String(workId),state:state,documentCount:0,teacherDeleted:true};
+      return {workId:String(workId),state:state,documentCount:0,deleted:true};
     const docIds=verificarTodosLosGoogleDocsEnClassroom_(cw,[]);
     return {workId:String(workId),state:state,documentCount:docIds.length,
       shareMode:docIds.length?'STUDENT_COPY':'SIN_GOOGLE_DOC'};
@@ -39,13 +39,19 @@ function diagnosticarEstabilidadAcademicaReadOnly(params) {
   });
   if(finals.length!==1)throw new Error('READ_ONLY_DIAGNOSTIC: cierre final inexistente o duplicado: '+finals.length);
   const final=finals[0],subs=entregasPorAlumnoPublicacion_(courseId,final.id);
-  let mismatches=0,assigned=0,missing=0;
+  let draftMismatches=0,assigned=0,assignedMatches=0,assignedDiffers=0,missing=0;
   rows.forEach(function(r){
     const uid=String(r[h['User ID']]||'').trim(),expected=Number(r[h['Promedio final']]);
     const sub=subs[uid];
     if(!sub){missing++;return;}
-    if(sub.assignedGrade!==undefined&&sub.assignedGrade!==null)assigned++;
-    if(!verificarCalificacionDraft_(sub,expected).ok)mismatches++;
+    if(sub.assignedGrade!==undefined&&sub.assignedGrade!==null){
+      assigned++;
+      if(Math.abs(Number(sub.assignedGrade)-expected)<=0.001)assignedMatches++;
+      else assignedDiffers++;
+    } else {
+      if(sub.draftGrade===undefined||sub.draftGrade===null||
+          Math.abs(Number(sub.draftGrade)-expected)>0.001)draftMismatches++;
+    }
   });
   const formId=String(p.formId||'').trim();
   const form=formId?FormApp.openById(formId):null;
@@ -54,8 +60,10 @@ function diagnosticarEstabilidadAcademicaReadOnly(params) {
   return {ok:true,mode:'READ_ONLY',courseId:courseId,unidad:unidad,
     documentCourseWork:docs,grades:{finalCourseWorkId:String(final.id),
       finalState:String(final.state),reportStudents:rows.length,
-      unmatched:mismatches,assignedGrades:assigned,missingSubmissions:missing,
-      aligned:mismatches===0&&assigned===0&&missing===0},
+      draftMismatches:draftMismatches,assignedGrades:assigned,
+      assignedMatchingReport:assignedMatches,assignedDifferentFromReport:assignedDiffers,
+      missingSubmissions:missing,aligned:draftMismatches===0&&assignedDiffers===0&&missing===0,
+      requiresTeacherReview:assignedDiffers>0},
     form:form?{formId:formId,unpublished:formUnpublished}:null,
     writes:false};
 }
