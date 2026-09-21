@@ -52,6 +52,9 @@ jobs:
       - name: Regression - Google Forms must remain unpublished drafts
         run: node scripts/test-forms-draft.mjs
 
+      - name: Regression - Google Forms grades import without TURNED_IN
+        run: node scripts/test-forms-import-without-turnedin.mjs
+
       - name: Enforce architecture contract
         shell: bash
         run: |
