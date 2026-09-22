@@ -26,6 +26,7 @@ const planHeader=['Sesión','Fecha','Unidad','Tema / subtema','Actividad / prác
   'Documento Google Docs / recurso','Presentación Gamma','Enlace Gamma','Estado de enlace',
   'Tarea previa a esta clase','Tarea siguiente / preparación para la próxima clase'];
 const plannedDoc='1AAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+const attachedDoc='1BBBBBBBBBBBBBBBBBBBBBBBBBBBBB';
 const planRows=[[],[],[],[],[],planHeader,
   ['12','01/01/2025','Unidad 2','2.1 Seguridad jurídica',
     'Tarea 01 - Preparación + actividad en clase',
@@ -39,7 +40,7 @@ const byName={Cursos:()=>sheet(courseRows),Tareas:()=>sheet([taskHeader,taskRow]
   Quizzes:()=>sheet([quizHeader,quizRow]),Planeacion:()=>sheet(planRows)};
 const works=[{id:'987654321012',title:'Tarea 01 - Preparación',state:'DRAFT',materials:[]},
   {id:'987654321013',title:'Práctica 01 - Documento externo',state:'DRAFT',
-    materials:[{driveFile:{driveFile:{id:plannedDoc},shareMode:'VIEW'}}]}];
+    materials:[{driveFile:{driveFile:{id:attachedDoc},shareMode:'VIEW'}}]}];
 const ctx={
   MASTER_GUARDRAILS:{PLANNING_SOURCES:{
     'uaq - curso ejemplo':{spreadsheetId:'PLAN',preferredSheet:'Planeacion',
