@@ -84,8 +84,8 @@ assert(codes.includes('EVALUACION_REGISTRADA_ERROR'),'Detecta examen ERROR');
 assert(byId.incidencias.some(x=>x.codigo==='RECURSO_DECLARADO_NO_LOCALIZADO'&&x.categoria==='PENDIENTE_FUTURO'),'No trata una clase futura como incumplida');
 assert.equal(byId.sesiones[0].recursos[0].estados[0],'DRAFT','No equipara CREADA a PUBLISHED');
 
-const byName=ctx.auditarMateriaAcademica('Curso Ejemplo');
-assert.equal(byName.curso.id,'123456789012');
+const byNameResult=ctx.auditarMateriaAcademica('Curso Ejemplo');
+assert.equal(byNameResult.curso.id,'123456789012');
 const explicit=ctx.auditarMateriaAcademica({materia:'UAQ - Curso Ejemplo',courseId:'123456789012'});
 assert.equal(explicit.curso.id,'123456789012');
 assert.throws(()=>ctx.auditarMateriaAcademica({materia:'Otra materia',courseId:'123456789012'}),/ID y nombre no corresponden/);
