@@ -154,7 +154,7 @@ function auditarYCompletarMateriaAcademica(identificador) {
       try{
         const r=completacionEjecutarAccion_(identity,action);
         actions.push({sesion:action.sesion,tipo:action.tipo,titulo:action.titulo,
-          workId:String(r.workId),documentId:action.documentId,estado:String(r.estado),
+          workId:String(r.workId),documentId:r.documentId||action.documentId,estado:String(r.estado),
           reutilizado:r.reutilizado===true});
       }catch(err){
         bloqueos.push({sesion:action.sesion,codigo:'FALLO_REPARACION',
@@ -234,6 +234,11 @@ function completacionEjecutarAccion_(identity,a){
   const verified=Classroom.Courses.CourseWork.get(id,String(result.workId));
   if(String(verified.state)!=='DRAFT'||verified.dueDate||verified.dueTime)
     throw new Error('POSTFLIGHT: la actividad no quedó DRAFT sin vencimiento.');
-  verificarTodosLosGoogleDocsEnClassroom_(verified,[a.documentId]);
-  return {workId:String(verified.id),estado:verified.state,reutilizado:result.reutilizado===true};
+  const documentId=String(a.documentId||result.documentId||'');
+  if(!documentId)throw new Error('POSTFLIGHT: documento de la práctica no identificado.');
+  verificarTodosLosGoogleDocsEnClassroom_(verified,[documentId]);
+  const file=Drive.Files.get(documentId,{fields:'id,mimeType,trashed'});
+  if(file.trashed||String(file.mimeType)!=='application/vnd.google-apps.document')
+    throw new Error('POSTFLIGHT: documento no es Google Doc vigente.');
+  return {workId:String(verified.id),documentId:documentId,estado:verified.state,reutilizado:result.reutilizado===true};
 }
