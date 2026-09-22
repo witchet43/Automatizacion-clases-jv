@@ -242,3 +242,17 @@ function completacionEjecutarAccion_(identity,a){
     throw new Error('POSTFLIGHT: documento no es Google Doc vigente.');
   return {workId:String(verified.id),documentId:documentId,estado:verified.state,reutilizado:result.reutilizado===true};
 }
+
+function completacionContenidoPractica_(row,title){
+  const desc=String(row.practiceDescription||'').trim();
+  const evidence=String(row.evidence||'').trim();
+  if(!desc||!evidence)throw new Error('La planeación no aporta actividad y evidencia suficientes.');
+  return ['PRÁCTICA: '+title,'','OBJETIVO Y CONTEXTO',String(row.topic||''),
+    '','ACTIVIDAD SEGÚN LA PLANEACIÓN',desc,'',
+    'PROCEDIMIENTO Y REGISTRO','1. Identifica las herramientas e insumos para ejecutar la actividad indicada.',
+    '2. Realiza la actividad y registra evidencias verificables de cada resultado.',
+    '3. Organiza los resultados conforme a la evidencia solicitada.',
+    '4. Relaciona los resultados con el tema y documenta las limitaciones sin incluir credenciales.',
+    '','EVIDENCIA DE ENTREGA',evidence,'','TRABAJO INDIVIDUAL',
+    'Completa aquí tu procedimiento, resultados y evidencia.'].join('\n');
+}
