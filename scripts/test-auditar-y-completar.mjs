@@ -26,6 +26,7 @@ const ctx={
   leerPlaneacionSiguienteClase_:()=>({rows:[row]}),
   resolvePlanningSource_:()=>({spreadsheetId:'plan',preferredSheet:'Planeacion'}),
   auditoriaLeerPlan_:()=>({rows:[{sesion:'12',actividadDia:'Matriz de seguridad jurídica - Aplicación 2.1'}]}),
+  auditoriaFechaCanonica_:v=>/^\d{4}-\d\d-\d\d$/.test(String(v))?v:(String(v).split('/').reverse().join('-')),
   auditoriaNormalizar_:v=>String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(),
   auditoriaExtraerDocId_:v=>((String(v).match(/\/document\/d\/([-\w]{15,})/)||[])[1]||''),
   auditoriaEsMarcador_:v=>!v||/^(pendiente|no aplica)/i.test(v),
