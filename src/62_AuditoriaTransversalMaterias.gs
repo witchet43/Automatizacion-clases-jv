@@ -278,7 +278,7 @@ function auditoriaNormalizar_(x){
  * palabras parecidas o tema supuesto. El ID real prevalece después del match. */
 function auditoriaClaveRecurso_(title){
   const name=auditoriaNormalizar_(title);
-  return name.replace(/^(tarea|actividad|practica|quiz|examen)\\s+0*([1-9]\\d*)(?=\\s*[-–—]|\\s*$)/,
+  return name.replace(/^(tarea|actividad|practica|quiz|examen)\s+0*([1-9]\d*)(?=\s*[-–—]|\s*$)/,
     function(match,type,n){return type+' '+String(Number(n));});
 }
 function auditoriaResolverIdentidad_(input){
