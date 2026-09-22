@@ -199,8 +199,8 @@ function completacionTituloActividad_(row,session){
 }
 function completacionEjecutarAccion_(identity,a){
   const id=String(identity.courseId);
-  const doc=Drive.Files.get(a.documentId,{fields:'id,name,mimeType,trashed'});
-  if(doc.trashed||String(doc.mimeType)!=='application/vnd.google-apps.document')
+  const doc=a.documentId?Drive.Files.get(a.documentId,{fields:'id,name,mimeType,trashed'}):null;
+  if(doc&&(doc.trashed||String(doc.mimeType)!=='application/vnd.google-apps.document'))
     throw new Error('El documento canónico no existe o no es un Google Doc vigente.');
   const found=auditoriaListarCourseWork_(id).filter(function(w){
     return auditoriaNormalizar_(w.title)===auditoriaNormalizar_(a.titulo);
