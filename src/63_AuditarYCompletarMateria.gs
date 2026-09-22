@@ -158,7 +158,8 @@ function auditarYCompletarMateriaAcademica(identificador) {
           reutilizado:r.reutilizado===true});
       }catch(err){
         bloqueos.push({sesion:action.sesion,codigo:'FALLO_REPARACION',
-          titulo:action.titulo,error:String(err&&err.message||err).slice(0,500)});
+          titulo:action.titulo,error:String(err&&err.message||err).slice(0,500),
+          traza:String(err&&err.stack||'').slice(0,1350)});
       }
     });
   }finally{lock.releaseLock();}
