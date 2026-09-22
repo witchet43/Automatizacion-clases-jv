@@ -50,6 +50,9 @@ jobs:
       - name: Regression - transversal read-only academic audit
         run: node scripts/test-auditoria-transversal.mjs
 
+      - name: Regression - audit reconciles completed sessions without publishing
+        run: node scripts/test-auditar-y-completar.mjs
+
       - name: Regression - next class follows real Classroom and verified Gamma, never today
         run: node scripts/test-next-class-real-state.mjs
 
