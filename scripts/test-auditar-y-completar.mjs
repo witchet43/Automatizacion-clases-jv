@@ -8,9 +8,9 @@ const didCtx={ACADEMIC_POLICY:{CLASSROOM:{DIDACTIC_INSTRUCTIONS:{
 }}}};
 vm.createContext(didCtx);
 vm.runInContext(didactica,didCtx,{filename:'src/54_DidacticaTransversal.gs'});
-const originalFormat='INDICACIONES PARA EL ALUMNO\\n\\nTrabaja en tu documento.\\n\\nDESARROLLO\\n\\n1. Registra resultados.\\n\\nEVIDENCIA DE ENTREGA\\n\\nTabla.';
+const originalFormat='INDICACIONES PARA EL ALUMNO\n\nTrabaja en tu documento.\n\nDESARROLLO\n\n1. Registra resultados.\n\nEVIDENCIA DE ENTREGA\n\nTabla.';
 const formatted=didCtx.normalizarInstruccionesDidacticas_(originalFormat,'PRACTICA');
-assert(formatted.startsWith('INDICACIONES PARA EL ALUMNO\\n\\nUtiliza tu computadora personal con Windows.'),
+assert(formatted.startsWith('INDICACIONES PARA EL ALUMNO\n\nUtiliza tu computadora personal con Windows.'),
   'La guía Windows debe añadirse DESPUÉS del encabezado, nunca antes');
 assert.equal(didCtx.normalizarInstruccionesDidacticas_(formatted,'PRACTICA'),formatted,'Normalización histórica idempotente');
 
