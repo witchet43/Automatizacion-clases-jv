@@ -1,3 +1,4 @@
+# Reejecución tras cruce de IDs de Classroom, títulos 01/1 y Docs registrados.
 name: One-time audit and reconcile UAQ Sistemas Distribuidos
 on:
   push:
