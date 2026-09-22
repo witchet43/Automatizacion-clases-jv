@@ -47,6 +47,9 @@ jobs:
           done
           node -e "JSON.parse(require('fs').readFileSync('src/appsscript.json', 'utf8')); console.log('appsscript.json OK')"
 
+      - name: Regression - transversal read-only academic audit
+        run: node scripts/test-auditoria-transversal.mjs
+
       - name: Regression - next class follows real Classroom and verified Gamma, never today
         run: node scripts/test-next-class-real-state.mjs
 
