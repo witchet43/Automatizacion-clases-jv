@@ -20,6 +20,13 @@ function auditarYCompletarMateriaAcademica(identificador) {
       {courseId:String(identificador)}:{materia:String(identificador||'')});
   const before=auditarMateriaAcademica({courseId:identity.courseId});
   const canonico=leerPlaneacionSiguienteClase_(identity.materiaCanonica);
+  const detalle=auditoriaLeerPlan_(resolvePlanningSource_(identity.materiaCanonica));
+  const detalleBySession={};
+  detalle.rows.forEach(function(x){
+    const id=String(x.sesion||'').trim();
+    if(detalleBySession[id])throw new Error('AUDITORIA_COMPLETAR: sesión repetida en detalle de planeación: '+id);
+    detalleBySession[id]=x;
+  });
   const planBySession={};
   canonico.rows.forEach(function(x){
     const key=String(x.session||'').trim();
@@ -36,7 +43,7 @@ function auditarYCompletarMateriaAcademica(identificador) {
     if(!gamma && gammaTitle && !auditoriaEsMarcador_(gammaTitle))
       bloqueos.push({sesion:s.sesion,codigo:'GAMMA_SIN_URL_REQUIERE_INVENTARIO_REMOTO',
         titulo:gammaTitle,nota:'La falta de URL en Sheets no demuestra que la Gamma no exista.'});
-    const title=completacionTituloActividad_(row,s);
+    const title=completacionTituloActividad_(row,detalleBySession[String(s.sesion)]);
     const docId=auditoriaExtraerDocId_(row.documento||s.documento&&s.documento.url||'');
     if(!title) {
       if(s.documento&&s.documento.id&&!s.documento.courseWorkIds.length)
@@ -44,7 +51,6 @@ function auditarYCompletarMateriaAcademica(identificador) {
           documentId:s.documento.id});
       return;
     }
-    const exact=before.recursos||[];
     const all=auditoriaListarCourseWork_(identity.courseId);
     const matches=all.filter(function(w){return auditoriaNormalizar_(w.title)===auditoriaNormalizar_(title);});
     // Un documento ya ligado a otra actividad NO autoriza crear una copia.
@@ -151,8 +157,6 @@ function completacionEjecutarAccion_(identity,a){
   const doc=Drive.Files.get(a.documentId,{fields:'id,name,mimeType,trashed'});
   if(doc.trashed||String(doc.mimeType)!=='application/vnd.google-apps.document')
     throw new Error('El documento canónico no existe o no es un Google Doc vigente.');
-  const text=DocumentApp.openById(a.documentId).getBody().getText().trim();
-  if(text.length<120)throw new Error('El documento no contiene instrucciones didácticas verificables.');
   const found=auditoriaListarCourseWork_(id).filter(function(w){
     return auditoriaNormalizar_(w.title)===auditoriaNormalizar_(a.titulo);
   });
