@@ -34,7 +34,7 @@ function auditarMateriaAcademica(identificador, opciones) {
   const workById={};const workByTitle={};
   works.forEach(function(w){
     workById[String(w.id)]=w;
-    const key=auditoriaNormalizar_(w.title);
+    const key=auditoriaClaveRecurso_(w.title);
     (workByTitle[key]||(workByTitle[key]=[])).push(w);
   });
   const sheet=SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
@@ -44,7 +44,7 @@ function auditarMateriaAcademica(identificador, opciones) {
   taskRecords.forEach(function(r){
     const id=String(r.data['ID Classroom']||'').trim();
     if(id)(tasksById[id]||(tasksById[id]=[])).push(r);
-    const key=auditoriaNormalizar_(r.data['Título']);
+    const key=auditoriaClaveRecurso_(r.data['Título']);
     if(key)(tasksByTitle[key]||(tasksByTitle[key]=[])).push(r);
   });
   const quizById={};
@@ -99,8 +99,9 @@ function auditarMateriaAcademica(identificador, opciones) {
     }
     const candidates=auditoriaTitulosExplicitos_([p.actividad,p.actividadDia,p.previa,p.siguiente]);
     candidates.forEach(function(title){
-      const matches=workByTitle[auditoriaNormalizar_(title)]||[];
-      const records=tasksByTitle[auditoriaNormalizar_(title)]||[];
+      const key=auditoriaClaveRecurso_(title);
+      const matches=workByTitle[key]||[];
+      const records=tasksByTitle[key]||[];
       const datum={titulo:title,ids:matches.map(function(w){return String(w.id);}),
         estados:matches.map(function(w){return String(w.state);}),
         registroOperativo:records.map(function(r){return r.fila;})};
@@ -155,7 +156,7 @@ function auditarMateriaAcademica(identificador, opciones) {
       add('DESVINCULADO','CLASSROOM_SIN_REGISTRO_OPERATIVO',
         {workId:id,titulo:title,estado:String(w.state||'')});
     rowMatches.forEach(function(r){
-      if(auditoriaNormalizar_(r.data['Título'])!==auditoriaNormalizar_(title))
+      if(auditoriaClaveRecurso_(r.data['Título'])!==auditoriaClaveRecurso_(title))
         add('INCIDENCIA','TITULO_CLASSROOM_DIFIERE_REGISTRO',
           {workId:id,titulo:title,tituloRegistrado:String(r.data['Título']||''),filaOperativa:r.fila});
     });
@@ -271,6 +272,14 @@ function auditarMateriaAcademica(identificador, opciones) {
 function auditoriaNormalizar_(x){
   return String(x==null?'':x).trim().toLowerCase().normalize('NFD')
     .replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
+}
+/** Identidad textual estricta: solo tolera 1/01 en el número inicial.
+ * El resto del título debe coincidir; jamás empareja por número únicamente,
+ * palabras parecidas o tema supuesto. El ID real prevalece después del match. */
+function auditoriaClaveRecurso_(title){
+  const name=auditoriaNormalizar_(title);
+  return name.replace(/^(tarea|actividad|practica|quiz|examen)\\s+0*([1-9]\\d*)(?=\\s*[-–—]|\\s*$)/,
+    function(match,type,n){return type+' '+String(Number(n));});
 }
 function auditoriaResolverIdentidad_(input){
   const id=String(input.courseId||input.id||'').trim();
