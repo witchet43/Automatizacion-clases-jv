@@ -1,0 +1,41 @@
+/** Reconciliación excepcional autorizada 2026-09-21. Crea evidencia faltante sin vencimientos y TODO queda DRAFT. */
+function reconciliarMaterialesSistemasOperativosHastaRoundRobin(){
+ const course=resolverCursoClassroomPorMateria_('Sistemas Operativos'), courseId=String(course.id);
+ if(courseId!=='875776451793') throw new Error('Curso distinto al auditado.');
+ const works=()=>listarCourseWorkClase_(courseId);
+ function pre(topic,type){preflightDocumentoMaestro({operation:'RESOURCE_CREATE',materia:'Sistemas Operativos',temaSubtema:topic,resourceType:type,resourceState:'DRAFT',explicitSequenceOverride:true,reconciliationMode:true});}
+ function draft(id){const w=Classroom.Courses.CourseWork.get(courseId,String(id));if(String(w.state).toUpperCase()==='PUBLISHED')Classroom.Courses.CourseWork.patch({state:'DRAFT'},courseId,String(id),{updateMask:'state'});const v=Classroom.Courses.CourseWork.get(courseId,String(id));if(String(v.state).toUpperCase()!=='DRAFT')throw new Error('No quedó DRAFT '+id);return v;}
+ function doc(title,desc,lines){return crearGoogleDocumentoPractica_({titulo:title,descripcion:desc,contenidoDocumento:lines.join('\n')}).id;}
+ function create(type,title,topic,desc,docId){const hit=works().find(w=>String(w.title||'').trim()===title);if(hit)return {id:String(draft(hit.id).id),reused:true};pre(topic,type);const p=normalizarCreacionDirecta_({courseId:courseId,courseKey:'ITQ_SO',materia:'Sistemas Operativos',temaSubtema:topic,unidad:'2',topicName:type==='PRACTICA'?'Prácticas':(type==='TAREA'?'Tareas':'Actividades'),titulo:title,descripcion:desc,documentId:docId,studentCopy:true,shareMode:'STUDENT_COPY',puntos:100},type);const r=crearCourseWorkDirecto_(p);postflightDocumentoMaestro({ok:true,state:r.estado,workId:r.workId,documentId:docId},{operation:'RESOURCE_CREATE',materia:'Sistemas Operativos',temaSubtema:topic,resourceType:type,resourceState:'DRAFT',explicitSequenceOverride:true,reconciliationMode:true});return {id:r.workId,documentId:docId,reused:false};}
+ const out=[];
+ // Recursos existentes de clase 9: reconciliar a DRAFT.
+ out.push({title:'Práctica 03 - Programa vs proceso; concepto de proceso',id:String(draft('869479699024').id),reconciled:true});
+ out.push({title:'Tarea 09 - Estados y transición de procesos',id:String(draft('869479870859').id),reconciled:true});
+ const tasks=[
+ ['Tarea 08 - Programa vs proceso; concepto de proceso','Programa vs proceso; concepto de proceso','Revisa Microsoft Learn — Processes and Threads. Distingue programa, proceso, hilo, PID y recursos. En tu copia escribe una comparación breve y anota dos dudas para clase.','1KG4LbvnztvrOVPJF7OlklfGqLt3-iyQxPWkK2HFrjfA'],
+ ['Tarea 10 - Control e información de procesos','Control e información de procesos','Revisa cómo consultar PID, PPID, estado y memoria en Windows 10/11. Identifica qué dato aporta Get-Process y qué dato aporta Win32_Process. Escribe cinco campos que buscarás en clase.',''],
+ ['Tarea 11 - Creación y terminación de procesos','Creación y terminación de procesos','Revisa creación, espera y terminación de procesos en Windows. Identifica Start-Process, Wait-Process y la función del PID. Redacta una secuencia de cuatro pasos sin ejecutarla todavía.',''],
+ ['Tarea 12 - Procesos e hilos','Procesos e hilos','Revisa Processes and Threads de Microsoft Learn. Compara memoria, recursos, identidad y planificación de proceso e hilo en una tabla de dos columnas.',''],
+ ['Tarea 13 - Fundamentos de planificación del procesador','Fundamentos de planificación del procesador','Revisa CPU Scheduling en OSTEP. Define con tus palabras turnaround, response, waiting, fairness y throughput; no resuelvas algoritmos todavía.',''],
+ ['Tarea 14 - FCFS y SJF','FCFS y SJF','Revisa FCFS y SJF en OSTEP. Identifica criterio de selección, ventaja, limitación y el efecto convoy. Lleva un ejemplo de cuatro ráfagas de CPU.',''],
+ ['Tarea 15 - Round Robin y prioridades','Round Robin y prioridades','Revisa planificación apropiativa en OSTEP: Round Robin, quantum, prioridad y starvation. Explica qué cambia al disminuir el quantum.','1kHGQErLPU2OCswKQUHBtk38aFmay-ir6WaFPTyIJCvU'],
+ ['Tarea 16 - Comunicación entre procesos (IPC)','Round Robin y prioridades','Como preparación siguiente, revisa IPC en Windows: pipes, memoria compartida y cuándo dos procesos necesitan comunicarse. Entrega una tabla mecanismo / uso / ventaja / riesgo.','']
+ ];
+ tasks.forEach(x=>{let id=x[3]||doc(x[0],x[2],['Propósito: llegar preparado a la sesión siguiente.','Instrucciones:',x[2],'Evidencia: redacta la respuesta en esta copia con tus propias palabras y conserva la fuente consultada.']);out.push(Object.assign({title:x[0]},create('TAREA',x[0],x[1],x[2],id)));});
+ const activities=[
+ ['Actividad 06 - Diagrama de estados de procesos','Estados y transición de procesos','Resolver secuencias de eventos y representar correctamente transiciones entre estados.','1y0AgfBQ1JCg0tB0KWHq10mr-V5Moy6Zs8xv2yR5_OZE'],
+ ['Actividad 07 - Dashboard de métricas de planificación de CPU','Fundamentos de planificación del procesador','Simular carga de procesos y calcular métricas de planificación para interpretar respuesta, espera, retorno y throughput.','1VFNa44FNkR-hTj8X-M9yl1Z1FbhnUv7vTmf8IPQ6yDo'],
+ ['Actividad 08 - Gantt comparativo FCFS y SJF','FCFS y SJF','Comparar FCFS y SJF mediante Gantt y métricas, justificando cuándo cambia la decisión del planificador.','1w66SoZLiioKqbdAw-pE-kSdAb6O5szFRDhFPCcKKg4o'],
+ ['Actividad 09 - Simulador Round Robin y prioridades','Round Robin y prioridades','Simular varios quantums y prioridades, comparar respuesta y overhead e identificar starvation potencial.','1cQPHObZtDV1btCGc6m3DRPYliCEJdEGiQeLHDEfjLys']
+ ];
+ activities.forEach(x=>out.push(Object.assign({title:x[0]},create('ACTIVIDAD',x[0],x[1],x[2],x[3]))));
+ const practices=[
+ ['Práctica 04 - Control e información de procesos','Control e información de procesos','Explorar un proceso real en Windows 10/11 con Get-Process, Get-CimInstance, Administrador de tareas y Monitor de recursos.',['Registra tres procesos con Name, Id, CPU y WorkingSet64.','Elige uno propio y consulta ProcessId, ParentProcessId, Name, ExecutablePath y CreationDate con Get-CimInstance Win32_Process.','Contrasta PID, PPID y memoria con Administrador de tareas.','Evidencia: ficha forense de un proceso, tabla y capturas sin datos personales.','Cierre: distingue datos observables de información interna del PCB.']],
+ ['Práctica 05 - Creación y terminación de procesos','Creación y terminación de procesos','Crear y controlar un proceso hijo propio en Windows 10/11 con PowerShell.',['Ejecuta $p = Start-Process notepad.exe -PassThru y registra el PID.','Consulta Get-Process -Id $p.Id y documenta StartTime y Responding.','Cierra manualmente Bloc de notas y usa Wait-Process -Id $p.Id -ErrorAction SilentlyContinue.','Comprueba que el proceso ya no aparece.','Evidencia: comandos, salida comentada y secuencia creación-ejecución-espera-terminación.']],
+ ['Práctica 06 - Procesos e hilos','Procesos e hilos','Observar procesos e hilos de una aplicación propia en Windows 10/11.',['Consulta tu proceso PowerShell con Get-Process -Id $PID y registra Id, ProcessName, Threads.Count, CPU y WorkingSet64.','Ejecuta tres trabajos con Start-ThreadJob que esperen 5 segundos y devuelvan ManagedThreadId; si el cmdlet no existe documenta la limitación.','Compara observaciones antes, durante y después.','Evidencia: código, salida y tabla proceso/hilos/recursos.','Cierre: explica concurrencia vs paralelismo y un riesgo de sincronización.']]
+ ];
+ practices.forEach(x=>{const id=doc(x[0],x[2],x[3]);out.push(Object.assign({title:x[0]},create('PRACTICA',x[0],x[1],x[2],id)));});
+ // Postflight: todos los recursos esperados en DRAFT y sin vencimiento.
+ const final=works(),expected=out.map(x=>x.title),bad=[];expected.forEach(t=>{const m=final.filter(w=>String(w.title||'').trim()===t);if(m.length!==1)bad.push({title:t,count:m.length});else if(String(m[0].state).toUpperCase()!=='DRAFT'||m[0].dueDate||m[0].dueTime)bad.push({title:t,state:m[0].state,dueDate:m[0].dueDate||null});});if(bad.length)throw new Error('RECONCILIATION_POSTFLIGHT_FAILED '+JSON.stringify(bad));
+ return {ok:true,reconciliation:true,courseId:courseId,createdOrReused:out,verifiedDraftNoDue:true,count:out.length};
+}
