@@ -12,7 +12,16 @@
  * de Gamma (no conectada con Apps Script). Un enlace verificado en Sheets nunca
  * equivale aquí a comprobación de existencia/contenido de la Gamma remota.
  */
-function auditarMateriaAcademica(identificador) {
+function auditarMateriaAcademica(identificador, opciones) {
+  const o=opciones&&typeof opciones==='object'?opciones:{};
+  const supplied=identificador&&typeof identificador==='object'?identificador:{};
+  if(o.completar===true||supplied.completar===true){
+    const base=supplied.completar===true?{
+      courseId:supplied.courseId||supplied.id||'',
+      materia:supplied.materia||supplied.nombre||''
+    }:identificador;
+    return auditarYCompletarMateriaAcademica(base);
+  }
   const input = identificador && typeof identificador === 'object'
     ? identificador : (/^\d{10,}$/.test(String(identificador||'').trim())
       ? {courseId:String(identificador)} : {materia:String(identificador||'')});
