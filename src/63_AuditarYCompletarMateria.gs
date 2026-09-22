@@ -224,8 +224,11 @@ function completacionEjecutarAccion_(identity,a){
     reconciliationReason:'Auditoría transversal de conciliación de recurso histórico previsto en la planeación y Doc canónico existente.',
     sesionCanonica:Number(a.sesion),courseId:id,materia:identity.materiaCanonica,
     temaSubtema:String(p.topic),unidad:String(p.unit),topicName:String(p.unit),
-    titulo:a.titulo,descripcion:description,documentId:a.documentId,
-    studentCopy:true};
+    titulo:a.titulo,descripcion:description,studentCopy:true};
+  if(a.documentId)request.documentId=a.documentId;
+  else if(a.tipo==='CREAR_PRACTICA_CON_DOC_PLANIFICADO' && completacionNumeroPractica_(a.titulo)!==null){
+    request.contenidoDocumento=completacionContenidoPractica_(p,a.titulo);
+  }else throw new Error('Se requiere documento canónico para este tipo de recurso.');
   const result=/^Pr[aá]ctica\b/i.test(a.titulo)
     ?crearPractica(request):crearActividadReconciliacionHistorica(request);
   const verified=Classroom.Courses.CourseWork.get(id,String(result.workId));
