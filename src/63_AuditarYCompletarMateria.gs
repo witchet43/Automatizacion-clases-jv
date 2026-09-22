@@ -219,7 +219,7 @@ function completacionEjecutarAccion_(identity,a){
     'Trabaja de forma individual en tu copia del documento canónico. ',
     'DESARROLLO',String(p.practiceDescription||'').trim(),
     'EVIDENCIA DE ENTREGA',String(p.evidence||'').trim(),
-    'Documento de trabajo: '+String(doc.name||a.titulo)].join('\n\n');
+    'Documento de trabajo: '+String(doc?doc.name:a.titulo)].join('\n\n');
   const request={reconciliationMode:true,explicitSequenceOverride:true,
     reconciliationReason:'Auditoría transversal de conciliación de recurso histórico previsto en la planeación y Doc canónico existente.',
     sesionCanonica:Number(a.sesion),courseId:id,materia:identity.materiaCanonica,
