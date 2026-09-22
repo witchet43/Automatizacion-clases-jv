@@ -1,0 +1,22 @@
+{
+  "function": "crearTareaReconciliacionHistorica",
+  "parameters": [
+    {
+      "courseId": "871158479566",
+      "materia": "UAQ - Análisis y Diseño de Sistemas Computacionales",
+      "temaSubtema": "Criterios de clasificación de los SI",
+      "sesionCanonica": 6,
+      "explicitSequenceOverride": true,
+      "reconciliationMode": true,
+      "reconciliationReason": "Reconciliación histórica solicitada expresamente por el docente para disponer como DRAFT la actividad previa del subtema 2.1 de sesión canónica 06; la fecha ya pasó, se crea sin vencimiento, no implica clase impartida y la publicación para alumnos es manual.",
+      "unidad": "Unidad 2",
+      "topicName": "Unidad 2",
+      "titulo": "Tarea previa 06 - Lectura y tabla comparativa: criterios de clasificación de los SI",
+      "descripcion": "INDICACIONES PARA EL ALUMNO\n\nTrabaja individualmente en tu copia personal del Google Documento adjunto. Lee los apartados señalados en el recurso del Politécnico Grancolombiano, diseña una tabla comparativa de criterios de clasificación de SI y justifica ejemplos. Después aplica preliminarmente dos criterios a un proceso de tu proyecto integrador. Completa todo directamente en tu copia individual y entrégala mediante Classroom.",
+      "documentId": "1IoYIxMr0GnoJfI2TF9i3wkPw2nFQwPbAHDVkBcaVE0U",
+      "studentCopy": true,
+      "shareMode": "STUDENT_COPY",
+      "puntos": 100
+    }
+  ]
+}
