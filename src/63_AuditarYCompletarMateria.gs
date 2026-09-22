@@ -203,7 +203,7 @@ function completacionEjecutarAccion_(identity,a){
   if(doc&&(doc.trashed||String(doc.mimeType)!=='application/vnd.google-apps.document'))
     throw new Error('El documento canónico no existe o no es un Google Doc vigente.');
   const found=auditoriaListarCourseWork_(id).filter(function(w){
-    return auditoriaNormalizar_(w.title)===auditoriaNormalizar_(a.titulo);
+    return auditoriaClaveRecurso_(w.title)===auditoriaClaveRecurso_(a.titulo);
   });
   if(found.length>1)throw new Error('Título ambiguo: varios trabajos con el mismo nombre.');
   if(a.tipo==='REPARAR_DOC_BORRADOR'){
