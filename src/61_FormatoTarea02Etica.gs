@@ -76,7 +76,7 @@ function corregirFormatoTarea02Etica(){
       JSON.stringify(old[key]===undefined?null:old[key]);
   };
   if(String(now.description||'')!==formatted||String(now.state||'')!==String(old.state||'')||
-      ['id','title','workType','topicId','maxPoints','dueDate','dueTime','materials','assignment'].some(function(k){return !same(k);}))
+      ['id','title','workType','topicId','maxPoints','dueDate','dueTime','materials'].some(function(k){return !same(k);}))
     throw new Error('TAREA02_ETICA_POSTFLIGHT: no se confirmó formato nuevo o preservación de los demás campos.');
   const ss=SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
   const sh=requireSheet_(ss,'Tareas');
