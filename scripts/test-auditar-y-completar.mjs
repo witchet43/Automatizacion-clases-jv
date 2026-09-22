@@ -2,6 +2,18 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const code=fs.readFileSync('src/63_AuditarYCompletarMateria.gs','utf8');
+const didactica=fs.readFileSync('src/54_DidacticaTransversal.gs','utf8');
+const didCtx={ACADEMIC_POLICY:{CLASSROOM:{DIDACTIC_INSTRUCTIONS:{
+  PERSONAL_WINDOWS_DEVICE:true,EXPLAIN_COMMANDS:true,REMOVE_ADMINISTRATIVE_TEXT:true
+}}}};
+vm.createContext(didCtx);
+vm.runInContext(didactica,didCtx,{filename:'src/54_DidacticaTransversal.gs'});
+const originalFormat='INDICACIONES PARA EL ALUMNO\\n\\nTrabaja en tu documento.\\n\\nDESARROLLO\\n\\n1. Registra resultados.\\n\\nEVIDENCIA DE ENTREGA\\n\\nTabla.';
+const formatted=didCtx.normalizarInstruccionesDidacticas_(originalFormat,'PRACTICA');
+assert(formatted.startsWith('INDICACIONES PARA EL ALUMNO\\n\\nUtiliza tu computadora personal con Windows.'),
+  'La guía Windows debe añadirse DESPUÉS del encabezado, nunca antes');
+assert.equal(didCtx.normalizarInstruccionesDidacticas_(formatted,'PRACTICA'),formatted,'Normalización histórica idempotente');
+
 assert.doesNotMatch(code,/StudentSubmissions\.(?:patch|return)|assignedGrade\s*:/);
 assert.doesNotMatch(code,/CourseWork\.(?:create|patch|delete)\s*\(/);
 assert.doesNotMatch(code,/Gamma\.generate|GAMMA_API_KEY/);
