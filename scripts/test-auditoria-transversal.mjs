@@ -38,7 +38,7 @@ const planRows=[[],[],[],[],[],planHeader,
 const sheet=data=>({getDataRange:()=>({getDisplayValues:()=>data})});
 const byName={Cursos:()=>sheet(courseRows),Tareas:()=>sheet([taskHeader,taskRow]),
   Quizzes:()=>sheet([quizHeader,quizRow]),Planeacion:()=>sheet(planRows)};
-const works=[{id:'987654321012',title:'Tarea 01 - Preparación',state:'DRAFT',materials:[]},
+const works=[{id:'987654321012',title:'Tarea 1 - Preparación',state:'DRAFT',materials:[]},
   {id:'987654321013',title:'Práctica 01 - Documento externo',state:'DRAFT',
     materials:[{driveFile:{driveFile:{id:attachedDoc},shareMode:'VIEW'}}]}];
 const ctx={
@@ -84,6 +84,8 @@ assert(codes.includes('GOOGLE_DOC_SIN_STUDENT_COPY'),'Detecta Docs de todos los 
 assert(codes.includes('EVALUACION_REGISTRADA_ERROR'),'Detecta examen ERROR');
 assert(byId.incidencias.some(x=>x.codigo==='RECURSO_DECLARADO_NO_LOCALIZADO'&&x.categoria==='PENDIENTE_FUTURO'),'No trata una clase futura como incumplida');
 assert.equal(byId.sesiones[0].recursos[0].estados[0],'DRAFT','No equipara CREADA a PUBLISHED');
+assert.deepEqual(Array.from(byId.sesiones[0].recursos[0].ids),['987654321012'],'Tarea 01 y Tarea 1 tienen mismo ID verificado');
+assert.equal(byId.incidencias.some(x=>x.codigo==='RECURSO_DECLARADO_NO_LOCALIZADO'&&x.titulo==='Tarea 01 - Preparación'),false,'No reporta la tarea 1/01 como omitida');
 
 const byNameResult=ctx.auditarMateriaAcademica('Curso Ejemplo');
 assert.equal(byNameResult.curso.id,'123456789012');
