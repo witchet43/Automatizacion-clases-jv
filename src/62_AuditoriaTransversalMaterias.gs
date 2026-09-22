@@ -271,14 +271,14 @@ function auditoriaResolverIdentidad_(input){
   const sh=ss.getSheetByName('Cursos');
   if(!sh)throw new Error('AUDITORIA_IDENTIDAD: falta hoja operativa Cursos.');
   const all=sh.getDataRange().getDisplayValues();
-  const h=all.shift().map(auditoriaNormalizar_);
+  const h=(all[0]||[]).map(auditoriaNormalizar_);
   const iId=h.indexOf('id curso'),iName=h.indexOf('nombre');
   if(iId<0||iName<0)throw new Error('AUDITORIA_IDENTIDAD: esquema Cursos incompleto.');
   const key=auditoriaNormalizar_(name);
   const normalized=function(s){
     return auditoriaNormalizar_(s).replace(/^(uaq|itq|umx)\s*-\s*/,'');
   };
-  const matches=all.filter(function(r){
+  const matches=all.slice(1).filter(function(r){
     if(id)return String(r[iId]).trim()===id;
     return auditoriaNormalizar_(r[iName])===key||normalized(r[iName])===normalized(name);
   });
