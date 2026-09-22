@@ -140,7 +140,7 @@ function auditarYCompletarMateriaAcademica(identificador) {
 
   });
   const actions=[],maxAcciones=8,lock=LockService.getScriptLock();
-  if(!lock.tryLock(1000))throw new Error('AUDITORIA_COMPLETAR: otra operación académica está en curso.');
+  if(!lock.tryLock(30000))throw new Error('AUDITORIA_COMPLETAR: otra operación académica retiene el bloqueo; reintentar sin crear duplicados.');
   try {
     // Revalidar fuente e identidad bajo lock antes de cualquier escritura.
     if(String(Classroom.Courses.get(identity.courseId).id)!==identity.courseId)
