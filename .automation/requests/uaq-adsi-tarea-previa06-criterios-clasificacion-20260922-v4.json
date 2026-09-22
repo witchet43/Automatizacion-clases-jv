@@ -1,0 +1,40 @@
+{
+  "function": "crearTareaReconciliacionHistorica",
+  "parameters": [
+    {
+      "courseId": "871158479566",
+      "materia": "UAQ - Análisis y Diseño de Sistemas Computacionales",
+      "temaSubtema": "Criterios de clasificación de los SI",
+      "sesionCanonica": 6,
+      "explicitSequenceOverride": true,
+      "reconciliationMode": true,
+      "reconciliationReason": "Solicitud explícita del docente: crear la tarea previa histórica 06 en DRAFT sin vencimiento. El Documento original no pudo abrirse desde la credencial de Apps Script, por lo que se reconstruye una copia nativa fiel con su texto completo mediante el generador canónico y se asigna STUDENT_COPY; no se publica ni acredita impartición.",
+      "unidad": "Unidad 2",
+      "topicName": "Unidad 2",
+      "titulo": "Tarea previa 06 - Lectura y tabla comparativa: criterios de clasificación de los SI",
+      "descripcion": "INDICACIONES PARA EL ALUMNO\n\nTrabaja individualmente en tu copia personal del Google Documento adjunto. Lee los apartados señalados en el recurso del Politécnico Grancolombiano, diseña una tabla comparativa de criterios de clasificación de SI y justifica ejemplos. Después aplica preliminarmente dos criterios a un proceso de tu proyecto integrador. Completa todo directamente en tu copia individual y entrégala mediante Classroom.",
+      "puntos": 100,
+      "requiereDocumentoEditable": true,
+      "googleDocContent": [
+        "Análisis y Diseño de Sistemas Computacionales · Unidad 2: Tipología de Sistemas de Información · Subtema 2.1: Criterios de clasificación de los SI",
+        "Propósito",
+        "Reconocer dos formas de clasificar sistemas de información presentadas en una lectura académica, contrastarlas mediante una tabla elaborada individualmente y ensayar su aplicación a un proceso real del proyecto integrador. La actividad prepara la discusión en clase; no se espera dominar todavía toda la tipología de sistemas.",
+        "Lectura obligatoria",
+        "Politécnico Grancolombiano, «Los sistemas de información y su evolución», lectura fundamental. Lee el apartado 3 «Clasificación de los sistemas de información», el 3.1 «Según su nivel organizacional» y el 3.2 «Según el área funcional» (páginas impresas 9–16). Presta especial atención a qué pregunta responde cada clasificación y a sus ejemplos.",
+        "Abrir lectura del Politécnico Grancolombiano: https://articulateusercontent.com/rise/courses/vQ0qUq3WCI30eCzhhG5cct2ul60Zbsw4/XbMOtVqKGxZq328s-lectura-20-fundamental-201.pdf",
+        "Nota de lectura: esta fuente define explícitamente dos criterios principales —nivel organizacional y área funcional—. Las dimensiones adicionales solicitadas más abajo (usuarios, decisión apoyada y alcance) son preguntas de análisis para relacionar lo leído con el proyecto; no las presentes como una tercera, cuarta o quinta taxonomía atribuida al texto.",
+        "Instrucciones",
+        "1. Lee los apartados indicados y redacta, en tus propias palabras, en qué consiste clasificar un sistema por nivel organizacional y por área funcional. En cada caso identifica categorías o ejemplos de la lectura e indica la página donde encontraste la información.",
+        "2. Trabaja en tu COPIA INDIVIDUAL de este Google Documento. Inserta una tabla nativa de cinco columnas con estos encabezados EXACTOS: «Criterio o dimensión» | «Pregunta que responde» | «Categorías o aspectos que se comparan» | «Ejemplo y justificación» | «Fuente/página o evidencia propia». No pegues capturas de tablas ni entregues una lista que sustituya la tabla.",
+        "3. Completa al menos cinco filas, una para cada elemento siguiente: (a) nivel organizacional [criterio de la lectura]; (b) área funcional [criterio de la lectura]; (c) usuarios o roles [dimensión de aplicación]; (d) tipo de decisión apoyada [dimensión de aplicación]; (e) alcance del sistema [dimensión de aplicación]. Para las dos primeras filas, usa la lectura como fuente y cita página; para las tres últimas, formula una pregunta útil y analiza un ejemplo sin atribuir a la lectura categorías que no aparecen en ella.",
+        "4. Compara, no solo definas: añade bajo la tabla dos contrastes breves. Primero explica cómo un mismo SI podría clasificarse simultáneamente por nivel organizacional y por área funcional, sin contradicción. Después explica por qué clasificarlo por la tecnología utilizada (por ejemplo «web» o «móvil») no sustituye por sí mismo los criterios anteriores.",
+        "5. Aplicación preliminar: selecciona UN proceso dentro del alcance actual del proyecto de tu equipo. En un párrafo de 6 a 8 oraciones, propone dos clasificaciones compatibles de su SI bajo criterios distintos. Identifica el usuario o área, una decisión que necesitaría información, una evidencia real de tu proyecto y un dato que aún debes validar. Si no has obtenido evidencia de un actor real, dilo expresamente; no simules entrevistas ni cifras.",
+        "Producto y entrega",
+        "Entrega tu copia individual de este Google Documento, con tu nombre al inicio, la tabla comparativa de cinco columnas y al menos cinco filas completas, los dos contrastes y el párrafo de aplicación al proyecto. Conserva esta tabla para recuperarla durante la Ficha 06 de la primera clase de la Unidad 2. Cuando la tarea aparezca en Classroom, utiliza la copia que te proporcione la actividad y entrega ese mismo archivo; no edites el documento original del profesor.",
+        "Criterios de revisión",
+        "Se revisará que la tabla diferencie correctamente los criterios de la fuente y las dimensiones de aplicación; que las categorías y ejemplos de la lectura estén referidos a una página verificable; que existan comparaciones razonadas; que el ejemplo del proyecto respete su alcance real; y que distingas evidencia, interpretación y cuestiones pendientes. Se valorará la claridad conceptual y argumentación, no la cantidad de texto copiado.",
+        "Para preparar la clase, trae una duda concreta acerca de la clasificación de tu proyecto que no hayas podido resolver con la lectura."
+      ]
+    }
+  ]
+}
