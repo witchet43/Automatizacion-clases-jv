@@ -57,7 +57,7 @@ function formatearDescripcionClassroom_(text,tipo){
   const kind=String(tipo||'').toUpperCase();
   let raw=String(text||'').replace(/\r\n?/g,'\n').trim();
   if(DIDACTICA_TRANSVERSAL.TIPOS.indexOf(kind)<0||!raw) return raw;
-  if(/^INDICACIONES PARA EL ALUMNO\n/m.test(raw)) return raw;
+  if(/^INDICACIONES PARA EL ALUMNO\n/.test(raw)) return raw;
   raw=raw.replace(/\s+(?=(?:[1-9]|[12]\d)\.\s+(?=[A-ZÁÉÍÓÚÑ¿]))/g,'\n');
   raw=raw.replace(/\s+(?=Evidencia(?:s)?\s*:\s*)/gi,'\n');
   const lines=raw.split(/\n+/).map(function(v){return v.trim();}).filter(Boolean);
@@ -110,7 +110,10 @@ function normalizarInstruccionesDidacticas_(text,tipo){
   if(DIDACTICA_TRANSVERSAL.TIPOS.indexOf(kind)<0) return out;
   out=asegurarGuiaComandos_(out);
   if(out && !/\b(?:tu|su)\s+(?:computadora|equipo)\s+personal\s+con\s+Windows\b/i.test(out)){
-    out=DIDACTICA_TRANSVERSAL.EQUIPO+'\n\n'+out;
+    if(out.startsWith('INDICACIONES PARA EL ALUMNO\n')){
+      out=out.replace(/^INDICACIONES PARA EL ALUMNO\n(?:\n)?/,
+        'INDICACIONES PARA EL ALUMNO\n\n'+DIDACTICA_TRANSVERSAL.EQUIPO+'\n\n');
+    }else out=DIDACTICA_TRANSVERSAL.EQUIPO+'\n\n'+out;
   }
   if(/\bTrabajo individual\s*\.\s*Duraci[oó]n estimada\s*:/i.test(out)){
     throw new Error('BLOCKED_DIDACTICA_ADMIN: texto administrativo no permitido.');
