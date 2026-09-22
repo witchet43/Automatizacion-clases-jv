@@ -33,7 +33,10 @@ function auditarYCompletarMateriaAcademica(identificador) {
     if(planBySession[key])throw new Error('AUDITORIA_COMPLETAR: sesión duplicada en la planeación: '+key);
     planBySession[key]=x;
   });
-  const accionables=[],bloqueos=[];
+  const accionables=[],bloqueos=[],reutilizados=[];
+  const trabajos=auditoriaListarCourseWork_(identity.courseId);
+  const registros=auditoriaLeerRegistros_(SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID),
+    'Tareas','ID curso',identity.courseId);
   before.sesiones.forEach(function(s){
     const row=planBySession[String(s.sesion)];
     if(!row){bloqueos.push({sesion:s.sesion,codigo:'SIN_SESION_EN_PLANEACION_CANONICA'});return;}
@@ -44,59 +47,97 @@ function auditarYCompletarMateriaAcademica(identificador) {
       bloqueos.push({sesion:s.sesion,codigo:'GAMMA_SIN_URL_REQUIERE_INVENTARIO_REMOTO',
         titulo:gammaTitle,nota:'La falta de URL en Sheets no demuestra que la Gamma no exista.'});
     const title=completacionTituloActividad_(row,detalleBySession[String(s.sesion)]);
-    const docId=auditoriaExtraerDocId_(row.documento||s.documento&&s.documento.url||'');
-    if(!title) {
-      if(s.documento&&s.documento.id&&!s.documento.courseWorkIds.length)
-        bloqueos.push({sesion:s.sesion,codigo:'DOC_SIN_TITULO_ACTIVIDAD_CANONICO',
-          documentId:s.documento.id});
+    if(!title)return;
+    const clave=auditoriaClaveRecurso_(title);
+    const records=registros.filter(function(r){
+      return auditoriaClaveRecurso_(r.data['Título'])===clave;
+    });
+    const matches=trabajos.filter(function(w){
+      return auditoriaClaveRecurso_(w.title)===clave;
+    });
+    const idsRegistrados=records.map(function(r){return String(r.data['ID Classroom']||'').trim();}).filter(Boolean);
+    const unicos=function(values){return values.filter(function(x,i){return values.indexOf(x)===i;});};
+    if(matches.length>1||unicos(idsRegistrados).length>1){
+      bloqueos.push({sesion:s.sesion,codigo:'RECURSO_DUPLICADO_O_AMBIGUO',titulo:title,
+        ids:unicos(matches.map(function(w){return String(w.id);}).concat(idsRegistrados))});
       return;
     }
-    const all=auditoriaListarCourseWork_(identity.courseId);
-    const matches=all.filter(function(w){return auditoriaNormalizar_(w.title)===auditoriaNormalizar_(title);});
-    // Un documento ya ligado a otra actividad NO autoriza crear una copia.
-    const byDoc=docId?all.filter(function(w){
-      return (w.materials||[]).some(function(m){
-        return m&&m.driveFile&&m.driveFile.driveFile&&String(m.driveFile.driveFile.id)===docId;
-      });
-    }):[];
-    if(matches.length>1||byDoc.length>1){
-      bloqueos.push({sesion:s.sesion,codigo:'AMBIGUEDAD_IDENTITY_NO_MUTAR',titulo:title,
-        ids:matches.concat(byDoc).map(function(w){return String(w.id);})});return;
+    if(idsRegistrados.length&&
+       (!matches.length||String(matches[0].id)!==idsRegistrados[0])){
+      bloqueos.push({sesion:s.sesion,codigo:'REGISTRO_ID_NO_COINCIDE_CLASSROOM',
+        titulo:title,ids:unicos(idsRegistrados)});return;
     }
-    if(!matches.length&&byDoc.length&&
-       auditoriaNormalizar_(byDoc[0].title)!==auditoriaNormalizar_(title)){
-      bloqueos.push({sesion:s.sesion,codigo:'DOC_LIGADO_A_OTRO_TITULO',
-        titulo:title,workId:String(byDoc[0].id)});return;
+    const work=matches[0]||null;
+    const planned=auditoriaExtraerDocId_(row.documento||
+      s.documento&&s.documento.url||'');
+    const sourceIds=[];
+    if(planned)sourceIds.push(planned);
+    records.forEach(function(r){
+      const id=auditoriaExtraerDocId_(r.data['Archivo adjunto (Google Doc)']);
+      if(id)sourceIds.push(id);
+    });
+    const onWork=(work&&work.materials||[]).map(function(m){
+      const id=m&&m.driveFile&&m.driveFile.driveFile?
+        String(m.driveFile.driveFile.id||''):m&&m.link?
+        auditoriaExtraerDocId_(m.link.url):'';
+      return id;
+    }).filter(Boolean);
+    const docs=unicos(sourceIds.concat(onWork));
+    if(docs.length>1){
+      bloqueos.push({sesion:s.sesion,codigo:'DOCUMENTOS_DISTINTOS_PARA_RECURSO',
+        titulo:title,ids:docs});return;
     }
-    const work=matches[0]||byDoc[0]||null;
+    const docId=docs[0]||'';
     if(work){
-      if(docId) {
+      reutilizados.push({sesion:s.sesion,titulo:title,workId:String(work.id),
+        estado:String(work.state),documentId:docId,origen:'CLASSROOM_VERIFICADO'});
+      if(docId){
         const present=(work.materials||[]).some(function(m){
           return m&&m.driveFile&&m.driveFile.driveFile&&
             String(m.driveFile.driveFile.id)===docId&&
-            String(m.driveFile.shareMode||'')==='STUDENT_COPY';
+            String(m.driveFile.shareMode||'').toUpperCase()==='STUDENT_COPY';
         });
         if(!present){
           if(String(work.state)!=='DRAFT'){
             bloqueos.push({sesion:s.sesion,codigo:'DOC_FALTANTE_EN_PUBLICADA_NO_MUTAR',
-              titulo:title,workId:String(work.id)});return;
+              titulo:title,workId:String(work.id),documentId:docId});return;
           }
           accionables.push({sesion:s.sesion,tipo:'REPARAR_DOC_BORRADOR',titulo:title,
             workId:String(work.id),documentId:docId,row:row});
         }
+      }else if(/^pr[aá]ctica\s+\d+/i.test(title)){
+        bloqueos.push({sesion:s.sesion,codigo:'PRACTICA_EXISTENTE_SIN_DOC_VERIFICADO',
+          titulo:title,workId:String(work.id)});
       }
       return;
     }
-    if(!docId){
-      bloqueos.push({sesion:s.sesion,codigo:'ACTIVIDAD_SIN_DOC_CANONICO_NO_INVENTAR',
-        titulo:title});return;
+    // Un título con número parecido NO acredita identidad. No generar si existe
+    // la misma numeración canónica con otro título: requiere aclarar duplicados.
+    const number=completacionNumeroPractica_(title);
+    const sameNumber=number===null?[]:trabajos.filter(function(w){
+      return completacionNumeroPractica_(w.title)===number &&
+        auditoriaClaveRecurso_(w.title)!==clave;
+    });
+    if(sameNumber.length){
+      bloqueos.push({sesion:s.sesion,codigo:'NUMERO_PRACTICA_OCUPADO_POR_OTRO_TITULO',
+        titulo:title,ids:sameNumber.map(function(w){return String(w.id);}),
+        titulos:sameNumber.map(function(w){return String(w.title);})});return;
     }
     if(!String(row.practiceDescription||'').trim()||!String(row.evidence||'').trim()){
       bloqueos.push({sesion:s.sesion,codigo:'CONTENIDO_DIDACTICO_INCOMPLETO',
         titulo:title});return;
     }
-    accionables.push({sesion:s.sesion,tipo:'CREAR_ACTIVIDAD_HISTORICA',
+    // Para una práctica auténticamente omitida, el motor canónico crea el Doc
+    // original con contenido tomado de la planeación y adjunta STUDENT_COPY.
+    // Para una ACTIVIDAD no se fabrica un documento si falta el canónico.
+    if(!docId&&!/^pr[aá]ctica\s+\d+/i.test(title)){
+      bloqueos.push({sesion:s.sesion,codigo:'ACTIVIDAD_SIN_DOC_CANONICO_NO_INVENTAR',
+        titulo:title});return;
+    }
+    accionables.push({sesion:s.sesion,
+      tipo:docId?'CREAR_RECURSO_HISTORICO':'CREAR_PRACTICA_CON_DOC_PLANIFICADO',
       titulo:title,documentId:docId,row:row});
+
   });
   const actions=[],maxAcciones=8,lock=LockService.getScriptLock();
   if(!lock.tryLock(1000))throw new Error('AUDITORIA_COMPLETAR: otra operación académica está en curso.');
@@ -123,7 +164,7 @@ function auditarYCompletarMateriaAcademica(identificador) {
   }finally{lock.releaseLock();}
   const after=auditarMateriaAcademica({courseId:identity.courseId});
   return {ok:true,completa:false,modo:'RECONCILIACION_CONSERVADORA',courseId:identity.courseId,
-    materia:identity.nombre,fechaCorte:inicio.toISOString(),creadosOReparados:actions,
+    materia:identity.nombre,fechaCorte:inicio.toISOString(),creadosOReparados:actions,reutilizados:reutilizados,
     bloqueados:bloqueos,antes:before.resumen,despues:after.resumen,
     cobertura:after.cobertura,nota:'No se afirma completitud: Gamma remota, casos ambiguos, exámenes y recursos sin contenido canónico requieren verificación.'};
 }
@@ -140,6 +181,10 @@ function completacionSesionConcluida_(row,now){
   const local=Utilities.formatDate(now,'America/Mexico_City','HH:mm');
   const hm=local.split(':');
   return {ok:Number(hm[0])*60+Number(hm[1])>=end,reason:'HOY'};
+}
+function completacionNumeroPractica_(title){
+  const m=auditoriaNormalizar_(title).match(/^practica\s+0*([1-9]\d*)\s*[-–—]/);
+  return m?Number(m[1]):null;
 }
 function completacionTituloActividad_(row,session){
   // Solo una actividad académica identificada en la planeación. Una tarea o un
