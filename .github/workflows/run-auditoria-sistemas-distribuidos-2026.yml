@@ -1,5 +1,5 @@
 # Reejecución tras cruce de IDs de Classroom, títulos 01/1 y Docs registrados.
-name: One-time audit and reconcile UAQ Sistemas Distribuidos
+name: One-time identify actual next class UAQ Sistemas Distribuidos
 on:
   push:
     branches: [main]
@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           test -n "$(node -p "JSON.parse(require('fs').readFileSync('.apps-script-deployment.json','utf8')).deploymentId")"
-      - name: Audit and reconcile concluded classes in UAQ Sistemas Distribuidos
+      - name: Identify next class from real Classroom and Gamma state
         env:
           GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
           GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
@@ -32,4 +32,4 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm run apps-script:run -- --function auditarYCompletarMateriaAcademica --parameters-json '["871158466533"]'
+          npm run apps-script:run -- --function resolverSiguienteClase --parameters-json '["Sistemas Distribuidos"]'
