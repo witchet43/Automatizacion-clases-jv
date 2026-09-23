@@ -1,5 +1,5 @@
 # Reejecución tras cruce de IDs de Classroom, títulos 01/1 y Docs registrados.
-name: One-time identify actual next class UAQ Sistemas Distribuidos
+name: One-time prepare canonical Practice 07 UAQ Distribuidos
 on:
   push:
     branches: [main]
@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           test -n "$(node -p "JSON.parse(require('fs').readFileSync('.apps-script-deployment.json','utf8')).deploymentId")"
-      - name: Identify next class from real Classroom and Gamma state
+      - name: Create canonical session 8 practice in DRAFT
         env:
           GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
           GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
@@ -32,4 +32,4 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          npm run apps-script:run -- --function resolverSiguienteClase --parameters-json '["Sistemas Distribuidos"]'
+          npm run apps-script:run -- --function crearPractica --parameters-json '[{"courseId":"871158466533","materia":"UAQ - Sistemas Distribuidos","temaSubtema":"2.1.1 Cliente-servidor + 2.1.2 Peer-to-peer","sesionCanonica":8,"explicitSequenceOverride":true,"unidad":"Unidad 2","topicName":"Unidad 2","courseKey":"UAQ_SISTEMAS_DISTRIBUIDOS","titulo":"Práctica 07 - Comparar cliente-servidor con un intercambio entre pares","descripcion":"Comparar los modelos cliente-servidor y entre pares mediante ejecuciones controladas en Python. Ejecuta y documenta el intercambio en ambos modelos, elabora dos diagramas y una tabla técnica comparativa. Trabaja en tu copia individual del Google Doc adjunto e integra evidencia de la ejecución, decisiones y conclusiones.","documentId":"14RDA2mUI-ywORM46MCThJShyrxxnyQmnnN4HGhGKHgM","studentCopy":true,"puntos":100}]'
