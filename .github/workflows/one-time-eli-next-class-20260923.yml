@@ -1,4 +1,4 @@
-name: One-time resolve next class UAQ Etica
+name: One-time inspect actual published material UAQ Etica
 on:
   push:
     branches: [main]
@@ -19,4 +19,4 @@ jobs:
           GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
           GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
           GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
-        run: npm run apps-script:run -- --function resolverSiguienteClase --parameters-json '["Ética y Legislación Informática"]'
+        run: npm run apps-script:run -- --function auditarMateriaAcademica --parameters-json '["871149624583"]'
