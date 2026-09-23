@@ -1,5 +1,5 @@
 # Reejecución tras cruce de IDs de Classroom, títulos 01/1 y Docs registrados.
-name: One-time create next preparation task UAQ Distribuidos
+name: One-time verify real next session after creating DRAFT package
 on:
   push:
     branches: [main]
@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           test -n "$(node -p "JSON.parse(require('fs').readFileSync('.apps-script-deployment.json','utf8')).deploymentId")"
-      - name: Create preparation for session 9 in DRAFT without retroactive due
+      - name: Confirm target is still session 8 using real PUBLISHED state
         env:
           GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
           GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
@@ -32,7 +32,4 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat > parameters.json <<'AUDIT_S09_TASK'
-          [{"courseId":"871158466533","materia":"UAQ - Sistemas Distribuidos","temaSubtema":"2.1.3 Comunicación entre procesos + 2.1.4 Direccionamiento entre procesos","sesionCanonica":9,"explicitSequenceOverride":true,"reconciliationMode":true,"reconciliationReason":"Preparación de la clase 8 determinada por recursos realmente publicados; se registra tarea para la sesión 9 de forma retrospectiva sin vencimiento y sin publicar.","unidad":"Unidad 2","topicName":"Unidad 2","courseKey":"UAQ_SISTEMAS_DISTRIBUIDOS","titulo":"Tarea 07 - Preparación de comunicación y direccionamiento entre procesos","descripcion":"Prepara los conceptos dirección IP, puerto y endpoint. En tu computadora personal con Windows consulta conexiones mediante netstat -ano: -a incluye conexiones y puertos en escucha, -n muestra direcciones y puertos numéricos, -o indica el PID; no cambies la configuración. Identifica un endpoint local y uno remoto y diferencia IP, puerto y proceso. Entrega una tabla breve de definiciones, un ejemplo de endpoint y una captura contextualizada sin credenciales ni información personal.","contenidoDocumento":"PREPARACIÓN DE LA SESIÓN 9: COMUNICACIÓN Y DIRECCIONAMIENTO ENTRE PROCESOS\n\n1. Investiga con una fuente técnica qué significan dirección IP, puerto y endpoint. Anota una definición breve de cada término y la fuente consultada.\n\n2. En tu computadora personal con Windows abre la terminal y ejecuta netstat -ano únicamente para consultar conexiones; -a muestra conexiones y puertos en escucha, -n muestra direcciones y puertos numéricos, -o muestra el identificador de proceso (PID).\n\n3. Selecciona una entrada de tu propio equipo. Registra dirección y puerto locales, dirección y puerto remotos si aparecen, y estado. No expongas credenciales, direcciones privadas de terceros ni datos personales.\n\n4. Construye una tabla con columnas: concepto, definición, ejemplo de tu observación. Redacta en una oración por qué IP y puerto juntos permiten identificar un extremo de comunicación.\n\nEVIDENCIA: tabla con las tres definiciones y fuente, ejemplo razonado de endpoint y captura de la herramienta localizada que permita identificar la consulta y sus resultados.","studentCopy":true,"puntos":100}]
-          AUDIT_S09_TASK
-          npm run apps-script:run -- --function crearTareaReconciliacionHistorica --parameters-json "$(cat parameters.json)"
+          npm run apps-script:run -- --function resolverSiguienteClase --parameters-json '["Sistemas Distribuidos"]'
