@@ -42,21 +42,19 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
   const seen=plan.map(function(row){return evidenciaSesionReal_(row,works);});
   const lastPrepared=seen.reduce(function(last,e,i){return e.materialPreparado?i:last;},-1);
   const lastPublished=seen.reduce(function(last,e,i){return e.publicado?i:last;},-1);
+  // El progreso de clase lo acredita únicamente Classroom PUBLISHED: un DRAFT
+  // indica preparación, NO que la clase ya fue impartida ni autoriza avanzar.
   let inferred=-1, reconciliation=false;
-  if(lastPrepared>=0){
-    // Se inspecciona la secuencia completa dentro de la unidad activa; nunca
-    // se salta un hueco intermedio aunque ya exista material de clases posteriores.
-    const unit=String(plan[lastPrepared].unit||'');
-    const firstInUnit=seen.findIndex(function(e){return e.materialPreparado&&String(e.unit)===unit;});
-    for(let i=firstInUnit+1;i<=lastPrepared;i++){
-      if(String(plan[i].unit)===unit&&!seen[i].materialPreparado&&!seen[i].publicado){
-        inferred=i;break;
-      }
+  if(lastPublished>=0){
+    inferred=lastPublished+1;
+    const unit=String(plan[lastPublished].unit||'');
+    const firstInUnit=seen.findIndex(function(e,i){return i<=lastPublished &&
+      e.publicado && String(plan[i].unit||'')===unit;});
+    if(firstInUnit>=0)for(let i=firstInUnit;i<=lastPublished;i++){
+      if(String(plan[i].unit||'')===unit&&!seen[i].publicado){inferred=i;break;}
     }
-    if(inferred<0)inferred=lastPrepared+1;
-  } else if(lastPublished>=0)inferred=lastPublished+1;
-  else if(String(requestedSession||'')===String(plan[0].session||''))inferred=0;
-  else throw new Error('BLOCKED_NO_REAL_PROGRESS_EVIDENCE: no se encontró avance corroborado en Classroom y Gamma; no se infiere a partir de la fecha ni de una propiedad guardada.');
+  }else if(String(requestedSession||'')===String(plan[0].session||''))inferred=0;
+  else throw new Error('BLOCKED_NO_REAL_PROGRESS_EVIDENCE: no se encontró avance publicado en Classroom; ni DRAFT, fecha ni contador acreditan progreso.');
   if(inferred>=plan.length)return {complete:true, target:null,source:'CLASSROOM_GAMMA_REAL_STATE',lastPrepared:lastPrepared,lastPublished:lastPublished,observed:seen};
   const requested=String(requestedSession||'').trim();
   let index=inferred;
@@ -86,7 +84,9 @@ function validarSecuenciaRealRegresion(){
   const after=rows.map(function(r){return Object.assign({},r);});
   after[2].gammaUrl='https://gamma.app/docs/test-14';after[2].gammaState='Gamma generado y verificado';
   const extended=w.concat([{id:'100000000003',title:'Actividad 7',state:'DRAFT'}]);
-  if(next(after,extended)!=='15')throw new Error('REGRESSION_SEQUENCE: debe reconocer la sesión 14 preparada en DRAFT sin confundirla con publicada.');
+  if(next(after,extended)!=='14')throw new Error('REGRESSION_SEQUENCE: un DRAFT no adelanta la clase siguiente.');
+  const reallyPublished=extended.map(function(w){return String(w.id)==='100000000003'?Object.assign({},w,{state:'PUBLISHED'}):w;});
+  if(next(after,reallyPublished)!=='15')throw new Error('REGRESSION_SEQUENCE: publicación real adelanta a la sesión 15.');
   const gap=after.map(function(r){return Object.assign({},r);});gap[3].gammaUrl='https://gamma.app/docs/test-15';gap[3].gammaState='Gamma generado y verificado';
   const outOfOrder=w.concat([{id:'100000000004',title:'Actividad 8',state:'DRAFT'}]);
   if(next(gap,outOfOrder)!=='14')throw new Error('REGRESSION_SEQUENCE: una sesión posterior no puede ocultar el hueco anterior.');
