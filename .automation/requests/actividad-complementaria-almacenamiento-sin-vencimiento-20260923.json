@@ -13,7 +13,9 @@
       "documentId": "1zLmOkXP2t8Bqe8ZcWsBkTouM8DkbnQBGV0373PTYgOI",
       "resourceState": "DRAFT",
       "studentCopy": true,
-      "shareMode": "STUDENT_COPY"
+      "shareMode": "STUDENT_COPY",
+      "explicitSequenceOverride": true,
+      "sesionCanonica": 13
     }
   ]
 }
