@@ -1,0 +1,31 @@
+name: One-time complete UAQ Etica 2.4 draft resources
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/one-time-eli-24-materials-20260923.yml'
+permissions:
+  contents: read
+jobs:
+  create-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: uaq-etica-24-draft-reconciliation
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - name: Create individual Docs activity and next preparation DRAFT without due
+        env:
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run apps-script:run -- --function crearActividadReconciliacionHistorica --parameters-json '[{"courseId":"871149624583","materia":"UAQ - Ética y Legislación Informática","unidad":"Unidad 2","topicName":"Unidad 2","reconciliationMode":true,"explicitSequenceOverride":true,"reconciliationReason":"Orden expresa del docente de preparar la sesión 15, tema 2.4, pese a existir recursos posteriores en DRAFT. Reconciliación histórica sin vencimiento ni publicación.","sesionCanonica":15,"temaSubtema":"2.4 Clasificación de los riesgos","titulo":"Actividad 8 - Matriz de clasificación y priorización de riesgos informáticos","descripcion":"INDICACIONES PARA EL ALUMNO\n\nUtiliza tu computadora personal con Windows. Abre tu copia personal del Google Documento adjunto; retoma las tres fichas de la Tarea 03 y trabaja individualmente en ese documento.\n\nDESARROLLO\n\n1. Clasifica tres riesgos por origen, activo afectado y naturaleza; justifica probabilidad e impacto con los criterios cualitativos del documento.\n2. Construye la matriz consolidada, asigna una prioridad con la regla indicada y propone una acción de seguimiento.\n3. Explica el orden de atención y cómo cambiaría según evidencia o supuestos. No inventes datos ni infieras automáticamente un delito.\n\nEVIDENCIA DE ENTREGA\n\nEntrega tu copia individual del Google Doc con tres fichas completas, matriz, orden de atención justificado y comparación final.","documentId":"1T7NLXwN_0hYD2qQCHiHFAZvZd_MKw7Ryg9CpaROEBUQ","studentCopy":true}]'
+          npm run apps-script:run -- --function crearTareaReconciliacionHistorica --parameters-json '[{"courseId":"871149624583","materia":"UAQ - Ética y Legislación Informática","unidad":"Unidad 2","topicName":"Unidad 2","reconciliationMode":true,"explicitSequenceOverride":true,"reconciliationReason":"Orden expresa del docente de preparar la sesión 15, tema 2.4, pese a existir recursos posteriores en DRAFT. Reconciliación histórica sin vencimiento ni publicación.","sesionCanonica":15,"temaSubtema":"2.4 Clasificación de los riesgos","titulo":"Tarea 04 - Identificación inicial de incidentes y posibles delitos informáticos","descripcion":"INDICACIONES PARA EL ALUMNO\n\nPrepara la próxima clase, 2.5 Características y clasificación de los delitos informáticos. Utiliza tu computadora personal con Windows; no accedas a sistemas ajenos ni compartas datos personales reales.\n\nDESARROLLO\n\n1. Retoma uno de tus tres riesgos de la Actividad 8 e imagina un incidente plausible que materialice ese riesgo. Explica qué ocurrió y qué evidencias técnicas faltarían para comprobarlo.\n2. Elabora una ficha breve con tres situaciones ficticias distintas: una configuración insegura sin daño constatado, un acceso no autorizado que requiere investigación y una indisponibilidad por falla de infraestructura. Para cada una identifica el activo, conducta o evento, afectación y evidencia que necesitarías obtener lícitamente.\n3. Escribe de cuatro a seis líneas diferenciando riesgo, incidente y posible delito. No afirmes que una situación constituye un delito sin examinar hechos, elementos de la norma y jurisdicción aplicable.\n\nEVIDENCIA DE ENTREGA\n\nEntrega tres fichas breves con evento, activo, efecto y evidencia faltante, más tu explicación final. Conserva las fichas para la comprobación inicial de 2.5."}]'
