@@ -61,9 +61,10 @@ ctx.PropertiesService={getScriptProperties:()=>{throw Error('PROHIBIDO_USAR_CONT
 ctx.Date=class extends Date {constructor(){throw Error('PROHIBIDO_USAR_FECHA_ACTUAL');}static now(){throw Error('PROHIBIDO_USAR_RELOJ');}};
 vm.runInContext(resolver,ctx,{filename:'41_SiguienteClase.gs'});
 let state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
-assert.equal(state.target.session,'14');
+assert.equal(state.target.session,'13');
 assert.equal(state.sequenceSource,'CLASSROOM_GAMMA_REAL_STATE');
-assert.equal(state.evidence.gammaVerificada,false);
+assert.equal(state.evidence.gammaVerificada,true);
+assert.equal(state.evidence.publicado,false);
 
 // Aunque el ordenador esté en cualquier fecha, solo cambian los recursos reales.
 data[3][5]='https://gamma.app/docs/demo-14';
@@ -71,8 +72,15 @@ data[3][6]='Gamma generado y verificado';
 data[3][7]='Actividad 7: 100000000003 (DRAFT)';
 works.push({id:'100000000003',title:'Actividad 7',state:'DRAFT'});
 state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
+assert.equal(state.target.session,'13');
+assert.equal(state.progress.lastPublished,0); // 2.2 y 2.3 están preparadas, NO publicadas.
+works[1].state='PUBLISHED';
+state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
+assert.equal(state.target.session,'14');
+assert.equal(state.evidence.publicado,false);
+works[2].state='PUBLISHED';
+state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
 assert.equal(state.target.session,'15');
-assert.equal(state.progress.lastPublished,0); // 2.3 está preparada, NO publicada.
 vm.runInContext(generator,ctx,{filename:'44_NomenclaturaRecursos.gs'});
 assert.throws(()=>ctx.generarSiguienteClase({materia:'UAQ - Ética y Legislación Informática'}),/BLOCKED_UNSUPPORTED_CLASS_GENERATOR/);
 console.log('OK: selección por evidencia Classroom/Gamma; huecos, DRAFT ≠ PUBLISHED, sin fecha ni contadores, preflight y materia segura.');
