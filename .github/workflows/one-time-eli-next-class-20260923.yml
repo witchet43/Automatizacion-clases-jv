@@ -1,0 +1,22 @@
+name: One-time resolve next class UAQ Etica
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-time-eli-next-class-20260923.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci
+      - name: Read real Classroom sequence through Apps Script
+        env:
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
+        run: npm run apps-script:run -- --function resolverSiguienteClase --parameters-json '["Ética y Legislación Informática"]'
