@@ -1,0 +1,19 @@
+{
+  "function": "crearPractica",
+  "parameters": [
+    {
+      "courseId": "871156721160",
+      "materia": "Introducción a las Tecnologías de Información",
+      "temaSubtema": "2.1.3 Dispositivos de almacenamiento",
+      "unidad": "Unidad 2",
+      "topicName": "Unidad 2",
+      "titulo": "Actividad complementaria - Latencia, throughput e IOPS (5 ejercicios)",
+      "descripcion": "Propósito: resolver cinco ejercicios sobre rendimiento de HDD, SSD SATA, NVMe y USB. Instrucciones: resuelve los cinco ejercicios del documento adjunto; muestra fórmulas, sustituciones, operaciones, unidades e interpretación técnica. Evidencia: entrega tu copia individual del documento con los cinco ejercicios resueltos y la pregunta de cierre. Evaluación: 100 puntos (20 por ejercicio).",
+      "puntos": 100,
+      "documentId": "1zLmOkXP2t8Bqe8ZcWsBkTouM8DkbnQBGV0373PTYgOI",
+      "resourceState": "DRAFT",
+      "studentCopy": true,
+      "shareMode": "STUDENT_COPY"
+    }
+  ]
+}
