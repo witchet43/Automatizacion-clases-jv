@@ -102,7 +102,7 @@ function procesarAutoQuizSencilloHorario_() {
 
     const resultado = {
       procesado:true,
-      estado:'GENERADO',
+      estado:creado.reutilizado===true?'REUTILIZADO':'GENERADO',
       slot:slot.id,
       solicitadoEnLocal:slot.solicitadoEnLocal,
       courseId:String(clase.courseId || ''),
