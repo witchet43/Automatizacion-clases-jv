@@ -68,6 +68,9 @@ jobs:
       - name: Regression - academic error alerts are not duplicated
         run: node scripts/test-academic-error-notifications.mjs
 
+      - name: Regression - minimal operations and attendance consecutives
+        run: node scripts/test-minimal-academic-operations.mjs
+
       - name: Regression - closure drafts retry and preserve manual grades
         run: node scripts/test-grade-closure-resilience.mjs
 
