@@ -1,0 +1,8 @@
+{
+  "function": "crearQuizAsistenciaRapido",
+  "parameters": [
+    {
+      "courseId": "875776451793"
+    }
+  ]
+}
