@@ -71,7 +71,6 @@ function resolverClaseActivaQuizAsistencia_(ahora) {
 
   const cursos = listarCursosActivosQuizAsistencia_();
   const validas = [];
-  const clasesSinTema = [];
 
   cursos.forEach(function(course) {
     const calendarId = resolverCalendarIdCurso_(course);
@@ -104,9 +103,6 @@ function resolverClaseActivaQuizAsistencia_(ahora) {
   });
 
   if (validas.length === 0) {
-    if (clasesSinTema.length > 0) {
-      throw new Error('QUIZ_ASISTENCIA_CLASE_ACTIVA_SIN_TEMA: existe una clase activa en Classroom Calendar, pero su descripción no contiene Tema/Subtema canónico. No se genera el quiz.');
-    }
     throw new Error('QUIZ_ASISTENCIA_SIN_CLASE_ACTIVA: no existe una clase canónica activa en este momento. No se genera el quiz.');
   }
 
