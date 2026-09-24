@@ -42,13 +42,12 @@ function crearQuizDeAsistencia() {
     'yyyy-MM-dd HH:mm:ss'
   );
 
-  const result = crearQuizSencillo({
+  const result = crearQuizAsistencia({
     courseId: clase.courseId,
-    materia: clase.courseName,
-    temaSubtema: clase.temaSubtema,
-    solicitadoEnLocal: solicitadoEnLocal
+    solicitadoEnLocal: solicitadoEnLocal,
+    requestId: 'ATTENDANCE|' + String(clase.courseId) + '|' + String(clase.eventId) +
+      '|' + solicitadoEnLocal
   });
-
   return Object.assign({}, result, {
     resueltoPor: QUIZ_ASISTENCIA_ACTIVE_CLASS_POLICY.SOURCE,
     claseActiva: {
