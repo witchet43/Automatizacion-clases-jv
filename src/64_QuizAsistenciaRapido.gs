@@ -5,7 +5,7 @@
  */
 function crearQuizAsistenciaRapido(params) {
   const courseId=String(params&&params.courseId||'').trim();
-  if (!/^\\d+$/.test(courseId)) throw new Error('Se requiere courseId numérico explícito.');
+  if (!/^\d+$/.test(courseId)) throw new Error('Se requiere courseId numérico explícito.');
   const lock=LockService.getScriptLock();
   lock.waitLock(10000);
   try {
@@ -18,7 +18,7 @@ function crearQuizAsistenciaRapido(params) {
           courseWorkStates:state,pageSize:100,pageToken:token
         });
         (page.courseWork||[]).forEach(function(work) {
-          const m=String(work.title||'').trim().match(/^Quiz\\s+(\\d+)$/i);
+          const m=String(work.title||'').trim().match(/^Quiz\s+(\d+)$/i);
           if (!m) return;
           max=Math.max(max,Number(m[1]));
           const fecha=work.creationTime?
