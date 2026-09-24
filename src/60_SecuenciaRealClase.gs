@@ -40,6 +40,19 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
   const plan=Array.isArray(rows)?rows:[], opts=options||{};
   if(!plan.length)throw new Error('BLOCKED_NO_CANONICAL_SESSIONS: la planeación está vacía.');
   const seen=plan.map(function(row){return evidenciaSesionReal_(row,works);});
+  // Sesión explícita: validar su identidad en la planeación, sin inferir
+  // progreso ni exigir reconciliación para trabajar el tema pedido.
+  const requested=String(requestedSession||'').trim();
+  if(requested&&opts.explicitTarget===true){
+    const index=plan.findIndex(function(r){return String(r.session||'').trim()===requested;});
+    if(index<0)throw new Error('BLOCKED_UNKNOWN_CANONICAL_SESSION: '+requested);
+    const target=plan[index],evidence=seen[index];
+    if(/^https?:\\/\\//i.test(evidence.gammaUrl)&&!evidence.gammaVerificada)
+      throw new Error('BLOCKED_GAMMA_UNVERIFIED: comprobar Gamma existente.');
+    return {complete:false,target:target,evidence:evidence,
+      source:'EXPLICIT_CANONICAL_SESSION',inferredSession:null,
+      lastPrepared:null,lastPublished:null,reconciliation:false,observed:seen};
+  }
   const lastPrepared=seen.reduce(function(last,e,i){return e.materialPreparado?i:last;},-1);
   const lastPublished=seen.reduce(function(last,e,i){return e.publicado?i:last;},-1);
   // El progreso de clase lo acredita únicamente Classroom PUBLISHED: un DRAFT
