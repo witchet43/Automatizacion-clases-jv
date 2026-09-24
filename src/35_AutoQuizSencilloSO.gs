@@ -84,8 +84,8 @@ function procesarEventoAutoQuizSO_(evento, policy) {
     resolverInstanteSolicitudQuizSencillo_(solicitadoEnLocal, ACADEMIC_POLICY.CLASSROOM.SIMPLE_QUIZ),
     ACADEMIC_POLICY.CLASSROOM.SIMPLE_QUIZ
   );
-  if (String(result.fechaLimiteLocal || '') !== expectedDue.fechaLocal ||
-      String(result.horaLimiteLocal || '') !== expectedDue.horaLocal) {
+  if (result.reutilizado!==true && (String(result.fechaLimiteLocal || '') !== expectedDue.fechaLocal ||
+      String(result.horaLimiteLocal || '') !== expectedDue.horaLocal)) {
     throw new Error('El Quiz Sencillo automático no quedó con el vencimiento esperado para el inicio de la clase.');
   }
   if (String(result.state || '').toUpperCase() !== 'DRAFT') {
