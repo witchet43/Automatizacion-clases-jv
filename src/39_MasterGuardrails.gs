@@ -79,7 +79,7 @@ function preflightDocumentoMaestro(request) {
      (isClassPackage || r.explicitSequenceOverride!==true))
     throw new Error('BLOCKED_SEQUENCE: el siguiente tema canónico por estado real es "'+expected.tema+'", no "'+target.tema+'".');
   if(isClassPackage) {
-    if(real.sequenceSource!=='CLASSROOM_GAMMA_REAL_STATE'||String(real.target.session)!==String(target.clase))
+    if((real.sequenceSource!=='CLASSROOM_GAMMA_REAL_STATE'&&real.sequenceSource!=='EXPLICIT_CANONICAL_SESSION')||String(real.target.session)!==String(target.clase))
       throw new Error('BLOCKED_SEQUENCE_REAL_STATE: sesión canónica o evidencia de progreso incongruente.');
     validateClassPackageRequest_(r);
   }
