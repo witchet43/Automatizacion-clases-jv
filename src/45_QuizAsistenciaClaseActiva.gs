@@ -13,7 +13,7 @@ const QUIZ_ASISTENCIA_ACTIVE_CLASS_POLICY = Object.freeze({
   REQUIRE_EXACTLY_ONE_ACTIVE_CLASS: true,
   REQUIRE_TIMED_EVENT: true,
   REQUIRE_AULA_IN_SUMMARY: true,
-  REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION: true,
+  REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION: false,
   ACTIVE_INTERVAL: '[START,END)',
   SEARCH_WINDOW_HOURS: 12,
   MAX_EVENTS_PER_PAGE: 100
@@ -94,10 +94,6 @@ function resolverClaseActivaQuizAsistencia_(ahora) {
         temaSubtema: temaSubtema
       };
 
-      if (!temaSubtema) {
-        clasesSinTema.push(base);
-        return;
-      }
       validas.push(base);
     });
   });
@@ -211,7 +207,7 @@ function validarPoliticaQuizAsistenciaClaseActiva_(policy) {
   if (!policy || policy.TIMEZONE !== 'America/Mexico_City' ||
       policy.SOURCE !== 'CLASSROOM_COURSE_CALENDAR' || policy.COURSE_STATE !== 'ACTIVE' ||
       policy.REQUIRE_EXACTLY_ONE_ACTIVE_CLASS !== true || policy.REQUIRE_TIMED_EVENT !== true ||
-      policy.REQUIRE_AULA_IN_SUMMARY !== true || policy.REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION !== true ||
+      policy.REQUIRE_AULA_IN_SUMMARY !== true || policy.REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION !== false ||
       policy.ACTIVE_INTERVAL !== '[START,END)' || Number(policy.SEARCH_WINDOW_HOURS) !== 12) {
     throw new Error('La política de Quiz de Asistencia con clase activa fue debilitada.');
   }
