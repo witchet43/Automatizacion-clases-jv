@@ -69,7 +69,7 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
   }else if(String(requestedSession||'')===String(plan[0].session||''))inferred=0;
   else throw new Error('BLOCKED_NO_REAL_PROGRESS_EVIDENCE: no se encontró avance publicado en Classroom; ni DRAFT, fecha ni contador acreditan progreso.');
   if(inferred>=plan.length)return {complete:true, target:null,source:'CLASSROOM_GAMMA_REAL_STATE',lastPrepared:lastPrepared,lastPublished:lastPublished,observed:seen};
-  const requested=String(requestedSession||'').trim();
+
   let index=inferred;
   if(requested){
     index=plan.findIndex(function(r){return String(r.session||'').trim()===requested;});
