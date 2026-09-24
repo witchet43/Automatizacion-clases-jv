@@ -117,5 +117,7 @@ function validarSecuenciaRealRegresion(){
   if(!blocked)throw new Error('REGRESSION_SEQUENCE: la sesión manual no puede saltar evidencia sin reconciliación.');
   if(seleccionarSiguienteClasePorEstadoReal_(rows,w13Published,'15',{reconciliationMode:true,reconciliationReason:'Reconciliación histórica solicitada expresamente por el docente.'}).target.session!=='15')
     throw new Error('REGRESSION_SEQUENCE: la reconciliación explícita no funciona.');
-  return {ok:true,source:'CLASSROOM_GAMMA_REAL_STATE',regressions:9,readOnly:true};
+  if(seleccionarSiguienteClasePorEstadoReal_(rows,w13Published,'15',{explicitTarget:true}).target.session!=='15')
+    throw new Error('REGRESSION_EXPLICIT_SESSION: la sesión indicada no debe inferir progreso.');
+  return {ok:true,source:'CLASSROOM_GAMMA_REAL_STATE',regressions:10,readOnly:true};
 }
