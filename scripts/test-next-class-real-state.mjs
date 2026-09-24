@@ -65,6 +65,9 @@ assert.equal(state.target.session,'13');
 assert.equal(state.sequenceSource,'CLASSROOM_GAMMA_REAL_STATE');
 assert.equal(state.evidence.gammaVerificada,true);
 assert.equal(state.evidence.publicado,false);
+const explicit=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática','15',{explicitTarget:true});
+assert.equal(explicit.target.session,'15');
+assert.equal(explicit.sequenceSource,'EXPLICIT_CANONICAL_SESSION');
 
 // Aunque el ordenador esté en cualquier fecha, solo cambian los recursos reales.
 data[3][5]='https://gamma.app/docs/demo-14';
