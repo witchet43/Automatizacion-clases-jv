@@ -21,7 +21,7 @@ const AUTO_SIMPLE_QUIZ_HOURLY_POLICY = Object.freeze({
   DECISION_WINDOW_MINUTES: 5,
   MAX_ONE_DECISION_PER_SLOT: true,
   NO_ACTIVE_CLASS: 'SKIP',
-  DRAFT_BLOCK_MODE: 'ANY_DRAFT_SIMPLE_QUIZ_IN_ACTIVE_COURSE',
+  DRAFT_BLOCK_MODE: 'REUSE_NEXT_CONSECUTIVE_DRAFT',
   DRAFT_TITLE_PATTERN: '^Quiz\\s+(\\d+)$',
   LAST_SLOT_PROPERTY: 'AUTO_SIMPLE_QUIZ_HOURLY_LAST_SLOT_V1',
   LAST_RESULT_PROPERTY: 'AUTO_SIMPLE_QUIZ_HOURLY_LAST_RESULT_V1'
@@ -87,56 +87,12 @@ function procesarAutoQuizSencilloHorario_() {
       throw errClase;
     }
 
-    const drafts = listarQuizSencilloDraftsCurso_(clase.courseId, policy);
-    if (drafts.length > 0) {
-      const bloqueado = {
-        procesado:false,
-        estado:'BLOQUEADO_DRAFT_EXISTENTE',
-        motivo:'QUIZ_SENCILLO_DRAFT_PENDIENTE_DE_USO',
-        slot:slot.id,
-        solicitadoEnLocal:slot.solicitadoEnLocal,
-        courseId:String(clase.courseId || ''),
-        courseName:String(clase.courseName || ''),
-        eventId:String(clase.eventId || ''),
-        eventTitle:String(clase.eventTitle || ''),
-        draftCount:drafts.length,
-        drafts:drafts
-      };
-      guardarResultadoAutoQuizHorario_(props, policy, bloqueado);
-      return bloqueado;
-    }
-
-    // El texto académico de Calendar es contexto visible, no una clave de
-    // planeación: puede incluir rangos y etiquetas históricas. Resolver por
-    // curso + fecha + sesión del evento y conservar el guardrail del Maestro.
-    const contextoCanonico = resolverTemaCanonicoAutoQuizHorario_(clase);
-    // No hay error operativo cuando la política académica prohíbe crear
-    // un Quiz Sencillo en una unidad ya cerrada o aún no abierta.
-    // Registrar el motivo en la bitácora del slot sin enviar correo.
-    try {
-      resolverUnidadAbiertaQuizSencillo_(clase.courseId);
-    } catch (errUnidad) {
-      const motivoUnidad=mensajeErrorOperacion_(errUnidad);
-      if (esUnidadSinQuizHorario_(motivoUnidad)) {
-        const omitido={
-          procesado:false,estado:'OMITIDO_UNIDAD_NO_ABIERTA',
-          motivo:'UNIDAD_NO_ABIERTA_O_CERRADA',
-          slot:slot.id,courseId:String(clase.courseId||''),
-          solicitadoEnLocal:slot.solicitadoEnLocal,
-          detalle:motivoUnidad
-        };
-        guardarResultadoAutoQuizHorario_(props,policy,omitido);
-        return omitido;
-      }
-      throw errUnidad;
-    }
-    const requestId = 'AUTO_HOURLY|' + slot.id + '|' + String(clase.courseId || '') + '|' + String(clase.eventId || '');
-    const creado = crearQuizSencillo({
+    // El motor único compara último Quiz PUBLISHED con el siguiente borrador.
+    // No se consultan planeación, examen ni unidad para generar asistencia.
+    const requestId = 'AUTO_HOURLY|' + slot.id + '|' +
+      String(clase.courseId || '') + '|' + String(clase.eventId || '');
+    const creado = crearQuizAsistencia({
       courseId: clase.courseId,
-      materia: clase.courseName,
-      temaSubtema: contextoCanonico.temaSubtema,
-      sesionCanonica: contextoCanonico.sesion,
-      explicitSequenceOverride: true,
       solicitadoEnLocal: slot.solicitadoEnLocal,
       requestId: requestId
     });
@@ -153,9 +109,7 @@ function procesarAutoQuizSencilloHorario_() {
       courseName:String(clase.courseName || ''),
       eventId:String(clase.eventId || ''),
       eventTitle:String(clase.eventTitle || ''),
-      temaSubtema:String(contextoCanonico.temaSubtema || ''),
-      temaCalendar:String(clase.temaSubtema || ''),
-      sesionCanonica:contextoCanonico.sesion,
+      resueltoPor:'CLASSROOM_LAST_PUBLISHED_QUIZ',
       workId:String(creado.workId || ''),
       title:String(creado.title || ''),
       state:String(creado.state || ''),
