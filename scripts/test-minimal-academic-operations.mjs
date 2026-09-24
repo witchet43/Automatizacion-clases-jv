@@ -19,6 +19,7 @@ assert.doesNotMatch(hourly.slice(hourly.indexOf('function procesarAutoQuizSencil
 function scenario(initial){
   let works=initial.map(w=>({...w}));
   let created=0,audited=0;
+  const stored=new Map();
   const clock={waitLock(){},releaseLock(){}};
   const context={
     ACADEMIC_POLICY:{CLASSROOM:{SIMPLE_QUIZ:{TIMEZONE:'America/Mexico_City'}}},
@@ -27,6 +28,12 @@ function scenario(initial){
     resolverInstanteSolicitudQuizSencillo_(){return {texto:'2026-09-24 14:40:00'};},
     calcularSiguienteHoraNaturalQuizSencillo_(){return {utcMs:Date.now()+100000,utcYear:2026,utcMonth:9,utcDay:24,utcHours:21,fechaUtc:'2026-09-24',horaUtc:'21:00',fechaLocal:'2026-09-24',horaLocal:'15:00'};},
     LockService:{getScriptLock(){return clock;}},
+    claveIdempotenciaQuizSencillo_:(courseId,requestId)=>courseId+'|'+requestId,
+    PropertiesService:{getScriptProperties(){return {
+      getProperty:key=>stored.get(key)||null,
+      setProperty:(key,value)=>stored.set(key,value),
+      deleteProperty:key=>stored.delete(key)
+    };}},
     Classroom:{Courses:{CourseWork:{
       list(courseId,p){
         assert.equal(courseId,'123');
@@ -45,7 +52,9 @@ function scenario(initial){
   };
   vm.createContext(context);
   vm.runInContext(core,context);
-  return {run:()=>context.crearQuizAsistenciaMinimo_({courseId:'123',requestId:'stable'}),get created(){return created;},get audited(){return audited;}};
+  return {run:(requestId='stable')=>context.crearQuizAsistenciaMinimo_({courseId:'123',requestId}),
+    publish:(id)=>{const w=works.find(w=>String(w.id)===String(id));w.state='PUBLISHED';},
+    get created(){return created;},get audited(){return audited;}};
 }
 const quiz=(id,n,state,topicId='')=>({id:String(id),title:'Quiz '+n,state,workType:'ASSIGNMENT',topicId,materials:[],description:'',maxPoints:null,creationTime:'2026-09-20T00:00:00Z'});
 let s=scenario([]),r=s.run();assert.equal(r.title,'Quiz 1');assert.equal(r.state,'DRAFT');assert.equal(s.created,1);
@@ -53,4 +62,7 @@ s=scenario([quiz(7,7,'PUBLISHED','UNIT_2'),quiz(8,8,'DRAFT','UNIT_2')]);r=s.run(
 s=scenario([quiz(7,7,'PUBLISHED'),quiz(9,9,'DRAFT')]);r=s.run();assert.equal(r.title,'Quiz 8');assert.equal(s.created,1);
 s=scenario([quiz(7,7,'PUBLISHED'),quiz(8,8,'PUBLISHED')]);r=s.run();assert.equal(r.title,'Quiz 9');assert.equal(s.created,1);
 s=scenario([quiz(7,7,'PUBLISHED'),quiz(8,8,'DRAFT'),quiz(18,8,'DRAFT')]);assert.throws(()=>s.run(),/CONSECUTIVO_DUPLICADO/);
+s=scenario([quiz(7,7,'PUBLISHED')]);r=s.run();s.publish(r.workId);
+const retried=s.run();assert.equal(retried.workId,r.workId);assert.equal(retried.state,'PUBLISHED');assert.equal(s.created,1);
+const newRequest=s.run('new-request');assert.equal(newRequest.title,'Quiz 9');assert.equal(s.created,2);
 console.log('OK: último Quiz PUBLISHED, reutilización de borrador, sin salto por borradores, sin unidad/planeación y DRAFT.');
