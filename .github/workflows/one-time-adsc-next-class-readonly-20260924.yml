@@ -1,0 +1,29 @@
+name: One-time inspect actual next class UAQ ADSC read-only
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/one-time-adsc-next-class-readonly-20260924.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - run: npm ci
+      - name: Audit real Classroom CourseWork read only
+        continue-on-error: true
+        env:
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
+        run: npm run apps-script:run -- --function auditarMateriaAcademica --parameters-json '[{"courseId":"871158479566"}]'
+      - name: Resolve real next class read only
+        env:
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
+        run: npm run apps-script:run -- --function resolverSiguienteClase --parameters-json '["Análisis y Diseño de Sistemas Computacionales"]'
