@@ -64,7 +64,7 @@ function resolverConsecutivoQuizAsistencia_(courseId){
     }while(token);
   });
   const pub=works.filter(function(w){return w.state==='PUBLISHED';})
-    .sort(function(a,b){return Date.parse(b.creationTime||'')-Date.parse(a.creationTime||'');});
+    .sort(function(a,b){return b.numero-a.numero;});
   const last=pub[0]||null;
   const numero=last?last.numero+1:1, title='Quiz '+numero;
   const hits=works.filter(function(w){return w.numero===numero;});
