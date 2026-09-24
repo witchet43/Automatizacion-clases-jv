@@ -1,0 +1,40 @@
+name: Validate Minimal Academic Operations
+on:
+  push:
+    paths:
+      - 'src/**'
+      - 'scripts/test-*.mjs'
+      - '.github/workflows/validate-minimal-academic-operations.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'scripts/test-*.mjs'
+      - '.github/workflows/validate-minimal-academic-operations.yml'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check all Apps Script source syntax
+        run: |
+          set -euo pipefail
+          for f in src/*.gs; do
+            cp "$f" "/tmp/$(basename "$f").js"
+            node --check "/tmp/$(basename "$f").js"
+          done
+      - name: Exercise minimal-operation and academic regressions
+        run: |
+          node scripts/test-minimal-academic-operations.mjs
+          node scripts/test-next-class-real-state.mjs
+          node scripts/test-auditoria-transversal.mjs
+          node scripts/test-auditar-y-completar.mjs
+          node scripts/test-google-doc-student-copy.mjs
+          node scripts/test-forms-draft.mjs
+          node scripts/test-forms-import-without-turnedin.mjs
+          node scripts/test-academic-error-notifications.mjs
+          node scripts/test-grade-closure-resilience.mjs
