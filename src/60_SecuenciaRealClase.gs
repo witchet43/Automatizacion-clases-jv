@@ -47,7 +47,7 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
     const index=plan.findIndex(function(r){return String(r.session||'').trim()===requested;});
     if(index<0)throw new Error('BLOCKED_UNKNOWN_CANONICAL_SESSION: '+requested);
     const target=plan[index],evidence=seen[index];
-    if(/^https?:\\/\\//i.test(evidence.gammaUrl)&&!evidence.gammaVerificada)
+    if(/^https?:/i.test(String(evidence.gammaUrl||''))&&!evidence.gammaVerificada)
       throw new Error('BLOCKED_GAMMA_UNVERIFIED: comprobar Gamma existente.');
     return {complete:false,target:target,evidence:evidence,
       source:'EXPLICIT_CANONICAL_SESSION',inferredSession:null,
