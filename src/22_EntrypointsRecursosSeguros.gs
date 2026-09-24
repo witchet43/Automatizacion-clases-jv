@@ -81,6 +81,11 @@ function crearQuizSencillo(params) {
   });
 }
 
+/** Alias exacto: asistencia usa el mismo contrato, guardrails y motor que Quiz Sencillo. */
+function crearQuizAsistencia(params) {
+  return crearQuizSencillo(params);
+}
+
 function crearExamen(params) {
   return ejecutarConNotificacionError_('CREAR_EXAMEN', params, function () {
     const ctx = prepararContextoGuardrailRecurso_(params, 'EXAMEN');
@@ -164,7 +169,7 @@ function validarEntrypointsRecursosSeguros() {
   if (typeof preflightDocumentoMaestro !== 'function' || typeof postflightDocumentoMaestro !== 'function') {
     throw new Error('MASTER_GUARDRAILS_REQUIRED: faltan preflight/postflight del Documento Maestro.');
   }
-  const names = ['crearActividad','crearTarea','crearPractica','crearQuiz','crearQuizSencillo','crearExamen'];
+  const names = ['crearActividad','crearTarea','crearPractica','crearQuiz','crearQuizSencillo','crearQuizAsistencia','crearExamen'];
   names.forEach(function (name) {
     if (typeof this[name] !== 'function') throw new Error('Falta entrypoint canónico: ' + name);
   }, this);
