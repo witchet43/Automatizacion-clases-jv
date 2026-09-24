@@ -68,12 +68,13 @@ function preflightDocumentoMaestro(request) {
   // Se coteja el CourseWork real y la Gamma verificada ANTES de cualquier escritura.
   const real = isClassPackage ? resolverSiguienteClase(materia,r.sesionCanonica||r.sesion,{
     reconciliationMode:r.reconciliationMode===true,
-    reconciliationReason:r.reconciliationReason
+    reconciliationReason:r.reconciliationReason,
+    explicitTarget:!!sessionRequested
   }) : null;
   if(isClassPackage && real.complete)throw new Error('BLOCKED_SEQUENCE_REAL_STATE: no queda una sesión canónica pendiente.');
   const expected = isClassPackage
     ? {tema:real.target.topic,clase:real.target.session,unidad:real.target.unit}
-    : firstPendingCanonical_(planning, r.completedTopics || []);
+    : target; // RESOURCE_CREATE con tema explícito no infiere la próxima sesión.
   if(expected && normalizeGuard_(expected.tema)!==normalizeGuard_(target.tema) &&
      (isClassPackage || r.explicitSequenceOverride!==true))
     throw new Error('BLOCKED_SEQUENCE: el siguiente tema canónico por estado real es "'+expected.tema+'", no "'+target.tema+'".');
@@ -138,13 +139,15 @@ function validarPlaneacionesCanonicasReadOnly(){
   return validarPlaneacionesCanonicasReadOnly_();
 }
 
-function assertAcademicAutomationWriteEnabled_(){
+/** Readiness del curso objetivo. La auditoría global de ocho materias se
+ * mantiene disponible de forma independiente, sin bloquear otros cursos. */
+function assertAcademicAutomationWriteEnabled_(materia){
+  const subject=requiredGuard_(materia,'materia');
   const cache=CacheService.getScriptCache();
-  const cached=String(cache.get(MASTER_GUARDRAILS.READINESS_CACHE_KEY)||'');
-  if(cached==='OK')return true;
-  const result=validarPlaneacionesCanonicasReadOnly_();
-  if(!result.ok||result.validated!==MASTER_GUARDRAILS.VALIDATION_COURSES.length)throw new Error('ACADEMIC_WRITE_BLOCKED: readiness incompleto.');
-  cache.put(MASTER_GUARDRAILS.READINESS_CACHE_KEY,'OK',MASTER_GUARDRAILS.READINESS_CACHE_SECONDS);
+  const key=MASTER_GUARDRAILS.READINESS_CACHE_KEY+'|'+normalizeGuard_(subject);
+  if(String(cache.get(key)||'')==='OK')return true;
+  validarPlaneacionCanonicaReadOnly_(subject);
+  cache.put(key,'OK',MASTER_GUARDRAILS.READINESS_CACHE_SECONDS);
   return true;
 }
 
