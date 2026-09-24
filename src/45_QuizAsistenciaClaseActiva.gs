@@ -13,7 +13,7 @@ const QUIZ_ASISTENCIA_ACTIVE_CLASS_POLICY = Object.freeze({
   REQUIRE_EXACTLY_ONE_ACTIVE_CLASS: true,
   REQUIRE_TIMED_EVENT: true,
   REQUIRE_AULA_IN_SUMMARY: true,
-  REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION: true,
+  REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION: false,
   ACTIVE_INTERVAL: '[START,END)',
   SEARCH_WINDOW_HOURS: 12,
   MAX_EVENTS_PER_PAGE: 100
@@ -42,13 +42,12 @@ function crearQuizDeAsistencia() {
     'yyyy-MM-dd HH:mm:ss'
   );
 
-  const result = crearQuizSencillo({
+  const result = crearQuizAsistencia({
     courseId: clase.courseId,
-    materia: clase.courseName,
-    temaSubtema: clase.temaSubtema,
-    solicitadoEnLocal: solicitadoEnLocal
+    solicitadoEnLocal: solicitadoEnLocal,
+    requestId: 'ATTENDANCE|' + String(clase.courseId) + '|' + String(clase.eventId) +
+      '|' + solicitadoEnLocal
   });
-
   return Object.assign({}, result, {
     resueltoPor: QUIZ_ASISTENCIA_ACTIVE_CLASS_POLICY.SOURCE,
     claseActiva: {
@@ -72,7 +71,6 @@ function resolverClaseActivaQuizAsistencia_(ahora) {
 
   const cursos = listarCursosActivosQuizAsistencia_();
   const validas = [];
-  const clasesSinTema = [];
 
   cursos.forEach(function(course) {
     const calendarId = resolverCalendarIdCurso_(course);
@@ -96,18 +94,11 @@ function resolverClaseActivaQuizAsistencia_(ahora) {
         temaSubtema: temaSubtema
       };
 
-      if (!temaSubtema) {
-        clasesSinTema.push(base);
-        return;
-      }
       validas.push(base);
     });
   });
 
   if (validas.length === 0) {
-    if (clasesSinTema.length > 0) {
-      throw new Error('QUIZ_ASISTENCIA_CLASE_ACTIVA_SIN_TEMA: existe una clase activa en Classroom Calendar, pero su descripción no contiene Tema/Subtema canónico. No se genera el quiz.');
-    }
     throw new Error('QUIZ_ASISTENCIA_SIN_CLASE_ACTIVA: no existe una clase canónica activa en este momento. No se genera el quiz.');
   }
 
@@ -216,7 +207,7 @@ function validarPoliticaQuizAsistenciaClaseActiva_(policy) {
   if (!policy || policy.TIMEZONE !== 'America/Mexico_City' ||
       policy.SOURCE !== 'CLASSROOM_COURSE_CALENDAR' || policy.COURSE_STATE !== 'ACTIVE' ||
       policy.REQUIRE_EXACTLY_ONE_ACTIVE_CLASS !== true || policy.REQUIRE_TIMED_EVENT !== true ||
-      policy.REQUIRE_AULA_IN_SUMMARY !== true || policy.REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION !== true ||
+      policy.REQUIRE_AULA_IN_SUMMARY !== true || policy.REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION !== false ||
       policy.ACTIVE_INTERVAL !== '[START,END)' || Number(policy.SEARCH_WINDOW_HOURS) !== 12) {
     throw new Error('La política de Quiz de Asistencia con clase activa fue debilitada.');
   }

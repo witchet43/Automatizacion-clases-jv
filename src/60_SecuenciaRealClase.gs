@@ -40,6 +40,19 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
   const plan=Array.isArray(rows)?rows:[], opts=options||{};
   if(!plan.length)throw new Error('BLOCKED_NO_CANONICAL_SESSIONS: la planeación está vacía.');
   const seen=plan.map(function(row){return evidenciaSesionReal_(row,works);});
+  // Sesión explícita: validar su identidad en la planeación, sin inferir
+  // progreso ni exigir reconciliación para trabajar el tema pedido.
+  const requested=String(requestedSession||'').trim();
+  if(requested&&opts.explicitTarget===true){
+    const index=plan.findIndex(function(r){return String(r.session||'').trim()===requested;});
+    if(index<0)throw new Error('BLOCKED_UNKNOWN_CANONICAL_SESSION: '+requested);
+    const target=plan[index],evidence=seen[index];
+    if(/^https?:/i.test(String(evidence.gammaUrl||''))&&!evidence.gammaVerificada)
+      throw new Error('BLOCKED_GAMMA_UNVERIFIED: comprobar Gamma existente.');
+    return {complete:false,target:target,evidence:evidence,
+      source:'EXPLICIT_CANONICAL_SESSION',inferredSession:null,
+      lastPrepared:null,lastPublished:null,reconciliation:false,observed:seen};
+  }
   const lastPrepared=seen.reduce(function(last,e,i){return e.materialPreparado?i:last;},-1);
   const lastPublished=seen.reduce(function(last,e,i){return e.publicado?i:last;},-1);
   // El progreso de clase lo acredita únicamente Classroom PUBLISHED: un DRAFT
@@ -56,7 +69,7 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
   }else if(String(requestedSession||'')===String(plan[0].session||''))inferred=0;
   else throw new Error('BLOCKED_NO_REAL_PROGRESS_EVIDENCE: no se encontró avance publicado en Classroom; ni DRAFT, fecha ni contador acreditan progreso.');
   if(inferred>=plan.length)return {complete:true, target:null,source:'CLASSROOM_GAMMA_REAL_STATE',lastPrepared:lastPrepared,lastPublished:lastPublished,observed:seen};
-  const requested=String(requestedSession||'').trim();
+
   let index=inferred;
   if(requested){
     index=plan.findIndex(function(r){return String(r.session||'').trim()===requested;});
@@ -104,5 +117,7 @@ function validarSecuenciaRealRegresion(){
   if(!blocked)throw new Error('REGRESSION_SEQUENCE: la sesión manual no puede saltar evidencia sin reconciliación.');
   if(seleccionarSiguienteClasePorEstadoReal_(rows,w13Published,'15',{reconciliationMode:true,reconciliationReason:'Reconciliación histórica solicitada expresamente por el docente.'}).target.session!=='15')
     throw new Error('REGRESSION_SEQUENCE: la reconciliación explícita no funciona.');
-  return {ok:true,source:'CLASSROOM_GAMMA_REAL_STATE',regressions:9,readOnly:true};
+  if(seleccionarSiguienteClasePorEstadoReal_(rows,w13Published,'15',{explicitTarget:true}).target.session!=='15')
+    throw new Error('REGRESSION_EXPLICIT_SESSION: la sesión indicada no debe inferir progreso.');
+  return {ok:true,source:'CLASSROOM_GAMMA_REAL_STATE',regressions:10,readOnly:true};
 }

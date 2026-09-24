@@ -21,12 +21,8 @@ assert.throws(()=>execute('EXTERNA',{},()=>execute('INTERNA',{},()=>{throw new E
 assert.equal(alerts,1,'Una misma excepción anidada debe generar un solo aviso.');
 assert.throws(()=>execute('DISTINTA',{},()=>{throw new Error('Otro fallo');}),/Otro fallo/);
 assert.equal(alerts,2,'Errores independientes deben seguir notificándose.');
-vm.runInContext(extracted(hourly,'esUnidadSinQuizHorario_'),sandbox);
-const expectedSkip=vm.runInContext('esUnidadSinQuizHorario_',sandbox);
-assert.equal(expectedSkip('QUIZ_UNIDAD_CERRADA: hay un examen'),true);
-assert.equal(expectedSkip('QUIZ_SIN_UNIDAD_ABIERTA: no hay unidad'),true);
-assert.equal(expectedSkip('BLOCKED_MASTER_RULE: falta tema'),false);
-assert.equal(expectedSkip('Google Classroom falló'),false);
-assert.match(hourly,/guardarResultadoAutoQuizHorario_\(props,policy,omitido\);\s*return omitido;/);
+const creation=hourly.slice(hourly.indexOf('function procesarAutoQuizSencilloHorario_('),hourly.indexOf('function resolverTemaCanonicoAutoQuizHorario_('));
+assert.doesNotMatch(creation,/resolverUnidadAbiertaQuizSencillo_|QUIZ_UNIDAD_CERRADA|preflightDocumentoMaestro/);
+assert.match(creation,/crearQuizAsistencia\s*\(/);
 assert.match(hourly,/if \(!errorAcademicoYaNotificadoEnEstaEjecucion_\(err\)\)/);
-console.log('PASS: fallos independientes notifican; excepciones anidadas solo una vez; unidad sin abrir/cerrada se omite sin correo.');
+console.log('PASS: fallos independientes notifican; excepciones anidadas solo una vez; asistencia sin bloqueo de unidad.');

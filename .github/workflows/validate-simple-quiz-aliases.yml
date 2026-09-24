@@ -57,7 +57,6 @@ jobs:
             /Calendar\.Events\.list/,
             /QUIZ_ASISTENCIA_SIN_CLASE_ACTIVA/,
             /QUIZ_ASISTENCIA_CLASE_AMBIGUA/,
-            /QUIZ_ASISTENCIA_CLASE_ACTIVA_SIN_TEMA/,
             /ACTIVE_INTERVAL:\s*'\[START,END\)'/,
             /Tema\/Subtema/
           ];

@@ -13,7 +13,8 @@ function generarSiguienteClase(params){
    throw new Error('BLOCKED_UNSUPPORTED_CLASS_GENERATOR: usar el paquete específico de la materia; no crear una práctica de Sistemas Distribuidos en otro curso.');
  const resolved=resolverSiguienteClase(materia,p.sesion,{
    reconciliationMode:p.reconciliationMode===true,
-   reconciliationReason:p.reconciliationReason
+   reconciliationReason:p.reconciliationReason,
+   explicitTarget:!!p.sesion
  });
  if(resolved.complete)return resolved;
  const row=resolved.target,courseId=resolved.courseId;
@@ -21,7 +22,7 @@ function generarSiguienteClase(params){
  const idx=plan.rows.findIndex(function(x){return x.row===row.row;});
  const nextRow=idx>=0&&idx+1<plan.rows.length?plan.rows[idx+1]:null;
  // Validar secuencia y Gamma ANTES de crear la primera tarea.
- if(resolved.sequenceSource!=='CLASSROOM_GAMMA_REAL_STATE'||!resolved.evidence.gammaVerificada)
+ if((resolved.sequenceSource!=='CLASSROOM_GAMMA_REAL_STATE'&&resolved.sequenceSource!=='EXPLICIT_CANONICAL_SESSION')||!resolved.evidence.gammaVerificada)
    throw new Error('BLOCKED_CLASS_PACKAGE_GAMMA: falta Gamma verificada para la sesión objetivo; auditar/reutilizar antes de mutar Classroom.');
  if(!String(row.practice||'').trim())
    throw new Error('BLOCKED_CLASS_PACKAGE_PRACTICE: la planeación no define práctica/actividad verificable.');
