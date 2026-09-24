@@ -13,13 +13,30 @@ function crearQuizAsistenciaMinimo_(params) {
     Utilities.formatDate(new Date(),policy.TIMEZONE,'yyyy-MM-dd HH:mm:ss'));
   const solicitud=resolverInstanteSolicitudQuizSencillo_(local,policy);
   const requestId=String(p.requestId||courseId+'|'+solicitud.texto);
+  const props=PropertiesService.getScriptProperties();
+  const idempotencyKey=claveIdempotenciaQuizSencillo_(courseId,requestId);
   const lock=LockService.getScriptLock();
   lock.waitLock(10000);
   try {
+    const previous=String(props.getProperty(idempotencyKey)||'').trim();
+    if(previous){
+      try{
+        const old=JSON.parse(previous);
+        const oldWork=Classroom.Courses.CourseWork.get(courseId,String(old.workId));
+        if(oldWork&&oldWork.id&&String(oldWork.state||'')!=='DELETED'){
+          return {ok:true,courseId:courseId,workId:String(oldWork.id),
+            title:String(oldWork.title||''),state:String(oldWork.state||''),
+            reutilizado:true,requestId:requestId,
+            classroomUrl:oldWork.alternateLink||''};
+        }
+      }catch(ignorePrevious){}
+      props.deleteProperty(idempotencyKey);
+    }
     const state=resolverConsecutivoQuizAsistencia_(courseId);
     if(state.existing){
       const work=Classroom.Courses.CourseWork.get(courseId,String(state.existing.id));
       verificarQuizAsistenciaMinimo_(work,state.title,policy,false);
+      props.setProperty(idempotencyKey,JSON.stringify({workId:String(work.id)}));
       return {ok:true,courseId:courseId,workId:String(work.id),
         title:state.title,numero:state.numero,state:'DRAFT',
         reutilizado:true,requestId:requestId,
@@ -37,6 +54,7 @@ function crearQuizAsistenciaMinimo_(params) {
     const created=Classroom.Courses.CourseWork.create(body,courseId);
     const work=Classroom.Courses.CourseWork.get(courseId,String(created.id));
     verificarQuizAsistenciaMinimo_(work,state.title,policy,true);
+    props.setProperty(idempotencyKey,JSON.stringify({workId:String(work.id)}));
     registrarAuditoriaCourseWorkDirecto_({
       courseId:courseId,titulo:state.title,tipo:'QUIZ_SENCILLO',
       descripcion:'',fechaLimite:due.fechaUtc,horaLimite:due.horaUtc
