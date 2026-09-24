@@ -78,7 +78,7 @@ function verificarQuizAsistenciaMinimo_(work,title,policy,newWork){
       String(work.state||'')!=='DRAFT'||work.workType!=='ASSIGNMENT'||
       String(work.description||'').trim()||
       (Array.isArray(work.materials)&&work.materials.length)||
-      (work.maxPoints!==undefined&&work.maxPoints!==null))
+      (work.maxPoints!==undefined&&work.maxPoints!==null&&Number(work.maxPoints)>0))
     throw new Error('QUIZ_ASISTENCIA_POSTFLIGHT_INVALIDO: '+title);
   if(newWork&&(!work.dueDate||!work.dueTime))
     throw new Error('QUIZ_ASISTENCIA_SIN_VENCIMIENTO');
