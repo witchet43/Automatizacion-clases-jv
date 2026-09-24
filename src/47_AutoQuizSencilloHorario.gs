@@ -193,7 +193,17 @@ function resolverTemaCanonicoAutoQuizHorario_(clase) {
   const evento = Calendar.Events.get(calendarId, eventId);
   const fecha = Utilities.formatDate(start, AUTO_SIMPLE_QUIZ_HOURLY_POLICY.TIMEZONE, 'dd/MM/yyyy');
   const plan = leerPlaneacionSiguienteClase_(courseName);
-  const filas = plan.rows.filter(function(row) { return String(row.date || '').trim() === fecha; });
+  const filas = plan.rows.filter(function(row) {
+    const valor = String(row.date || '').trim();
+    if (valor === fecha) return true;
+    // La planeación ITQ SO conserva fechas históricas MM/DD sin año.
+    // El año procede exclusivamente del evento real de Calendar; no se infiere.
+    if (!/sistemas operativos/i.test(courseName)) return false;
+    const md = valor.match(/^(\d{1,2})\/(\d{1,2})$/);
+    const dmy = fecha.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    return Boolean(md && dmy &&
+      Number(md[1]) === Number(dmy[2]) && Number(md[2]) === Number(dmy[1]));
+  });
   if (filas.length !== 1) throw new Error('AUTO_QUIZ_PLANEACION_AMBIGUA: '+courseName+' '+fecha+' tiene '+filas.length+' sesiones; no se genera Quiz.');
   const fila = filas[0];
   // Si el calendario expone el número de clase, verificarlo también. Los
