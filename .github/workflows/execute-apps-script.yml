@@ -26,6 +26,7 @@ on:
           - crearActividad
           - crearQuizSencillo
           - crearQuizDeAsistencia
+          - crearQuizAsistenciaRapido
           - importarCalificacionesAhora
           - cerrarUnidadConSiguienteVerificadaAhora
           - recalcularYPublicarUnidadSolicitadaAhora
