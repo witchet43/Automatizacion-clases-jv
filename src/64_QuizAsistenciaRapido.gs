@@ -1,50 +1,90 @@
-/**
- * QUIZ DE ASISTENCIA RÁPIDO — Classroom, sin Forms ni dependencias académicas.
- * Entrada única: courseId explícito. Un Quiz N por curso y día local;
- * se consulta Classroom (no Sheet) para hallar último N y evitar duplicados.
+/** Una sola operación para Quiz Sencillo / Quiz de Asistencia.
+ * Entradas: courseId; requestedAtLocal y requestId opcionales.
+ * Únicamente los Quiz N PUBLISHED deciden el próximo consecutivo.
+ * Un Quiz N+1 DRAFT se reutiliza, no se incrementa el número por borradores.
  */
-function crearQuizAsistenciaRapido(params) {
-  const courseId=String(params&&params.courseId||'').trim();
-  if (!/^\d+$/.test(courseId)) throw new Error('Se requiere courseId numérico explícito.');
+function crearQuizAsistenciaMinimo_(params) {
+  const p=params&&typeof params==='object'?params:{};
+  const courseId=String(p.courseId||'').trim();
+  if(!/^\d+$/.test(courseId))throw new Error('QUIZ_ASISTENCIA_REQUIERE_COURSE_ID');
+  const policy=ACADEMIC_POLICY.CLASSROOM.SIMPLE_QUIZ;
+  validarPoliticaQuizSencillo_(policy);
+  const local=String(p.solicitadoEnLocal||p.requestedAtLocal||
+    Utilities.formatDate(new Date(),policy.TIMEZONE,'yyyy-MM-dd HH:mm:ss'));
+  const solicitud=resolverInstanteSolicitudQuizSencillo_(local,policy);
+  const requestId=String(p.requestId||courseId+'|'+solicitud.texto);
   const lock=LockService.getScriptLock();
   lock.waitLock(10000);
   try {
-    const hoy=Utilities.formatDate(new Date(),'America/Mexico_City','yyyy-MM-dd');
-    let max=0, existente=null;
-    ['DRAFT','PUBLISHED'].forEach(function(state) {
-      let token;
-      do {
-        const page=Classroom.Courses.CourseWork.list(courseId,{
-          courseWorkStates:state,pageSize:100,pageToken:token
-        });
-        (page.courseWork||[]).forEach(function(work) {
-          const m=String(work.title||'').trim().match(/^Quiz\s+(\d+)$/i);
-          if (!m) return;
-          max=Math.max(max,Number(m[1]));
-          const fecha=work.creationTime?
-            Utilities.formatDate(new Date(work.creationTime),'America/Mexico_City','yyyy-MM-dd'):'';
-          if (fecha===hoy && !existente) existente=work;
-        });
-        token=page.nextPageToken;
-      } while(token);
-    });
-    if (existente) {
-      return {ok:true,courseId:courseId,workId:String(existente.id),
-        title:String(existente.title),state:String(existente.state),reutilizado:true};
+    const state=resolverConsecutivoQuizAsistencia_(courseId);
+    if(state.existing){
+      const work=Classroom.Courses.CourseWork.get(courseId,String(state.existing.id));
+      verificarQuizAsistenciaMinimo_(work,state.title,policy,false);
+      return {ok:true,courseId:courseId,workId:String(work.id),
+        title:state.title,numero:state.numero,state:'DRAFT',
+        reutilizado:true,requestId:requestId,
+        classroomUrl:work.alternateLink||''};
     }
-    const titulo='Quiz '+(max+1);
-    const nuevo=Classroom.Courses.CourseWork.create({
-      title:titulo,workType:'ASSIGNMENT',state:'DRAFT'
-    },courseId);
-    const verificado=Classroom.Courses.CourseWork.get(courseId,String(nuevo.id));
-    if (verificado.title!==titulo || verificado.state!=='DRAFT' ||
-        String(verificado.description||'').trim() ||
-        (verificado.materials||[]).length)
-      throw new Error('El quiz creado no coincide con título, borrador o contenido vacío.');
+    const due=calcularSiguienteHoraNaturalQuizSencillo_(solicitud,policy);
+    if(Date.now()>=due.utcMs)throw new Error('QUIZ_ASISTENCIA_VENCIMIENTO_PASADO');
+    const body={title:state.title,workType:'ASSIGNMENT',state:'DRAFT',
+      dueDate:{year:due.utcYear,month:due.utcMonth,day:due.utcDay},
+      dueTime:{hours:due.utcHours,minutes:0}};
+    // Se conserva el tema del último Quiz liberado si existe; jamás se
+    // deduce una unidad a partir de otros CourseWork o de un examen.
+    if(state.lastPublished&&state.lastPublished.topicId)
+      body.topicId=String(state.lastPublished.topicId);
+    const created=Classroom.Courses.CourseWork.create(body,courseId);
+    const work=Classroom.Courses.CourseWork.get(courseId,String(created.id));
+    verificarQuizAsistenciaMinimo_(work,state.title,policy,true);
     registrarAuditoriaCourseWorkDirecto_({
-      courseId:courseId,titulo:titulo,descripcion:'',tipo:'QUIZ_SENCILLO'
-    },verificado,'','CREADO');
-    return {ok:true,courseId:courseId,workId:String(verificado.id),
-      title:titulo,state:'DRAFT',reutilizado:false};
-  } finally { lock.releaseLock(); }
+      courseId:courseId,titulo:state.title,tipo:'QUIZ_SENCILLO',
+      descripcion:'',fechaLimite:due.fechaUtc,horaLimite:due.horaUtc
+    },work,'','CREADO');
+    return {ok:true,courseId:courseId,workId:String(work.id),
+      title:state.title,numero:state.numero,state:'DRAFT',reutilizado:false,
+      requestId:requestId,classroomUrl:work.alternateLink||'',
+      fechaLimiteLocal:due.fechaLocal,horaLimiteLocal:due.horaLocal};
+  } finally {lock.releaseLock();}
+}
+function resolverConsecutivoQuizAsistencia_(courseId){
+  const works=[];
+  ['PUBLISHED','DRAFT'].forEach(function(state){
+    let token;
+    do{
+      const page=Classroom.Courses.CourseWork.list(String(courseId),{
+        courseWorkStates:[state],pageSize:100,pageToken:token
+      });
+      (page.courseWork||[]).forEach(function(w){
+        const m=String(w.title||'').trim().match(/^Quiz\s+(\d+)$/i);
+        if(m)works.push({id:String(w.id),title:String(w.title),numero:Number(m[1]),
+          state:state,topicId:w.topicId||'',creationTime:w.creationTime||''});
+      });
+      token=page.nextPageToken;
+    }while(token);
+  });
+  const pub=works.filter(function(w){return w.state==='PUBLISHED';})
+    .sort(function(a,b){return Date.parse(b.creationTime||'')-Date.parse(a.creationTime||'');});
+  const last=pub[0]||null;
+  const numero=last?last.numero+1:1, title='Quiz '+numero;
+  const hits=works.filter(function(w){return w.numero===numero;});
+  if(hits.length>1)throw new Error('QUIZ_ASISTENCIA_CONSECUTIVO_DUPLICADO: '+title);
+  if(hits.length&&hits[0].state==='PUBLISHED')
+    throw new Error('QUIZ_ASISTENCIA_ESTADO_CONFLICTIVO: '+title);
+  return {numero:numero,title:title,lastPublished:last,existing:hits[0]||null};
+}
+function verificarQuizAsistenciaMinimo_(work,title,policy,newWork){
+  if(!work||!work.id||String(work.title||'').trim()!==title||
+      String(work.state||'')!=='DRAFT'||work.workType!=='ASSIGNMENT'||
+      String(work.description||'').trim()||
+      (Array.isArray(work.materials)&&work.materials.length)||
+      (work.maxPoints!==undefined&&work.maxPoints!==null))
+    throw new Error('QUIZ_ASISTENCIA_POSTFLIGHT_INVALIDO: '+title);
+  if(newWork&&(!work.dueDate||!work.dueTime))
+    throw new Error('QUIZ_ASISTENCIA_SIN_VENCIMIENTO');
+  return true;
+}
+/** Alias heredado sin lógica de secuencia ni ruta alternativa. */
+function crearQuizAsistenciaRapido(params){
+  return crearQuizAsistencia(params);
 }
