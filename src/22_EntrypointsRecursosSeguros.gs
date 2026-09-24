@@ -70,18 +70,18 @@ function crearQuiz(params) {
   });
 }
 
+/** Quiz de Asistencia: operación mínima, sin tema, unidad ni planeación ajena. */
 function crearQuizSencillo(params) {
-  return ejecutarConNotificacionError_('CREAR_QUIZ_SENCILLO', params, function () {
-    const ctx = prepararContextoGuardrailRecurso_(params, 'QUIZ');
-    preflightDocumentoMaestro(ctx.guardrailRequest);
-    assertAcademicAutomationWriteEnabled_();
-    const result = crearQuizSencilloCanonico_(ctx.params);
-    postflightDocumentoMaestro(normalizarResultadoGuardrail_(result), ctx.guardrailRequest);
-    return result;
+  return ejecutarConNotificacionError_('CREAR_QUIZ_SENCILLO',params,function(){
+    const p=params&&typeof params==='object'?Object.assign({},params):{};
+    const courseId=String(p.courseId||'').trim();
+    if(!/^\d+$/.test(courseId))throw new Error('QUIZ_ASISTENCIA_REQUIERE_COURSE_ID');
+    const course=Classroom.Courses.get(courseId);
+    if(String(course.courseState||'')!=='ACTIVE')
+      throw new Error('QUIZ_ASISTENCIA_CURSO_NO_ACTIVO');
+    return crearQuizSencilloCanonico_(p);
   });
 }
-
-/** Alias exacto: asistencia usa el mismo contrato, guardrails y motor que Quiz Sencillo. */
 function crearQuizAsistencia(params) {
   return crearQuizSencillo(params);
 }
