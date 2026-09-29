@@ -1,0 +1,37 @@
+{
+  "action": "clase",
+  "materia": "Análisis y Diseño de Sistemas de Información",
+  "gammaUrl": "https://gamma.app/docs/q1cxch828njvz62",
+  "expectedResourceTypes": [
+    "actividad",
+    "tarea"
+  ],
+  "resources": [
+    {
+      "type": "actividad",
+      "params": {
+        "unidad": "Unidad 2",
+        "temaSubtema": "Funciones de negocio, entradas, procesamiento y salidas",
+        "titulo": "Actividad 8 - Matriz función–entrada–proceso–salida",
+        "descripcion": "Relaciona una función de negocio real de tu proyecto con las entradas que recibe, el procesamiento o reglas que aplica, las salidas que produce, el consumidor de esas salidas y la decisión que apoyan.\n\n1. Selecciona una función de negocio concreta de tu proyecto. Cada integrante debe trabajar una función distinta.\n2. Identifica de tres a cinco entradas y especifica para cada una su fuente y formato.\n3. Describe el procesamiento, validación, cálculo o regla de negocio que transforma cada entrada.\n4. Define las salidas como productos de información verificables; evita describir actividades como si fueran salidas.\n5. Identifica el consumidor de cada salida y la decisión que puede tomar con ella.\n6. Relaciona la función con el nivel operacional, táctico o estratégico trabajado en el subtema 2.2 y justifica la clasificación.\n7. Construye un flujo breve que muestre entrada → proceso/regla → salida → consumidor/decisión.\n8. Revisa la coherencia de la matriz y corrige entradas vagas, procesos sin regla o salidas sin decisión asociada.\n\nEvidencia: matriz función–entrada–proceso–salida completa, flujo breve y justificación del nivel organizacional.",
+        "contenidoDocumento": "ACTIVIDAD 8 — MATRIZ FUNCIÓN–ENTRADA–PROCESO–SALIDA\n\nPropósito\nRelacionar funciones de negocio con la información que reciben, las reglas o transformaciones que aplican y las salidas que producen para apoyar decisiones reales.\n\nProducto individual\nTrabaja una función de negocio distinta a la de tus compañeros.\n\n1. FUNCIÓN DE NEGOCIO\nNombre de la función:\nPropósito organizacional:\nActor o área responsable:\n\n2. MATRIZ IPO\nPara cada elemento registra:\n- Entrada: dato, documento, evento o solicitud concreta.\n- Fuente y formato de la entrada.\n- Procesamiento o regla de negocio.\n- Salida verificable.\n- Consumidor de la salida.\n- Decisión apoyada.\n- Nivel: operacional, táctico o estratégico.\n- Justificación del nivel.\n\nRegistra de tres a cinco filas.\n\n3. FLUJO BREVE\nRepresenta:\nEntrada → procesamiento/regla → salida → consumidor → decisión.\n\n4. PRUEBA DE COHERENCIA\nCompleta esta frase con los datos de tu función:\n“La función __________ recibe __________ y, aplicando __________, produce __________ para que __________ pueda decidir __________.”\n\n5. REVISIÓN\nComprueba:\n- Las entradas son específicas y tienen fuente.\n- El procesamiento incluye al menos una transformación o regla.\n- Las salidas son productos de información y no actividades.\n- Cada salida tiene consumidor.\n- Cada salida apoya una decisión concreta.\n- La clasificación operacional/táctica/estratégica está justificada.\n\n6. INTEGRACIÓN DEL EQUIPO\nComparen las matrices individuales e integren una matriz única del proyecto. Detecten funciones duplicadas, entradas o salidas inconsistentes y decisiones sin información suficiente.\n\nEvidencia de entrega\nMatriz individual, flujo breve, justificación del nivel y observaciones de integración del equipo.",
+        "fechaSesion": "2026-09-29",
+        "horaFinSesion": "15:00",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "tarea",
+      "params": {
+        "unidad": "Unidad 2",
+        "temaSubtema": "Alcance y justificación del tipo de sistema",
+        "titulo": "Tarea previa 09 - Alcance y justificación del tipo de sistema",
+        "descripcion": "Prepara el subtema 2.4 utilizando la matriz IPO construida en la Actividad 8.\n\n1. Recupera la matriz función–entrada–proceso–salida de tu proyecto.\n2. Selecciona al menos cinco funciones o capacidades y decide cuáles quedan dentro y cuáles fuera del alcance inicial.\n3. Justifica cada inclusión o exclusión con una necesidad, actor, información o decisión del proyecto.\n4. Identifica al menos dos fronteras o interfaces con actores, procesos o sistemas externos.\n5. Indica qué tipo de sistema consideran más adecuado y compáralo con una alternativa descartada.\n6. Explica la alternativa descartada usando criterios de usuario, nivel organizacional, horizonte de decisión, información requerida y alcance.\n\nEvidencia: tabla de alcance incluido/excluido, dos fronteras o interfaces y una comparación razonada entre el tipo de sistema elegido y una alternativa descartada.",
+        "contenidoDocumento": "TAREA PREVIA 09 — ALCANCE Y JUSTIFICACIÓN DEL TIPO DE SISTEMA\n\nPropósito\nPreparar el subtema 2.4 delimitando qué resolverá el sistema y justificando el tipo de sistema seleccionado.\n\n1. RECUPERACIÓN\nUsa como punto de partida la matriz IPO de la Actividad 8.\n\n2. ALCANCE FUNCIONAL\nSelecciona al menos cinco funciones o capacidades del proyecto.\nPara cada una registra:\n- Función o capacidad.\n- Dentro / fuera del alcance inicial.\n- Justificación.\n- Actor involucrado.\n- Información que utiliza o produce.\n- Decisión que apoya.\n\n3. FRONTERAS E INTERFACES\nDescribe al menos dos relaciones con actores, procesos o sistemas externos:\n- Elemento externo.\n- Información intercambiada.\n- Responsabilidad del sistema.\n- Responsabilidad externa.\n\n4. TIPO DE SISTEMA\nPropón el tipo de sistema que mejor corresponde al proyecto.\nJustifica con:\n- usuarios;\n- nivel organizacional;\n- horizonte de decisión;\n- frecuencia de uso;\n- información requerida;\n- alcance.\n\n5. ALTERNATIVA DESCARTADA\nSelecciona una clasificación o tipo alternativo que podría parecer viable y explica por qué no resulta la opción principal.\n\nEvidencia de entrega\nTabla de alcance incluido/excluido, dos fronteras o interfaces y comparación razonada entre el tipo seleccionado y la alternativa descartada.",
+        "fechaSiguienteSesion": "2026-10-01",
+        "horaInicioSiguienteSesion": "13:00",
+        "puntos": 100
+      }
+    }
+  ]
+}
