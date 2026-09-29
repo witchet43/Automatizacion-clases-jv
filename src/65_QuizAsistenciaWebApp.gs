@@ -63,7 +63,7 @@ function ejecutarServicioAcademicoWeb_(params){
 
     if(action==='quizAsistencia')validarEntradaQuizAsistenciaWeb_(p);
     if(action==='auditarIdentidadClassroom'){
-      const audit=auditarIdentidadClassroomWeb_();
+      const audit=auditarIdentidadClassroomWeb_(p);
       return respuestaAcademicaWeb_(Object.assign({ok:true,transport:'WEB_APP',action:action},audit));
     }
     const course=resolverCursoFastPathAcademicoWeb_(action,p)||resolverCursoAcademicoWeb_(p);
@@ -113,7 +113,9 @@ function validarContratoOperacionWeb_(action){
   return contracts[action];
 }
 
-function auditarIdentidadClassroomWeb_(){
+function auditarIdentidadClassroomWeb_(p){
+  const options=p&&typeof p==='object'?p:{};
+  const requested=String(options.materia||options.courseId||'').trim();
   const unique={};
   Object.keys(ACADEMIC_WEB.COURSES).forEach(function(k){
     const course=ACADEMIC_WEB.COURSES[k];
@@ -122,6 +124,11 @@ function auditarIdentidadClassroomWeb_(){
   const materias=[];
   Object.keys(unique).forEach(function(id){
     const course=unique[id];
+    if(requested){
+      const reqNorm=normalizarNombreCursoRapido_(requested);
+      const courseNorm=normalizarNombreCursoRapido_(course.materia);
+      if(String(course.id)!==requested && reqNorm!==courseNorm && courseNorm.indexOf(reqNorm)<0 && reqNorm.indexOf(courseNorm)<0)return;
+    }
     const works=listarCourseWorkClase_(course.id).filter(function(w){
       return /^(?:tarea|actividad|pr[aá]ctica)\b/i.test(String(w.title||'').trim()) &&
         ['DRAFT','PUBLISHED'].indexOf(String(w.state||'').toUpperCase())>=0;
@@ -152,6 +159,7 @@ function auditarIdentidadClassroomWeb_(){
     readOnly:true,
     scope:'7_CLASSROOM_COURSES_TASK_ACTIVITY_PRACTICE_DRAFT_PUBLISHED',
     materias:materias,
+    requestedMateria:requested,
     totalMaterias:materias.length,
     totalRecursos:materias.reduce(function(n,m){return n+m.recursosRevisados;},0),
     totalDocumentos:materias.reduce(function(n,m){return n+m.documentosRevisados;},0),
