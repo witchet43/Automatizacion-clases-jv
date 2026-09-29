@@ -154,6 +154,8 @@ const ACADEMIC_POLICY = Object.freeze({
   DOCUMENTS: Object.freeze({
     PRACTICE_STUDENT_COPY: true,
     PRACTICE_DOCUMENT_FORMAT: 'GOOGLE_DOC',
+    STUDENT_IDENTITY_FIELDS_ALLOWED: false,
+    CLASSROOM_IS_IDENTITY_SOURCE: true,
     ACTIVITY_DOC_STUDENT_COPY: true,
     TASK_STUDENT_COPY_DEFAULT: true,
     ALL_GOOGLE_DOCS_STUDENT_COPY: true,
@@ -223,6 +225,7 @@ function validarPoliticasCanonicas_(){
   if(!p.ERROR_REPORTING||p.ERROR_REPORTING.NOTIFY_ON_ERROR!==true||p.ERROR_REPORTING.SILENT_FAILURE_ALLOWED!==false||p.ERROR_REPORTING.PRIMARY_CHANNEL!=='EMAIL'||p.ERROR_REPORTING.PRESERVE_ORIGINAL_EXCEPTION!==true) throw new Error('La política de notificación de errores fue debilitada.');
   if(Math.abs((p.UNIT_GRADING.EXAM_WEIGHT+p.UNIT_GRADING.NON_EXAM_WEIGHT)-1)>0.000001) throw new Error('La ponderación canónica de unidad no suma 100%.');
   if(!p.GAMMA||p.GAMMA.COVER_SESSION_NUMBER_ALLOWED!==false||p.GAMMA.REQUIRE_TOPIC_NUMBER_ON_COVER!==true) throw new Error('La portada Gamma debe incluir Unidad + Tema/Subtema oficial y excluir número de sesión.');
+    if(!p.DOCUMENTS||p.DOCUMENTS.STUDENT_IDENTITY_FIELDS_ALLOWED!==false||p.DOCUMENTS.CLASSROOM_IS_IDENTITY_SOURCE!==true) throw new Error('Los Google Docs de Classroom no deben pedir Nombre del alumno, Grupo ni Fecha: Classroom identifica la entrega.');
     if(p.CLASSROOM.DEFAULT_COURSEWORK_STATE!=='DRAFT') throw new Error('El estado automático ordinario de Classroom debe ser DRAFT.');
   const did=p.CLASSROOM.DIDACTIC_INSTRUCTIONS;
   if(!did||did.PERSONAL_WINDOWS_DEVICE!==true||did.EXPLAIN_COMMANDS!==true||did.REMOVE_ADMINISTRATIVE_TEXT!==true||did.FOR_ALL_SUBJECTS!==true||did.FORMAT_REQUIRED!==true) throw new Error('La didáctica transversal (Windows personal, comandos explicados, sin texto administrativo) es obligatoria.');
