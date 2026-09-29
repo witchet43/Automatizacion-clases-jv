@@ -1,0 +1,34 @@
+{
+  "action": "clase",
+  "materia": "Algoritmos y Estructuras de Datos",
+  "expectedResourceTypes": [
+    "practica",
+    "tarea"
+  ],
+  "resources": [
+    {
+      "type": "practica",
+      "params": {
+        "unidad": "Unidad 2",
+        "temaSubtema": "2.2.3 Aplicaciones de pilas; 2.3 Colas: representación y operaciones básicas",
+        "titulo": "Práctica 12 - Aplicaciones de pilas y colas",
+        "descripcion": "Resuelve una aplicación con pila e implementa una cola, comparando LIFO y FIFO.\n\n1. Selecciona una aplicación donde una pila sea adecuada (por ejemplo: deshacer, historial o validación de delimitadores).\n2. Modela al menos seis operaciones e identifica cuándo ocurre push, pop y top.\n3. Implementa la solución en C++ y prueba un caso normal y un caso límite.\n4. Implementa una cola con std::queue<int> usando enqueue mediante push(), dequeue mediante pop() y consulta del frente con front().\n5. Ejecuta una secuencia mínima de ocho operaciones sobre la cola y registra el contenido después de cada una.\n6. Incluye validación para no ejecutar front() o pop() cuando la cola esté vacía.\n7. Compara pila y cola en una tabla: orden de acceso, inserción, eliminación, elemento visible y caso de uso.\n8. Describe un problema donde usar una pila produciría un orden incorrecto y justifica por qué la cola es adecuada.\n\nEvidencia: código funcional de ambos casos, traza de operaciones y comparación razonada pila vs cola.",
+        "contenidoDocumento": "PRÁCTICA 12 — APLICACIONES DE PILAS Y COLAS\n\nUnidad 2\nTema 2.2.3 y 2.3 — Aplicaciones de pilas y colas: representación y operaciones básicas\n\nPropósito\nAplicar el comportamiento LIFO en un caso real e implementar el comportamiento FIFO de una cola.\n\n1. APLICACIÓN CON PILA\nSelecciona una aplicación:\n- deshacer/rehacer;\n- historial;\n- validación de delimitadores;\n- otra justificada.\n\nDocumenta:\n- qué elemento se almacena;\n- cuándo ocurre push;\n- cuándo ocurre pop;\n- qué representa top.\n\nImplementa una secuencia de al menos seis operaciones.\n\n2. IMPLEMENTACIÓN DE COLA\nUsa std::queue<int> e implementa:\n- insertar;\n- retirar;\n- consultar frente;\n- validar cola vacía;\n- mostrar estado.\n\n3. TRAZA\nEjecuta al menos ocho operaciones.\nRegistra:\nOperación | contenido de la cola | frente | elemento retirado\n\n4. CASOS LÍMITE\nPrueba:\n- cola vacía;\n- un solo elemento;\n- varias inserciones antes de retirar.\n\n5. COMPARACIÓN\nConstruye una tabla:\nCriterio | Pila | Cola\n\nIncluye:\n- principio;\n- inserción;\n- eliminación;\n- elemento visible;\n- aplicación.\n\n6. DECISIÓN\nDescribe un problema donde una pila produzca un orden incorrecto y justifica por qué una cola resuelve mejor el caso.\n\nEvidencia de entrega\nCódigo de pila, código de cola, trazas y comparación razonada.",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "tarea",
+      "params": {
+        "unidad": "Unidad 2",
+        "temaSubtema": "2.3.1 Colas dobles e integración de estructuras lineales",
+        "titulo": "Tarea 8 - Colas dobles e integración de estructuras lineales",
+        "descripcion": "Prepara el tema 2.3.1 comparando listas, pilas, colas y colas dobles.\n\n1. Define qué es una cola doble (deque).\n2. Explica las operaciones de inserción y eliminación por ambos extremos.\n3. Construye una tabla comparativa entre lista, pila, cola y deque.\n4. Para cada estructura indica el principio de acceso y dos operaciones características.\n5. Analiza cuatro escenarios y selecciona la estructura más adecuada, justificando la decisión.\n6. Identifica un escenario donde un deque sea preferible a una cola simple.\n7. Formula dos preguntas sobre integración de estructuras lineales.\n\nEvidencia: definición de deque, tabla comparativa y selección razonada de estructura en cuatro casos.",
+        "contenidoDocumento": "TAREA 8 — COLAS DOBLES E INTEGRACIÓN DE ESTRUCTURAS LINEALES\n\nUnidad 2\nTema 2.3.1 — Colas dobles e integración de estructuras lineales\n\nPropósito\nPreparar la comparación e integración de estructuras lineales.\n\n1. COLA DOBLE\nDefine deque y explica:\n- inserción al frente;\n- inserción al final;\n- eliminación al frente;\n- eliminación al final.\n\n2. TABLA COMPARATIVA\nCompara:\n- lista;\n- pila;\n- cola;\n- deque.\n\nUsa:\n- principio de acceso;\n- inserción;\n- eliminación;\n- elemento consultado;\n- caso de uso.\n\n3. SELECCIÓN DE ESTRUCTURA\nPara cuatro escenarios, indica:\n- estructura elegida;\n- operación dominante;\n- razón de la elección.\n\n4. CASO DE DEQUE\nDescribe un problema donde una cola simple sea insuficiente y un deque resulte adecuado.\n\n5. PREGUNTAS\nFormula dos preguntas para discutir en clase.\n\nEvidencia de entrega\nDefinición, tabla comparativa y análisis de cuatro escenarios.",
+        "fechaSiguienteSesion": "2026-10-07",
+        "horaInicioSiguienteSesion": "11:00",
+        "puntos": 100
+      }
+    }
+  ]
+}
