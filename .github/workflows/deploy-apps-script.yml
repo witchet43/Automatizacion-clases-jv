@@ -328,7 +328,7 @@ jobs:
           clasp_config_auth: .clasprc.json
         run: npx clasp push --force
 
-      - name: Create API executable deployment
+      - name: Update canonical Web App deployment
         env:
           clasp_config_auth: .clasprc.json
         shell: bash
