@@ -6,9 +6,10 @@
 const ACADEMIC_POLICY = Object.freeze({
   EXECUTION: Object.freeze({
     RESOURCE_CREATION_MODE: 'DIRECT_SCRIPT',
+    REMOTE_TRANSPORT: 'WEB_APP',
+    PUBLIC_WEBAPP_SCOPE: 'DIDACTIC_MATERIALIZATION',
     SHEETS_ROLE: 'AUDIT_AND_CONFIGURATION_ONLY',
     MONITOR_REQUIRED_FOR_CREATION: false,
-    LEGACY_MONITOR_COMPATIBILITY: true,
     DIRECT_RESOURCE_TYPES: Object.freeze(['ACTIVIDAD','TAREA','PRACTICA','QUIZ','QUIZ_SENCILLO','EXAMEN']),
     CANONICAL_RESOURCE_ENTRYPOINTS: Object.freeze(['crearActividad','crearTarea','crearPractica','crearQuiz','crearQuizSencillo','crearExamen'])
   }),
@@ -182,7 +183,7 @@ function politicaCurso_(courseKey){const key=String(courseKey||'').trim().toUppe
 function redondearCalificacionFinalCanonica_(value){const n=Number(value);if(!Number.isFinite(n))throw new Error('La calificación final debe ser numérica.');return Math.round(n);}
 function validarPoliticasCanonicas_(){
   const p=ACADEMIC_POLICY;
-  if(p.EXECUTION.RESOURCE_CREATION_MODE!=='DIRECT_SCRIPT'||p.EXECUTION.SHEETS_ROLE!=='AUDIT_AND_CONFIGURATION_ONLY'||p.EXECUTION.MONITOR_REQUIRED_FOR_CREATION!==false) throw new Error('La creación directa por script debe ser el camino canónico.');
+  if(p.EXECUTION.RESOURCE_CREATION_MODE!=='DIRECT_SCRIPT'||p.EXECUTION.REMOTE_TRANSPORT!=='WEB_APP'||p.EXECUTION.PUBLIC_WEBAPP_SCOPE!=='DIDACTIC_MATERIALIZATION'||p.EXECUTION.SHEETS_ROLE!=='AUDIT_AND_CONFIGURATION_ONLY'||p.EXECUTION.MONITOR_REQUIRED_FOR_CREATION!==false) throw new Error('La creación didáctica debe usar entrypoints canónicos y Web App como transporte remoto.');
   const seq=p.CLASS_SEQUENCE;
   if(!seq||seq.SOURCE!=='CLASSROOM_GAMMA_REAL_STATE'||seq.SYSTEM_DATE_AS_PROGRESS!==false||
     seq.PLANNING_DATE_AS_PROGRESS!==false||seq.SAVED_COUNTER_AS_PROGRESS!==false||
