@@ -18,8 +18,22 @@ jobs:
         with:
           fetch-depth: 2
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - run: npm install --silent
+
+      - name: Restaurar acceso clasp
+        shell: bash
+        run: |
+          printf '%s' '${{ secrets.CLASPRC_JSON }}' > .clasprc.json
+          chmod 600 .clasprc.json
+
       - name: Crear Quiz de Asistencia
         shell: bash
+        env:
+          clasp_config_auth: .clasprc.json
         run: |
           set -euo pipefail
           request_file="$(git diff-tree --no-commit-id --name-only -r HEAD -- '.attendance-requests/*.json' | tail -n1)"
@@ -31,7 +45,9 @@ jobs:
           test -n "$request_id"
           test "$request_id" != "null"
 
-          response="$(curl -fsSL --get             --data-urlencode "action=quizAsistencia"             --data-urlencode "course=$course"             --data-urlencode "requestId=$request_id"             "https://script.google.com/macros/s/AKfycbwS5oWDQyUlFaQ5OfwHdI8QjI-RwOdq8MsoPtIiY4iug-vYcHYJwBTBvgfu_rjrl5hR/exec")"
+          params="$(jq -cn --arg courseId "875776451793" --arg requestId "$request_id" '[{courseId:$courseId,requestId:$requestId}]')"
+          response="$(npx clasp run-function crearQuizAsistencia --params "$params")"
 
           echo "$response"
-          echo "$response" | jq -e '.ok == true and .state == "DRAFT" and (.workId | type == "string" and length > 0)' >/dev/null
+          echo "$response" | grep -q '"state":"DRAFT"'
+          echo "$response" | grep -q '"workId"'
