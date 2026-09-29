@@ -1,4 +1,4 @@
-// Monitor de transporte: solo despacha solicitudes hacia operaciones canónicas.
+// Monitor administrativo protegido. No crea recursos didácticos; esas operaciones usan el Web App canónico.
 const IMPORT_REQUEST = Object.freeze({
   SHEET: 'Configuración Quizzes',
   KEY: 'SOLICITUD_IMPORTAR_CALIFICACIONES',
@@ -18,7 +18,7 @@ function instalarMonitorSolicitudesImportacion() {
     instalado: true,
     handler: 'procesarSolicitudesImportacion',
     frecuenciaMinutos: 1,
-    adaptadores: ['AUTO_QUIZ_SENCILLO_HORARIO','ACTIVIDAD_EN_CLASE','TAREA','PRACTICA','QUIZ_SENCILLO','ELIMINAR_COURSEWORK_BORRADOR']
+    adaptadores: ['ELIMINAR_COURSEWORK_BORRADOR','REVISION_TAREAS','CALIFICACIONES_ADMINISTRATIVAS']
   };
 }
 
@@ -34,18 +34,9 @@ function procesarSolicitudesImportacion() {
       console.error('Revisión nocturna: ' + mensajeErrorOperacion_(nightErr));
     }
 
-    // El monitor corre cada minuto por robustez, pero la automatización horaria
-    // toma como máximo una decisión durante los primeros 5 minutos de cada hora.
-    // Se ejecuta fuera del lock general porque crearQuizSencillo() usa su propio lock.
-    procesarAutoQuizSencilloHorarioSeguro_();
-
     const lock = LockService.getScriptLock();
     if (!lock.tryLock(1000)) return {procesado: false, motivo: 'LOCK'};
     try {
-      ejecutarAdaptadorSolicitud_('creación de actividad en clase', procesarSolicitudCrearActividadClase_);
-      ejecutarAdaptadorSolicitud_('creación de tarea', procesarSolicitudCrearTarea_);
-      ejecutarAdaptadorSolicitud_('creación de práctica', procesarSolicitudCrearPractica_);
-      ejecutarAdaptadorSolicitud_('creación de quiz sencillo', procesarSolicitudCrearQuizSencillo_);
       ejecutarAdaptadorSolicitud_('eliminación segura de CourseWork DRAFT', procesarSolicitudEliminarCourseWorkBorrador_);
       ejecutarAdaptadorSolicitud_('revisión de tareas', procesarSolicitudRevisionTareas_);
       ejecutarAdaptadorSolicitud_('reparación de ceros erróneos', procesarSolicitudRepararCerosActividad_);
