@@ -83,34 +83,7 @@ function crearGoogleDocumentoPractica_(params) {
   const descripcion = String(p.descripcion || p.description || '').trim();
   const contenido = normalizarContenidoPractica_(p.contenidoDocumento || p.googleDocContent || '');
   const html = construirHtmlPractica_(titulo, descripcion, contenido);
-  const media = Utilities.newBlob(html, 'text/html', titulo + '.html');
-
-  let created = null;
-  let advancedError = null;
-  try {
-    created = Drive.Files.create({
-      name:titulo,
-      mimeType:policy.GOOGLE_DOCUMENT_MIME
-    }, media, {fields:'id,name,mimeType'});
-  } catch (err) {
-    advancedError = err;
-  }
-  if (!created || !created.id) {
-    try {
-      created = crearGoogleDocumentoPracticaViaRest_(titulo, html, policy.GOOGLE_DOCUMENT_MIME);
-    } catch (restErr) {
-      throw new Error('No fue posible crear el Google Documento de la PRÁCTICA mediante Drive v3. Servicio avanzado: ' + String(advancedError && advancedError.message ? advancedError.message : advancedError || 'sin resultado') + '. REST: ' + String(restErr && restErr.message ? restErr.message : restErr));
-    }
-  }
-  if (!created || !created.id) throw new Error('Drive v3 no devolvió id para el Google Documento de la PRÁCTICA.');
-
-  const file = obtenerArchivoPracticaConReintento_(String(created.id));
-  const mime = String(file.mimeType || '');
-  if (mime !== policy.GOOGLE_DOCUMENT_MIME) {
-    try { enviarArchivoPracticaPapelera_(String(created.id)); } catch (ignore) {}
-    throw new Error('El archivo creado para la PRÁCTICA no quedó como Google Documento nativo: ' + mime + '.');
-  }
-  return {id:String(file.id || created.id), name:String(file.name || titulo), mimeType:mime};
+  return crearGoogleDocumentoAcademico_({titulo:titulo,html:html});
 }
 
 function crearGoogleDocumentoPracticaViaRest_(titulo, html, targetMime) {
