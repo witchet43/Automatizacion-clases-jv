@@ -1,0 +1,35 @@
+{
+  "action": "clase",
+  "materia": "Sistemas Operativos",
+  "gammaUrl": "https://gamma.app/docs/ss0d0k0163vh3zz",
+  "expectedResourceTypes": [
+    "practica",
+    "tarea"
+  ],
+  "resources": [
+    {
+      "type": "practica",
+      "params": {
+        "unidad": "Unidad 2",
+        "temaSubtema": "Estados y transición de procesos",
+        "titulo": "Práctica 10 - Estados y transición de procesos",
+        "descripcion": "Resuelve secuencias de eventos y determina el estado correcto de cada proceso.\n\n1. Dibuja el modelo de estados con Nuevo, Listo, Ejecución, Bloqueado/Espera y Terminado.\n2. Etiqueta las transiciones de admisión, despacho, preempción, espera por E/S, finalización de E/S y terminación.\n3. Resuelve cinco secuencias de eventos indicando el estado inicial, el evento y el estado resultante.\n4. Justifica cada transición; no basta con escribir únicamente el estado final.\n5. Incluye al menos un caso de preempción y uno de bloqueo por E/S.\n6. Identifica y corrige tres transiciones imposibles, explicando por qué son inválidas.\n7. Construye un diagrama final limpio que integre estados y transiciones.\n\nEvidencia: tabla de secuencias resueltas, justificaciones, corrección de transiciones inválidas y diagrama de transición final.",
+        "contenidoDocumento": "PRÁCTICA 10 — ESTADOS Y TRANSICIÓN DE PROCESOS\n\nPropósito\nAplicar el modelo de estados de procesos a secuencias concretas de eventos del sistema operativo.\n\n1. MODELO DE ESTADOS\nDibuja y etiqueta:\n- Nuevo\n- Listo\n- Ejecución\n- Bloqueado / Espera\n- Terminado\n\n2. TRANSICIONES\nIncluye y explica:\n- admisión;\n- despacho;\n- preempción o interrupción;\n- espera por E/S o evento;\n- finalización de E/S o evento;\n- terminación.\n\n3. SECUENCIAS DE EVENTOS\nResuelve y justifica las siguientes secuencias:\n\nCaso A\nUn proceso es admitido por el sistema y espera CPU.\n\nCaso B\nUn proceso está en ejecución y solicita una operación de disco.\n\nCaso C\nUn proceso bloqueado termina la operación de E/S que esperaba.\n\nCaso D\nUn proceso en ejecución agota su quantum y existe otro proceso listo.\n\nCaso E\nUn proceso en ejecución concluye normalmente.\n\nPara cada caso registra:\n- estado inicial;\n- evento;\n- estado final;\n- justificación.\n\n4. TRANSICIONES INVÁLIDAS\nAnaliza:\n- Bloqueado → Ejecución sin pasar por Listo.\n- Listo → Bloqueado sin haber ejecutado.\n- Terminado → Listo.\nExplica por qué cada transición es inválida.\n\n5. DIAGRAMA FINAL\nEntrega un diagrama limpio con todos los estados y transiciones válidas.\n\nEvidencia de entrega\nTabla de cinco casos, explicación de tres transiciones inválidas y diagrama final.",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "tarea",
+      "params": {
+        "unidad": "Unidad 2",
+        "temaSubtema": "Estados y transición de procesos",
+        "titulo": "Tarea previa 11 - Inspección de procesos en Windows",
+        "descripcion": "Prepara la siguiente sesión revisando cómo observar procesos reales en Windows.\n\n1. Investiga qué representan PID y PPID en un proceso.\n2. Identifica qué información permite observar el estado de un proceso.\n3. Revisa cómo consultar procesos con Get-Process en PowerShell.\n4. Localiza qué propiedades permiten observar identificador, nombre y consumo de memoria.\n5. Explica qué limitación existe al intentar relacionar directamente los estados teóricos del modelo de cinco estados con la información que muestra Windows.\n6. Selecciona tres procesos de tu computadora y registra nombre, PID y memoria observada.\n\nEvidencia: tabla de tres procesos con nombre, PID y memoria, explicación de PID/PPID y una breve nota sobre la diferencia entre el modelo teórico de estados y la información observable en Windows.",
+        "contenidoDocumento": "TAREA PREVIA 11 — INSPECCIÓN DE PROCESOS EN WINDOWS\n\nPropósito\nPreparar la observación de procesos reales y relacionarla con los conceptos de estado, identificación y uso de recursos.\n\n1. PID Y PPID\nExplica con tus palabras:\n- qué es PID;\n- qué es PPID;\n- para qué sirve cada identificador.\n\n2. CONSULTA DE PROCESOS\nRevisa el uso de Get-Process en PowerShell.\nIdentifica qué información entrega sobre:\n- nombre del proceso;\n- identificador;\n- uso de memoria.\n\n3. OBSERVACIÓN\nSelecciona tres procesos de tu computadora y registra:\n- nombre;\n- PID;\n- memoria observada.\n\n4. MODELO TEÓRICO VS. WINDOWS\nExplica por qué los estados Nuevo, Listo, Ejecución, Bloqueado y Terminado no necesariamente aparecen con esos mismos nombres en las herramientas de Windows.\n\nEvidencia de entrega\nTabla de tres procesos, explicación de PID/PPID y comparación breve entre el modelo teórico y la observación real.",
+        "fechaSiguienteSesion": "2026-09-30",
+        "horaInicioSiguienteSesion": "07:00",
+        "puntos": 100
+      }
+    }
+  ]
+}
