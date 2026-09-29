@@ -104,8 +104,18 @@ function loadCanonicalPlanning_(materia){
   const sessionCol=columnIndexBySchema_(headers,cols.session,'session',materia);
   const unitCol=columnIndexBySchema_(headers,cols.unit,'unit',materia);
   const topicCol=columnIndexBySchema_(headers,cols.topic,'topic',materia);
+  const fallbackTopicCols=['Nombre del subtema','Tema / subtema','Tema / subtema canónico','Subtema']
+    .map(function(name){return headers.indexOf(normalizeGuard_(name));})
+    .filter(function(idx){return idx>=0&&idx!==topicCol;});
   return values.slice(headerRow).map(function(row,i){
-    return{row:headerRow+i+1,clase:row[sessionCol],materia:materia,unidad:row[unitCol],tema:row[topicCol]};
+    let tema=String(row[topicCol]||'').trim();
+    if(!tema){
+      for(let j=0;j<fallbackTopicCols.length;j++){
+        const value=String(row[fallbackTopicCols[j]]||'').trim();
+        if(value){tema=value;break;}
+      }
+    }
+    return{row:headerRow+i+1,clase:row[sessionCol],materia:materia,unidad:row[unitCol],tema:tema};
   }).filter(function(x){return String(x.tema||'').trim()!=='';});
 }
 
