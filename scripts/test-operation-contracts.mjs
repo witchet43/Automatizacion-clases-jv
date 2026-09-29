@@ -9,6 +9,8 @@ const practice=fs.readFileSync('src/30_PracticaConGoogleDoc.gs','utf8');
 const genericDoc=fs.readFileSync('src/31_GoogleDocumentoAcademico.gs','utf8');
 const importFacade=fs.readFileSync('src/15b_OperacionesImportacionFacade.gs','utf8');
 const deliveryFacade=fs.readFileSync('src/08b_CalificarEstadoEntrega.gs','utf8');
+const practiceDoc=fs.readFileSync('src/30_PracticaConGoogleDoc.gs','utf8');
+const didactics=fs.readFileSync('src/54_DidacticaTransversal.gs','utf8');
 
 for(const name of ['quizAsistencia','actividad','tarea','practica','quiz','examen','material','resolverClase','clase','importarCalificaciones','revisarTrabajos','calificarEstadoEntrega','cerrarUnidad']){
   assert.match(policy,new RegExp(name+':Object\\.freeze'));
@@ -36,5 +38,11 @@ assert.match(importFacade,/function importarCalificacionesInstrumento/);
 assert.match(deliveryFacade,/revisionAcademica=false/);
 assert.match(policy,/revisarTrabajos:Object\.freeze\(\{mode:'ACADEMIC_REVIEW'/);
 assert.match(policy,/calificarEstadoEntrega:Object\.freeze\(\{mode:'ADMIN_PROTECTED'/);
+assert.match(policy,/STUDENT_IDENTITY_FIELDS_ALLOWED: false/);
+assert.match(policy,/CLASSROOM_IS_IDENTITY_SOURCE: true/);
+assert.doesNotMatch(practiceDoc,/Nombre del alumno:/);
+assert.doesNotMatch(practiceDoc,/Grupo: ____________________/);
+assert.match(didactics,/Nombre del alumno/);
+assert.match(didactics,/Grupo\\s\*:/);
 
-console.log('OK: contratos transversales, acción explícita, preflight único, Docs desacoplados, clase verificable e importación/revisión sin ambigüedad.');
+console.log('OK: contratos transversales, acción explícita, preflight único, Docs desacoplados, identidad resuelta por Classroom, clase verificable e importación\/revisión sin ambigüedad.');
