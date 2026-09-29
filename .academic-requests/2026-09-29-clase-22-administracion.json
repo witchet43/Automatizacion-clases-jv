@@ -1,0 +1,36 @@
+{
+  "action": "clase",
+  "materia": "Administración",
+  "expectedResourceTypes": [
+    "actividad",
+    "tarea"
+  ],
+  "resources": [
+    {
+      "type": "actividad",
+      "params": {
+        "unidad": "Unidad 4",
+        "temaSubtema": "4.3.2 Producción",
+        "titulo": "Actividad 19 - Análisis del área de Producción",
+        "descripcion": "Analiza el área de Producción de una empresa y relaciona proceso, recursos, controles, indicadores y decisiones.\n\n1. Recupera el mapa preliminar elaborado en la Tarea 10.\n2. Selecciona un proceso principal y delimita su inicio y fin.\n3. Identifica al menos cinco etapas.\n4. Para cada etapa registra entradas, recursos, actividad, salida y responsable.\n5. Señala al menos tres puntos de control y especifica qué se controla y con qué criterio.\n6. Identifica un posible cuello de botella y explica su efecto.\n7. Define cuatro indicadores: productividad, tiempo de ciclo, calidad/defectos y utilización o cumplimiento.\n8. Relaciona cada indicador con una decisión concreta.\n9. Propón una mejora al proceso y explica qué indicador debería cambiar si la mejora funciona.\n\nEvidencia: mapa del proceso, matriz etapa–recurso–control–indicador–decisión, cuello de botella y propuesta de mejora.",
+        "contenidoDocumento": "ACTIVIDAD 19 — ANÁLISIS DEL ÁREA DE PRODUCCIÓN\n\nUnidad 4\nTema 4.3.2 — Producción\n\nPropósito\nAnalizar un proceso productivo o de prestación de servicios para identificar recursos, controles, indicadores y decisiones.\n\n1. CONTEXTO\nEmpresa:\nProducto o servicio:\nProceso seleccionado:\n\n2. MAPA DEL PROCESO\nDefine inicio y fin.\nIncluye al menos cinco etapas.\n\n3. MATRIZ DE ANÁLISIS\nPara cada etapa registra:\n- Entrada\n- Recurso\n- Actividad\n- Salida\n- Responsable\n- Punto de control\n- Criterio de control\n- Indicador\n- Decisión apoyada\n\n4. CUELLO DE BOTELLA\nIdentifica una etapa que pueda limitar capacidad, tiempo o flujo.\nExplica:\n- causa;\n- efecto;\n- evidencia observable.\n\n5. INDICADORES\nDefine al menos cuatro:\n- productividad;\n- tiempo de ciclo;\n- calidad/defectos;\n- utilización o cumplimiento.\n\nPara cada indicador registra:\n- qué mide;\n- fórmula o criterio;\n- frecuencia;\n- decisión que apoya.\n\n6. PROPUESTA DE MEJORA\nDescribe una mejora concreta.\nIndica qué indicador debería cambiar si la mejora funciona.\n\nEvidencia de entrega\nMapa, matriz, cuello de botella, indicadores y propuesta de mejora.",
+        "fechaSesion": "2026-10-14",
+        "horaFinSesion": "17:00",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "tarea",
+      "params": {
+        "unidad": "Unidad 4",
+        "temaSubtema": "4.3.3 Mercadotecnia",
+        "titulo": "Tarea 11 - Diagnóstico preliminar de Mercadotecnia",
+        "descripcion": "Prepara el tema 4.3.3 Mercadotecnia mediante un diagnóstico básico de una empresa.\n\n1. Identifica el producto o servicio principal.\n2. Define un segmento de mercado o tipo de cliente.\n3. Describe una necesidad o problema que ese cliente busca resolver.\n4. Identifica dos competidores o alternativas.\n5. Registra información preliminar sobre producto, precio, distribución y promoción.\n6. Señala dos fuentes que podrían utilizarse para investigar al consumidor o mercado.\n7. Formula dos preguntas de decisión de mercadotecnia.\n\nEvidencia: ficha de cliente/mercado, comparación con competencia, borrador de mezcla de marketing y preguntas de decisión.",
+        "contenidoDocumento": "TAREA 11 — DIAGNÓSTICO PRELIMINAR DE MERCADOTECNIA\n\nUnidad 4\nTema 4.3.3 — Mercadotecnia\n\nPropósito\nPreparar el análisis del área de Mercadotecnia con información básica sobre cliente, competencia y mezcla de marketing.\n\n1. PRODUCTO O SERVICIO\nEmpresa:\nProducto o servicio principal:\nPropuesta de valor preliminar:\n\n2. CLIENTE / MERCADO\nSegmento o tipo de cliente:\nNecesidad o problema principal:\nCriterio de compra relevante:\n\n3. COMPETENCIA\nIdentifica dos competidores o alternativas.\nPara cada uno registra:\n- oferta;\n- fortaleza;\n- diferencia respecto a la empresa analizada.\n\n4. MEZCLA DE MARKETING\nProducto:\nPrecio:\nDistribución:\nPromoción:\n\n5. INFORMACIÓN DE MERCADO\nPropón dos fuentes útiles para conocer al consumidor o al mercado.\n\n6. PREGUNTAS DE DECISIÓN\nFormula dos preguntas que una persona responsable de Mercadotecnia debería resolver.\n\nEvidencia de entrega\nFicha de mercado, comparación de competencia, mezcla de marketing y preguntas.",
+        "fechaSiguienteSesion": "2026-10-19",
+        "horaInicioSiguienteSesion": "15:00",
+        "puntos": 100
+      }
+    }
+  ]
+}
