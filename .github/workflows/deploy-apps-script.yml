@@ -362,7 +362,6 @@ jobs:
 
       - name: Run safe read-only diagnostic when OAuth is configured
         env:
-          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
           GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
           GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
           GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
