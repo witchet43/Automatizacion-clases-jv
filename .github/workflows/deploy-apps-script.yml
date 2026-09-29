@@ -328,49 +328,11 @@ jobs:
           clasp_config_auth: .clasprc.json
         run: npx clasp push --force
 
-      - name: Create or update API executable deployment
-        env:
-          clasp_config_auth: .clasprc.json
+      - name: Confirm direct Apps Script deployment
         shell: bash
         run: |
-          set -euo pipefail
-          npm run apps-script:deploy | tee deployment-output.txt
-          deployment_id="$(sed -n 's/^APPS_SCRIPT_DEPLOYMENT_ID=//p' deployment-output.txt | tail -n 1)"
-          test -n "$deployment_id"
           {
-            echo '### Apps Script API executable'
+            echo '### Apps Script'
             echo
-            echo "Deployment ID: \`$deployment_id\`"
+            echo 'Código desplegado. Las operaciones de Quiz de Asistencia se reciben por la hoja de control y se ejecutan dentro de Apps Script.'
           } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Assert official execution transport
-        run: |
-          node <<'NODE'
-          const fs = require('fs');
-          const path = require('path');
-          const forbidden = 'clasp' + ' run';
-          const files = fs.readdirSync('.github/workflows')
-            .filter(name => /\.ya?ml$/.test(name));
-          const violations = files.filter(name =>
-            fs.readFileSync(path.join('.github/workflows', name), 'utf8').includes(forbidden));
-          if (violations.length) {
-            console.error('Execution must use the official Apps Script API:', violations.join(', '));
-            process.exit(1);
-          }
-          console.log('No production dependency on clasp function execution.');
-          NODE
-
-      - name: Run safe read-only diagnostic when OAuth is configured
-        env:
-          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
-          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
-          GOOGLE_OAUTH_REFRESH_TOKEN: ${{ secrets.GOOGLE_OAUTH_REFRESH_TOKEN }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -z "$GOOGLE_OAUTH_CLIENT_ID" ] || [ -z "$GOOGLE_OAUTH_CLIENT_SECRET" ] || [ -z "$GOOGLE_OAUTH_REFRESH_TOKEN" ]; then
-            echo 'OAuth diagnostic deferred: one or more GOOGLE_OAUTH_* secrets are not configured.'
-            exit 0
-          fi
-          npm run apps-script:run -- --function diagnosticarInfraestructuraEjecucion
-          npm run apps-script:run -- --function validarReadinessAcademicoCompleto
