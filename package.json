@@ -12,7 +12,8 @@
     "clasp:pull": "clasp pull",
     "clasp:push": "clasp push",
     "clasp:open": "clasp open-script",
-    "apps-script:webapp:update": "clasp update-deployment AKfycbz2rCuB9jUsbnt0tj0RgHmr3lguOZjVL34a_2F_yhggiwLNTOEn8QdsdbFv4SK6aGxr --description \"Academic Web App canonical\""
+    "apps-script:webapp:update": "clasp update-deployment AKfycbz2rCuB9jUsbnt0tj0RgHmr3lguOZjVL34a_2F_yhggiwLNTOEn8QdsdbFv4SK6aGxr --description \"Academic Web App canonical\"",
+    "apps-script:deploy": "npm run apps-script:webapp:update"
   },
   "engines": {
     "node": ">=22"
