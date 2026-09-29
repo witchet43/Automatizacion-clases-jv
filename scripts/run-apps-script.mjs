@@ -18,10 +18,14 @@ function readClaspCredentials() {
   } catch {
     fail('CLASPRC_JSON no contiene JSON válido.');
   }
-  const token = cfg.token && typeof cfg.token === 'object' ? cfg.token : cfg;
-  const oauth = cfg.oauth2ClientSettings && typeof cfg.oauth2ClientSettings === 'object'
+  const modernTokens = cfg.tokens && typeof cfg.tokens === 'object' ? cfg.tokens : null;
+  const modern = modernTokens
+    ? (modernTokens.default || Object.values(modernTokens).find(v => v && typeof v === 'object'))
+    : null;
+  const token = modern || (cfg.token && typeof cfg.token === 'object' ? cfg.token : cfg);
+  const oauth = modern || (cfg.oauth2ClientSettings && typeof cfg.oauth2ClientSettings === 'object'
     ? cfg.oauth2ClientSettings
-    : cfg;
+    : cfg);
   const refreshToken = String(token.refresh_token || token.refreshToken || '').trim();
   const accessTokenValue = String(token.access_token || token.accessToken || '').trim();
   const expiryDate = Number(token.expiry_date || token.expiryDate || 0);
