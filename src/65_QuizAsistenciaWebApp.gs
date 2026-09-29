@@ -32,7 +32,7 @@ const ACADEMIC_WEB = Object.freeze({
   }),
   ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase']),
   FAST_PATHS:Object.freeze({
-    quizAsistencia:Object.freeze({singleExternalInput:'materia',documentationRead:false,auxiliaryReads:false})
+    quizAsistencia:Object.freeze({singleExternalInput:'materia',firstExternalAction:'WEB_APP',preflightReadsAllowed:false,documentationRead:false,auxiliaryReads:false,diagnosticOnlyAfterError:true})
   })
 });
 
