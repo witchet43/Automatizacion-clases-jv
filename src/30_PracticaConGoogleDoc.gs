@@ -144,9 +144,7 @@ function normalizarContenidoPractica_(value) {
 function construirHtmlPractica_(titulo, descripcion, contenido) {
   const parts = [
     '<!doctype html><html><head><meta charset="utf-8"><title>' + escaparHtmlPractica_(titulo) + '</title></head><body>',
-    '<h1>' + escaparHtmlPractica_(titulo) + '</h1>',
-    '<p>Nombre del alumno: ________________________________________________</p>',
-    '<p>Grupo: ____________________ &nbsp;&nbsp;&nbsp; Fecha: ____________________</p>'
+    '<h1>' + escaparHtmlPractica_(titulo) + '</h1>'
   ];
   if (descripcion) {
     parts.push('<h2>Instrucciones</h2><p>' + escaparHtmlPractica_(descripcion) + '</p>');
