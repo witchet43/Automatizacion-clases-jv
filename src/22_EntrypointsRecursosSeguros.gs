@@ -21,11 +21,18 @@ function crearTarea(params) {
     preflightDocumentoMaestro(ctx.guardrailRequest);
     const tarea = aplicarReglaVencimientoTarea_(ctx.params);
     const result = crearCourseWorkDirecto_(normalizarCreacionDirecta_(tarea, 'TAREA'));
-    const due = asegurarVencimientoTareaCreada_(tarea.courseId, result.workId, tarea);
-    verificarVencimientoTareaCreada_(tarea.courseId, result.workId, tarea);
-    result.vencimientoReparado = due.reparado === true;
-    result.fechaLimiteLocal = tarea.fechaLimiteLocal;
-    result.horaLimiteLocal = tarea.horaLimiteLocal;
+    if (tarea.backfillSinVencimiento === true) {
+      result.vencimientoReparado = false;
+      result.fechaLimiteLocal = '';
+      result.horaLimiteLocal = '';
+      result.backfillSinVencimiento = true;
+    } else {
+      const due = asegurarVencimientoTareaCreada_(tarea.courseId, result.workId, tarea);
+      verificarVencimientoTareaCreada_(tarea.courseId, result.workId, tarea);
+      result.vencimientoReparado = due.reparado === true;
+      result.fechaLimiteLocal = tarea.fechaLimiteLocal;
+      result.horaLimiteLocal = tarea.horaLimiteLocal;
+    }
     postflightDocumentoMaestro(normalizarResultadoGuardrail_(result), ctx.guardrailRequest);
     return result;
   });
