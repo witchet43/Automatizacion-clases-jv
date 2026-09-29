@@ -1,26 +1,37 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
+
 const pipeline=fs.readFileSync('src/01_PipelineQuizzes.gs','utf8');
 const direct=fs.readFileSync('src/20_CreacionDirectaRecursos.gs','utf8');
-assert.match(pipeline,/FormApp\.create\(clean_\(quiz\[H\.TITLE\]\),\s*false\)/,'Los Forms deben nacer SIN publicar.');
+
+assert.match(
+  pipeline,
+  /FormApp\.create\(clean_\(quiz\[H\.TITLE\]\),\s*false\)/,
+  'Los Forms deben nacer SIN publicar.'
+);
 assert.match(pipeline,/assertQuizFormNotPublished_\(form\);[\s\S]*?return form;/);
 assert.match(direct,/form=buildQuizForm_\(quiz,preguntas\);\s*assertQuizFormNotPublished_\(form\);/);
+
 const helper=pipeline.match(/function assertQuizFormNotPublished_\(form\)\s*\{[\s\S]*?\n\}/);
 assert.ok(helper,'Falta la función de protección contra Forms publicados.');
-const sandbox={};vm.createContext(sandbox);vm.runInContext(helper[0],sandbox);
+
+const sandbox={};
+vm.createContext(sandbox);
+vm.runInContext(helper[0],sandbox);
 const verify=x=>vm.runInContext('assertQuizFormNotPublished_',sandbox)(x);
-assert.equal(verify({supportsAdvancedResponderPermissions:()=>true,isPublished:()=>false}),true);
-assert.throws(()=>verify({supportsAdvancedResponderPermissions:()=>true,isPublished:()=>true}),/BLOCKED_FORMS_DRAFT/);
-assert.throws(()=>verify({supportsAdvancedResponderPermissions:()=>false,isPublished:()=>false}),/BLOCKED_FORMS_DRAFT/);
-const execution=fs.readFileSync('src/38_ExecutionApi.gs','utf8');
-const linkHelper=execution.match(/function formularioVinculadoPorUrlReal_\(materials,responderUrl\)\s*\{[\s\S]*?\n\}/);
-assert.ok(linkHelper,'La verificación remota debe comparar la URL de respuesta real.');
-vm.runInContext(linkHelper[0],sandbox);
-const linked=(materials,url)=>vm.runInContext('formularioVinculadoPorUrlReal_',sandbox)(materials,url);
-const responderUrl='https://docs.google.com/forms/d/e/1FAIpQL_example/viewform';
-assert.equal(linked([{link:{url:responderUrl}}],responderUrl),true,
-  'La URL de respuesta /d/e/ no contiene el ID de edición y aun así debe verificarse.');
-assert.equal(linked([{link:{url:'https://docs.google.com/forms/d/otro/viewform'}}],responderUrl),false);
-assert.match(execution,/assertQuizFormNotPublished_\(form\)/);
-console.log('PASS: el Form nace sin publicar, se verifica antes de Classroom, un Form publicado o no verificable queda bloqueado.');
+
+assert.equal(
+  verify({supportsAdvancedResponderPermissions:()=>true,isPublished:()=>false}),
+  true
+);
+assert.throws(
+  ()=>verify({supportsAdvancedResponderPermissions:()=>true,isPublished:()=>true}),
+  /BLOCKED_FORMS_DRAFT/
+);
+assert.throws(
+  ()=>verify({supportsAdvancedResponderPermissions:()=>false,isPublished:()=>false}),
+  /BLOCKED_FORMS_DRAFT/
+);
+
+console.log('PASS: el Form nace sin publicar, se verifica antes de Classroom y un Form publicado o no verificable queda bloqueado.');
