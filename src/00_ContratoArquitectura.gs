@@ -18,6 +18,8 @@
 const ARCHITECTURE_CONTRACT = Object.freeze({
   BEHAVIOR_SOURCE: 'CODE',
   AI_ROLE: 'INTENT_AND_MINIMAL_PARAMETERS',
+  REMOTE_TRANSPORT: 'WEB_APP',
+  PUBLIC_WEBAPP_SCOPE: 'DIDACTIC_MATERIALIZATION',
   PROMPT_ALGORITHM_RECONSTRUCTION_ALLOWED: false,
   BEHAVIOR_CHANGE_REQUIRES_CODE: true,
   BEHAVIOR_CHANGE_REQUIRES_REGRESSION: true,
@@ -30,6 +32,8 @@ function validarContratoArquitectura_() {
   const c = ARCHITECTURE_CONTRACT;
   if (c.BEHAVIOR_SOURCE !== 'CODE') throw new Error('El comportamiento debe vivir en código.');
   if (c.AI_ROLE !== 'INTENT_AND_MINIMAL_PARAMETERS') throw new Error('La IA no debe reconstruir algoritmos.');
+  if (c.REMOTE_TRANSPORT !== 'WEB_APP') throw new Error('El transporte remoto canónico debe ser WEB_APP.');
+  if (c.PUBLIC_WEBAPP_SCOPE !== 'DIDACTIC_MATERIALIZATION') throw new Error('El Web App público debe limitarse a materialización didáctica.');
   if (c.PROMPT_ALGORITHM_RECONSTRUCTION_ALLOWED !== false) throw new Error('No se permite reconstruir algoritmos desde prompts.');
   if (c.BEHAVIOR_CHANGE_REQUIRES_CODE !== true) throw new Error('Todo cambio de comportamiento debe quedar implementado en código.');
   if (c.BEHAVIOR_CHANGE_REQUIRES_REGRESSION !== true) throw new Error('Todo cambio de comportamiento debe quedar protegido por regresión o validación determinista.');
