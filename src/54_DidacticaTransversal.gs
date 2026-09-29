@@ -26,6 +26,9 @@ function limpiarMetadatosAdministrativos_(text){
     .replace(/\bTrabajo individual\s*\.\s*Duraci[oó]n estimada\s*:\s*\d+\s*(?:[–—-]\s*\d+\s*)?(?:minutos?|mins?|horas?)\s*\.?/gi,'')
     .replace(/\bTrabajo individual\s*\.\s*/gi,'')
     .replace(/(?:^|\n)\s*Duraci[oó]n estimada\s*:\s*\d+\s*(?:[–—-]\s*\d+\s*)?(?:minutos?|mins?|horas?)\s*\.?\s*(?=\n|$)/gim,'')
+    .replace(/(?:^|\n)\s*Nombre del alumno\s*:\s*[_\s]*\s*(?=\n|$)/gim,'')
+    .replace(/(?:^|\n)\s*Grupo\s*:\s*[_\s]*\s*(?:Fecha\s*:\s*[_\s]*)?\s*(?=\n|$)/gim,'')
+    .replace(/(?:^|\n)\s*Fecha\s*:\s*[_\s]*\s*(?=\n|$)/gim,'')
     .replace(/\b(?:tu equipo personal o el equipo del laboratorio|tu equipo personal o equipo del laboratorio)\b/gi,'tu computadora personal con Windows')
     .replace(/\b(?:tu equipo o laboratorio|tu equipo o el laboratorio|el equipo o laboratorio|el equipo o el laboratorio|el equipo del laboratorio|equipo institucional|equipo asignado)\b/gi,'tu computadora personal con Windows')
     .replace(/\n{3,}/g,'\n\n').trim();
