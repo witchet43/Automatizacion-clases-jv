@@ -1,0 +1,9 @@
+{
+  "function": "crearQuizAsistencia",
+  "parameters": [
+    {
+      "courseId": "875776451793",
+      "requestId": "quiz-asistencia-so-2026-09-29-0649"
+    }
+  ]
+}
