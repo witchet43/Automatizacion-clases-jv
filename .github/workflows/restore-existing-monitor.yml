@@ -1,0 +1,30 @@
+name: Restore Existing Classroom Monitor
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.monitor-repair/**'
+
+permissions:
+  contents: read
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --silent
+      - name: Restore existing clasp authorization
+        shell: bash
+        run: |
+          printf '%s' '${{ secrets.CLASPRC_JSON }}' > .clasprc.json
+          chmod 600 .clasprc.json
+      - name: Reinstall existing minute monitor
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp run instalarMonitorSolicitudesImportacion
