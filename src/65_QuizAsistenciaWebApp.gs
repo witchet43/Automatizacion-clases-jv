@@ -27,7 +27,10 @@ const ACADEMIC_WEB = Object.freeze({
     'sistemas-operativos':Object.freeze({id:'875776451793',materia:'Sistemas Operativos'}),
     'so':Object.freeze({id:'875776451793',materia:'Sistemas Operativos'})
   }),
-  ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase'])
+  ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase']),
+  FAST_PATHS:Object.freeze({
+    quizAsistencia:Object.freeze({directCourseId:true,documentationRead:false,auxiliaryReads:false})
+  })
 });
 
 function doGet(e){
@@ -52,7 +55,7 @@ function ejecutarServicioAcademicoWeb_(params){
     const action=String(p.action||'quizAsistencia').trim();
     if(ACADEMIC_WEB.ACTIONS.indexOf(action)<0)throw new Error('ACCION_NO_PERMITIDA');
 
-    const course=resolverCursoAcademicoWeb_(p);
+    const course=resolverCursoFastPathAcademicoWeb_(action,p)||resolverCursoAcademicoWeb_(p);
     let result;
 
     if(action==='quizAsistencia'){
@@ -89,6 +92,25 @@ function ejecutarServicioAcademicoWeb_(params){
       error:String(err&&err.message?err.message:err)
     });
   }
+}
+
+function resolverCursoFastPathAcademicoWeb_(action,p){
+  const cfg=ACADEMIC_WEB.FAST_PATHS[action];
+  if(!cfg)return null;
+  if(action==='quizAsistencia'){
+    const rawId=String(p.courseId||'').trim();
+    if(rawId){
+      const unique={};
+      Object.keys(ACADEMIC_WEB.COURSES).forEach(function(k){
+        const c=ACADEMIC_WEB.COURSES[k]; unique[c.id]=c;
+      });
+      if(!unique[rawId])throw new Error('COURSE_ID_NO_PERMITIDO');
+      return unique[rawId];
+    }
+    const raw=String(p.course||p.courseKey||p.materia||'').trim();
+    if(!raw)throw new Error('QUIZ_ASISTENCIA_REQUIERE_COURSE_ID');
+  }
+  return null;
 }
 
 function resolverCursoAcademicoWeb_(p){
