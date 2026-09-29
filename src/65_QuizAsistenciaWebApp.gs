@@ -67,7 +67,7 @@ function ejecutarServicioAcademicoWeb_(params){
     if(action==='quizAsistencia'){
       result=crearQuizAsistenciaRapido(String(p.materia||'').trim());
     }else if(action==='diagnosticarClase'){
-      result=diagnosticarProgresoClaseWeb_(course);
+      result=diagnosticarProgresoClaseWeb_(course,p);
     }else if(action==='resolverClase'){
       result=resolverSiguienteClase(
         course.materia,
@@ -108,8 +108,10 @@ function validarContratoOperacionWeb_(action){
   return contracts[action];
 }
 
-function diagnosticarProgresoClaseWeb_(course){
-  const plan=leerPlaneacionSiguienteClase_(course.materia);
+function diagnosticarProgresoClaseWeb_(course,p){
+  const options=p&&typeof p==='object'?p:{};
+  const soloClassroom=options.soloClassroom===true;
+  const plan=soloClassroom?null:leerPlaneacionSiguienteClase_(course.materia);
   const works=listarCourseWorkClase_(course.id);
   const active=works.map(function(w){
     return {
@@ -123,9 +125,10 @@ function diagnosticarProgresoClaseWeb_(course){
   return {
     diagnostic:true,
     readOnly:true,
-    planningRows:plan.rows.map(function(r){
+    planningRows:soloClassroom?[]:plan.rows.map(function(r){
       return {session:String(r.session||''),unit:String(r.unit||''),topic:String(r.topic||''),practice:String(r.practice||''),gammaUrl:String(r.gammaUrl||''),gammaState:String(r.gammaState||'')};
     }),
+    planningSkipped:soloClassroom,
     courseWork:active
   };
 }
