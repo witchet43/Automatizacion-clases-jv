@@ -16,7 +16,7 @@ function evidenciaSesionReal_(row, works) {
   // Un ID anotado en Sheets nunca se considera evidencia sin cotejarlo en Classroom.
   // Si hay título de actividad/práctica, debe coincidir: una tarea de la sesión
   // siguiente no prueba que la actividad de ESTA sesión ya existe.
-  const tituloEsPlaceholder=!tituloNorm||/^(historico|histórico|actividad definida|practica definida|práctica definida|no aplica)/i.test(String(titulo||'').trim());
+  const tituloEsPlaceholder=!tituloNorm||/^(historico|histórico|actividad definida|practica definida|práctica definida|práctica formal(?:\s+de)?|practica formal(?:\s+de)?|actividad de|no aplica)/i.test(String(titulo||'').trim());
   const matches=active.filter(function(w){
     const byId=ids.indexOf(String(w.id))>=0;
     const byTitle=tituloNorm&&normal(w.title)===tituloNorm;
