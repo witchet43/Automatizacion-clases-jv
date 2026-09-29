@@ -12,8 +12,7 @@
     "clasp:pull": "clasp pull",
     "clasp:push": "clasp push",
     "clasp:open": "clasp open-script",
-    "apps-script:deploy": "node scripts/deploy-api-executable.mjs",
-    "apps-script:run": "node scripts/run-apps-script.mjs"
+    "apps-script:webapp:update": "clasp update-deployment AKfycbz2rCuB9jUsbnt0tj0RgHmr3lguOZjVL34a_2F_yhggiwLNTOEn8QdsdbFv4SK6aGxr --description \"Academic Web App canonical\""
   },
   "engines": {
     "node": ">=22"
