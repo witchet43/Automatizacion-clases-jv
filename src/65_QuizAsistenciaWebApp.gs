@@ -30,7 +30,7 @@ const ACADEMIC_WEB = Object.freeze({
     'sistemas-operativos':Object.freeze({id:'875776451793',materia:'Sistemas Operativos'}),
     'so':Object.freeze({id:'875776451793',materia:'Sistemas Operativos'})
   }),
-  ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase','diagnosticarClase']),
+  ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase','diagnosticarClase','auditarIdentidadClassroom']),
   FAST_PATHS:Object.freeze({
     quizAsistencia:Object.freeze({singleExternalInput:'materia',firstExternalAction:'WEB_APP',preflightReadsAllowed:false,documentationRead:false,auxiliaryReads:false,diagnosticOnlyAfterError:true})
   })
@@ -61,6 +61,10 @@ function ejecutarServicioAcademicoWeb_(params){
     validarContratoOperacionWeb_(action);
 
     if(action==='quizAsistencia')validarEntradaQuizAsistenciaWeb_(p);
+    if(action==='auditarIdentidadClassroom'){
+      const audit=auditarIdentidadClassroomWeb_();
+      return respuestaAcademicaWeb_(Object.assign({ok:true,transport:'WEB_APP',action:action},audit));
+    }
     const course=resolverCursoFastPathAcademicoWeb_(action,p)||resolverCursoAcademicoWeb_(p);
     let result;
 
@@ -106,6 +110,90 @@ function validarContratoOperacionWeb_(action){
   const contracts=ACADEMIC_POLICY&&ACADEMIC_POLICY.EXECUTION?ACADEMIC_POLICY.EXECUTION.OPERATION_CONTRACTS:null;
   if(!contracts||!contracts[action])throw new Error('CONTRATO_OPERACION_NO_DEFINIDO: '+action);
   return contracts[action];
+}
+
+function auditarIdentidadClassroomWeb_(){
+  const unique={};
+  Object.keys(ACADEMIC_WEB.COURSES).forEach(function(k){
+    const course=ACADEMIC_WEB.COURSES[k];
+    unique[String(course.id)]=course;
+  });
+  const materias=[];
+  Object.keys(unique).forEach(function(id){
+    const course=unique[id];
+    const works=listarCourseWorkClase_(course.id).filter(function(w){
+      return /^(?:tarea|actividad|pr[aá]ctica)\b/i.test(String(w.title||'').trim()) &&
+        ['DRAFT','PUBLISHED'].indexOf(String(w.state||'').toUpperCase())>=0;
+    });
+    const recursos=[];
+    works.forEach(function(w){
+      const docs=extraerDocumentosAdjuntosAuditoria_(w).map(function(doc){
+        return inspeccionarEncabezadoIdentidadDocumento_(doc);
+      });
+      recursos.push({
+        workId:String(w.id||''),
+        title:String(w.title||''),
+        state:String(w.state||''),
+        documents:docs
+      });
+    });
+    materias.push({
+      materia:course.materia,
+      courseId:String(course.id),
+      recursosRevisados:recursos.length,
+      documentosRevisados:recursos.reduce(function(n,r){return n+r.documents.length;},0),
+      documentosConEncabezado:recursos.reduce(function(n,r){return n+r.documents.filter(function(d){return d.hasIdentityHeader===true;}).length;},0),
+      recursos:recursos
+    });
+  });
+  return {
+    diagnostic:true,
+    readOnly:true,
+    scope:'7_CLASSROOM_COURSES_TASK_ACTIVITY_PRACTICE_DRAFT_PUBLISHED',
+    materias:materias,
+    totalMaterias:materias.length,
+    totalRecursos:materias.reduce(function(n,m){return n+m.recursosRevisados;},0),
+    totalDocumentos:materias.reduce(function(n,m){return n+m.documentosRevisados;},0),
+    totalConEncabezado:materias.reduce(function(n,m){return n+m.documentosConEncabezado;},0)
+  };
+}
+
+function extraerDocumentosAdjuntosAuditoria_(work){
+  const out=[],seen={};
+  (work.materials||[]).forEach(function(m){
+    const holder=m&&m.driveFile&&m.driveFile.driveFile?m.driveFile.driveFile:(m&&m.driveFile?m.driveFile:null);
+    const id=String(holder&&holder.id||'').trim();
+    if(!id||seen[id])return;
+    seen[id]=true;
+    let file=null;
+    try{file=Drive.Files.get(id,{fields:'id,name,mimeType,webViewLink'});}catch(ignore){}
+    if(!file)return;
+    out.push({
+      id:String(file.id||id),
+      name:String(file.name||holder.title||''),
+      mimeType:String(file.mimeType||''),
+      url:String(file.webViewLink||holder.alternateLink||'')
+    });
+  });
+  return out;
+}
+
+function inspeccionarEncabezadoIdentidadDocumento_(doc){
+  const result=Object.assign({},doc,{hasIdentityHeader:false,identityFields:[],inspection:'UNSUPPORTED_NON_GOOGLE_DOC'});
+  if(String(doc.mimeType)!=='application/vnd.google-apps.document')return result;
+  try{
+    const text=String(DocumentApp.openById(String(doc.id)).getBody().getText()||'');
+    const fields=[];
+    if(/Nombre del alumno\s*:/i.test(text))fields.push('Nombre del alumno');
+    if(/(?:^|\n)\s*Grupo\s*:/i.test(text))fields.push('Grupo');
+    if(/(?:^|\n).*\bFecha\s*:/i.test(text))fields.push('Fecha');
+    result.hasIdentityHeader=fields.length>0;
+    result.identityFields=fields;
+    result.inspection='GOOGLE_DOC_TEXT';
+  }catch(err){
+    result.inspection='ERROR: '+String(err&&err.message?err.message:err);
+  }
+  return result;
 }
 
 function diagnosticarProgresoClaseWeb_(course,p){
