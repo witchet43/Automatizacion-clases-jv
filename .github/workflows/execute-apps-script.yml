@@ -74,6 +74,7 @@ jobs:
             echo 'PARAMETERS_JSON=${{ inputs.parameters_json }}' >> "$GITHUB_ENV"
           fi
       - name: Wait for successful Apps Script deployment
+        if: github.event_name != 'push'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         shell: bash
