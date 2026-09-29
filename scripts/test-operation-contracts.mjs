@@ -42,7 +42,9 @@ assert.match(policy,/STUDENT_IDENTITY_FIELDS_ALLOWED: false/);
 assert.match(policy,/CLASSROOM_IS_IDENTITY_SOURCE: true/);
 assert.doesNotMatch(practiceDoc,/Nombre del alumno:/);
 assert.doesNotMatch(practiceDoc,/Grupo: ____________________/);
+assert.doesNotMatch(practiceDoc,/Fecha: ____________________/);
 assert.match(didactics,/Nombre del alumno/);
 assert.match(didactics,/Grupo\\s\*:/);
+assert.match(didactics,/Fecha\\s\*:/);
 
 console.log('OK: contratos transversales, acción explícita, preflight único, Docs desacoplados, identidad resuelta por Classroom, clase verificable e importación\/revisión sin ambigüedad.');
