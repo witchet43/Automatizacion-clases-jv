@@ -9,10 +9,17 @@ const facade=fs.readFileSync('src/22_EntrypointsRecursosSeguros.gs','utf8');
 const policy=fs.readFileSync('src/00_PoliticasCanonicas.gs','utf8');
 const activeCourse=fs.readFileSync('src/45_QuizAsistenciaClaseActiva.gs','utf8');
 const guards=fs.readFileSync('src/39_MasterGuardrails.gs','utf8');
+const web=fs.readFileSync('src/65_QuizAsistenciaWebApp.gs','utf8');
 assert.match(main,/return crearQuizAsistenciaMinimo_\(params\)/);
 assert.match(facade,/function crearQuizAsistencia\(params\)/);
 assert.doesNotMatch(facade.slice(facade.indexOf('function crearQuizSencillo('),facade.indexOf('function crearExamen(')),/preflightDocumentoMaestro|temaSubtema|assertAcademicAutomationWriteEnabled_/);
 assert.match(policy,/SEQUENCE_SOURCE:\s*'LATEST_PUBLISHED_QUIZ'/);
+assert.match(policy,/FAST_PATH_ACTIONS:\s*Object\.freeze\(\['quizAsistencia'\]\)/);
+assert.match(policy,/FAST_PATH_DOCUMENT_READ_REQUIRED:\s*false/);
+assert.match(policy,/FAST_PATH_AUXILIARY_READS_ALLOWED:\s*false/);
+assert.match(web,/function resolverCursoFastPathAcademicoWeb_\s*\(/);
+assert.match(web,/p\.courseId/);
+assert.match(web,/documentationRead:false,auxiliaryReads:false/);
 assert.match(activeCourse,/REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION:\s*false/);
 assert.doesNotMatch(activeCourse,/clasesSinTema|if\s*\(!temaSubtema\)/);
 assert.match(guards,/validarPlaneacionCanonicaReadOnly_\(subject\)/);
@@ -58,8 +65,8 @@ function scenario(initial){
     get created(){return created;},get audited(){return audited;}};
 }
 const quiz=(id,n,state,topicId='')=>({id:String(id),title:'Quiz '+n,state,workType:'ASSIGNMENT',topicId,materials:[],description:'',maxPoints:null,creationTime:'2026-09-20T00:00:00Z'});
-let s=scenario([]),r=s.run();assert.equal(r.title,'Quiz 1');assert.equal(r.state,'DRAFT');assert.equal(s.created,1);
-s=scenario([quiz(7,7,'PUBLISHED','UNIT_2'),quiz(8,8,'DRAFT','UNIT_2')]);r=s.run();assert.equal(r.title,'Quiz 8');assert.equal(r.reutilizado,true);assert.equal(s.created,0);
+let s=scenario([]),r=s.run();assert.equal(r.title,'Quiz 1');assert.equal(r.state,'DRAFT');assert.equal(r.postflightVerified,true);assert.equal(r.emptyAssignmentVerified,true);assert.equal(r.creado,true);assert.equal(s.created,1);
+s=scenario([quiz(7,7,'PUBLISHED','UNIT_2'),quiz(8,8,'DRAFT','UNIT_2')]);r=s.run();assert.equal(r.title,'Quiz 8');assert.equal(r.reutilizado,true);assert.equal(r.ultimoQuizPublicado,'Quiz 7');assert.equal(r.duplicateCount,0);assert.equal(s.created,0);
 s=scenario([quiz(7,7,'PUBLISHED'),quiz(9,9,'DRAFT')]);r=s.run();assert.equal(r.title,'Quiz 8');assert.equal(s.created,1);
 s=scenario([quiz(7,7,'PUBLISHED'),quiz(8,8,'PUBLISHED')]);r=s.run();assert.equal(r.title,'Quiz 9');assert.equal(s.created,1);
 s=scenario([quiz(7,7,'PUBLISHED'),quiz(8,8,'DRAFT'),quiz(18,8,'DRAFT')]);assert.throws(()=>s.run(),/CONSECUTIVO_DUPLICADO/);
