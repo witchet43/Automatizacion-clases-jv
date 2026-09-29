@@ -3,11 +3,32 @@
 import fs from 'node:fs';
 import process from 'node:process';
 
-const REQUIRED_ENV = [
+const LEGACY_REQUIRED_ENV = [
   'GOOGLE_OAUTH_CLIENT_ID',
   'GOOGLE_OAUTH_CLIENT_SECRET',
   'GOOGLE_OAUTH_REFRESH_TOKEN'
 ];
+
+function readClaspCredentials() {
+  const raw = String(process.env.CLASPRC_JSON || '').trim();
+  if (!raw) return null;
+  let cfg;
+  try {
+    cfg = JSON.parse(raw);
+  } catch {
+    fail('CLASPRC_JSON no contiene JSON válido.');
+  }
+  const token = cfg.token && typeof cfg.token === 'object' ? cfg.token : cfg;
+  const oauth = cfg.oauth2ClientSettings && typeof cfg.oauth2ClientSettings === 'object'
+    ? cfg.oauth2ClientSettings
+    : cfg;
+  const refreshToken = String(token.refresh_token || token.refreshToken || '').trim();
+  const accessTokenValue = String(token.access_token || token.accessToken || '').trim();
+  const expiryDate = Number(token.expiry_date || token.expiryDate || 0);
+  const clientId = String(oauth.clientId || oauth.client_id || '').trim();
+  const clientSecret = String(oauth.clientSecret || oauth.client_secret || '').trim();
+  return {refreshToken, accessTokenValue, expiryDate, clientId, clientSecret};
+}
 
 function fail(message, details) {
   if (details) console.error(details);
@@ -53,14 +74,11 @@ async function jsonResponse(response, context) {
   return body;
 }
 
-async function accessToken() {
-  for (const name of REQUIRED_ENV) {
-    if (!process.env[name]) fail(`Falta el secreto ${name}.`);
-  }
+async function refreshAccessToken(clientId, clientSecret, refreshToken, sourceName) {
   const params = new URLSearchParams({
-    client_id: process.env.GOOGLE_OAUTH_CLIENT_ID,
-    client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
-    refresh_token: process.env.GOOGLE_OAUTH_REFRESH_TOKEN,
+    client_id: clientId,
+    client_secret: clientSecret,
+    refresh_token: refreshToken,
     grant_type: 'refresh_token'
   });
   const response = await fetch('https://oauth2.googleapis.com/token', {
@@ -68,9 +86,37 @@ async function accessToken() {
     headers: {'content-type': 'application/x-www-form-urlencoded'},
     body: params
   });
-  const body = await jsonResponse(response, 'Renovación OAuth');
-  if (!body.access_token) fail('La renovación OAuth no devolvió access_token.');
+  const body = await jsonResponse(response, `Renovación OAuth (${sourceName})`);
+  if (!body.access_token) fail(`La renovación OAuth de ${sourceName} no devolvió access_token.`);
   return body.access_token;
+}
+
+async function accessToken() {
+  const clasp = readClaspCredentials();
+  if (clasp) {
+    if (clasp.refreshToken && clasp.clientId && clasp.clientSecret) {
+      return refreshAccessToken(
+        clasp.clientId,
+        clasp.clientSecret,
+        clasp.refreshToken,
+        'CLASPRC_JSON'
+      );
+    }
+    if (clasp.accessTokenValue && (!clasp.expiryDate || clasp.expiryDate > Date.now() + 60000)) {
+      return clasp.accessTokenValue;
+    }
+    fail('CLASPRC_JSON existe, pero no contiene credenciales OAuth reutilizables.');
+  }
+
+  for (const name of LEGACY_REQUIRED_ENV) {
+    if (!process.env[name]) fail(`Falta CLASPRC_JSON y el secreto legado ${name}.`);
+  }
+  return refreshAccessToken(
+    process.env.GOOGLE_OAUTH_CLIENT_ID,
+    process.env.GOOGLE_OAUTH_CLIENT_SECRET,
+    process.env.GOOGLE_OAUTH_REFRESH_TOKEN,
+    'GOOGLE_OAUTH_* legado'
+  );
 }
 
 function executionResult(body, functionName) {
