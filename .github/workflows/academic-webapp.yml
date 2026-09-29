@@ -1,0 +1,32 @@
+name: Academic Web App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.academic-requests/**'
+
+permissions:
+  contents: read
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Execute canonical academic Web App
+        shell: bash
+        run: |
+          set -euo pipefail
+          request_file="$(git diff-tree --no-commit-id --name-only -r HEAD -- '.academic-requests/*.json' | tail -n1)"
+          test -n "$request_file"
+
+          endpoint="https://script.google.com/macros/s/AKfycbz2rCuB9jUsbnt0tj0RgHmr3lguOZjVL34a_2F_yhggiwLNTOEn8QdsdbFv4SK6aGxr/exec"
+          response="$(curl -fsSL --max-time 60             -H 'Content-Type: application/json'             --data-binary @"$request_file"             "$endpoint")"
+
+          echo "$response"
+          printf '%s' "$response" | grep -q '"ok":true'
