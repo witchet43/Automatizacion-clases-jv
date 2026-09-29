@@ -1,0 +1,37 @@
+{
+  "action": "clase",
+  "materia": "Administración",
+  "gammaUrl": "https://gamma.app/docs/1owzwt340ln5avg",
+  "expectedResourceTypes": [
+    "actividad",
+    "tarea"
+  ],
+  "resources": [
+    {
+      "type": "actividad",
+      "params": {
+        "unidad": "Unidad 4",
+        "temaSubtema": "4.3.1 Recursos Humanos",
+        "titulo": "Actividad 18 - Diseño funcional del área de Recursos Humanos",
+        "descripcion": "Diseña una propuesta básica del área de Recursos Humanos para la empresa trabajada en clase.\n\n1. Recupera la empresa seleccionada en la Tarea 09 y resume sus características principales.\n2. Define el propósito del área de Recursos Humanos para esa empresa.\n3. Organiza al menos seis funciones de RH: planeación de personal, reclutamiento, selección, contratación/inducción, capacitación, evaluación, compensación o relaciones laborales.\n4. Para cada función indica responsable, decisión principal e información necesaria.\n5. Propón una estructura funcional mínima del área y represéntala mediante un esquema u organigrama.\n6. Define al menos cuatro indicadores para evaluar el funcionamiento del área.\n7. Identifica tres riesgos de gestión de personas y propone una medida preventiva para cada uno.\n8. Justifica por qué el diseño es coherente con el tamaño, giro y necesidades de la empresa.\n\nEvidencia: esquema funcional del área, matriz de funciones/decisiones/indicadores, riesgos y justificación final.",
+        "contenidoDocumento": "ACTIVIDAD 18 — DISEÑO FUNCIONAL DEL ÁREA DE RECURSOS HUMANOS\n\nPropósito\nDiseñar un área básica de Recursos Humanos coherente con las características y necesidades de una empresa.\n\n1. CONTEXTO DE LA EMPRESA\nNombre de la empresa:\nGiro:\nTamaño:\nCaracterísticas relevantes:\n\n2. PROPÓSITO DEL ÁREA DE RH\nDescribe qué debe resolver el área de Recursos Humanos en esta empresa.\n\n3. FUNCIONES PRINCIPALES\nCompleta una matriz con:\n- Función de RH\n- Responsable\n- Decisión principal\n- Información necesaria\n- Resultado esperado\n\nIncluye al menos seis funciones.\n\n4. ESTRUCTURA FUNCIONAL\nDiseña un esquema u organigrama mínimo del área.\n\n5. INDICADORES\nDefine al menos cuatro indicadores. Para cada uno registra:\n- nombre;\n- qué mide;\n- fórmula o criterio;\n- decisión que apoya.\n\n6. RIESGOS Y PREVENCIÓN\nIdentifica tres riesgos de gestión de personas y una medida preventiva por riesgo.\n\n7. JUSTIFICACIÓN\nExplica por qué la propuesta es adecuada para el tamaño, giro y necesidades de la empresa.\n\nEvidencia de entrega\nEsquema funcional, matriz de funciones y decisiones, indicadores, riesgos y justificación.",
+        "fechaSesion": "2026-10-12",
+        "horaFinSesion": "17:00",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "tarea",
+      "params": {
+        "unidad": "Unidad 4",
+        "temaSubtema": "4.3.2 Producción",
+        "titulo": "Tarea 10 - Mapa preliminar del área de Producción",
+        "descripcion": "Prepara el subtema 4.3.2 Producción a partir de una empresa real o del proyecto trabajado.\n\n1. Identifica un producto o servicio principal.\n2. Describe de forma resumida el proceso mediante el cual se produce o entrega.\n3. Señala al menos cinco actividades o etapas del proceso.\n4. Identifica entradas, recursos y salidas principales.\n5. Detecta tres puntos donde sea necesario controlar calidad, tiempo, costo o capacidad.\n6. Propón dos indicadores del proceso.\n7. Formula dos preguntas que te gustaría resolver sobre el área de Producción.\n\nEvidencia: mapa preliminar del proceso, entradas/recursos/salidas, puntos de control, indicadores y preguntas.",
+        "contenidoDocumento": "TAREA 10 — MAPA PRELIMINAR DEL ÁREA DE PRODUCCIÓN\n\nPropósito\nPreparar el análisis del área de Producción identificando el proceso principal y sus puntos de control.\n\n1. PRODUCTO O SERVICIO\nEmpresa:\nProducto o servicio principal:\n\n2. PROCESO GENERAL\nDescribe brevemente cómo se produce o entrega.\n\n3. ETAPAS\nEnumera al menos cinco actividades o etapas.\n\n4. ENTRADAS, RECURSOS Y SALIDAS\nPara cada etapa registra:\n- entrada;\n- recurso;\n- actividad;\n- salida.\n\n5. PUNTOS DE CONTROL\nIdentifica tres puntos donde sea necesario controlar:\n- calidad;\n- tiempo;\n- costo;\n- capacidad.\n\n6. INDICADORES\nPropón dos indicadores del proceso.\n\n7. PREGUNTAS\nFormula dos preguntas para trabajar en la siguiente sesión.\n\nEvidencia de entrega\nMapa preliminar del proceso, tabla de entradas/recursos/salidas, controles, indicadores y preguntas.",
+        "fechaSiguienteSesion": "2026-10-14",
+        "horaInicioSiguienteSesion": "15:00",
+        "puntos": 100
+      }
+    }
+  ]
+}
