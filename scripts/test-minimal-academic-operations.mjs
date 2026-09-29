@@ -26,6 +26,11 @@ assert.match(web,/QUIZ_ASISTENCIA_REQUIERE_MATERIA/);
 assert.match(web,/QUIZ_ASISTENCIA_PARAMETRO_NO_PERMITIDO/);
 assert.doesNotMatch(fastResolver,/p\.courseId|p\.course\b|p\.courseKey/);
 assert.match(web,/documentationRead:false,auxiliaryReads:false/);
+assert.match(web,/firstExternalAction:'WEB_APP'/);
+assert.match(web,/preflightReadsAllowed:false/);
+assert.match(web,/diagnosticOnlyAfterError:true/);
+const fastPathBlock=web.slice(web.indexOf("quizAsistencia:Object.freeze"),web.indexOf("})",web.indexOf("quizAsistencia:Object.freeze"))+2);
+assert.doesNotMatch(fastPathBlock,/courseId|courseKey|sesion|unidad|tema|fecha/);
 assert.match(activeCourse,/REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION:\s*false/);
 assert.doesNotMatch(activeCourse,/clasesSinTema|if\s*\(!temaSubtema\)/);
 assert.match(guards,/validarPlaneacionCanonicaReadOnly_\(subject\)/);
@@ -79,4 +84,4 @@ s=scenario([quiz(7,7,'PUBLISHED'),quiz(8,8,'DRAFT'),quiz(18,8,'DRAFT')]);assert.
 s=scenario([quiz(7,7,'PUBLISHED')]);r=s.run();s.publish(r.workId);
 const retried=s.run();assert.equal(retried.workId,r.workId);assert.equal(retried.state,'PUBLISHED');assert.equal(s.created,1);
 const newRequest=s.run('new-request');assert.equal(newRequest.title,'Quiz 9');assert.equal(s.created,2);
-console.log('OK: FAST PATH de asistencia usa solo materia externamente; alias/courseId internos, último Quiz PUBLISHED, reutilización de DRAFT y sin planeación.');
+console.log('OK: FAST PATH de asistencia exige WEB_APP como primera acción externa, prohíbe preflight contextual y usa solo materia externamente; alias/courseId internos, último Quiz PUBLISHED, reutilización de DRAFT y sin planeación.');
