@@ -1,0 +1,38 @@
+{
+  "action": "clase",
+  "materia": "Sistemas Distribuidos",
+  "gammaUrl": "https://gamma.app/docs/225-Mensajes-de-respuesta-HTTP-a9587ft23s7tleg",
+  "expectedResourceTypes": [
+    "practica",
+    "tarea"
+  ],
+  "resources": [
+    {
+      "type": "practica",
+      "params": {
+        "unidad": "Unidad 2",
+        "temaSubtema": "2.2.5 Mensajes de respuesta HTTP",
+        "sesionCanonica": 16,
+        "explicitSequenceOverride": true,
+        "titulo": "Práctica 15 - Interpretar códigos y mensajes de respuesta HTTP",
+        "descripcion": "Analiza respuestas HTTP reales y construye un árbol de decisión para que un cliente determine cómo reaccionar.\n\n1. Ejecuta o reproduce solicitudes que generen respuestas de familias 2xx, 4xx y 5xx.\n2. Para cada caso registra código, texto de estado, headers relevantes y cuerpo de la respuesta.\n3. Explica qué parte del resultado corresponde al protocolo y qué parte corresponde a la lógica de la aplicación.\n4. Clasifica cada respuesta como éxito, error del cliente o error del servidor.\n5. Diseña un árbol de decisión que indique qué debe hacer un cliente ante cada familia de respuestas.\n6. Incluye al menos un caso donde el mismo recurso produzca respuestas distintas por cambios en la solicitud.\n7. Explica por qué un código HTTP por sí solo no siempre basta para determinar la causa raíz.\n8. Cierra con una tabla código → significado → acción del cliente.\n\nEvidencia: tres o más respuestas documentadas, árbol de decisión y tabla de interpretación.",
+        "contenidoDocumento": "PRÁCTICA 15 — INTERPRETAR CÓDIGOS Y MENSAJES DE RESPUESTA HTTP\n\nPropósito\nInterpretar respuestas HTTP y decidir cómo debe reaccionar un cliente ante distintos resultados.\n\n1. CASOS\nObtén respuestas de al menos tres familias:\n- 2xx\n- 4xx\n- 5xx\n\n2. REGISTRO\nPara cada respuesta documenta:\n- URL o endpoint\n- método\n- código\n- texto de estado\n- headers relevantes\n- cuerpo resumido\n- causa probable\n\n3. CLASIFICACIÓN\nIndica si el resultado corresponde a:\n- éxito;\n- error del cliente;\n- error del servidor.\n\n4. ÁRBOL DE DECISIÓN\nConstruye un flujo que responda:\n- ¿es 2xx?\n- ¿es 4xx?\n- ¿es 5xx?\n- ¿se debe reintentar?\n- ¿se debe corregir la solicitud?\n- ¿se debe escalar o registrar el error?\n\n5. CASO COMPARATIVO\nUsa el mismo recurso con dos solicitudes distintas y explica por qué cambia la respuesta.\n\n6. ANÁLISIS\nExplica por qué el código HTTP no siempre revela por sí solo la causa raíz.\n\n7. TABLA FINAL\nCódigo | significado | posible causa | acción recomendada del cliente\n\nEvidencia de entrega\nCasos documentados, árbol de decisión y tabla final.",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "tarea",
+      "params": {
+        "unidad": "Unidad 2",
+        "temaSubtema": "2.2.6 Estado usuario-servidor",
+        "sesionCanonica": 17,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "titulo": "Tarea 09 - Preparación: estado usuario-servidor, cookies y sesión",
+        "descripcion": "Prepara el tema 2.2.6 identificando cómo una aplicación web conserva estado entre solicitudes HTTP.\n\n1. Explica con tus palabras por qué HTTP se considera stateless.\n2. Define cookie, sesión y token de sesión.\n3. Describe qué información puede almacenar una cookie y qué información conviene no guardar directamente en ella.\n4. Dibuja una secuencia simple: primera solicitud → respuesta con cookie → segunda solicitud con cookie → identificación de sesión.\n5. Explica la diferencia entre cookie de sesión y cookie persistente.\n6. Identifica dos riesgos asociados con el manejo incorrecto de cookies o sesiones.\n7. Formula dos preguntas técnicas que quieras resolver durante la práctica.\n\nEvidencia: explicación breve, diagrama de secuencia, comparación de cookies y dos riesgos.",
+        "contenidoDocumento": "TAREA 09 — PREPARACIÓN: ESTADO USUARIO-SERVIDOR, COOKIES Y SESIÓN\n\nPropósito\nPreparar el análisis del estado usuario-servidor en aplicaciones web.\n\n1. HTTP Y ESTADO\nExplica por qué HTTP se considera stateless.\n\n2. CONCEPTOS\nDefine:\n- cookie;\n- sesión;\n- identificador de sesión;\n- token de sesión.\n\n3. INFORMACIÓN\nIndica qué puede almacenarse en una cookie y qué información sensible no debería almacenarse directamente.\n\n4. SECUENCIA\nDibuja:\nPrimera solicitud → respuesta con cookie → nueva solicitud con cookie → recuperación de sesión.\n\n5. COMPARACIÓN\nDiferencia:\n- cookie de sesión;\n- cookie persistente.\n\n6. RIESGOS\nDescribe dos riesgos derivados de un manejo incorrecto de cookies o sesiones.\n\n7. PREGUNTAS\nFormula dos preguntas técnicas para la siguiente clase.\n\nEvidencia de entrega\nExplicación, diagrama, comparación y riesgos.",
+        "puntos": 100
+      }
+    }
+  ]
+}
