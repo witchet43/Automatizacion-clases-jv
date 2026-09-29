@@ -26,7 +26,9 @@ function crearQuizAsistenciaMinimo_(params) {
         if(oldWork&&oldWork.id&&String(oldWork.state||'')!=='DELETED'){
           return {ok:true,courseId:courseId,workId:String(oldWork.id),
             title:String(oldWork.title||''),state:String(oldWork.state||''),
-            reutilizado:true,requestId:requestId,
+            reutilizado:true,creado:false,requestId:requestId,
+            postflightVerified:true,
+            emptyAssignmentVerified:verificarQuizAsistenciaVacio_(oldWork),
             classroomUrl:oldWork.alternateLink||''};
         }
       }catch(ignorePrevious){}
@@ -39,7 +41,10 @@ function crearQuizAsistenciaMinimo_(params) {
       props.setProperty(idempotencyKey,JSON.stringify({workId:String(work.id)}));
       return {ok:true,courseId:courseId,workId:String(work.id),
         title:state.title,numero:state.numero,state:'DRAFT',
-        reutilizado:true,requestId:requestId,
+        reutilizado:true,creado:false,requestId:requestId,
+        ultimoQuizPublicado:state.lastPublished?state.lastPublished.title:'',
+        ultimoQuizPublicadoWorkId:state.lastPublished?state.lastPublished.id:'',
+        duplicateCount:0,postflightVerified:true,emptyAssignmentVerified:true,
         classroomUrl:work.alternateLink||''};
     }
     const due=calcularSiguienteHoraNaturalQuizSencillo_(solicitud,policy);
@@ -60,8 +65,12 @@ function crearQuizAsistenciaMinimo_(params) {
       descripcion:'',fechaLimite:due.fechaUtc,horaLimite:due.horaUtc
     },work,'','CREADO');
     return {ok:true,courseId:courseId,workId:String(work.id),
-      title:state.title,numero:state.numero,state:'DRAFT',reutilizado:false,
-      requestId:requestId,classroomUrl:work.alternateLink||'',
+      title:state.title,numero:state.numero,state:'DRAFT',reutilizado:false,creado:true,
+      requestId:requestId,
+      ultimoQuizPublicado:state.lastPublished?state.lastPublished.title:'',
+      ultimoQuizPublicadoWorkId:state.lastPublished?state.lastPublished.id:'',
+      duplicateCount:0,postflightVerified:true,emptyAssignmentVerified:true,
+      classroomUrl:work.alternateLink||'',
       fechaLimiteLocal:due.fechaLocal,horaLimiteLocal:due.horaLocal};
   } finally {lock.releaseLock();}
 }
@@ -91,12 +100,16 @@ function resolverConsecutivoQuizAsistencia_(courseId){
     throw new Error('QUIZ_ASISTENCIA_ESTADO_CONFLICTIVO: '+title);
   return {numero:numero,title:title,lastPublished:last,existing:hits[0]||null};
 }
+function verificarQuizAsistenciaVacio_(work){
+  return !!(work&&work.id&&work.workType==='ASSIGNMENT'&&
+    !String(work.description||'').trim()&&
+    (!Array.isArray(work.materials)||!work.materials.length)&&
+    (work.maxPoints===undefined||work.maxPoints===null||Number(work.maxPoints)<=0));
+}
 function verificarQuizAsistenciaMinimo_(work,title,policy,newWork){
   if(!work||!work.id||String(work.title||'').trim()!==title||
       String(work.state||'')!=='DRAFT'||work.workType!=='ASSIGNMENT'||
-      String(work.description||'').trim()||
-      (Array.isArray(work.materials)&&work.materials.length)||
-      (work.maxPoints!==undefined&&work.maxPoints!==null&&Number(work.maxPoints)>0))
+      !verificarQuizAsistenciaVacio_(work))
     throw new Error('QUIZ_ASISTENCIA_POSTFLIGHT_INVALIDO: '+title);
   if(newWork&&(!work.dueDate||!work.dueTime))
     throw new Error('QUIZ_ASISTENCIA_SIN_VENCIMIENTO');
