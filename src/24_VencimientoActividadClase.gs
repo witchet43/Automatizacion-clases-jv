@@ -11,6 +11,14 @@ function aplicarReglaVencimientoActividadEnClase_(params) {
 
 function aplicarReglaVencimientoActividadEnClaseConAhora_(params, ahoraLocal) {
   const p = params && typeof params === 'object' ? Object.assign({}, params) : {};
+  if (p.backfillDraft === true && p.explicitSequenceOverride === true) {
+    p.fechaLimite = '';
+    p.horaLimite = '';
+    p.fechaLimiteLocal = '';
+    p.horaLimiteLocal = '';
+    p.backfillSinVencimiento = true;
+    return p;
+  }
   const policy = ACADEMIC_POLICY.CLASSROOM.ACTIVITY_IN_CLASS_DUE;
   validarPoliticaVencimientoActividadEnClase_(policy);
 
