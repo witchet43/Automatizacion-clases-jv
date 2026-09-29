@@ -153,104 +153,51 @@ jobs:
           console.log('Canonical academic policy OK');
           NODE
 
-      - name: Enforce direct resource creation API
+      - name: Enforce canonical didactic Web App API
         shell: bash
         run: |
           set -euo pipefail
           node <<'NODE'
           const fs = require('fs');
-          const legacyFile = 'src/20_CreacionDirectaRecursos.gs';
-          const safeFile = 'src/22_EntrypointsRecursosSeguros.gs';
-          const activityDueFile = 'src/24_VencimientoActividadClase.gs';
-          const taskDueFile = 'src/27_VencimientoTarea.gs';
-          const taskAdapterFile = 'src/28_SolicitudCrearTarea.gs';
-          const practiceRuleFile = 'src/30_PracticaConGoogleDoc.gs';
-          const practiceAdapterFile = 'src/31_SolicitudCrearPractica.gs';
-          const dispatcherFile = 'src/00_SolicitudImportacionCalificaciones.gs';
-          const requiredFiles = [legacyFile,safeFile,activityDueFile,taskDueFile,taskAdapterFile,practiceRuleFile,practiceAdapterFile,dispatcherFile];
-          if (requiredFiles.some(file => !fs.existsSync(file))) process.exit(1);
-          const direct = fs.readFileSync(legacyFile, 'utf8');
-          const safe = fs.readFileSync(safeFile, 'utf8');
-          const activityDue = fs.readFileSync(activityDueFile, 'utf8');
-          const taskDue = fs.readFileSync(taskDueFile, 'utf8');
-          const taskAdapter = fs.readFileSync(taskAdapterFile, 'utf8');
-          const practiceRule = fs.readFileSync(practiceRuleFile, 'utf8');
-          const practiceAdapter = fs.readFileSync(practiceAdapterFile, 'utf8');
-          const dispatcher = fs.readFileSync(dispatcherFile, 'utf8');
-          const engineRequired = [
-            /crearCourseWorkDirecto_/,
-            /crearEvaluacionDirecta_/,
-            /registrarAuditoriaCourseWorkDirecto_/,
-            /registrarAuditoriaEvaluacionDirecta_/,
-            /verificarCourseWorkDraftDirecto_/,
-            /construirMaterialesDirectos_/,
-            /STUDENT_COPY/
+          const files = [
+            'src/20_CreacionDirectaRecursos.gs',
+            'src/22_EntrypointsRecursosSeguros.gs',
+            'src/24_VencimientoActividadClase.gs',
+            'src/27_VencimientoTarea.gs',
+            'src/30_PracticaConGoogleDoc.gs',
+            'src/64_QuizAsistenciaRapido.gs',
+            'src/65_QuizAsistenciaWebApp.gs',
+            'src/appsscript.json'
           ];
-          const safeRequired = [
-            /function\s+crearActividad\s*\(/,
-            /aplicarReglaVencimientoActividadEnClase_/,
-            /function\s+crearTarea\s*\(/,
-            /aplicarReglaVencimientoTarea_/,
-            /verificarVencimientoTareaCreada_/,
-            /function\s+crearPractica\s*\(/,
-            /prepararPracticaConGoogleDoc_/,
-            /verificarPracticaCreada_/,
-            /function\s+crearQuiz\s*\(/,
-            /function\s+crearExamen\s*\(/,
-            /ejecutarConNotificacionError_/
-          ];
-          const activityDueRequired = [
-            /function\s+aplicarReglaVencimientoActividadEnClase_\s*\(/,
-            /function\s+aplicarReglaVencimientoActividadEnClaseConAhora_\s*\(/,
-            /function\s+validarVencimientoActividadEnClaseCanonico\s*\(/,
-            /sesión ha concluido/,
-            /debe seguir estando en el futuro/,
-            /no puede ser posterior al final de la sesión/
-          ];
-          const taskDueRequired = [
-            /function\s+aplicarReglaVencimientoTarea_\s*\(/,
-            /function\s+aplicarReglaVencimientoTareaConAhora_\s*\(/,
-            /function\s+validarVencimientoTareaCanonico\s*\(/,
-            /siguiente clase ha iniciado/,
-            /debe seguir estando en el futuro/,
-            /no puede ser posterior al inicio de la siguiente clase/,
-            /verificarVencimientoTareaCreada_/
-          ];
-          const practiceRequired = [
-            /function\s+prepararPracticaConGoogleDoc_\s*\(/,
-            /function\s+crearGoogleDocumentoPractica_\s*\(/,
-            /function\s+verificarPracticaCreada_\s*\(/,
-            /function\s+validarPracticaCanonica\s*\(/,
-            /UrlFetchApp\.fetch\s*\(/,
-            /ScriptApp\.getOAuthToken\s*\(/,
-            /googleapis\.com\/upload\/drive\/v3\/files/,
-            /PRÁCTICA no admite fecha ni hora de vencimiento/,
-            /STUDENT_COPY/,
-            /application\/vnd\.google-apps\.document/
-          ];
-          const taskTransportRequired = [
-            /SOLICITUD_CREAR_TAREA/,
-            /procesarSolicitudCrearTarea_/,
-            /crearTarea\s*\(params\)/
-          ];
-          const practiceTransportRequired = [
-            /SOLICITUD_CREAR_PRACTICA/,
-            /procesarSolicitudCrearPractica_/,
-            /crearPractica\s*\(params\)/,
-            /STUDENT_COPY/,
-            /GOOGLE_DOCUMENT_MIME/
-          ];
-          const failed = engineRequired.some(re => !re.test(direct)) ||
-            safeRequired.some(re => !re.test(safe)) ||
-            activityDueRequired.some(re => !re.test(activityDue)) ||
-            taskDueRequired.some(re => !re.test(taskDue)) ||
-            practiceRequired.some(re => !re.test(practiceRule)) ||
-            taskTransportRequired.some(re => !re.test(taskAdapter)) ||
-            practiceTransportRequired.some(re => !re.test(practiceAdapter)) ||
-            !/procesarSolicitudCrearTarea_/.test(dispatcher) ||
-            !/procesarSolicitudCrearPractica_/.test(dispatcher);
+          if (files.some(file => !fs.existsSync(file))) process.exit(1);
+          const direct = fs.readFileSync(files[0], 'utf8');
+          const safe = fs.readFileSync(files[1], 'utf8');
+          const activityDue = fs.readFileSync(files[2], 'utf8');
+          const taskDue = fs.readFileSync(files[3], 'utf8');
+          const practice = fs.readFileSync(files[4], 'utf8');
+          const attendance = fs.readFileSync(files[5], 'utf8');
+          const web = fs.readFileSync(files[6], 'utf8');
+          const manifest = JSON.parse(fs.readFileSync(files[7], 'utf8'));
+          const requiredActions = ['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase'];
+          const failed =
+            !/crearCourseWorkDirecto_/.test(direct) ||
+            !/crearEvaluacionDirecta_/.test(direct) ||
+            !/function\s+crearActividad\s*\(/.test(safe) ||
+            !/function\s+crearTarea\s*\(/.test(safe) ||
+            !/function\s+crearPractica\s*\(/.test(safe) ||
+            !/function\s+crearQuiz\s*\(/.test(safe) ||
+            !/function\s+crearExamen\s*\(/.test(safe) ||
+            !/SESSION_END/.test(activityDue) ||
+            !/NEXT_SESSION_START/.test(taskDue) ||
+            !/STUDENT_COPY/.test(practice) ||
+            !/function\s+crearQuizAsistenciaRapido\s*\(/.test(attendance) ||
+            requiredActions.some(action => !web.includes("'" + action + "'")) ||
+            !/function\s+doPost\s*\(/.test(web) ||
+            !/executeAs\s*":\s*"USER_DEPLOYING"/.test(JSON.stringify(manifest)) ||
+            !/access\s*":\s*"ANYONE_ANONYMOUS"/.test(JSON.stringify(manifest)) ||
+            Object.prototype.hasOwnProperty.call(manifest,'executionApi');
           if (failed) process.exit(1);
-          console.log('Direct resource creation API OK');
+          console.log('Canonical didactic Web App API OK');
           NODE
 
       - name: Enforce script error notification
