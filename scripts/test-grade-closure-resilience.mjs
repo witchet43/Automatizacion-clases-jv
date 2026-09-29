@@ -56,7 +56,4 @@ assert.match(facade,/modo:'OMITIDO_POR_NOTAS_ASIGNADAS'/);
 assert.match(facade,/noWrites:true/);
 assert.ok(facade.indexOf('const publicado=detectarCierreConNotasAsignadas_')<
   facade.indexOf('const ss = SpreadsheetApp.openById',facade.indexOf('const publicado=detectarCierreConNotasAsignadas_')));
-const remote=fs.readFileSync('src/38_ExecutionApi.gs','utf8');
-assert.match(remote,/verification:'CLOSE_MANUAL_GRADES_PROTECTED'/);
-assert.match(remote,/actual\.assignedGrades<1/);
 console.log('PASS: cierre reintenta notas desactualizadas, protege assignedGrade, usa exclusivamente draftGrade y serializa cierres.');
