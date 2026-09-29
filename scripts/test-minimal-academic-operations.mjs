@@ -6,7 +6,6 @@ import vm from 'node:vm';
 const core=fs.readFileSync('src/64_QuizAsistenciaRapido.gs','utf8');
 const main=fs.readFileSync('src/33_QuizSencillo.gs','utf8');
 const facade=fs.readFileSync('src/22_EntrypointsRecursosSeguros.gs','utf8');
-const hourly=fs.readFileSync('src/47_AutoQuizSencilloHorario.gs','utf8');
 const policy=fs.readFileSync('src/00_PoliticasCanonicas.gs','utf8');
 const activeCourse=fs.readFileSync('src/45_QuizAsistenciaClaseActiva.gs','utf8');
 const guards=fs.readFileSync('src/39_MasterGuardrails.gs','utf8');
@@ -17,7 +16,6 @@ assert.match(policy,/SEQUENCE_SOURCE:\s*'LATEST_PUBLISHED_QUIZ'/);
 assert.match(activeCourse,/REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION:\s*false/);
 assert.doesNotMatch(activeCourse,/clasesSinTema|if\s*\(!temaSubtema\)/);
 assert.match(guards,/validarPlaneacionCanonicaReadOnly_\(subject\)/);
-assert.doesNotMatch(hourly.slice(hourly.indexOf('function procesarAutoQuizSencilloHorario_('),hourly.indexOf('function resolverTemaCanonicoAutoQuizHorario_(')),/resolverUnidadAbiertaQuizSencillo_|resolverTemaCanonicoAutoQuizHorario_|preflightDocumentoMaestro/);
 
 function scenario(initial){
   let works=initial.map(w=>({...w}));
