@@ -108,6 +108,7 @@ function verificarQuizAsistenciaMinimo_(work,title,policy,newWork){
  * "Sistemas Operativos". No consulta Calendar, Drive, Sheets ni planeaciones.
  */
 function obtenerCourseIdPorNombre(nombreMateria){
+  nombreMateria=String(nombreMateria||'Sistemas Operativos').trim();
   const objetivo=normalizarNombreCursoRapido_(nombreMateria);
   if(!objetivo)throw new Error('NOMBRE_MATERIA_REQUERIDO');
 
@@ -161,7 +162,7 @@ function normalizarNombreCursoRapido_(value){
  * El motor canónico conserva DRAFT, consecutivo e idempotencia.
  */
 function crearQuizAsistenciaRapido(courseId){
-  const id=String(courseId||'').trim();
+  const id=String(courseId||obtenerCourseIdPorNombre('Sistemas Operativos')).trim();
   if(!/^\d+$/.test(id))throw new Error('QUIZ_ASISTENCIA_REQUIERE_COURSE_ID');
 
   const requestId='QUIZ_ASISTENCIA_RAPIDO|'+id+'|'+
