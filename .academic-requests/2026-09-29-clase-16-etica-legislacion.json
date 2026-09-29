@@ -1,0 +1,39 @@
+{
+  "action": "clase",
+  "materia": "Ética y Legislación Informática",
+  "gammaUrl": "https://gamma.app/docs/0vc7f4nwfey2trp",
+  "expectedResourceTypes": [
+    "actividad",
+    "tarea"
+  ],
+  "resources": [
+    {
+      "type": "actividad",
+      "params": {
+        "unidad": "Unidad 2",
+        "temaSubtema": "2.5 Características y clasificación de los delitos informáticos",
+        "sesionCanonica": 16,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "titulo": "Actividad 9 - Clasificación razonada de incidentes y posibles delitos informáticos",
+        "descripcion": "Analiza distintos escenarios y distingue entre incidente, conducta indebida, incumplimiento y posible delito informático.\n\n1. Para cada caso identifica hechos verificables, actor, activo afectado y acción realizada.\n2. Determina si existe autorización o si ésta es dudosa/no acreditada.\n3. Clasifica el caso como incidente, conducta riesgosa, incumplimiento o posible delito; cuando no exista información suficiente, indícalo expresamente.\n4. Relaciona cada caso con el activo afectado: confidencialidad, integridad, disponibilidad, identidad o patrimonio.\n5. Identifica qué evidencia adicional sería necesaria antes de sostener una conclusión jurídica.\n6. Justifica cada clasificación evitando asumir intención o delito sin hechos suficientes.\n7. Elabora una tabla final de criterios que permita diferenciar riesgo, incidente y posible delito.\n\nEvidencia: matriz de casos, clasificación razonada, evidencia faltante y tabla de criterios.",
+        "contenidoDocumento": "ACTIVIDAD 9 — CLASIFICACIÓN RAZONADA DE INCIDENTES Y POSIBLES DELITOS INFORMÁTICOS\n\nPropósito\nDistinguir riesgos, incidentes y posibles delitos informáticos utilizando hechos, autorización, activos afectados y evidencia.\n\n1. CRITERIOS DE ANÁLISIS\nPara cada caso registra:\n- Hechos verificables\n- Actor\n- Activo afectado\n- Acción realizada\n- Existencia o ausencia de autorización\n- Impacto observado\n- Evidencia disponible\n- Evidencia faltante\n\n2. CLASIFICACIÓN\nSelecciona una categoría:\n- Incidente de seguridad\n- Conducta riesgosa o indebida\n- Incumplimiento\n- Posible delito informático\n- Información insuficiente para clasificar\n\n3. JUSTIFICACIÓN\nExplica por qué elegiste la categoría sin asumir intención ni responsabilidad jurídica cuando no exista evidencia suficiente.\n\n4. ACTIVO AFECTADO\nRelaciona el caso con uno o más elementos:\n- Confidencialidad\n- Integridad\n- Disponibilidad\n- Identidad\n- Patrimonio\n\n5. EVIDENCIA ADICIONAL\nIndica qué información o evidencia sería necesaria para mejorar la conclusión.\n\n6. TABLA DE CIERRE\nConstruye una tabla comparativa:\nRiesgo | Incidente | Posible delito\nIncluye definición operativa, evidencia mínima y ejemplo.\n\nEvidencia de entrega\nMatriz de casos, justificaciones y tabla comparativa final.",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "tarea",
+      "params": {
+        "unidad": "Unidad 2",
+        "temaSubtema": "Integración Unidad 2 — responsabilidades, riesgos y posibles delitos",
+        "sesionCanonica": 17,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "titulo": "Tarea 05 - Caso integrador de responsabilidades, riesgos y posibles delitos",
+        "descripcion": "Prepara la integración de la Unidad 2 mediante un caso único.\n\n1. Selecciona o construye un escenario organizacional donde exista un activo digital relevante y una situación de seguridad.\n2. Describe el contexto y separa hechos de supuestos.\n3. Identifica el activo, amenaza, vulnerabilidad o condición de exposición e impacto.\n4. Clasifica el riesgo utilizando los criterios trabajados en 2.3 y 2.4.\n5. Señala responsabilidades técnicas y organizacionales.\n6. Determina si existe un incidente y si hay elementos suficientes para hablar únicamente de “posible delito”; si no los hay, explica qué evidencia falta.\n7. Formula una recomendación técnica y una recomendación administrativa/jurídica.\n8. Incluye una fuente confiable relacionada con gestión del riesgo, seguridad o marco jurídico.\n\nEvidencia: ficha de caso integrador con hechos, riesgo, responsabilidades, posible clasificación y recomendaciones.",
+        "contenidoDocumento": "TAREA 05 — CASO INTEGRADOR DE RESPONSABILIDADES, RIESGOS Y POSIBLES DELITOS\n\nPropósito\nIntegrar seguridad jurídica, seguridad técnica, riesgos y posibles delitos mediante un solo caso.\n\n1. CONTEXTO\nDescribe brevemente la organización y el activo digital relevante.\n\n2. HECHOS Y SUPUESTOS\nSepara:\n- hechos conocidos;\n- datos no confirmados;\n- supuestos que requieren verificación.\n\n3. RIESGO\nIdentifica:\n- activo;\n- amenaza;\n- vulnerabilidad o exposición;\n- impacto;\n- clasificación del riesgo.\n\n4. RESPONSABILIDADES\nDistingue:\n- responsabilidad técnica;\n- responsabilidad organizacional;\n- obligaciones o controles esperados.\n\n5. INCIDENTE Y POSIBLE DELITO\nExplica:\n- si existe un incidente;\n- si hay elementos para hablar de posible delito;\n- qué evidencia falta antes de una conclusión jurídica.\n\n6. RECOMENDACIONES\nPropón:\n- una medida técnica;\n- una medida administrativa/jurídica.\n\n7. FUENTE\nIncluye al menos una fuente confiable relacionada con el análisis.\n\nEvidencia de entrega\nFicha integradora completa y argumentada.",
+        "puntos": 100
+      }
+    }
+  ]
+}
