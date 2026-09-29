@@ -15,6 +15,8 @@ jobs:
     timeout-minutes: 2
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Crear Quiz de Asistencia
         shell: bash
