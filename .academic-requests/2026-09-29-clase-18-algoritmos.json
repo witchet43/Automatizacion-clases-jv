@@ -1,0 +1,37 @@
+{
+  "action": "clase",
+  "materia": "Algoritmos y Estructuras de Datos",
+  "gammaUrl": "https://gamma.app/docs/c2zzw2kavrix3j0",
+  "expectedResourceTypes": [
+    "actividad",
+    "tarea"
+  ],
+  "resources": [
+    {
+      "type": "actividad",
+      "params": {
+        "unidad": "Unidad 2",
+        "temaSubtema": "2.2 Pilas: representación y 2.2.2 operaciones básicas",
+        "titulo": "Actividad 11 - Simulación e implementación de una pila",
+        "descripcion": "Aplica el modelo LIFO y las operaciones básicas de una pila.\n\n1. Dibuja una pila vacía y simula paso a paso esta secuencia: push(10), push(20), push(30), pop(), push(40), top(), pop().\n2. Después de cada operación registra el contenido de la pila y el elemento superior.\n3. Explica la diferencia entre top() y pop().\n4. Implementa en C++ una pila usando std::stack<int> y reproduce la misma secuencia.\n5. Agrega una validación que evite ejecutar top() o pop() cuando la pila esté vacía.\n6. Modifica el programa para leer una secuencia de operaciones desde teclado y mostrar el estado de la pila después de cada operación.\n7. Explica por qué push, pop y top se consideran operaciones O(1) en una implementación adecuada.\n8. Identifica dos errores frecuentes al trabajar con pilas y explica cómo prevenirlos.\n\nEvidencia: traza completa de operaciones, código funcional en C++ y explicación del comportamiento LIFO.",
+        "contenidoDocumento": "ACTIVIDAD 11 — SIMULACIÓN E IMPLEMENTACIÓN DE UNA PILA\n\nPropósito\nAplicar el modelo LIFO mediante trazado manual e implementación en C++.\n\n1. TRAZA MANUAL\nParte de una pila vacía y ejecuta:\npush(10)\npush(20)\npush(30)\npop()\npush(40)\ntop()\npop()\n\nDespués de cada operación registra:\n- operación;\n- contenido de la pila de base a cima;\n- elemento superior;\n- valor retirado, cuando aplique.\n\n2. CONCEPTOS\nExplica:\n- diferencia entre push y pop;\n- diferencia entre top y pop;\n- qué significa LIFO;\n- qué ocurre si se intenta consultar o retirar un elemento de una pila vacía.\n\n3. IMPLEMENTACIÓN EN C++\nImplementa la secuencia usando std::stack<int>.\nEl programa debe:\n- mostrar el estado después de cada operación;\n- validar empty() antes de top() o pop();\n- imprimir los valores retirados.\n\n4. EXTENSIÓN\nPermite capturar operaciones desde teclado:\n- PUSH valor\n- POP\n- TOP\n- SALIR\n\n5. ANÁLISIS\nExplica por qué push, pop y top tienen costo O(1) en una implementación adecuada.\n\n6. ERRORES FRECUENTES\nDescribe dos errores posibles y cómo prevenirlos.\n\nEvidencia de entrega\nTraza manual, código funcional y explicación del modelo LIFO.",
+        "fechaSesion": "2026-09-30",
+        "horaFinSesion": "13:00",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "tarea",
+      "params": {
+        "unidad": "Unidad 2",
+        "temaSubtema": "2.2.3 Aplicaciones de pilas; 2.3 Colas: representación y operaciones básicas",
+        "titulo": "Tarea 7 - Aplicaciones de pilas y preparación de colas",
+        "descripcion": "Prepara la siguiente sesión conectando las pilas con sus aplicaciones y con el concepto de cola.\n\n1. Investiga tres aplicaciones reales de pilas en software.\n2. Para cada aplicación explica qué elemento se apila, cuándo se hace push y cuándo se hace pop.\n3. Elige una de las aplicaciones y representa una secuencia mínima de cinco operaciones.\n4. Define qué es una cola y explica el principio FIFO.\n5. Compara pila y cola en una tabla con: orden de acceso, inserción, eliminación y ejemplo de uso.\n6. Investiga las operaciones básicas enqueue, dequeue y front.\n7. Explica un caso donde usar una pila produciría un comportamiento incorrecto y una cola sería la estructura adecuada.\n\nEvidencia: tres aplicaciones de pilas, una secuencia de operaciones y tabla comparativa pila vs. cola.",
+        "contenidoDocumento": "TAREA 7 — APLICACIONES DE PILAS Y PREPARACIÓN DE COLAS\n\nPropósito\nRelacionar el modelo LIFO con aplicaciones reales y preparar la transición hacia colas.\n\n1. APLICACIONES DE PILAS\nInvestiga tres aplicaciones en software.\nPara cada una registra:\n- aplicación;\n- elemento almacenado;\n- evento que provoca push;\n- evento que provoca pop;\n- por qué LIFO resulta adecuado.\n\n2. SECUENCIA\nSelecciona una aplicación y representa al menos cinco operaciones consecutivas.\n\n3. INTRODUCCIÓN A COLAS\nDefine:\n- cola;\n- FIFO;\n- enqueue;\n- dequeue;\n- front.\n\n4. COMPARACIÓN\nConstruye una tabla:\n- criterio;\n- pila;\n- cola.\n\nIncluye:\n- orden de acceso;\n- inserción;\n- eliminación;\n- elemento consultado;\n- ejemplo de aplicación.\n\n5. DECISIÓN DE ESTRUCTURA\nDescribe un problema donde una pila produciría un orden incorrecto y explica por qué una cola sería más adecuada.\n\nEvidencia de entrega\nTres aplicaciones de pilas, secuencia de operaciones y comparación pila vs. cola.",
+        "fechaSiguienteSesion": "2026-10-05",
+        "horaInicioSiguienteSesion": "11:00",
+        "puntos": 100
+      }
+    }
+  ]
+}
