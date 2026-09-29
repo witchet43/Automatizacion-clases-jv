@@ -17,8 +17,9 @@ function evidenciaSesionReal_(row, works) {
   // Si hay título de actividad/práctica, debe coincidir: una tarea de la sesión
   // siguiente no prueba que la actividad de ESTA sesión ya existe.
   const matches=active.filter(function(w){
-    if(tituloNorm)return normal(w.title)===tituloNorm;
-    return ids.indexOf(String(w.id))>=0;
+    const byId=ids.indexOf(String(w.id))>=0;
+    const byTitle=tituloNorm&&normal(w.title)===tituloNorm;
+    return byId||byTitle;
   });
   const gammaUrl=String(row.gammaUrl||'').trim();
   const gammaVerificada=/^https:\/\/gamma\.app\/docs\//i.test(gammaUrl)&&
