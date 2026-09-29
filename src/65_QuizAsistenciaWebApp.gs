@@ -183,14 +183,23 @@ function inspeccionarEncabezadoIdentidadDocumento_(doc){
   const result=Object.assign({},doc,{hasIdentityHeader:false,identityFields:[],inspection:'UNSUPPORTED_NON_GOOGLE_DOC'});
   if(String(doc.mimeType)!=='application/vnd.google-apps.document')return result;
   try{
-    const text=String(DocumentApp.openById(String(doc.id)).getBody().getText()||'');
+    const url='https://www.googleapis.com/drive/v3/files/'+encodeURIComponent(String(doc.id))+
+      '/export?mimeType='+encodeURIComponent('text/plain');
+    const response=UrlFetchApp.fetch(url,{
+      method:'get',
+      headers:{Authorization:'Bearer '+ScriptApp.getOAuthToken()},
+      muteHttpExceptions:true
+    });
+    const code=Number(response.getResponseCode());
+    if(code<200||code>=300)throw new Error('Drive export HTTP '+code+': '+String(response.getContentText()||'').slice(0,250));
+    const text=String(response.getContentText()||'');
     const fields=[];
     if(/Nombre del alumno\s*:/i.test(text))fields.push('Nombre del alumno');
     if(/(?:^|\n)\s*Grupo\s*:/i.test(text))fields.push('Grupo');
     if(/(?:^|\n).*\bFecha\s*:/i.test(text))fields.push('Fecha');
     result.hasIdentityHeader=fields.length>0;
     result.identityFields=fields;
-    result.inspection='GOOGLE_DOC_TEXT';
+    result.inspection='DRIVE_EXPORT_TEXT';
   }catch(err){
     result.inspection='ERROR: '+String(err&&err.message?err.message:err);
   }
