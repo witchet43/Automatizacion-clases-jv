@@ -55,8 +55,10 @@ function doPost(e){
 function ejecutarServicioAcademicoWeb_(params){
   try{
     const p=params&&typeof params==='object'?params:{};
-    const action=String(p.action||'quizAsistencia').trim();
+    const action=String(p.action||'').trim();
+    if(!action)throw new Error('ACCION_REQUERIDA');
     if(ACADEMIC_WEB.ACTIONS.indexOf(action)<0)throw new Error('ACCION_NO_PERMITIDA');
+    validarContratoOperacionWeb_(action);
 
     if(action==='quizAsistencia')validarEntradaQuizAsistenciaWeb_(p);
     const course=resolverCursoFastPathAcademicoWeb_(action,p)||resolverCursoAcademicoWeb_(p);
@@ -98,6 +100,12 @@ function ejecutarServicioAcademicoWeb_(params){
   }
 }
 
+function validarContratoOperacionWeb_(action){
+  const contracts=ACADEMIC_POLICY&&ACADEMIC_POLICY.EXECUTION?ACADEMIC_POLICY.EXECUTION.OPERATION_CONTRACTS:null;
+  if(!contracts||!contracts[action])throw new Error('CONTRATO_OPERACION_NO_DEFINIDO: '+action);
+  return contracts[action];
+}
+
 function validarEntradaQuizAsistenciaWeb_(p){
   const allowed={action:true,materia:true};
   Object.keys(p||{}).forEach(function(key){
@@ -118,7 +126,7 @@ function resolverCursoFastPathAcademicoWeb_(action,p){
 }
 
 function resolverCursoAcademicoWeb_(p){
-  const raw=String(p.course||p.courseKey||p.materia||'').trim();
+  const raw=String(p.courseId||p.course||p.courseKey||p.materia||'').trim();
   if(!raw)throw new Error('CURSO_REQUERIDO');
   const norm=normalizarNombreCursoRapido_(raw).replace(/\s+/g,'-');
   if(ACADEMIC_WEB.COURSES[norm])return ACADEMIC_WEB.COURSES[norm];
@@ -149,6 +157,7 @@ function normalizarPayloadAcademicoWeb_(course,p){
   delete out.action;
   delete out.course;
   delete out.courseKey;
+  delete out.courseId;
   delete out.params;
   out.courseId=course.id;
   if(!String(out.materia||'').trim())out.materia=course.materia;
@@ -180,8 +189,16 @@ function crearPaqueteClaseWeb_(course,p){
     else throw new Error('TIPO_RECURSO_NO_PERMITIDO_EN_CLASE_'+index+': '+type);
     results.push({type:type,result:r});
   });
+  const expected=(Array.isArray(p.expectedResourceTypes)?p.expectedResourceTypes:[])
+    .map(function(x){return String(x||'').trim().toLowerCase();}).filter(Boolean);
+  const actual=results.map(function(x){return x.type;});
+  const missing=expected.filter(function(type){return actual.indexOf(type)<0;});
+  const packageStatus=expected.length?(missing.length?'PARCIAL':'COMPLETO'):'PARCIAL_NO_VERIFICABLE';
   return {
-    package:true,
+    package:packageStatus==='COMPLETO',
+    packageStatus:packageStatus,
+    expectedResourceTypes:expected,
+    missingResourceTypes:missing,
     gammaUrl:String(p.gammaUrl||'').trim(),
     resources:results
   };
@@ -193,7 +210,7 @@ function crearMaterialDidacticoWeb_(course,p){
   if(!titulo)throw new Error('MATERIAL_REQUIERE_TITULO');
   const contenido=payload.contenidoDocumento!==undefined?payload.contenidoDocumento:payload.googleDocContent;
   if(!String(Array.isArray(contenido)?contenido.join('\n'):contenido||'').trim())throw new Error('MATERIAL_REQUIERE_CONTENIDO');
-  const doc=crearGoogleDocumentoPractica_({
+  const doc=crearGoogleDocumentoAcademico_({
     titulo:titulo,
     descripcion:String(payload.descripcion||payload.description||'').trim(),
     contenidoDocumento:contenido
