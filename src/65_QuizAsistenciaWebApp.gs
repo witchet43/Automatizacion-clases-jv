@@ -30,7 +30,7 @@ const ACADEMIC_WEB = Object.freeze({
     'sistemas-operativos':Object.freeze({id:'875776451793',materia:'Sistemas Operativos'}),
     'so':Object.freeze({id:'875776451793',materia:'Sistemas Operativos'})
   }),
-  ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase']),
+  ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase','diagnosticarClase']),
   FAST_PATHS:Object.freeze({
     quizAsistencia:Object.freeze({singleExternalInput:'materia',firstExternalAction:'WEB_APP',preflightReadsAllowed:false,documentationRead:false,auxiliaryReads:false,diagnosticOnlyAfterError:true})
   })
@@ -66,6 +66,8 @@ function ejecutarServicioAcademicoWeb_(params){
 
     if(action==='quizAsistencia'){
       result=crearQuizAsistenciaRapido(String(p.materia||'').trim());
+    }else if(action==='diagnosticarClase'){
+      result=diagnosticarProgresoClaseWeb_(course);
     }else if(action==='resolverClase'){
       result=resolverSiguienteClase(
         course.materia,
@@ -104,6 +106,28 @@ function validarContratoOperacionWeb_(action){
   const contracts=ACADEMIC_POLICY&&ACADEMIC_POLICY.EXECUTION?ACADEMIC_POLICY.EXECUTION.OPERATION_CONTRACTS:null;
   if(!contracts||!contracts[action])throw new Error('CONTRATO_OPERACION_NO_DEFINIDO: '+action);
   return contracts[action];
+}
+
+function diagnosticarProgresoClaseWeb_(course){
+  const plan=leerPlaneacionSiguienteClase_(course.materia);
+  const works=listarCourseWorkClase_(course.id);
+  const active=works.map(function(w){
+    return {
+      id:String(w.id||''),
+      title:String(w.title||''),
+      state:String(w.state||''),
+      topicId:String(w.topicId||''),
+      creationTime:String(w.creationTime||'')
+    };
+  }).sort(function(a,b){return String(a.creationTime).localeCompare(String(b.creationTime));});
+  return {
+    diagnostic:true,
+    readOnly:true,
+    planningRows:plan.rows.map(function(r){
+      return {session:String(r.session||''),unit:String(r.unit||''),topic:String(r.topic||''),practice:String(r.practice||''),gammaUrl:String(r.gammaUrl||''),gammaState:String(r.gammaState||'')};
+    }),
+    courseWork:active
+  };
 }
 
 function validarEntradaQuizAsistenciaWeb_(p){
