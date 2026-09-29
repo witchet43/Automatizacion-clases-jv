@@ -20,15 +20,7 @@ jobs:
           ADDED_FILES: ${{ toJson(github.event.head_commit.added) }}
         run: |
           set -euo pipefail
-          request_file="$(python3 - <<'PY'
-import json, os
-files = json.loads(os.environ.get('ADDED_FILES') or '[]')
-matches = [f for f in files if f.startswith('.attendance-requests/')]
-if len(matches) != 1:
-    raise SystemExit('Se esperaba exactamente una solicitud nueva.')
-print(matches[0])
-PY
-)"
+          request_file="$(python3 -c 'import json,os; fs=json.loads(os.environ.get("ADDED_FILES") or "[]"); m=[f for f in fs if f.startswith(".attendance-requests/")]; assert len(m)==1, "Se esperaba exactamente una solicitud nueva"; print(m[0])')"
           name="$(basename "$request_file" .txt)"
           course="${name%%--*}"
           request_id="${name#*--}"
@@ -38,8 +30,4 @@ PY
           response="$(curl -fsSL --get             --data-urlencode "action=quizAsistencia"             --data-urlencode "course=$course"             --data-urlencode "requestId=$request_id"             "https://script.google.com/macros/s/AKfycbwS5oWDQyUlFaQ5OfwHdI8QjI-RwOdq8MsoPtIiY4iug-vYcHYJwBTBvgfu_rjrl5hR/exec")"
 
           echo "$response"
-          echo "$response" | jq -e '
-            .ok == true and
-            .state == "DRAFT" and
-            (.workId | type == "string" and length > 0)
-          ' >/dev/null
+          echo "$response" | jq -e '.ok == true and .state == "DRAFT" and (.workId | type == "string" and length > 0)' >/dev/null
