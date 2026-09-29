@@ -103,47 +103,35 @@ function verificarQuizAsistenciaMinimo_(work,title,policy,newWork){
   return true;
 }
 /**
- * Resuelve un curso ACTIVE de Classroom por nombre.
- * Admite el nombre completo o un fragmento inequívoco, por ejemplo
- * "Sistemas Operativos". No consulta Calendar, Drive, Sheets ni planeaciones.
+ * Course IDs canónicos del periodo julio-diciembre 2026.
+ * Configuración estable: no consultar Classroom/Sheets/Calendar para resolverlos.
+ */
+const COURSE_IDS_2026_JUL_DIC = Object.freeze({
+  'sistemas distribuidos':'871158466533',
+  'analisis y diseno de sistemas computacionales':'871158479566',
+  'introduccion a las tecnologias de informacion':'871156721160',
+  'administracion':'871158187513',
+  'etica y legislacion informatica':'871149624583',
+  'algoritmos y estructuras de datos':'871156334717',
+  'sistemas operativos':'875776451793'
+});
+
+/**
+ * Resuelve courseId exclusivamente desde el registro canónico local.
+ * No llama a Classroom ni a ninguna fuente externa.
  */
 function obtenerCourseIdPorNombre(nombreMateria){
-  nombreMateria=String(nombreMateria||'Sistemas Operativos').trim();
-  const objetivo=normalizarNombreCursoRapido_(nombreMateria);
+  const objetivo=normalizarNombreCursoRapido_(String(nombreMateria||'Sistemas Operativos').trim());
   if(!objetivo)throw new Error('NOMBRE_MATERIA_REQUERIDO');
 
-  const cursos=[];
-  let token;
-  do{
-    const page=Classroom.Courses.list({
-      courseStates:['ACTIVE'],
-      pageSize:100,
-      pageToken:token
-    });
-    (page.courses||[]).forEach(function(course){
-      cursos.push({
-        id:String(course.id||''),
-        name:String(course.name||''),
-        normalizado:normalizarNombreCursoRapido_(course.name)
-      });
-    });
-    token=page.nextPageToken;
-  }while(token);
+  if(COURSE_IDS_2026_JUL_DIC[objetivo]) return COURSE_IDS_2026_JUL_DIC[objetivo];
 
-  const exactos=cursos.filter(function(c){return c.normalizado===objetivo;});
-  if(exactos.length===1)return exactos[0].id;
-  if(exactos.length>1)throw new Error('CURSO_AMBIGUO: '+nombreMateria);
-
-  const parciales=cursos.filter(function(c){
-    return c.normalizado.indexOf(objetivo)>=0;
+  const hits=Object.keys(COURSE_IDS_2026_JUL_DIC).filter(function(nombre){
+    return objetivo.indexOf(nombre)>=0 || nombre.indexOf(objetivo)>=0;
   });
-  if(parciales.length===1)return parciales[0].id;
-  if(parciales.length===0)throw new Error('CURSO_NO_ENCONTRADO: '+nombreMateria);
-
-  throw new Error(
-    'CURSO_AMBIGUO: '+nombreMateria+' -> '+
-    parciales.map(function(c){return c.name+' ['+c.id+']';}).join(' | ')
-  );
+  if(hits.length===1)return COURSE_IDS_2026_JUL_DIC[hits[0]];
+  if(hits.length===0)throw new Error('CURSO_NO_REGISTRADO: '+nombreMateria);
+  throw new Error('CURSO_AMBIGUO: '+nombreMateria);
 }
 
 function normalizarNombreCursoRapido_(value){
