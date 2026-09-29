@@ -49,12 +49,14 @@ ctx.findHeaderGuard_ = (headers,candidates) => {
   return -1;
 };
 ctx.resolvePlanningSource_=()=>({spreadsheetId:'CONTROL_PRUEBA',preferredSheet:'Planeación'});
+ctx.obtenerCourseIdPorNombre=()=> '871149624583';
 ctx.SpreadsheetApp={openById:()=>({
   getSheetByName:()=>({getDataRange:()=>({getDisplayValues:()=>data}),getName:()=> 'Planeación'}),
   getSheets:()=>[]
 })};
 ctx.Classroom={Courses:{
-  list:()=>({courses:[{id:'CURSO_PRUEBA',name:'UAQ - Ética y Legislación Informática'}]}),
+  get:(id)=>({id:String(id),name:'UAQ - Ética y Legislación Informática',courseState:'ACTIVE'}),
+  list:()=>({courses:[{id:'871149624583',name:'UAQ - Ética y Legislación Informática'}]}),
   CourseWork:{list:()=>({courseWork:works}),create:()=>{throw Error('PROHIBIDO_CREAR_EN_REGRESION');}}
 }};
 ctx.PropertiesService={getScriptProperties:()=>{throw Error('PROHIBIDO_USAR_CONTADOR_GUARDADO');}};
