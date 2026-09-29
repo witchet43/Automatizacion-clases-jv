@@ -10,7 +10,7 @@
  *  - devuelve JSON verificable.
  *
  * Operaciones de creación admitidas:
- *  quizAsistencia, actividad, tarea, practica, quiz, examen, clase.
+ *  quizAsistencia, actividad, tarea, practica, quiz, examen, material, clase.
  *
  * "clase" orquesta exclusivamente recursos Google ya especificados en
  * resources[]. Gamma se incorpora mediante gammaUrl ya creado por su conector
@@ -27,7 +27,7 @@ const ACADEMIC_WEB = Object.freeze({
     'sistemas-operativos':Object.freeze({id:'875776451793',materia:'Sistemas Operativos'}),
     'so':Object.freeze({id:'875776451793',materia:'Sistemas Operativos'})
   }),
-  ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','clase','resolverClase'])
+  ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase'])
 });
 
 function doGet(e){
@@ -65,6 +65,8 @@ function ejecutarServicioAcademicoWeb_(params){
       );
     }else if(action==='clase'){
       result=crearPaqueteClaseWeb_(course,p);
+    }else if(action==='material'){
+      result=crearMaterialDidacticoWeb_(course,p);
     }else{
       const payload=normalizarPayloadAcademicoWeb_(course,p);
       if(action==='actividad')result=crearActividad(payload);
@@ -147,6 +149,7 @@ function crearPaqueteClaseWeb_(course,p){
     else if(type==='practica')r=crearPractica(payload);
     else if(type==='quiz')r=crearQuiz(payload);
     else if(type==='examen')r=crearExamen(payload);
+    else if(type==='material')r=crearMaterialDidacticoWeb_(course,{params:payload});
     else if(type==='quizasistencia'||type==='quiz-asistencia')r=crearQuizAsistenciaRapido(course.id);
     else throw new Error('TIPO_RECURSO_NO_PERMITIDO_EN_CLASE_'+index+': '+type);
     results.push({type:type,result:r});
@@ -155,6 +158,26 @@ function crearPaqueteClaseWeb_(course,p){
     package:true,
     gammaUrl:String(p.gammaUrl||'').trim(),
     resources:results
+  };
+}
+
+function crearMaterialDidacticoWeb_(course,p){
+  const payload=normalizarPayloadAcademicoWeb_(course,p);
+  const titulo=String(payload.titulo||payload.title||'').trim();
+  if(!titulo)throw new Error('MATERIAL_REQUIERE_TITULO');
+  const contenido=payload.contenidoDocumento!==undefined?payload.contenidoDocumento:payload.googleDocContent;
+  if(!String(Array.isArray(contenido)?contenido.join('\n'):contenido||'').trim())throw new Error('MATERIAL_REQUIERE_CONTENIDO');
+  const doc=crearGoogleDocumentoPractica_({
+    titulo:titulo,
+    descripcion:String(payload.descripcion||payload.description||'').trim(),
+    contenidoDocumento:contenido
+  });
+  return {
+    material:true,
+    courseId:course.id,
+    documentId:String(doc.id),
+    documentName:String(doc.name||titulo),
+    documentMime:String(doc.mimeType||'')
   };
 }
 
