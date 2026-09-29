@@ -172,6 +172,9 @@ const ACADEMIC_POLICY = Object.freeze({
   }),
   GAMMA: Object.freeze({
     TITLE_PATTERN: '<número del subtema> - <nombre del subtema>',
+    COVER_CONTEXT_PATTERN: 'Unidad <N> · Tema <número del subtema> - <nombre del subtema>',
+    COVER_SESSION_NUMBER_ALLOWED: false,
+    REQUIRE_TOPIC_NUMBER_ON_COVER: true,
     MAX_SLIDES: 25,
     ORDINARY_MINUTES_MIN: 15,
     ORDINARY_MINUTES_MAX: 25,
@@ -219,7 +222,8 @@ function validarPoliticasCanonicas_(){
       throw new Error('La siguiente clase debe resolverse por estado real Classroom/Gamma, nunca por fecha, contador guardado ni memoria.');
   if(!p.ERROR_REPORTING||p.ERROR_REPORTING.NOTIFY_ON_ERROR!==true||p.ERROR_REPORTING.SILENT_FAILURE_ALLOWED!==false||p.ERROR_REPORTING.PRIMARY_CHANNEL!=='EMAIL'||p.ERROR_REPORTING.PRESERVE_ORIGINAL_EXCEPTION!==true) throw new Error('La política de notificación de errores fue debilitada.');
   if(Math.abs((p.UNIT_GRADING.EXAM_WEIGHT+p.UNIT_GRADING.NON_EXAM_WEIGHT)-1)>0.000001) throw new Error('La ponderación canónica de unidad no suma 100%.');
-  if(p.CLASSROOM.DEFAULT_COURSEWORK_STATE!=='DRAFT') throw new Error('El estado automático ordinario de Classroom debe ser DRAFT.');
+  if(!p.GAMMA||p.GAMMA.COVER_SESSION_NUMBER_ALLOWED!==false||p.GAMMA.REQUIRE_TOPIC_NUMBER_ON_COVER!==true) throw new Error('La portada Gamma debe incluir Unidad + Tema/Subtema oficial y excluir número de sesión.');
+    if(p.CLASSROOM.DEFAULT_COURSEWORK_STATE!=='DRAFT') throw new Error('El estado automático ordinario de Classroom debe ser DRAFT.');
   const did=p.CLASSROOM.DIDACTIC_INSTRUCTIONS;
   if(!did||did.PERSONAL_WINDOWS_DEVICE!==true||did.EXPLAIN_COMMANDS!==true||did.REMOVE_ADMINISTRATIVE_TEXT!==true||did.FOR_ALL_SUBJECTS!==true||did.FORMAT_REQUIRED!==true) throw new Error('La didáctica transversal (Windows personal, comandos explicados, sin texto administrativo) es obligatoria.');
   if(p.CLASSROOM.AUTOMATIC_GRADE_FIELD!=='draftGrade'||p.CLASSROOM.AUTOMATIC_ASSIGNED_GRADE!==false||p.CLASSROOM.AUTOMATIC_RETURN!==false) throw new Error('La política automática de calificaciones debe ser DRAFT_ONLY.');
