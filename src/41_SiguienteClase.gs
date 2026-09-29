@@ -16,10 +16,12 @@ function resolverSiguienteClase(materia,requestedSession,options){
  const state=seleccionarSiguienteClasePorEstadoReal_(plan.rows,works,requestedSession,options);
  if(state.complete)return {ok:true,complete:true,materia:subject,courseId:String(course.id),courseName:course.name,sequenceSource:state.source,observed:state.observed};
  const target=state.target,evidence=state.evidence;
+ const targetIndex=plan.rows.findIndex(function(r){return Number(r.row)===Number(target.row);});
+ const nextTarget=targetIndex>=0&&targetIndex+1<plan.rows.length?plan.rows[targetIndex+1]:null;
  const prev=buscarWorkTitulo_(works,tituloTareaPreviaClase_(target));
  const practice=buscarWorkTitulo_(works,tituloPracticaClase_(target));
  return {ok:true,complete:false,materia:subject,courseId:String(course.id),courseName:course.name,
-  planningSpreadsheetId:plan.source.spreadsheetId,planningSheet:plan.sheet.getName(),target:target,
+  planningSpreadsheetId:plan.source.spreadsheetId,planningSheet:plan.sheet.getName(),target:target,nextTarget:nextTarget,
   evidence:evidence,sequenceSource:state.source,inferredSession:state.inferredSession,
   reconciliation:state.reconciliation,progress:{lastPrepared:state.lastPrepared,lastPublished:state.lastPublished},
   missing:{tareaPrevia:!prev,gamma:!evidence.gammaVerificada,practica:!practice},resourceState:'DRAFT'};
