@@ -328,11 +328,21 @@ jobs:
           clasp_config_auth: .clasprc.json
         run: npx clasp push --force
 
-      - name: Confirm direct Apps Script deployment
+      - name: Create Quiz Asistencia Web App deployment
+        env:
+          clasp_config_auth: .clasprc.json
         shell: bash
         run: |
+          set -euo pipefail
+          npx clasp create-deployment --description "Quiz Asistencia Web App" | tee webapp-deployment-output.txt
+          deployment_id="$(grep -oE 'AKfy[A-Za-z0-9_-]+' webapp-deployment-output.txt | tail -n 1)"
+          test -n "$deployment_id"
+          webapp_url="https://script.google.com/macros/s/$deployment_id/exec"
+          echo "QUIZ_ASISTENCIA_WEBAPP_URL=$webapp_url" >> "$GITHUB_ENV"
           {
-            echo '### Apps Script'
+            echo '### Quiz de Asistencia Web App'
             echo
-            echo 'Código desplegado. Las operaciones de Quiz de Asistencia se reciben por la hoja de control y se ejecutan dentro de Apps Script.'
+            echo "Deployment ID: $deployment_id"
+            echo
+            echo "URL: $webapp_url"
           } >> "$GITHUB_STEP_SUMMARY"
