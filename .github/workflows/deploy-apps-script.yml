@@ -84,7 +84,10 @@ jobs:
           const required = [
             /BEHAVIOR_SOURCE:\s*'CODE'/,
             /AI_ROLE:\s*'INTENT_AND_MINIMAL_PARAMETERS'/,
+            /REMOTE_TRANSPORT:\s*'WEB_APP'/,
+            /PUBLIC_WEBAPP_SCOPE:\s*'DIDACTIC_MATERIALIZATION'/,
             /PROMPT_ALGORITHM_RECONSTRUCTION_ALLOWED:\s*false/,
+
             /BEHAVIOR_CHANGE_REQUIRES_CODE:\s*true/,
             /BEHAVIOR_CHANGE_REQUIRES_REGRESSION:\s*true/,
             /DOCUMENTATION_IS_EXECUTION_SOURCE:\s*false/,
@@ -104,6 +107,8 @@ jobs:
           const text = fs.readFileSync('src/00_PoliticasCanonicas.gs', 'utf8');
           const required = [
             /RESOURCE_CREATION_MODE:\s*'DIRECT_SCRIPT'/,
+            /REMOTE_TRANSPORT:\s*'WEB_APP'/,
+            /PUBLIC_WEBAPP_SCOPE:\s*'DIDACTIC_MATERIALIZATION'/,
             /SHEETS_ROLE:\s*'AUDIT_AND_CONFIGURATION_ONLY'/,
             /MONITOR_REQUIRED_FOR_CREATION:\s*false/,
             /NOTIFY_ON_ERROR:\s*true/,
