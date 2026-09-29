@@ -14,18 +14,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
+      - uses: actions/checkout@v4
+
       - name: Crear Quiz de Asistencia
         shell: bash
-        env:
-          ADDED_FILES: ${{ toJson(github.event.head_commit.added) }}
         run: |
           set -euo pipefail
-          request_file="$(python3 -c 'import json,os; fs=json.loads(os.environ.get("ADDED_FILES") or "[]"); m=[f for f in fs if f.startswith(".attendance-requests/")]; assert len(m)==1, "Se esperaba exactamente una solicitud nueva"; print(m[0])')"
-          name="$(basename "$request_file" .txt)"
-          course="${name%%--*}"
-          request_id="${name#*--}"
+          request_file="$(git diff-tree --no-commit-id --name-only -r HEAD -- '.attendance-requests/*.json' | tail -n1)"
+          test -n "$request_file"
+
+          course="$(jq -r '.course' "$request_file")"
+          request_id="$(jq -r '.requestId' "$request_file")"
           test "$course" = "so"
-          test "$request_id" != "$name"
+          test -n "$request_id"
+          test "$request_id" != "null"
 
           response="$(curl -fsSL --get             --data-urlencode "action=quizAsistencia"             --data-urlencode "course=$course"             --data-urlencode "requestId=$request_id"             "https://script.google.com/macros/s/AKfycbwS5oWDQyUlFaQ5OfwHdI8QjI-RwOdq8MsoPtIiY4iug-vYcHYJwBTBvgfu_rjrl5hR/exec")"
 
