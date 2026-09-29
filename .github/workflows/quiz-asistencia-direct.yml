@@ -18,36 +18,20 @@ jobs:
         with:
           fetch-depth: 2
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - run: npm install --silent
-
-      - name: Restaurar acceso clasp
+      - name: Crear Quiz de Asistencia vía Web App
         shell: bash
-        run: |
-          printf '%s' '${{ secrets.CLASPRC_JSON }}' > .clasprc.json
-          chmod 600 .clasprc.json
-
-      - name: Crear Quiz de Asistencia
-        shell: bash
-        env:
-          clasp_config_auth: .clasprc.json
         run: |
           set -euo pipefail
           request_file="$(git diff-tree --no-commit-id --name-only -r HEAD -- '.attendance-requests/*.json' | tail -n1)"
           test -n "$request_file"
 
-          course="$(jq -r '.course' "$request_file")"
-          request_id="$(jq -r '.requestId' "$request_file")"
-          test "$course" = "so"
-          test -n "$request_id"
-          test "$request_id" != "null"
+          course="$(python -c "import json;print(json.load(open('$request_file'))['course'])")"
+          test -n "$course"
 
-          params="$(jq -cn --arg courseId "875776451793" --arg requestId "$request_id" '[{courseId:$courseId,requestId:$requestId}]')"
-          response="$(npx clasp run-function crearQuizAsistencia --params "$params")"
+          base="https://script.google.com/macros/s/AKfycbwvhillpOawsMRFwVjRx4iiO4IbVZcTgFE8-ZXvesVlwEhtrooqmS-8DQ2huxKWp3e6/exec"
+          response="$(curl -fsSL --max-time 30 "$base?action=quizAsistencia&course=$course")"
 
           echo "$response"
-          echo "$response" | grep -q '"state":"DRAFT"'
-          echo "$response" | grep -q '"workId"'
+          printf '%s' "$response" | grep -q '"ok":true'
+          printf '%s' "$response" | grep -q '"state":"DRAFT"'
+          printf '%s' "$response" | grep -q '"workId"'
