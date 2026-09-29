@@ -9,6 +9,7 @@
  *  - delega;
  *  - devuelve JSON verificable.
  *
+ * Auditoría transversal disponible: auditarIdentidadClassroom (solo lectura).
  * Operaciones de creación admitidas:
  *  quizAsistencia, actividad, tarea, practica, quiz, examen, material, clase.
  *
