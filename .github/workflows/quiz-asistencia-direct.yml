@@ -28,7 +28,7 @@ jobs:
           course="$(python -c "import json;print(json.load(open('$request_file'))['course'])")"
           test -n "$course"
 
-          base="https://script.google.com/macros/s/AKfycbwvhillpOawsMRFwVjRx4iiO4IbVZcTgFE8-ZXvesVlwEhtrooqmS-8DQ2huxKWp3e6/exec"
+          base="https://script.google.com/macros/s/AKfycbz2rCuB9jUsbnt0tj0RgHmr3lguOZjVL34a_2F_yhggiwLNTOEn8QdsdbFv4SK6aGxr/exec"
           response="$(curl -fsSL --max-time 30 "$base?action=quizAsistencia&course=$course")"
 
           echo "$response"
