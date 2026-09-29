@@ -1,5 +1,6 @@
 /** Una sola operación para Quiz Sencillo / Quiz de Asistencia.
- * Entradas: courseId; requestedAtLocal y requestId opcionales.
+ * Entrada externa del FAST PATH: materia.
+ * courseId, requestedAtLocal y requestId son detalles internos del motor.
  * Únicamente los Quiz N PUBLISHED deciden el próximo consecutivo.
  * Un Quiz N+1 DRAFT se reutiliza, no se incrementa el número por borradores.
  */
@@ -122,6 +123,7 @@ function verificarQuizAsistenciaMinimo_(work,title,policy,newWork){
 const COURSE_IDS_2026_JUL_DIC = Object.freeze({
   'sistemas distribuidos':'871158466533',
   'analisis y diseno de sistemas computacionales':'871158479566',
+  'analisis y diseno de sistemas de informacion':'871158479566',
   'introduccion a las tecnologias de informacion':'871156721160',
   'administracion':'871158187513',
   'etica y legislacion informatica':'871149624583',
@@ -134,7 +136,7 @@ const COURSE_IDS_2026_JUL_DIC = Object.freeze({
  * No llama a Classroom ni a ninguna fuente externa.
  */
 function obtenerCourseIdPorNombre(nombreMateria){
-  const objetivo=normalizarNombreCursoRapido_(String(nombreMateria||'Sistemas Operativos').trim());
+  const objetivo=normalizarNombreCursoRapido_(String(nombreMateria||'').trim());
   if(!objetivo)throw new Error('NOMBRE_MATERIA_REQUERIDO');
 
   if(COURSE_IDS_2026_JUL_DIC[objetivo]) return COURSE_IDS_2026_JUL_DIC[objetivo];
@@ -158,13 +160,14 @@ function normalizarNombreCursoRapido_(value){
 }
 
 /**
- * Crea/reutiliza el Quiz de Asistencia para un courseId.
- * Único parámetro obligatorio: courseId.
- * El motor canónico conserva DRAFT, consecutivo e idempotencia.
+ * Crea/reutiliza el Quiz de Asistencia desde una sola entrada: materia.
+ * La resolución de alias/courseId ocurre exclusivamente dentro del código.
+ * El motor canónico conserva DRAFT, consecutivo, idempotencia y postflight.
  */
-function crearQuizAsistenciaRapido(courseId){
-  const id=String(courseId||obtenerCourseIdPorNombre('Sistemas Operativos')).trim();
-  if(!/^\d+$/.test(id))throw new Error('QUIZ_ASISTENCIA_REQUIERE_COURSE_ID');
+function crearQuizAsistenciaRapido(materia){
+  const nombre=String(materia||'').trim();
+  if(!nombre)throw new Error('QUIZ_ASISTENCIA_REQUIERE_MATERIA');
+  const id=obtenerCourseIdPorNombre(nombre);
 
   const requestId='QUIZ_ASISTENCIA_RAPIDO|'+id+'|'+
     Utilities.formatDate(new Date(),'America/Mexico_City','yyyy-MM-dd-HH');

@@ -18,7 +18,13 @@ assert.match(policy,/FAST_PATH_ACTIONS:\s*Object\.freeze\(\['quizAsistencia'\]\)
 assert.match(policy,/FAST_PATH_DOCUMENT_READ_REQUIRED:\s*false/);
 assert.match(policy,/FAST_PATH_AUXILIARY_READS_ALLOWED:\s*false/);
 assert.match(web,/function resolverCursoFastPathAcademicoWeb_\s*\(/);
-assert.match(web,/p\.courseId/);
+const fastResolver=web.slice(web.indexOf('function validarEntradaQuizAsistenciaWeb_'),web.indexOf('function resolverCursoAcademicoWeb_'));
+assert.match(core,/'analisis y diseno de sistemas de informacion':'871158479566'/);
+assert.match(core,/function crearQuizAsistenciaRapido\(materia\)/);
+assert.match(web,/singleExternalInput:'materia'/);
+assert.match(web,/QUIZ_ASISTENCIA_REQUIERE_MATERIA/);
+assert.match(web,/QUIZ_ASISTENCIA_PARAMETRO_NO_PERMITIDO/);
+assert.doesNotMatch(fastResolver,/p\.courseId|p\.course\b|p\.courseKey/);
 assert.match(web,/documentationRead:false,auxiliaryReads:false/);
 assert.match(activeCourse,/REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION:\s*false/);
 assert.doesNotMatch(activeCourse,/clasesSinTema|if\s*\(!temaSubtema\)/);
@@ -73,4 +79,4 @@ s=scenario([quiz(7,7,'PUBLISHED'),quiz(8,8,'DRAFT'),quiz(18,8,'DRAFT')]);assert.
 s=scenario([quiz(7,7,'PUBLISHED')]);r=s.run();s.publish(r.workId);
 const retried=s.run();assert.equal(retried.workId,r.workId);assert.equal(retried.state,'PUBLISHED');assert.equal(s.created,1);
 const newRequest=s.run('new-request');assert.equal(newRequest.title,'Quiz 9');assert.equal(s.created,2);
-console.log('OK: último Quiz PUBLISHED, reutilización de borrador, sin salto por borradores, sin unidad/planeación y DRAFT.');
+console.log('OK: FAST PATH de asistencia usa solo materia externamente; alias/courseId internos, último Quiz PUBLISHED, reutilización de DRAFT y sin planeación.');

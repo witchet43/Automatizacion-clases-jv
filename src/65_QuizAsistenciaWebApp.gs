@@ -20,6 +20,7 @@ const ACADEMIC_WEB = Object.freeze({
   COURSES:Object.freeze({
     'sistemas-distribuidos':Object.freeze({id:'871158466533',materia:'Sistemas Distribuidos'}),
     'analisis-diseno-sistemas-computacionales':Object.freeze({id:'871158479566',materia:'Análisis y Diseño de Sistemas Computacionales'}),
+    'analisis-diseno-sistemas-informacion':Object.freeze({id:'871158479566',materia:'Análisis y Diseño de Sistemas Computacionales'}),
     'introduccion-tecnologias-informacion':Object.freeze({id:'871156721160',materia:'Introducción a las Tecnologías de Información'}),
     'administracion':Object.freeze({id:'871158187513',materia:'Administración'}),
     'etica-legislacion-informatica':Object.freeze({id:'871149624583',materia:'Ética y Legislación Informática'}),
@@ -29,7 +30,7 @@ const ACADEMIC_WEB = Object.freeze({
   }),
   ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase']),
   FAST_PATHS:Object.freeze({
-    quizAsistencia:Object.freeze({directCourseId:true,documentationRead:false,auxiliaryReads:false})
+    quizAsistencia:Object.freeze({singleExternalInput:'materia',documentationRead:false,auxiliaryReads:false})
   })
 });
 
@@ -55,11 +56,12 @@ function ejecutarServicioAcademicoWeb_(params){
     const action=String(p.action||'quizAsistencia').trim();
     if(ACADEMIC_WEB.ACTIONS.indexOf(action)<0)throw new Error('ACCION_NO_PERMITIDA');
 
+    if(action==='quizAsistencia')validarEntradaQuizAsistenciaWeb_(p);
     const course=resolverCursoFastPathAcademicoWeb_(action,p)||resolverCursoAcademicoWeb_(p);
     let result;
 
     if(action==='quizAsistencia'){
-      result=crearQuizAsistenciaRapido(course.id);
+      result=crearQuizAsistenciaRapido(String(p.materia||'').trim());
     }else if(action==='resolverClase'){
       result=resolverSiguienteClase(
         course.materia,
@@ -94,21 +96,21 @@ function ejecutarServicioAcademicoWeb_(params){
   }
 }
 
+function validarEntradaQuizAsistenciaWeb_(p){
+  const allowed={action:true,materia:true};
+  Object.keys(p||{}).forEach(function(key){
+    if(!allowed[key])throw new Error('QUIZ_ASISTENCIA_PARAMETRO_NO_PERMITIDO: '+key);
+  });
+  if(!String(p&&p.materia||'').trim())
+    throw new Error('QUIZ_ASISTENCIA_REQUIERE_MATERIA');
+  return true;
+}
+
 function resolverCursoFastPathAcademicoWeb_(action,p){
   const cfg=ACADEMIC_WEB.FAST_PATHS[action];
   if(!cfg)return null;
   if(action==='quizAsistencia'){
-    const rawId=String(p.courseId||'').trim();
-    if(rawId){
-      const unique={};
-      Object.keys(ACADEMIC_WEB.COURSES).forEach(function(k){
-        const c=ACADEMIC_WEB.COURSES[k]; unique[c.id]=c;
-      });
-      if(!unique[rawId])throw new Error('COURSE_ID_NO_PERMITIDO');
-      return unique[rawId];
-    }
-    const raw=String(p.course||p.courseKey||p.materia||'').trim();
-    if(!raw)throw new Error('QUIZ_ASISTENCIA_REQUIERE_COURSE_ID');
+    return resolverCursoAcademicoWeb_({materia:String(p.materia||'').trim()});
   }
   return null;
 }
@@ -172,7 +174,7 @@ function crearPaqueteClaseWeb_(course,p){
     else if(type==='quiz')r=crearQuiz(payload);
     else if(type==='examen')r=crearExamen(payload);
     else if(type==='material')r=crearMaterialDidacticoWeb_(course,{params:payload});
-    else if(type==='quizasistencia'||type==='quiz-asistencia')r=crearQuizAsistenciaRapido(course.id);
+    else if(type==='quizasistencia'||type==='quiz-asistencia')r=crearQuizAsistenciaRapido(course.materia);
     else throw new Error('TIPO_RECURSO_NO_PERMITIDO_EN_CLASE_'+index+': '+type);
     results.push({type:type,result:r});
   });
