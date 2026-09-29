@@ -14,8 +14,8 @@ const MASTER_GUARDRAILS = Object.freeze({
   PLANNING_SPREADSHEET_ID: '1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI',
   PLANNING_SHEET: 'Planeación maestra',
   PLANNING_SOURCES: Object.freeze({
-    'itq - sistemas operativos': Object.freeze({spreadsheetId:'1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI',preferredSheet:'Planeación maestra',headerRow:1,columns:Object.freeze({session:'Clase',unit:'Unidad',topic:'Tema / alcance'})}),
-    'sistemas operativos': Object.freeze({spreadsheetId:'1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI',preferredSheet:'Planeación maestra',headerRow:1,columns:Object.freeze({session:'Clase',unit:'Unidad',topic:'Tema / alcance'})}),
+    'itq - sistemas operativos': Object.freeze({spreadsheetId:'1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI',preferredSheet:'Planeación maestra',headerRow:1,columns:Object.freeze({session:'Clase',unit:'Unidad',topic:'Subtema curricular (desglose de planeación)'})}),
+    'sistemas operativos': Object.freeze({spreadsheetId:'1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI',preferredSheet:'Planeación maestra',headerRow:1,columns:Object.freeze({session:'Clase',unit:'Unidad',topic:'Subtema curricular (desglose de planeación)'})}),
     'uaq - sistemas distribuidos': Object.freeze({spreadsheetId:'11QQnAbMCCoebc2o6Tm2_lROZvyfjFnVM89ZAcgBbr6I',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema / subtema'})}),
     'sistemas distribuidos': Object.freeze({spreadsheetId:'11QQnAbMCCoebc2o6Tm2_lROZvyfjFnVM89ZAcgBbr6I',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema / subtema'})}),
     'uaq - administracion': Object.freeze({spreadsheetId:'1G1MTtP9dRN8fM7vG7uOQoHkjbK2uOEoca3Aa2SxJqr4',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema / subtema'})}),
