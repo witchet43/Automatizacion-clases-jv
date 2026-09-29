@@ -14,6 +14,20 @@ const ACADEMIC_POLICY = Object.freeze({
     FAST_PATH_ACTIONS: Object.freeze(['quizAsistencia']),
     FAST_PATH_DOCUMENT_READ_REQUIRED: false,
     FAST_PATH_AUXILIARY_READS_ALLOWED: false,
+    OPERATION_CONTRACTS: Object.freeze({
+      quizAsistencia:Object.freeze({mode:'EXECUTE_FIRST',externalInput:Object.freeze(['materia']),preflight:Object.freeze([]),firstAction:'WEB_APP',state:'DRAFT',postflight:Object.freeze(['courseId','workId','title','state','duplicateCount','postflightVerified','emptyAssignmentVerified'])}),
+      actividad:Object.freeze({mode:'CONTEXT_IF_MISSING_THEN_EXECUTE',externalInput:Object.freeze(['materia','temaSubtema','titulo','descripcion','fechaSesion','horaFinSesion']),preflight:Object.freeze(['TARGET_PLANNING']),firstAction:'VALIDATE_TARGET_CONTEXT',state:'DRAFT',postflight:Object.freeze(['courseId','workId','state','due'])}),
+      tarea:Object.freeze({mode:'NEXT_SESSION_CONTEXT_THEN_EXECUTE',externalInput:Object.freeze(['materia','temaSubtema','titulo','descripcion','fechaSiguienteSesion','horaInicioSiguienteSesion']),preflight:Object.freeze(['TARGET_PLANNING','NEXT_SESSION_WHEN_MISSING']),firstAction:'VALIDATE_TARGET_CONTEXT',state:'DRAFT',postflight:Object.freeze(['courseId','workId','state','due'])}),
+      practica:Object.freeze({mode:'ACADEMIC_CONTEXT_THEN_EXECUTE',externalInput:Object.freeze(['materia','temaSubtema','titulo','descripcion','contenidoDocumento','documentId']),preflight:Object.freeze(['TARGET_PLANNING']),firstAction:'VALIDATE_TARGET_CONTEXT',state:'DRAFT',postflight:Object.freeze(['courseId','workId','state','documentId','shareMode','noDue'])}),
+      quiz:Object.freeze({mode:'SOURCE_CONTENT_THEN_EXECUTE',externalInput:Object.freeze(['materia','temaSubtema','titulo','preguntas']),preflight:Object.freeze(['TARGET_PLANNING','SOURCE_RESOURCE_WHEN_NEEDED']),firstAction:'VALIDATE_CONTENT',state:'DRAFT',postflight:Object.freeze(['courseId','quizId','formId','workId','state'])}),
+      examen:Object.freeze({mode:'APPROVED_CONTENT_THEN_EXECUTE',externalInput:Object.freeze(['materia','temaSubtema','titulo','preguntas']),preflight:Object.freeze(['TARGET_PLANNING','TAUGHT_CONTENT_WHEN_DESIGNING']),firstAction:'VALIDATE_APPROVED_CONTENT',state:'DRAFT',postflight:Object.freeze(['courseId','quizId','formId','workId','state'])}),
+      material:Object.freeze({mode:'CONTENT_READY_THEN_CREATE_DOC',externalInput:Object.freeze(['materia','titulo','contenidoDocumento']),preflight:Object.freeze([]),firstAction:'CREATE_DOCUMENT',state:'NATIVE_GOOGLE_DOC',postflight:Object.freeze(['courseId','documentId','documentMime'])}),
+      resolverClase:Object.freeze({mode:'READ_ONLY_REAL_STATE',externalInput:Object.freeze(['materia','sesion']),preflight:Object.freeze(['TARGET_PLANNING','CLASSROOM_REAL','GAMMA_VERIFIED']),firstAction:'READ_REAL_STATE',state:'READ_ONLY',postflight:Object.freeze(['courseId','target','sequenceSource'])}),
+      clase:Object.freeze({mode:'RESOLVE_OR_VALIDATE_THEN_PACKAGE',externalInput:Object.freeze(['materia','sesion','resources','gammaUrl','expectedResourceTypes']),preflight:Object.freeze(['TARGET_PLANNING','CLASSROOM_REAL','GAMMA_VERIFIED']),firstAction:'VALIDATE_OR_RESOLVE_TARGET',state:'DRAFT',postflight:Object.freeze(['courseId','packageStatus','resources'])}),
+      importarCalificaciones:Object.freeze({mode:'ADMIN_PROTECTED',externalInput:Object.freeze(['quizId','courseId']),preflight:Object.freeze(['QUIZ_REGISTRY','FORMS','CLASSROOM']),firstAction:'RESOLVE_EXACT_INSTRUMENT',state:'DRAFT_GRADE_ONLY',postflight:Object.freeze(['quizId','courseId','workId','detalle'])}),
+      revisarTrabajos:Object.freeze({mode:'ADMIN_PROTECTED',externalInput:Object.freeze(['courseId']),preflight:Object.freeze(['CLASSROOM_PUBLISHED']),firstAction:'SELECT_EXACT_SCOPE',state:'DRAFT_GRADE_ONLY',postflight:Object.freeze(['courseId','trabajosCandidatos','estadoCalificacion'])}),
+      cerrarUnidad:Object.freeze({mode:'ADMIN_PROTECTED',externalInput:Object.freeze(['courseId','unidad']),preflight:Object.freeze(['EXACT_UNIT_PUBLISHED']),firstAction:'RESOLVE_EXACT_UNIT',state:'DRAFT_GRADE_ONLY',postflight:Object.freeze(['courseId','unidad','modo','estadoCalificacion'])})
+    }),
     DIRECT_RESOURCE_TYPES: Object.freeze(['ACTIVIDAD','TAREA','PRACTICA','QUIZ','QUIZ_SENCILLO','EXAMEN']),
     CANONICAL_RESOURCE_ENTRYPOINTS: Object.freeze(['crearActividad','crearTarea','crearPractica','crearQuiz','crearQuizSencillo','crearExamen'])
   }),
@@ -188,6 +202,11 @@ function redondearCalificacionFinalCanonica_(value){const n=Number(value);if(!Nu
 function validarPoliticasCanonicas_(){
   const p=ACADEMIC_POLICY;
   if(p.EXECUTION.RESOURCE_CREATION_MODE!=='DIRECT_SCRIPT'||p.EXECUTION.REMOTE_TRANSPORT!=='WEB_APP'||p.EXECUTION.PUBLIC_WEBAPP_SCOPE!=='DIDACTIC_MATERIALIZATION'||p.EXECUTION.SHEETS_ROLE!=='AUDIT_AND_CONFIGURATION_ONLY'||p.EXECUTION.MONITOR_REQUIRED_FOR_CREATION!==false||p.EXECUTION.FAST_PATH_ENABLED!==true||p.EXECUTION.FAST_PATH_DOCUMENT_READ_REQUIRED!==false||p.EXECUTION.FAST_PATH_AUXILIARY_READS_ALLOWED!==false||p.EXECUTION.FAST_PATH_ACTIONS.indexOf('quizAsistencia')<0) throw new Error('La creación didáctica debe usar entrypoints canónicos y Web App como transporte remoto.');
+  const contracts=p.EXECUTION.OPERATION_CONTRACTS;
+  ['quizAsistencia','actividad','tarea','practica','quiz','examen','material','resolverClase','clase','importarCalificaciones','revisarTrabajos','cerrarUnidad'].forEach(function(name){
+    if(!contracts||!contracts[name])throw new Error('Falta contrato académico ejecutable: '+name);
+  });
+  if(contracts.quizAsistencia.firstAction!=='WEB_APP'||contracts.quizAsistencia.preflight.length!==0)throw new Error('Quiz de Asistencia debe conservar EXECUTE_FIRST sin preflight.');
   const seq=p.CLASS_SEQUENCE;
   if(!seq||seq.SOURCE!=='CLASSROOM_GAMMA_REAL_STATE'||seq.SYSTEM_DATE_AS_PROGRESS!==false||
     seq.PLANNING_DATE_AS_PROGRESS!==false||seq.SAVED_COUNTER_AS_PROGRESS!==false||
