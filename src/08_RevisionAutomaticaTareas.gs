@@ -35,10 +35,10 @@ function procesarSolicitudRevisionTareas_() {
   SpreadsheetApp.flush();
 
   try {
-    const result = revisarTareasCurso_(courseId, true);
+    const result = calificarEstadoEntregaCurso({courseId:courseId,aplicar:true});
     sh.getRange(row, 2).setValue(TASK_REVIEW_REQUEST.DONE);
     sh.getRange(row, 3).setValue(
-      'Revisión directa de Classroom ejecutada en DRAFT. ' + result.calificadas100 + ' con puntaje completo; ' +
+      'Calificación explícita por estado de entrega ejecutada en DRAFT (NO equivale a revisión académica del contenido). ' + result.calificadas100 + ' con puntaje completo; ' +
       result.calificadas0 + ' con 0; ' + result.borradoresConservados + ' borradores existentes conservados; ' +
       result.yaAsignadas + ' calificaciones ya publicadas preservadas; ' + result.trabajosCandidatos + ' trabajos revisados. Ninguna entrega fue devuelta automáticamente.'
     );
