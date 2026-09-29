@@ -102,7 +102,73 @@ function verificarQuizAsistenciaMinimo_(work,title,policy,newWork){
     throw new Error('QUIZ_ASISTENCIA_SIN_VENCIMIENTO');
   return true;
 }
-/** Alias heredado sin lógica de secuencia ni ruta alternativa. */
-function crearQuizAsistenciaRapido(params){
-  return crearQuizAsistencia(params);
+/**
+ * Resuelve un curso ACTIVE de Classroom por nombre.
+ * Admite el nombre completo o un fragmento inequívoco, por ejemplo
+ * "Sistemas Operativos". No consulta Calendar, Drive, Sheets ni planeaciones.
+ */
+function obtenerCourseIdPorNombre(nombreMateria){
+  const objetivo=normalizarNombreCursoRapido_(nombreMateria);
+  if(!objetivo)throw new Error('NOMBRE_MATERIA_REQUERIDO');
+
+  const cursos=[];
+  let token;
+  do{
+    const page=Classroom.Courses.list({
+      courseStates:['ACTIVE'],
+      pageSize:100,
+      pageToken:token
+    });
+    (page.courses||[]).forEach(function(course){
+      cursos.push({
+        id:String(course.id||''),
+        name:String(course.name||''),
+        normalizado:normalizarNombreCursoRapido_(course.name)
+      });
+    });
+    token=page.nextPageToken;
+  }while(token);
+
+  const exactos=cursos.filter(function(c){return c.normalizado===objetivo;});
+  if(exactos.length===1)return exactos[0].id;
+  if(exactos.length>1)throw new Error('CURSO_AMBIGUO: '+nombreMateria);
+
+  const parciales=cursos.filter(function(c){
+    return c.normalizado.indexOf(objetivo)>=0;
+  });
+  if(parciales.length===1)return parciales[0].id;
+  if(parciales.length===0)throw new Error('CURSO_NO_ENCONTRADO: '+nombreMateria);
+
+  throw new Error(
+    'CURSO_AMBIGUO: '+nombreMateria+' -> '+
+    parciales.map(function(c){return c.name+' ['+c.id+']';}).join(' | ')
+  );
+}
+
+function normalizarNombreCursoRapido_(value){
+  return String(value||'')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-zA-Z0-9]+/g,' ')
+    .trim()
+    .replace(/\s+/g,' ')
+    .toLowerCase();
+}
+
+/**
+ * Crea/reutiliza el Quiz de Asistencia para un courseId.
+ * Único parámetro obligatorio: courseId.
+ * El motor canónico conserva DRAFT, consecutivo e idempotencia.
+ */
+function crearQuizAsistenciaRapido(courseId){
+  const id=String(courseId||'').trim();
+  if(!/^\d+$/.test(id))throw new Error('QUIZ_ASISTENCIA_REQUIERE_COURSE_ID');
+
+  const requestId='QUIZ_ASISTENCIA_RAPIDO|'+id+'|'+
+    Utilities.formatDate(new Date(),'America/Mexico_City','yyyy-MM-dd-HH');
+
+  return crearQuizAsistencia({
+    courseId:id,
+    requestId:requestId
+  });
 }
