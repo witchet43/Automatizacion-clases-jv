@@ -25,7 +25,6 @@ const ACADEMIC_POLICY = Object.freeze({
       resolverClase:Object.freeze({mode:'READ_ONLY_REAL_STATE',externalInput:Object.freeze(['materia','sesion']),preflight:Object.freeze(['TARGET_PLANNING','CLASSROOM_REAL','GAMMA_VERIFIED']),firstAction:'READ_REAL_STATE',state:'READ_ONLY',postflight:Object.freeze(['courseId','target','sequenceSource'])}),
       diagnosticarClase:Object.freeze({mode:'DIAGNOSTIC_READ_ONLY',externalInput:Object.freeze(['materia']),preflight:Object.freeze(['TARGET_PLANNING','CLASSROOM_REAL']),firstAction:'READ_AFTER_REAL_ERROR',state:'READ_ONLY',postflight:Object.freeze(['planningRows','courseWork'])}),
       auditarIdentidadClassroom:Object.freeze({mode:'DIAGNOSTIC_READ_ONLY',externalInput:Object.freeze(['materia']),preflight:Object.freeze(['CLASSROOM_REAL','ATTACHED_GOOGLE_DOCS']),firstAction:'READ_ONE_OR_ALL_COURSES',state:'READ_ONLY',postflight:Object.freeze(['materias','totalRecursos','totalDocumentos','totalConEncabezado'])}),
-      purgeWordCanonical:Object.freeze({mode:'ADMIN_DESTRUCTIVE_EXPLICIT',externalInput:Object.freeze(['confirm']),preflight:Object.freeze(['CANONICAL_DRIVE_FOLDERS']),firstAction:'DELETE_WORD_FILES_RECURSIVELY',state:'NO_WORD_FILES',postflight:Object.freeze(['deletedCount','errorCount','deleted','errors'])}),
       clase:Object.freeze({mode:'RESOLVE_OR_VALIDATE_THEN_PACKAGE',externalInput:Object.freeze(['materia','sesion','resources','gammaUrl','expectedResourceTypes']),preflight:Object.freeze(['TARGET_PLANNING','CLASSROOM_REAL','GAMMA_VERIFIED']),firstAction:'VALIDATE_OR_RESOLVE_TARGET',state:'DRAFT',postflight:Object.freeze(['courseId','packageStatus','resources'])}),
       importarCalificaciones:Object.freeze({mode:'ADMIN_PROTECTED',externalInput:Object.freeze(['quizId','courseId']),preflight:Object.freeze(['QUIZ_REGISTRY','FORMS','CLASSROOM']),firstAction:'RESOLVE_EXACT_INSTRUMENT',state:'DRAFT_GRADE_ONLY',postflight:Object.freeze(['quizId','courseId','workId','detalle'])}),
       revisarTrabajos:Object.freeze({mode:'ACADEMIC_REVIEW',externalInput:Object.freeze(['courseId','scope','rubrica']),preflight:Object.freeze(['CLASSROOM_PUBLISHED','EVIDENCE','RUBRIC_WHEN_REQUIRED']),firstAction:'RESOLVE_EVIDENCE_AND_CRITERIA',state:'DRAFT_GRADE_ONLY',postflight:Object.freeze(['courseId','trabajosRevisados','estadoCalificacion'])}),
@@ -156,6 +155,9 @@ const ACADEMIC_POLICY = Object.freeze({
   DOCUMENTS: Object.freeze({
     PRACTICE_STUDENT_COPY: true,
     PRACTICE_DOCUMENT_FORMAT: 'GOOGLE_DOC',
+    ACADEMIC_DOCUMENT_FORMAT: 'GOOGLE_DOC_NATIVE_ONLY',
+    WORD_FILES_ALLOWED: false,
+    WORD_MIME_TYPES_FORBIDDEN: Object.freeze(['application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/msword']),
     STUDENT_IDENTITY_FIELDS_ALLOWED: false,
     CLASSROOM_IS_IDENTITY_SOURCE: true,
     IDENTITY_AUDIT_SCOPE: 'DRIVE_CANONICAL_FOLDERS_THEN_CLASSROOM_DRAFT_PUBLISHED',
@@ -231,6 +233,7 @@ function validarPoliticasCanonicas_(){
   if(Math.abs((p.UNIT_GRADING.EXAM_WEIGHT+p.UNIT_GRADING.NON_EXAM_WEIGHT)-1)>0.000001) throw new Error('La ponderación canónica de unidad no suma 100%.');
   if(!p.GAMMA||p.GAMMA.COVER_SESSION_NUMBER_ALLOWED!==false||p.GAMMA.REQUIRE_TOPIC_NUMBER_ON_COVER!==true) throw new Error('La portada Gamma debe incluir Unidad + Tema/Subtema oficial y excluir número de sesión.');
     if(!p.DOCUMENTS||p.DOCUMENTS.STUDENT_IDENTITY_FIELDS_ALLOWED!==false||p.DOCUMENTS.CLASSROOM_IS_IDENTITY_SOURCE!==true) throw new Error('Los Google Docs de Classroom no deben pedir Nombre del alumno, Grupo ni Fecha: Classroom identifica la entrega.');
+  if(p.DOCUMENTS.WORD_FILES_ALLOWED!==false||p.DOCUMENTS.ACADEMIC_DOCUMENT_FORMAT!=='GOOGLE_DOC_NATIVE_ONLY') throw new Error('Los archivos Word están prohibidos en las carpetas académicas canónicas; usar Google Docs nativos.');
   if(p.DOCUMENTS.IDENTITY_AUDIT_SCOPE!=='DRIVE_CANONICAL_FOLDERS_THEN_CLASSROOM_DRAFT_PUBLISHED') throw new Error('La auditoría de identidad debe iniciar en carpetas canónicas de Drive y después contrastar Classroom DRAFT/PUBLISHED.');
     if(p.CLASSROOM.DEFAULT_COURSEWORK_STATE!=='DRAFT') throw new Error('El estado automático ordinario de Classroom debe ser DRAFT.');
   const did=p.CLASSROOM.DIDACTIC_INSTRUCTIONS;
