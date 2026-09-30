@@ -13,9 +13,10 @@
  * Operaciones de creación admitidas:
  *  quizAsistencia, actividad, tarea, practica, quiz, examen, material, clase.
  *
- * "clase" orquesta exclusivamente recursos Google ya especificados en
- * resources[]. Gamma se incorpora mediante gammaUrl ya creado por su conector
- * nativo; este Web App no duplica la API de Gamma.
+ * "clase" es exclusivamente la FASE DE RECURSOS: materializa/reutiliza primero
+ * Tareas, Actividades, Prácticas y demás recursos Google ya diseñados.
+ * Gamma se genera DESPUÉS, con sus IDs/URLs reales verificados como referencias.
+ * La fecha actual y Calendar nunca identifican ni secuencian la clase.
  */
 const ACADEMIC_WEB = Object.freeze({
   COURSES:Object.freeze({
@@ -306,6 +307,8 @@ function normalizarPayloadAcademicoWeb_(course,p){
  * No inventa contenido ni secuencia y no publica nada.
  */
 function crearPaqueteClaseWeb_(course,p){
+  if(String(p.gammaUrl||'').trim())
+    throw new Error('CLASE_RECURSOS_PRIMERO: gammaUrl no se acepta en la fase de materialización. Genere/verifique Gamma después de obtener IDs/URLs reales de los recursos.');
   const resources=Array.isArray(p.resources)?p.resources:[];
   if(!resources.length)throw new Error('CLASE_REQUIERE_RECURSOS');
   const results=[];
@@ -329,13 +332,15 @@ function crearPaqueteClaseWeb_(course,p){
     .map(function(x){return String(x||'').trim().toLowerCase();}).filter(Boolean);
   const actual=results.map(function(x){return x.type;});
   const missing=expected.filter(function(type){return actual.indexOf(type)<0;});
-  const packageStatus=expected.length?(missing.length?'PARCIAL':'COMPLETO'):'PARCIAL_NO_VERIFICABLE';
+  const resourcePhaseStatus=expected.length?(missing.length?'PARCIAL':'MATERIALES_LISTOS_PARA_GAMMA'):'MATERIALES_SIN_LISTA_ESPERADA';
   return {
-    package:packageStatus==='COMPLETO',
-    packageStatus:packageStatus,
+    package:false,
+    packageStatus:resourcePhaseStatus,
+    resourcePhaseStatus:resourcePhaseStatus,
     expectedResourceTypes:expected,
     missingResourceTypes:missing,
-    gammaUrl:String(p.gammaUrl||'').trim(),
+    gammaUrl:'',
+    nextPhase:missing.length?'COMPLETE_MISSING_RESOURCES':'GENERATE_AND_VERIFY_GAMMA_REFERENCING_RESOURCE_IDS_URLS',
     resources:results
   };
 }
