@@ -1,0 +1,23 @@
+{
+  "action": "clase",
+  "materia": "Administración",
+  "gammaUrl": "https://gamma.app/docs/7tuz14retj4b6xc",
+  "expectedResourceTypes": [
+    "actividad"
+  ],
+  "resources": [
+    {
+      "type": "actividad",
+      "params": {
+        "unidad": "Unidad 4",
+        "temaSubtema": "4.3.3 Mercadotecnia",
+        "titulo": "Actividad 20 - Propuesta de Mercadotecnia sustentada",
+        "descripcion": "Construye una propuesta de mercadotecnia sustentada a partir del diagnóstico previo de la Tarea 11.\n\n1. Define y justifica un segmento objetivo usando criterios de segmentación pertinentes.\n2. Explica la necesidad o problema principal y el criterio de compra relevante.\n3. Formula una propuesta de valor coherente con el segmento seleccionado.\n4. Compara dos competidores o sustitutos con evidencia o fuente explícita.\n5. Define decisiones coherentes de Producto, Precio, Distribución y Promoción.\n6. Identifica dos fuentes o evidencias de mercado que todavía deban validarse.\n7. Define tres métricas para comprobar resultados.\n8. Redacta un dictamen ejecutivo breve justificando la coherencia de la propuesta completa.\n\nEvidencia: segmento justificado, necesidad y criterio de compra, propuesta de valor, comparación competitiva, decisiones de las 4P, brechas de información, tres métricas y dictamen ejecutivo.",
+        "contenidoDocumento": "ACTIVIDAD 20 — PROPUESTA DE MERCADOTECNIA SUSTENTADA\n\nUnidad 4\nTema 4.3.3 — Mercadotecnia\n\nPropósito\nTransformar el diagnóstico preliminar de la Tarea 11 en una propuesta de mercadotecnia sustentada, coherente y verificable.\n\n1. SEGMENTO OBJETIVO\nDefine el segmento que priorizarás.\nJustifica tu decisión con criterios geográficos, demográficos, psicográficos y/o conductuales cuando correspondan.\n\n2. NECESIDAD Y CRITERIO DE COMPRA\nDescribe:\n- necesidad o problema principal del segmento;\n- criterio de compra más relevante;\n- evidencia disponible y supuestos aún no validados.\n\n3. PROPUESTA DE VALOR\nFormula una propuesta de valor concreta y explica por qué es coherente con el segmento seleccionado.\n\n4. COMPETENCIA Y SUSTITUTOS\nSelecciona dos competidores o sustitutos.\nPara cada uno registra:\n- oferta;\n- fortaleza;\n- diferencia respecto a tu propuesta;\n- evidencia o fuente utilizada.\n\n5. MEZCLA DE MARKETING\nDefine y justifica:\n- Producto;\n- Precio;\n- Distribución / Plaza;\n- Promoción.\nExplica cómo las cuatro decisiones se apoyan entre sí y cómo se relacionan con el segmento y la propuesta de valor.\n\n6. INFORMACIÓN QUE FALTA VALIDAR\nIdentifica dos fuentes, datos o evidencias de mercado que todavía necesitarías obtener antes de ejecutar la propuesta.\nPara cada una explica qué decisión ayudaría a validar.\n\n7. MÉTRICAS\nDefine tres métricas para comprobar resultados.\nPara cada métrica indica:\n- qué mide;\n- cómo se interpretaría;\n- qué decisión permitiría ajustar.\nPuedes utilizar métricas como conversión, adquisición o retención, ticket o ingreso promedio, participación de mercado o respuesta a campañas, según correspondan al caso.\n\n8. DICTAMEN EJECUTIVO\nRedacta un dictamen breve que explique por qué tu propuesta es coherente como conjunto.\nNo enumeres únicamente las 4P: relaciona segmento, necesidad, propuesta de valor, competencia, evidencia y métricas.\n\nEvidencia de entrega\nSegmento justificado, necesidad y criterio de compra, propuesta de valor, comparación de dos competidores o sustitutos, decisiones de Producto/Precio/Distribución/Promoción, dos brechas de información, tres métricas y dictamen ejecutivo.",
+        "fechaSesion": "2026-10-19",
+        "horaFinSesion": "17:00",
+        "puntos": 100
+      }
+    }
+  ]
+}
