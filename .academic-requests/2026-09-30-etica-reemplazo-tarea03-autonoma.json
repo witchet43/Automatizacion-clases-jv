@@ -1,0 +1,16 @@
+{
+  "action": "tarea",
+  "materia": "Ética y Legislación Informática",
+  "params": {
+    "sesionCanonica": 14,
+    "explicitSequenceOverride": true,
+    "backfillDraft": true,
+    "unidad": "Unidad 2",
+    "topicName": "Unidad 2",
+    "temaSubtema": "2.3 Riesgos informáticos",
+    "titulo": "Tarea 03 - Criterios preliminares para clasificar riesgos informáticos",
+    "descripcion": "Actividad preparatoria autónoma para 2.4 Clasificación de los riesgos. Trabaja con los tres escenarios incluidos en tu copia individual; no necesitas recuperar tareas o actividades anteriores. Para cada escenario identifica origen principal, activo afectado, naturaleza del efecto y una estimación cualitativa inicial de probabilidad e impacto con su justificación. No asignes todavía prioridad final.",
+    "contenidoDocumento": "TAREA 03 — CRITERIOS PRELIMINARES PARA CLASIFICAR RIESGOS INFORMÁTICOS\n\nUnidad 2 · Tema 2.3 Riesgos informáticos\n\nPropósito\nPreparar la clasificación de riesgos mediante tres escenarios autocontenidos.\n\nInstrucciones\nTrabaja únicamente con los tres escenarios incluidos en este documento. No necesitas recuperar tareas o actividades anteriores. Si un dato no está disponible, decláralo como supuesto o información faltante.\n\nESCENARIO 1 — CUENTA INSTITUCIONAL\nUna cuenta institucional presenta actividad no habitual. La cuenta permite acceso a correo, documentos compartidos y servicios académicos. No se ha confirmado si existen controles adicionales de acceso ni si hubo uso indebido.\n\nESCENARIO 2 — CARPETA COMPARTIDA\nUna carpeta de nube con documentos de trabajo quedó accesible mediante un enlace con restricciones insuficientes. No se sabe cuánto tiempo estuvo expuesta ni si alguien ajeno consultó la información.\n\nESCENARIO 3 — SERVIDOR Y RESPALDOS\nUn área administrativa almacena documentos críticos en un servidor compartido. Existen respaldos automáticos, pero nunca se ha comprobado una restauración completa. Una falla o incidente podría impedir temporalmente el acceso a la información.\n\nPara cada escenario completa:\n1. Enunciado del riesgo.\n2. Origen principal de la amenaza o condición de riesgo.\n3. Activo principalmente afectado.\n4. Naturaleza del efecto esperado.\n5. Probabilidad inicial: baja, media o alta, con una justificación.\n6. Impacto inicial: bajo, medio o alto, con una justificación.\n7. Dato o evidencia que todavía necesitarías para mejorar tu estimación.\n\nCierre\nEn 4 a 6 líneas explica por qué dos personas podrían clasificar de manera distinta el mismo riesgo cuando parten de información o supuestos diferentes.\n\nEvidencia de entrega\nTres fichas completas y una explicación final.\n\nCriterios de revisión\nSe revisará la separación correcta entre origen, activo y efecto; la coherencia de probabilidad e impacto; la identificación de supuestos y la claridad de la explicación final.",
+    "puntos": 100
+  }
+}
