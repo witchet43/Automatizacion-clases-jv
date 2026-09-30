@@ -227,10 +227,13 @@ function eliminarCourseWorkDraftsWeb_(course,p){
     const w=Classroom.Courses.CourseWork.get(String(course.id),id);
     if(String(w.state||'').toUpperCase()!=='DRAFT')throw new Error('BLOCKED_DELETE_NON_DRAFT: '+id+' '+String(w.title||''));
     Classroom.Courses.CourseWork.remove(String(course.id),id);
-    let exists=true;
-    try{Classroom.Courses.CourseWork.get(String(course.id),id);}catch(err){exists=false;}
-    if(exists)throw new Error('POSTFLIGHT_DELETE_DRAFT_FAILED: '+id);
-    deleted.push({workId:id,title:String(w.title||''),previousState:'DRAFT'});
+    let postState='NOT_FOUND';
+    try{
+      const after=Classroom.Courses.CourseWork.get(String(course.id),id);
+      postState=String(after&&after.state||'').toUpperCase();
+    }catch(err){postState='NOT_FOUND';}
+    if(postState!=='NOT_FOUND'&&postState!=='DELETED')throw new Error('POSTFLIGHT_DELETE_DRAFT_FAILED: '+id+' state='+postState);
+    deleted.push({workId:id,title:String(w.title||''),previousState:'DRAFT',postState:postState});
   });
   return {deleted:deleted,deletedCount:deleted.length,postflightVerified:true};
 }
