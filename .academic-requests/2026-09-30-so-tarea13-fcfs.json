@@ -1,0 +1,17 @@
+{
+  "action": "tarea",
+  "materia": "Sistemas Operativos",
+  "params": {
+    "sesionCanonica": 15,
+    "explicitSequenceOverride": true,
+    "backfillDraft": true,
+    "insertTaskNumber": 13,
+    "unidad": "Unidad 2",
+    "topicName": "Unidad 2",
+    "temaSubtema": "FCFS y SJF",
+    "titulo": "Tarea 13 - Planificación de procesos: FCFS sin desalojo",
+    "descripcion": "Resuelve el ejercicio de planificación de procesos aplicando FCFS (First Come, First Served), en orden de llegada y sin desalojo. Completa el diagrama de Gantt y calcula para cada proceso Completion Time, Turnaround Time, Waiting Time y Response Time. Después calcula Turnaround promedio, Waiting promedio y Throughput. Justifica el orden de ejecución cuando varios procesos llegan en el mismo instante.",
+    "contenidoDocumento": "TAREA 13 — PLANIFICACIÓN DE PROCESOS: FCFS SIN DESALOJO\n\nTema: FCFS (First Come, First Served)\n\nPropósito\nAplicar el algoritmo FCFS para determinar el orden de ejecución de una cola de procesos y calcular las métricas fundamentales de planificación del procesador.\n\nReglas del ejercicio\n• La política de planificación es FCFS.\n• La ejecución es sin desalojo: una vez que un proceso comienza a ejecutarse, conserva el CPU hasta terminar.\n• Los procesos se atienden en orden de llegada.\n• Cuando varios procesos llegan en el mismo instante, conserva el orden en el que aparecen en la tabla.\n\nDatos\nProceso | Arrival Time | Burst Time\nP1 | 0 | 3\nP2 | 0 | 2\nP3 | 0 | 4\nP4 | 1 | 5\nP5 | 0 | 1\n\nParte 1 — Orden de ejecución\nConstruye el diagrama de Gantt completo. Indica el instante de inicio y de terminación de cada proceso.\n\nParte 2 — Métricas por proceso\nCompleta una tabla con las siguientes columnas:\nProceso | Arrival Time | Burst Time | Start Time | Completion Time | Turnaround Time | Waiting Time | Response Time\n\nUtiliza estas relaciones:\nTurnaround Time = Completion Time − Arrival Time\nWaiting Time = Turnaround Time − Burst Time\nResponse Time = Start Time − Arrival Time\n\nParte 3 — Métricas globales\nCalcula:\n• Turnaround Time promedio.\n• Waiting Time promedio.\n• Throughput del sistema.\n\nPara Throughput utiliza:\nThroughput = número de procesos completados / intervalo total observado\n\nParte 4 — Explicación\nResponde brevemente:\n1. ¿Cuál fue el orden final de ejecución y por qué?\n2. ¿Qué proceso tuvo el mayor Waiting Time?\n3. ¿Qué observas sobre el efecto de FCFS cuando un proceso largo queda delante de procesos más cortos?\n\nEvidencia de entrega\nLa copia individual debe contener el diagrama de Gantt, la tabla completa de métricas, los cálculos de los dos promedios y del Throughput, y las tres respuestas de análisis.\n\nImportante\nNo entregues únicamente resultados finales. Deben observarse los cálculos utilizados para obtener cada métrica.",
+    "puntos": 100
+  }
+}
