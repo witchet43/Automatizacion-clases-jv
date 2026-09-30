@@ -222,14 +222,31 @@ function diagnosticarProgresoClaseWeb_(course,p){
   const soloClassroom=options.soloClassroom===true;
   const plan=soloClassroom?null:leerPlaneacionSiguienteClase_(course.materia);
   const works=listarCourseWorkClase_(course.id);
+  const detalle=options.detalle===true;
   const active=works.map(function(w){
-    return {
+    const item={
       id:String(w.id||''),
       title:String(w.title||''),
       state:String(w.state||''),
       topicId:String(w.topicId||''),
       creationTime:String(w.creationTime||'')
     };
+    if(detalle){
+      item.description=String(w.description||'');
+      item.workType=String(w.workType||'');
+      item.maxPoints=w.maxPoints===undefined||w.maxPoints===null?null:Number(w.maxPoints);
+      item.materials=(w.materials||[]).map(function(m){
+        if(m&&m.form)return {type:'FORM',formUrl:String(m.form.formUrl||''),title:String(m.form.title||'')};
+        if(m&&m.link)return {type:'LINK',url:String(m.link.url||''),title:String(m.link.title||'')};
+        if(m&&m.driveFile){
+          const h=m.driveFile.driveFile||m.driveFile;
+          return {type:'DRIVE_FILE',id:String(h.id||''),title:String(h.title||''),alternateLink:String(h.alternateLink||'')};
+        }
+        if(m&&m.youtubeVideo)return {type:'YOUTUBE',id:String(m.youtubeVideo.id||''),title:String(m.youtubeVideo.title||'')};
+        return {type:'OTHER'};
+      });
+    }
+    return item;
   }).sort(function(a,b){return String(a.creationTime).localeCompare(String(b.creationTime));});
   return {
     diagnostic:true,
