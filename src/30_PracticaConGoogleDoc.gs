@@ -83,7 +83,7 @@ function crearGoogleDocumentoPractica_(params) {
   const descripcion = String(p.descripcion || p.description || '').trim();
   const contenido = normalizarContenidoPractica_(p.contenidoDocumento || p.googleDocContent || '');
   const html = construirHtmlPractica_(titulo, descripcion, contenido);
-  return crearGoogleDocumentoAcademico_({titulo:titulo,html:html});
+  return crearGoogleDocumentoAcademico_({titulo:titulo,html:html,courseId:p.courseId,tipo:p.tipo||'PRACTICA'});
 }
 
 function crearGoogleDocumentoPracticaViaRest_(titulo, html, targetMime) {
