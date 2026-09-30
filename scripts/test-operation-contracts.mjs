@@ -85,3 +85,8 @@ assert.match(web,/formUrl/);
 assert.match(web,/soloDrafts===true/);
 assert.match(web,/inspeccionarFormularioDiagnosticoWeb_/);
 assert.match(web,/FormApp\.openByUrl/);
+
+assert.match(policy,/eliminarDrafts:Object\.freeze/);
+assert.match(web,/eliminarCourseWorkDraftsWeb_/);
+assert.match(web,/BLOCKED_DELETE_NON_DRAFT/);
+assert.match(web,/POSTFLIGHT_DELETE_DRAFT_FAILED/);

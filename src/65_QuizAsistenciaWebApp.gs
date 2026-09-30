@@ -32,7 +32,7 @@ const ACADEMIC_WEB = Object.freeze({
     'sistemas-operativos':Object.freeze({id:'875776451793',materia:'Sistemas Operativos'}),
     'so':Object.freeze({id:'875776451793',materia:'Sistemas Operativos'})
   }),
-  ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase','diagnosticarClase','auditarIdentidadClassroom']),
+  ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts']),
   FAST_PATHS:Object.freeze({
     quizAsistencia:Object.freeze({singleExternalInput:'materia',firstExternalAction:'WEB_APP',preflightReadsAllowed:false,documentationRead:false,auxiliaryReads:false,diagnosticOnlyAfterError:true})
   })
@@ -75,6 +75,8 @@ function ejecutarServicioAcademicoWeb_(params){
       result=crearQuizAsistenciaRapido(String(p.materia||'').trim());
     }else if(action==='diagnosticarClase'){
       result=diagnosticarProgresoClaseWeb_(course,p);
+    }else if(action==='eliminarDrafts'){
+      result=eliminarCourseWorkDraftsWeb_(course,p);
     }else if(action==='resolverClase'){
       result=resolverSiguienteClase(
         course.materia,
@@ -215,6 +217,22 @@ function inspeccionarEncabezadoIdentidadDocumento_(doc){
     result.inspection='ERROR: '+String(err&&err.message?err.message:err);
   }
   return result;
+}
+
+function eliminarCourseWorkDraftsWeb_(course,p){
+  const ids=Array.isArray(p&&p.workIds)?p.workIds.map(function(x){return String(x||'').trim();}).filter(Boolean):[];
+  if(!ids.length)throw new Error('ELIMINAR_DRAFTS_REQUIERE_WORKIDS');
+  const deleted=[];
+  ids.forEach(function(id){
+    const w=Classroom.Courses.CourseWork.get(String(course.id),id);
+    if(String(w.state||'').toUpperCase()!=='DRAFT')throw new Error('BLOCKED_DELETE_NON_DRAFT: '+id+' '+String(w.title||''));
+    Classroom.Courses.CourseWork.remove(String(course.id),id);
+    let exists=true;
+    try{Classroom.Courses.CourseWork.get(String(course.id),id);}catch(err){exists=false;}
+    if(exists)throw new Error('POSTFLIGHT_DELETE_DRAFT_FAILED: '+id);
+    deleted.push({workId:id,title:String(w.title||''),previousState:'DRAFT'});
+  });
+  return {deleted:deleted,deletedCount:deleted.length,postflightVerified:true};
 }
 
 function diagnosticarProgresoClaseWeb_(course,p){
