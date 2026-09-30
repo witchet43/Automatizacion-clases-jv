@@ -10,6 +10,7 @@ const genericDoc=fs.readFileSync('src/31_GoogleDocumentoAcademico.gs','utf8');
 const importFacade=fs.readFileSync('src/15b_OperacionesImportacionFacade.gs','utf8');
 const deliveryFacade=fs.readFileSync('src/08b_CalificarEstadoEntrega.gs','utf8');
 const practiceDoc=fs.readFileSync('src/30_PracticaConGoogleDoc.gs','utf8');
+const academicDoc=fs.readFileSync('src/31_GoogleDocumentoAcademico.gs','utf8');
 const didactics=fs.readFileSync('src/54_DidacticaTransversal.gs','utf8');
 
 for(const name of ['quizAsistencia','actividad','tarea','practica','quiz','examen','material','resolverClase','clase','importarCalificaciones','revisarTrabajos','calificarEstadoEntrega','cerrarUnidad']){
@@ -45,6 +46,14 @@ assert.match(policy,/IDENTITY_AUDIT_RESOURCE_TYPES: Object\.freeze\(\['TAREA','A
 assert.match(policy,/IDENTITY_AUDIT_EXCLUDE_STUDENT_COPIES: true/);
 assert.match(policy,/ACADEMIC_DOCUMENT_FORMAT: 'GOOGLE_DOC_NATIVE_ONLY'/);
 assert.match(policy,/WORD_FILES_ALLOWED: false/);
+assert.match(policy,/CANONICAL_RESOURCE_FOLDERS: Object\.freeze\(\{PRACTICA:'Prácticas',TAREA:'Tareas',ACTIVIDAD:'Actividades en clase'\}\)/);
+assert.match(policy,/CREATE_DIRECTLY_IN_CANONICAL_FOLDER: true/);
+assert.match(policy,/COMBINED_RESOURCE_FOLDER_ALLOWED: false/);
+assert.match(policy,/ROOT_LEVEL_RESOURCE_DOC_ALLOWED: false/);
+assert.match(academicDoc,/function resolverCarpetaDocumentoAcademico_/);
+assert.match(academicDoc,/BLOCKED_DRIVE_STRUCTURE/);
+assert.match(academicDoc,/metadata\.parents=\[folderId\]/);
+assert.match(practiceDoc,/courseId:p\.courseId,tipo:p\.tipo\|\|'PRACTICA'/);
 assert.match(policy,/application\/vnd\.openxmlformats-officedocument\.wordprocessingml\.document/);
 assert.match(policy,/application\/msword/);
 assert.doesNotMatch(practiceDoc,/Nombre del alumno:/);
