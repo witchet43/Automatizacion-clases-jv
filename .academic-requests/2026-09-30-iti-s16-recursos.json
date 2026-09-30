@@ -58,7 +58,7 @@
               "Ejecutar por sí mismo todos los programas de usuario",
               "Sustituir a la memoria RAM durante la ejecución"
             ],
-            "respuestaCorrecta": "Coordinar diversas interfaces de entrada/salida y su comunicación con el procesador",
+            "respuestaCorrecta": "A",
             "puntos": 5,
             "retroalimentacionCorrecta": "Correcto. El chipset/PCH participa en la coordinación de distintas interfaces y rutas de entrada/salida.",
             "retroalimentacionIncorrecta": "Revisa el papel del chipset/PCH y qué componentes o interfaces dependen de él."
@@ -72,7 +72,7 @@
               "El nombre de la cuenta de Windows",
               "La resolución del monitor"
             ],
-            "respuestaCorrecta": "La generación y cantidad de líneas PCIe disponibles",
+            "respuestaCorrecta": "A",
             "puntos": 5,
             "retroalimentacionCorrecta": "Correcto. Generación y número de líneas PCIe condicionan ancho de banda y compatibilidad.",
             "retroalimentacionIncorrecta": "Piensa en la ruta física/lógica que usa NVMe para comunicarse con el sistema."
@@ -86,7 +86,7 @@
               "CPU → bocinas → fuente de poder → archivo",
               "Aplicación → impresora → BIOS → memoria USB"
             ],
-            "respuestaCorrecta": "Almacenamiento → controlador/interfaz → sistema operativo → memoria/CPU → aplicación",
+            "respuestaCorrecta": "A",
             "puntos": 5,
             "retroalimentacionCorrecta": "Correcto. La lectura atraviesa la interfaz/controlador y la gestión del sistema operativo antes de ser utilizada por la aplicación.",
             "retroalimentacionIncorrecta": "Revisa el diagrama de interconexión y relaciona almacenamiento, interfaz, SO, memoria y CPU."
@@ -100,7 +100,7 @@
               "Para sustituir todas las mediciones del equipo por valores teóricos",
               "Para evitar identificar el modelo de placa base"
             ],
-            "respuestaCorrecta": "Para validar modelo, interfaces y capacidades antes de concluir compatibilidad",
+            "respuestaCorrecta": "A",
             "puntos": 5,
             "retroalimentacionCorrecta": "Correcto. La evidencia local y la especificación del fabricante se complementan para justificar compatibilidad.",
             "retroalimentacionIncorrecta": "Recuerda que la práctica pedía contrastar lo observado con especificaciones oficiales antes de decidir compatibilidad."
