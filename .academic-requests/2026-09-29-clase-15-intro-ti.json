@@ -1,0 +1,37 @@
+{
+  "action": "clase",
+  "materia": "Introducción a las Tecnologías de Información",
+  "expectedResourceTypes": [
+    "practica",
+    "tarea"
+  ],
+  "resources": [
+    {
+      "type": "practica",
+      "params": {
+        "unidad": "Unidad 2",
+        "temaSubtema": "2.1.5 Chipset",
+        "sesionCanonica": 15,
+        "explicitSequenceOverride": true,
+        "titulo": "Práctica 02 - Radiografía de placa y rutas de datos",
+        "descripcion": "Analiza la placa base y las rutas principales de datos de un equipo real o del laboratorio.\n\n1. Identifica fabricante y modelo de la placa base o del equipo.\n2. Usa CPU-Z y msinfo32 para registrar CPU, chipset/PCH, memoria y placa base.\n3. Consulta la ficha técnica del fabricante y contrasta al menos cinco datos.\n4. Identifica las conexiones principales hacia RAM, almacenamiento, PCIe y USB.\n5. Construye un diagrama CPU → RAM / PCIe / almacenamiento / USB.\n6. Explica dos decisiones de compatibilidad que dependan de placa/chipset.\n7. Identifica dos posibles cuellos de botella o restricciones y justifica por qué.\n8. Incluye evidencia verificable de las herramientas consultadas.\n\nEvidencia: capturas técnicas, referencia del fabricante, tabla de contraste, diagrama de interconexión y dos decisiones justificadas.",
+        "contenidoDocumento": "PRÁCTICA 02 — RADIOGRAFÍA DE PLACA Y RUTAS DE DATOS\n\nUnidad 2\nTema 2.1.5 — Chipset\n\nPropósito\nIdentificar la placa base, chipset/PCH y las principales rutas de interconexión del sistema.\n\n1. IDENTIFICACIÓN DEL EQUIPO\nRegistra:\n- fabricante y modelo del equipo;\n- fabricante y modelo de la placa base;\n- CPU;\n- chipset/PCH cuando esté disponible.\n\n2. EVIDENCIA CON HERRAMIENTAS\nUsa CPU-Z y msinfo32.\nIncluye capturas donde puedan verificarse los datos técnicos relevantes.\n\n3. CONTRASTE CON FABRICANTE\nConsulta la especificación oficial.\nCompleta una tabla:\nDato | Detectado en el equipo | Especificación del fabricante | Coincide / observación\n\nIncluye al menos cinco datos.\n\n4. RUTAS DE DATOS\nIdentifica y representa:\n- CPU ↔ RAM;\n- CPU/PCH ↔ almacenamiento;\n- CPU/PCH ↔ PCIe;\n- PCH ↔ USB/periféricos.\n\n5. DIAGRAMA\nConstruye un diagrama de interconexión del equipo.\nDebe mostrar CPU, RAM, almacenamiento, PCIe, USB y chipset/PCH cuando corresponda.\n\n6. COMPATIBILIDAD\nDescribe dos decisiones de compatibilidad que dependan de la placa/chipset.\n\n7. POSIBLES RESTRICCIONES\nExplica dos posibles cuellos de botella o restricciones del equipo.\n\n8. CONCLUSIONES\nResponde:\n- ¿Qué función cumple actualmente el chipset/PCH?\n- ¿Qué componente o conexión limita más la expansión del equipo?\n- ¿Qué dato del fabricante fue más útil para interpretar el hardware?\n\nEvidencia de entrega\nCapturas, tabla de contraste, diagrama y conclusiones.",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "tarea",
+      "params": {
+        "unidad": "Unidad 2",
+        "temaSubtema": "2.2.1 Software del sistema operativo + 2.2.2 Tipos del sistema operativo",
+        "sesionCanonica": 16,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "titulo": "Tarea 03 - Comparativa de sistemas operativos",
+        "descripcion": "Prepara el siguiente tema comparando sistemas operativos.\n\n1. Registra la versión de Windows del equipo.\n2. Verifica si tienes acceso a WSL, una VM Linux o un entorno Linux de laboratorio.\n3. Compara Windows, Linux y un sistema operativo móvil por propósito, interfaz, administración y licencia.\n4. Identifica una tarea equivalente que pueda realizarse en Windows y Linux.\n5. Formula dos preguntas sobre diferencias entre tipos de sistemas operativos.\n\nEvidencia: tabla comparativa y evidencia de acceso al entorno Linux o contingencia registrada.",
+        "contenidoDocumento": "TAREA 03 — COMPARATIVA DE SISTEMAS OPERATIVOS\n\nUnidad 2\nTemas 2.2.1 y 2.2.2 — Software del sistema operativo y tipos del sistema operativo\n\n1. WINDOWS\nVersión:\nEdición:\nArquitectura:\n\n2. ENTORNO LINUX\nIndica si usarás:\n- WSL;\n- máquina virtual;\n- equipo/laboratorio;\n- otra alternativa autorizada.\n\nRegistra evidencia de acceso o, si no está disponible, describe la contingencia.\n\n3. TABLA COMPARATIVA\nCompara Windows, Linux y un sistema operativo móvil:\n- propósito;\n- interfaz;\n- administración;\n- modelo de licencia;\n- ejemplo de uso.\n\n4. TAREA EQUIVALENTE\nSelecciona una operación básica que pueda realizarse en Windows y Linux y explica cómo cambia la forma de ejecutarla.\n\n5. PREGUNTAS\nFormula dos preguntas para discutir en clase.\n\nEvidencia de entrega\nTabla comparativa + evidencia de acceso al entorno Linux.",
+        "puntos": 100
+      }
+    }
+  ]
+}
