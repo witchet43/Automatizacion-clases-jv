@@ -11,8 +11,9 @@ export function readContext() {
   const digest = crypto.createHash('sha256').update(raw).digest('hex');
   if (manifest.repository !== 'witchet43/Automatizacion-clases-jv' ||
       manifest.webApp.url !== 'https://script.google.com/macros/s/AKfycbz2rCuB9jUsbnt0tj0RgHmr3lguOZjVL34a_2F_yhggiwLNTOEn8QdsdbFv4SK6aGxr/exec' ||
-      manifest.workflow.name !== 'Academic Web App' || manifest.contractVersion !== '1.0.0' ||
-      manifest.rules.courseWorkState !== 'DRAFT' || manifest.rules.calendarSelectsClass !== false ||
+      manifest.workflow.name !== 'Academic Web App' || manifest.contractVersion !== '1.1.0' ||
+      manifest.rules.courseWorkState !== 'DRAFT' || manifest.rules.calendarSelectsClass !== false || manifest.rules.currentDateSelectsClass !== false ||
+      manifest.rules.resourcesBeforeGamma !== true || manifest.rules.gammaReferencesVerifiedResources !== true ||
       JSON.stringify(manifest.fastPaths) !== '["quizAsistencia"]') throw Error('ACADEMIC_CONTEXT_INVALID');
   for (const key of ['bootstrap','master','classGuide','runbook']) {
     const doc = manifest.documents[key];

@@ -25,7 +25,7 @@ const ACADEMIC_POLICY = Object.freeze({
       resolverClase:Object.freeze({mode:'READ_ONLY_REAL_STATE',externalInput:Object.freeze(['materia','sesion']),preflight:Object.freeze(['TARGET_PLANNING','CLASSROOM_REAL','GAMMA_VERIFIED']),firstAction:'READ_REAL_STATE',state:'READ_ONLY',postflight:Object.freeze(['courseId','target','sequenceSource'])}),
       diagnosticarClase:Object.freeze({mode:'DIAGNOSTIC_READ_ONLY',externalInput:Object.freeze(['materia']),preflight:Object.freeze(['TARGET_PLANNING','CLASSROOM_REAL']),firstAction:'READ_AFTER_REAL_ERROR',state:'READ_ONLY',postflight:Object.freeze(['planningRows','courseWork'])}),
       auditarIdentidadClassroom:Object.freeze({mode:'DIAGNOSTIC_READ_ONLY',externalInput:Object.freeze(['materia']),preflight:Object.freeze(['CLASSROOM_REAL','ATTACHED_GOOGLE_DOCS']),firstAction:'READ_ONE_OR_ALL_COURSES',state:'READ_ONLY',postflight:Object.freeze(['materias','totalRecursos','totalDocumentos','totalConEncabezado'])}),
-      clase:Object.freeze({mode:'RESOLVE_OR_VALIDATE_THEN_PACKAGE',externalInput:Object.freeze(['materia','sesion','resources','gammaUrl','expectedResourceTypes']),preflight:Object.freeze(['TARGET_PLANNING','CLASSROOM_REAL','GAMMA_VERIFIED']),firstAction:'VALIDATE_OR_RESOLVE_TARGET',state:'DRAFT',postflight:Object.freeze(['courseId','packageStatus','resources'])}),
+      clase:Object.freeze({mode:'IDENTIFY_THEN_RESOURCES_FIRST',externalInput:Object.freeze(['materia','sesion','resources','expectedResourceTypes']),preflight:Object.freeze(['TARGET_PLANNING','CLASSROOM_REAL']),firstAction:'VALIDATE_TARGET_THEN_MATERIALIZE_RESOURCES',state:'DRAFT',postflight:Object.freeze(['courseId','resourcePhaseStatus','resources','nextPhase'])}),
       importarCalificaciones:Object.freeze({mode:'ADMIN_PROTECTED',externalInput:Object.freeze(['quizId','courseId']),preflight:Object.freeze(['QUIZ_REGISTRY','FORMS','CLASSROOM']),firstAction:'RESOLVE_EXACT_INSTRUMENT',state:'DRAFT_GRADE_ONLY',postflight:Object.freeze(['quizId','courseId','workId','detalle'])}),
       revisarTrabajos:Object.freeze({mode:'ACADEMIC_REVIEW',externalInput:Object.freeze(['courseId','scope','rubrica']),preflight:Object.freeze(['CLASSROOM_PUBLISHED','EVIDENCE','RUBRIC_WHEN_REQUIRED']),firstAction:'RESOLVE_EVIDENCE_AND_CRITERIA',state:'DRAFT_GRADE_ONLY',postflight:Object.freeze(['courseId','trabajosRevisados','estadoCalificacion'])}),
       calificarEstadoEntrega:Object.freeze({mode:'ADMIN_PROTECTED',externalInput:Object.freeze(['courseId']),preflight:Object.freeze(['CLASSROOM_PUBLISHED']),firstAction:'SELECT_EXACT_SCOPE',state:'DRAFT_GRADE_ONLY',postflight:Object.freeze(['courseId','trabajosCandidatos','estadoCalificacion'])}),
@@ -35,15 +35,18 @@ const ACADEMIC_POLICY = Object.freeze({
     CANONICAL_RESOURCE_ENTRYPOINTS: Object.freeze(['crearActividad','crearTarea','crearPractica','crearQuiz','crearQuizSencillo','crearExamen'])
   }),
   CLASS_SEQUENCE: Object.freeze({
-    SOURCE: 'CLASSROOM_GAMMA_REAL_STATE',
+    SOURCE: 'FIRST_INCOMPLETE_CANONICAL_PACKAGE_BY_REAL_PREPARATION',
     SYSTEM_DATE_AS_PROGRESS: false,
+    CURRENT_DATE_ALLOWED_FOR_IDENTITY_OR_SEQUENCE: false,
+    CALENDAR_ALLOWED_FOR_IDENTITY_OR_SEQUENCE: false,
     PLANNING_DATE_AS_PROGRESS: false,
     SAVED_COUNTER_AS_PROGRESS: false,
     CLASSROOM_PUBLISHED_COUNTS_AS_PUBLISHED: true,
-    CLASSROOM_DRAFT_COUNTS_AS_ONLY_PREPARED: true,
-    REQUIRE_VERIFIED_GAMMA_LINK: true,
-    REQUIRE_REAL_CLASSROOM_ACTIVITY: true,
-    FAIL_CLOSED_WITHOUT_EVIDENCE: true,
+    CLASSROOM_DRAFT_COUNTS_AS_PREPARED: true,
+    VERIFIED_GAMMA_COUNTS_AS_PREPARED_COMPONENT: true,
+    REQUIRE_REAL_CLASSROOM_RESOURCE_FOR_PREPARED_PACKAGE: true,
+    RESOURCES_BEFORE_GAMMA: true,
+    GAMMA_REFERENCES_VERIFIED_RESOURCES: true,
     RECONCILIATION_REQUIRES_EXPLICIT_REASON: true
   }),
   ERROR_REPORTING: Object.freeze({
@@ -194,7 +197,9 @@ const ACADEMIC_POLICY = Object.freeze({
     ONE_CANONICAL_PER_SESSION: true,
     VERIFY_BY_PLANNING_URL_FIRST: true,
     TITLE_SEARCH_ONLY_IF_URL_MISSING: true,
-    RESOLVE_FOLDER_BEFORE_GENERATE: true
+    RESOLVE_FOLDER_BEFORE_GENERATE: true,
+    RESOURCES_BEFORE_GAMMA: true,
+    REQUIRE_VERIFIED_RESOURCE_REFERENCES: true
   }),
   CALENDAR: Object.freeze({
     CANONICAL_SOURCE: 'CLASSROOM_COURSE_CALENDAR',
@@ -229,16 +234,21 @@ function validarPoliticasCanonicas_(){
   });
   if(contracts.quizAsistencia.firstAction!=='WEB_APP'||contracts.quizAsistencia.preflight.length!==0)throw new Error('Quiz de Asistencia debe conservar EXECUTE_FIRST sin preflight.');
   const seq=p.CLASS_SEQUENCE;
-  if(!seq||seq.SOURCE!=='CLASSROOM_GAMMA_REAL_STATE'||seq.SYSTEM_DATE_AS_PROGRESS!==false||
+  if(!seq||seq.SOURCE!=='FIRST_INCOMPLETE_CANONICAL_PACKAGE_BY_REAL_PREPARATION'||seq.SYSTEM_DATE_AS_PROGRESS!==false||
+    seq.CURRENT_DATE_ALLOWED_FOR_IDENTITY_OR_SEQUENCE!==false||seq.CALENDAR_ALLOWED_FOR_IDENTITY_OR_SEQUENCE!==false||
     seq.PLANNING_DATE_AS_PROGRESS!==false||seq.SAVED_COUNTER_AS_PROGRESS!==false||
     seq.CLASSROOM_PUBLISHED_COUNTS_AS_PUBLISHED!==true||
-    seq.CLASSROOM_DRAFT_COUNTS_AS_ONLY_PREPARED!==true||
-    seq.REQUIRE_VERIFIED_GAMMA_LINK!==true||seq.REQUIRE_REAL_CLASSROOM_ACTIVITY!==true||
-    seq.FAIL_CLOSED_WITHOUT_EVIDENCE!==true||seq.RECONCILIATION_REQUIRES_EXPLICIT_REASON!==true)
-      throw new Error('La siguiente clase debe resolverse por estado real Classroom/Gamma, nunca por fecha, contador guardado ni memoria.');
+    seq.CLASSROOM_DRAFT_COUNTS_AS_PREPARED!==true||
+    seq.VERIFIED_GAMMA_COUNTS_AS_PREPARED_COMPONENT!==true||
+    seq.REQUIRE_REAL_CLASSROOM_RESOURCE_FOR_PREPARED_PACKAGE!==true||
+    seq.RESOURCES_BEFORE_GAMMA!==true||seq.GAMMA_REFERENCES_VERIFIED_RESOURCES!==true||
+    seq.RECONCILIATION_REQUIRES_EXPLICIT_REASON!==true)
+      throw new Error('La siguiente clase debe resolverse por el primer paquete canónico incompleto según recursos reales preparados; fecha actual, Calendar, contador y memoria están prohibidos para identidad o secuencia.');
   if(!p.ERROR_REPORTING||p.ERROR_REPORTING.NOTIFY_ON_ERROR!==true||p.ERROR_REPORTING.SILENT_FAILURE_ALLOWED!==false||p.ERROR_REPORTING.PRIMARY_CHANNEL!=='EMAIL'||p.ERROR_REPORTING.PRESERVE_ORIGINAL_EXCEPTION!==true) throw new Error('La política de notificación de errores fue debilitada.');
   if(Math.abs((p.UNIT_GRADING.EXAM_WEIGHT+p.UNIT_GRADING.NON_EXAM_WEIGHT)-1)>0.000001) throw new Error('La ponderación canónica de unidad no suma 100%.');
-  if(!p.GAMMA||p.GAMMA.COVER_SESSION_NUMBER_ALLOWED!==false||p.GAMMA.REQUIRE_TOPIC_NUMBER_ON_COVER!==true) throw new Error('La portada Gamma debe incluir Unidad + Tema/Subtema oficial y excluir número de sesión.');
+  if(!p.GAMMA||p.GAMMA.COVER_SESSION_NUMBER_ALLOWED!==false||p.GAMMA.REQUIRE_TOPIC_NUMBER_ON_COVER!==true||
+    p.GAMMA.RESOURCES_BEFORE_GAMMA!==true||p.GAMMA.REQUIRE_VERIFIED_RESOURCE_REFERENCES!==true)
+    throw new Error('Gamma debe generarse después de materializar/verificar los recursos académicos y debe referenciarlos; la portada conserva Unidad + Tema/Subtema oficial sin número de sesión.');
     if(!p.DOCUMENTS||p.DOCUMENTS.STUDENT_IDENTITY_FIELDS_ALLOWED!==false||p.DOCUMENTS.CLASSROOM_IS_IDENTITY_SOURCE!==true) throw new Error('Los Google Docs de Classroom no deben pedir Nombre del alumno, Grupo ni Fecha: Classroom identifica la entrega.');
   if(p.DOCUMENTS.WORD_FILES_ALLOWED!==false||p.DOCUMENTS.ACADEMIC_DOCUMENT_FORMAT!=='GOOGLE_DOC_NATIVE_ONLY') throw new Error('Los archivos Word están prohibidos en las carpetas académicas canónicas; usar Google Docs nativos.');
   if(!p.DOCUMENTS.CANONICAL_RESOURCE_FOLDERS||

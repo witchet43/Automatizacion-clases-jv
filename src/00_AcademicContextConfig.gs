@@ -1,8 +1,8 @@
 // Generated from config/academic-context.json. Do not edit.
 const ACADEMIC_CONTEXT_CONFIG = {
-  "manifestSha256": "23bb9384d64ba741bbd6dc82630e57408b44ecd7178f89d864333f4360447680",
+  "manifestSha256": "add632bae9339795b40d875eb1e299b24e91fe114e0851d8d1adf81081e614cd",
   "schemaVersion": 1,
-  "contractVersion": "1.0.0",
+  "contractVersion": "1.1.0",
   "repository": "witchet43/Automatizacion-clases-jv",
   "branch": "main",
   "webApp": {
@@ -287,7 +287,12 @@ const ACADEMIC_CONTEXT_CONFIG = {
       "REAL_CLASSROOM"
     ],
     "alternativeRoutesAllowed": false,
-    "conversationMemoryIsAuthority": false
+    "conversationMemoryIsAuthority": false,
+    "classSelectionStrategy": "FIRST_INCOMPLETE_CANONICAL_PACKAGE_BY_REAL_PREPARATION",
+    "resourcesBeforeGamma": true,
+    "gammaReferencesVerifiedResources": true,
+    "currentDateRole": "NEVER_FOR_CLASS_IDENTITY_OR_SEQUENCE",
+    "calendarRoleInClassGeneration": "NONE"
   },
   "startup": {
     "read": [
@@ -297,8 +302,8 @@ const ACADEMIC_CONTEXT_CONFIG = {
       "targetPlanningWhenRequired"
     ],
     "onMissingOrMismatch": "BLOCK_BEFORE_SIDE_EFFECTS",
-    "classSequence": "Use explicit canonical session, otherwise compare planning, verified Gamma and real Classroom; resolverClase only for discrepancy.",
-    "execution": "Verified Gamma URL → .academic-requests JSON → Academic Web App → canonical Web App → entrypoints → postflight → record real IDs in target planning."
+    "classSequence": "Use canonical planning order plus real prepared Classroom resources and verified Gamma only to identify the first incomplete package. DRAFT + verified Gamma counts as prepared, not taught. Current/system date and Calendar never participate. Explicit session/tema remains authoritative when supplied.",
+    "execution": "Identify canonical target → design required academic resources → materialize/reuse Google resources through Academic Web App → postflight real resource IDs/URLs → generate/verify Gamma last, explicitly referencing those verified resources → record all real IDs/URLs and states in target planning."
   },
   "code": {
     "guard": "src/00_AcademicContextGuard.gs",
