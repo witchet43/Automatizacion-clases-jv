@@ -1,0 +1,16 @@
+{
+  "action": "tarea",
+  "materia": "Ética y Legislación Informática",
+  "params": {
+    "sesionCanonica": 15,
+    "explicitSequenceOverride": true,
+    "backfillDraft": true,
+    "unidad": "Unidad 2",
+    "topicName": "Unidad 2",
+    "temaSubtema": "2.4 Clasificación de los riesgos",
+    "titulo": "Tarea 04 - Identificación inicial de incidentes y posibles delitos informáticos",
+    "descripcion": "INDICACIONES PARA EL ALUMNO\n\nTrabaja únicamente con los tres casos ficticios incluidos en tu copia individual. No necesitas recuperar tareas o actividades anteriores.\n\nDESARROLLO\n\n1. Identifica el evento de cada caso.\n2. Señala el activo afectado.\n3. Distingue hechos, evidencia disponible y evidencia faltante.\n4. Propón una clasificación preliminar.\n5. Justifica tu decisión sin asumir hechos que no estén indicados.\n\nEVIDENCIA DE ENTREGA\n\nEntrega únicamente tu copia individual de Google Docs.",
+    "contenidoDocumento": "TAREA 04 — IDENTIFICACIÓN INICIAL DE INCIDENTES Y POSIBLES DELITOS INFORMÁTICOS\n\nUnidad 2 · Tema 2.4 Clasificación de los riesgos\n\nPropósito\nPreparar el tema 2.5 mediante tres casos ficticios autocontenidos.\n\nInstrucciones\nTodo lo necesario está incluido en este documento. No necesitas recuperar tareas o actividades anteriores.\n\nCASO 1\nUna carpeta de trabajo quedó accesible con permisos más amplios de lo previsto. No existe evidencia confirmada de consulta por personas externas.\n\nCASO 2\nSe detectó una consulta a información interna realizada por una cuenta que no debía tener acceso a ese contenido. Existen registros, pero el alcance completo todavía no se conoce.\n\nCASO 3\nUn servicio digital permaneció fuera de línea durante dos horas debido a una falla de infraestructura. No existe evidencia de una acción intencional.\n\nPara cada caso registra:\n1. Evento observado.\n2. Activo afectado.\n3. Afectación conocida.\n4. Evidencia disponible.\n5. Evidencia faltante.\n6. Clasificación preliminar.\n7. Justificación.\n\nCierre\nEn 4 a 6 líneas diferencia riesgo, incidente y posible delito informático. Explica por qué una falla técnica o un incidente no demuestran por sí solos una conclusión jurídica.\n\nEvidencia de entrega\nTres fichas y explicación final.",
+    "puntos": 100
+  }
+}
