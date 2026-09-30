@@ -32,7 +32,7 @@ assert.doesNotMatch(web,/crearGoogleDocumentoPractica_\(\{/);
 assert.match(web,/PARCIAL_NO_VERIFICABLE/);
 assert.match(web,/expectedResourceTypes/);
 
-assert.match(practice,/return crearGoogleDocumentoAcademico_\(\{titulo:titulo,html:html\}\)/);
+assert.match(practice,/return crearGoogleDocumentoAcademico_\(\{titulo:titulo,html:html,courseId:p\.courseId,tipo:p\.tipo\|\|'PRACTICA'\}\)/);
 assert.match(genericDoc,/function crearGoogleDocumentoAcademico_/);
 assert.match(importFacade,/function importarCalificacionesQuiz/);
 assert.match(importFacade,/function importarCalificacionesInstrumento/);
