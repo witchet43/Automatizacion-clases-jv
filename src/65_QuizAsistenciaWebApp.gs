@@ -326,6 +326,9 @@ function crearPaqueteClaseWeb_(course,p){
     else if(type==='material')r=crearMaterialDidacticoWeb_(course,{params:payload});
     else if(type==='quizasistencia'||type==='quiz-asistencia')r=crearQuizAsistenciaRapido(course.materia);
     else throw new Error('TIPO_RECURSO_NO_PERMITIDO_EN_CLASE_'+index+': '+type);
+    if(['actividad','tarea','practica'].indexOf(type)>=0 && r && r.workId){
+      r.duplicateDraftsRemoved=deduplicarDraftsExactosClaseWeb_(course.id,payload,r);
+    }
     results.push({type:type,result:r});
   });
   const expected=(Array.isArray(p.expectedResourceTypes)?p.expectedResourceTypes:[])
@@ -343,6 +346,33 @@ function crearPaqueteClaseWeb_(course,p){
     nextPhase:missing.length?'COMPLETE_MISSING_RESOURCES':'GENERATE_AND_VERIFY_GAMMA_REFERENCING_RESOURCE_IDS_URLS',
     resources:results
   };
+}
+
+function deduplicarDraftsExactosClaseWeb_(courseId,payload,result){
+  const keepId=String(result&&result.workId||'').trim();
+  const title=String(payload&&payload.titulo||payload&&payload.title||'').trim();
+  if(!keepId||!title)return [];
+  let keep;
+  try{keep=Classroom.Courses.CourseWork.get(String(courseId),keepId);}catch(err){return [];}
+  const topicId=String(keep&&keep.topicId||'');
+  const matches=listarCourseWorkClase_(courseId).filter(function(w){
+    return String(w.state||'').toUpperCase()==='DRAFT' &&
+      String(w.title||'').trim()===title && String(w.topicId||'')===topicId;
+  });
+  if(matches.length<=1)return [];
+  const removed=[];
+  matches.forEach(function(w){
+    if(String(w.id)===keepId)return;
+    Classroom.Courses.CourseWork.remove(String(courseId),String(w.id));
+    removed.push({workId:String(w.id),title:String(w.title||'')});
+  });
+  const remaining=listarCourseWorkClase_(courseId).filter(function(w){
+    return String(w.state||'').toUpperCase()==='DRAFT' &&
+      String(w.title||'').trim()===title && String(w.topicId||'')===topicId;
+  });
+  if(remaining.length!==1 || String(remaining[0].id)!==keepId)
+    throw new Error('POSTFLIGHT_DUPLICATE_DRAFT: no quedó un único DRAFT canónico para '+title+'.');
+  return removed;
 }
 
 function crearMaterialDidacticoWeb_(course,p){
