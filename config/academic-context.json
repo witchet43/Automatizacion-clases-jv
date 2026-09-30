@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "1.0.0",
+  "effectivePeriod": "2026-JUL-DEC",
+  "repository": {
+    "fullName": "witchet43/Automatizacion-clases-jv",
+    "branch": "main"
+  },
+  "bootstrap": {
+    "driveDocumentId": "1WxSK34dy1GM5H_yc9iceX-zs_hq4GwKD9_tN22iXnEE",
+    "title": "Bootstrap Académico — Arranque canónico independiente del chat"
+  },
+  "documents": {
+    "master": {
+      "id": "1lH7ME10VRX472PP54BdeE9evRbbjAUYowov3-slM5v8",
+      "title": "Reglas maestras de trabajo - Cursos 2026 v2 - VIGENTE"
+    },
+    "classGuide": {
+      "id": "1NwoBxox95vUQlpKo3j_IKzkLSZxcEC5qAQmAyYT_5-E",
+      "title": "Instrucción operativa única — Generación de clases académicas"
+    },
+    "runbook": {
+      "id": "1MQuVEQAzRc5Xb8uisCaZqBDZz5WS9oibA4kOdIvVxe4",
+      "title": "Runbook técnico - Automatización académica 2026"
+    }
+  },
+  "transport": {
+    "requestDirectory": ".academic-requests",
+    "requestWorkflow": ".github/workflows/academic-webapp.yml",
+    "deploymentWorkflow": ".github/workflows/deploy-apps-script.yml",
+    "webAppUrl": "https://script.google.com/macros/s/AKfycbz2rCuB9jUsbnt0tj0RgHmr3lguOZjVL34a_2F_yhggiwLNTOEn8QdsdbFv4SK6aGxr/exec",
+    "appsScriptDeploymentId": "AKfycbz2rCuB9jUsbnt0tj0RgHmr3lguOZjVL34a_2F_yhggiwLNTOEn8QdsdbFv4SK6aGxr"
+  },
+  "execution": {
+    "ordinaryCourseWorkState": "DRAFT",
+    "formsPublicationState": "UNPUBLISHED",
+    "calendarSelectsAcademicProgress": false,
+    "fastPathActions": [
+      "quizAsistencia"
+    ],
+    "nonFastPathRequiresOperationalContext": true,
+    "courseSequenceSources": [
+      "TARGET_PLANNING",
+      "GAMMA_VERIFIED",
+      "CLASSROOM_REAL"
+    ]
+  },
+  "guides": {
+    "planning": "1ZYqOD5n-GLRY3Gz2U2oVEkECXg9-9WH7UVVkv3bBswQ",
+    "gamma": "1xwmj_9eJdVkuAmvyLzmaVjZ36m9p54hcPDA9YlprTnY",
+    "activity": "1m0jYdq5jeCl6Ky-9grF21adNygCn-b4OwztMbOgQimE",
+    "task": "1J2_5DslIks-o875_hwY0Hc-vQMfnBV4dXZLMmF4PjCo",
+    "practice": "1XYw4Y5bl-HieNXC8ATLrVanAadC6GRKD8SDxL_VvcSA",
+    "quizQuick": "1doNuNiUUZ9wwD4Mc1CZLrGP9yMaRO9AJBSW_qtmbo8o",
+    "quizAttendance": "1RT9cpkZ4W-MVRrrOfcq2rrP1LpHCOwZXvkOhO5qCtzw",
+    "exam": "1jwydbPFP11T2V2vP0TeCX7wFwx8VoEs5-ngN1PBXt9I",
+    "gradeImport": "1taOJ9fHR0NZK1N3PhpITCmCMOn6pjPAYgdRx-ZtQL4w",
+    "unitClosure": "1vnDBta1dJ1Kn8rQzrt9IHFio-r81ERp-OYJlQYyBuO0",
+    "material": "1vFgWR96IxIZHaS-hP_mZPK2G0qRw2hBcplJt0KZdBiA"
+  },
+  "courses": [
+    {
+      "key": "sistemas-distribuidos",
+      "materia": "Sistemas Distribuidos",
+      "courseId": "871158466533",
+      "planningSpreadsheetId": "11QQnAbMCCoebc2o6Tm2_lROZvyfjFnVM89ZAcgBbr6I",
+      "aliases": [
+        "Sistemas Distribuidos"
+      ]
+    },
+    {
+      "key": "analisis-diseno-sistemas-computacionales",
+      "materia": "Análisis y Diseño de Sistemas Computacionales",
+      "courseId": "871158479566",
+      "planningSpreadsheetId": "1a7Icsnxciy2cK9xHOEBWBt_RbE0v9sM8ioRCfp95YAA",
+      "aliases": [
+        "Análisis y Diseño de Sistemas Computacionales",
+        "Análisis y Diseño de Sistemas de Información"
+      ]
+    },
+    {
+      "key": "introduccion-tecnologias-informacion",
+      "materia": "Introducción a las Tecnologías de Información",
+      "courseId": "871156721160",
+      "planningSpreadsheetId": "1j8_Qq0esbBhYOIqbkU9DywV-Zl3l-FW71KlKNRW8aS0",
+      "aliases": [
+        "Introducción a las Tecnologías de Información"
+      ]
+    },
+    {
+      "key": "administracion",
+      "materia": "Administración",
+      "courseId": "871158187513",
+      "planningSpreadsheetId": "1G1MTtP9dRN8fM7vG7uOQoHkjbK2uOEoca3Aa2SxJqr4",
+      "aliases": [
+        "Administración"
+      ]
+    },
+    {
+      "key": "etica-legislacion-informatica",
+      "materia": "Ética y Legislación Informática",
+      "courseId": "871149624583",
+      "planningSpreadsheetId": "16XoGCp7vPMD5dgvhMgQz_MUDfSvgLPrs9KfXKXwU-bQ",
+      "aliases": [
+        "Ética y Legislación Informática"
+      ]
+    },
+    {
+      "key": "algoritmos-estructuras-datos",
+      "materia": "Algoritmos y Estructuras de Datos",
+      "courseId": "871156334717",
+      "planningSpreadsheetId": "1Ujb02-K9k9xkEu7rPMsdV2v3E8MIFAUyP-yAmAwZwWc",
+      "aliases": [
+        "Algoritmos y Estructuras de Datos"
+      ]
+    },
+    {
+      "key": "sistemas-operativos",
+      "materia": "Sistemas Operativos",
+      "courseId": "875776451793",
+      "planningSpreadsheetId": "1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI",
+      "aliases": [
+        "Sistemas Operativos",
+        "SO"
+      ]
+    }
+  ],
+  "code": {
+    "policy": "src/00_PoliticasCanonicas.gs",
+    "webApp": "src/65_QuizAsistenciaWebApp.gs",
+    "operationalContextGuard": "src/66_OperationalContextGuard.gs",
+    "classSequence": "src/60_SecuenciaRealClase.gs"
+  }
+}
