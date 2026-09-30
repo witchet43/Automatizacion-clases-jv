@@ -23,6 +23,9 @@ assert.match(policy,/preflight:Object\.freeze\(\[\]\)/);
 assert.doesNotMatch(entrypoints,/8_PLANNINGS_READ_ONLY_REQUIRED/);
 assert.doesNotMatch(entrypoints,/assertAcademicAutomationWriteEnabled_\(ctx\.params\.materia\)/);
 assert.match(entrypoints,/academicReadinessGate:'TARGET_PLANNING_ONLY'/);
+assert.match(entrypoints,/prepararInsercionConsecutivaTareaDraft_/);
+assert.match(entrypoints,/revertirInsercionConsecutivaTareaDraft_/);
+assert.match(policy,/insertTaskNumber/);
 
 assert.match(web,/if\(!action\)throw new Error\('ACCION_REQUERIDA'\)/);
 assert.doesNotMatch(web,/p\.action\|\|'quizAsistencia'/);

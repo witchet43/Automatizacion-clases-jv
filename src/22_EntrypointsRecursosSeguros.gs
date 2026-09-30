@@ -20,7 +20,15 @@ function crearTarea(params) {
     const ctx = prepararContextoGuardrailRecurso_(params, 'TAREA');
     preflightDocumentoMaestro(ctx.guardrailRequest);
     const tarea = aplicarReglaVencimientoTarea_(ctx.params);
-    const result = crearCourseWorkDirecto_(normalizarCreacionDirecta_(tarea, 'TAREA'));
+    const renumeracion = prepararInsercionConsecutivaTareaDraft_(tarea);
+    let result;
+    try {
+      result = crearCourseWorkDirecto_(normalizarCreacionDirecta_(tarea, 'TAREA'));
+    } catch (err) {
+      revertirInsercionConsecutivaTareaDraft_(tarea.courseId, renumeracion);
+      throw err;
+    }
+    result.renumeracionDraft = renumeracion;
     if (tarea.backfillSinVencimiento === true) {
       result.vencimientoReparado = false;
       result.fechaLimiteLocal = '';
