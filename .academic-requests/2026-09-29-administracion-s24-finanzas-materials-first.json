@@ -1,0 +1,25 @@
+{
+  "action": "clase",
+  "materia": "Administración",
+  "sesion": "24",
+  "expectedResourceTypes": [
+    "actividad"
+  ],
+  "resources": [
+    {
+      "type": "actividad",
+      "params": {
+        "sesionCanonica": 24,
+        "explicitSequenceOverride": true,
+        "unidad": "Unidad 4",
+        "temaSubtema": "4.3.4 Finanzas",
+        "titulo": "Actividad 21 - Decisión financiera con presupuesto limitado",
+        "descripcion": "Analiza un escenario financiero de una empresa con recursos limitados y toma una decisión sustentada.\n\n1. Identifica los datos financieros relevantes del caso y distingue ingresos, costos, gastos, utilidad y flujo de efectivo cuando correspondan.\n2. Construye un presupuesto básico con el monto disponible y las alternativas propuestas.\n3. Formula al menos dos alternativas viables de asignación de recursos.\n4. Evalúa cada alternativa considerando liquidez, rentabilidad, riesgo e impacto operativo.\n5. Selecciona una alternativa y justifica por qué es preferible frente a las demás.\n6. Define tres indicadores financieros u operativos que permitirían verificar si la decisión funcionó.\n7. Explica qué información adicional pedirías antes de autorizar definitivamente la decisión.\n\nEvidencia: presupuesto básico, comparación de alternativas, criterios financieros explícitos, decisión justificada, tres indicadores y necesidades de información adicional.",
+        "contenidoDocumento": "ACTIVIDAD 21 — DECISIÓN FINANCIERA CON PRESUPUESTO LIMITADO\n\nUnidad 4\nTema 4.3.4 — Finanzas\n\nPropósito\nAplicar conceptos básicos de finanzas administrativas para decidir cómo asignar recursos limitados sin confundir utilidad, liquidez, costo, gasto y flujo de efectivo.\n\nCASO: ECORUTA QUERÉTARO\nEcoRuta Querétaro es una empresa ficticia de distribución sostenible. La dirección dispone de $120,000 MXN para atender cuatro necesidades del siguiente periodo:\n\n- Mantenimiento preventivo y correctivo de unidades: $55,000.\n- Campaña comercial para captar nuevos clientes: $40,000.\n- Actualización del software de operación y seguimiento: $30,000.\n- Contratación temporal para ampliar capacidad de entrega: $25,000.\n\nLa suma de las cuatro necesidades es superior al presupuesto disponible. No es obligatorio financiar todas las opciones y puedes proponer una combinación distinta siempre que respetes el límite.\n\n1. LECTURA FINANCIERA DEL CASO\nIdentifica:\n- recursos disponibles;\n- necesidades financieras;\n- costos o gastos involucrados;\n- posibles efectos sobre ingresos;\n- posibles efectos sobre flujo de efectivo;\n- datos que todavía son supuestos y requieren validación.\n\n2. PRESUPUESTO BASE\nConstruye una tabla con las cuatro alternativas. Incluye como mínimo:\n- alternativa;\n- monto solicitado;\n- monto que propones autorizar;\n- justificación inicial;\n- saldo restante del presupuesto.\n\nLa suma autorizada no puede superar $120,000 MXN.\n\n3. DOS ALTERNATIVAS DE DECISIÓN\nDiseña al menos dos combinaciones completas de asignación del presupuesto. Para cada una explica:\n- qué se financia y qué se difiere;\n- efecto probable en liquidez;\n- efecto esperado en operación o ingresos;\n- riesgo principal;\n- supuesto crítico que debe cumplirse.\n\n4. MATRIZ DE EVALUACIÓN\nCompara las alternativas usando los siguientes criterios:\n- liquidez;\n- rentabilidad o beneficio esperado;\n- riesgo;\n- continuidad operativa;\n- efecto en otras áreas de la empresa.\n\nAsigna una valoración cualitativa o cuantitativa consistente y explica brevemente cada valoración.\n\n5. DECISIÓN FINANCIERA\nSelecciona una alternativa y redacta una justificación ejecutiva de 180–230 palabras. La justificación debe relacionar presupuesto, liquidez, rentabilidad, riesgo e impacto operativo. No basta afirmar que una opción es más barata.\n\n6. INDICADORES DE SEGUIMIENTO\nDefine tres indicadores para comprobar posteriormente si la decisión funcionó. Para cada indicador escribe:\n- nombre;\n- qué mide;\n- dato necesario;\n- cómo se interpretaría;\n- qué decisión permitiría corregir.\n\n7. INFORMACIÓN ADICIONAL\nEscribe al menos tres datos que solicitarías antes de autorizar definitivamente el presupuesto. Explica por qué cada dato podría cambiar la decisión.\n\nEVIDENCIA DE ENTREGA\nLa copia individual debe contener:\n- lectura financiera del caso;\n- presupuesto base;\n- dos alternativas completas;\n- matriz de evaluación;\n- decisión ejecutiva justificada;\n- tres indicadores;\n- información adicional requerida.\n\nCriterios de revisión\nSe revisará coherencia financiera, respeto del límite presupuestal, distinción correcta entre conceptos, calidad de la comparación, justificación de la decisión y trazabilidad entre datos, criterios e indicadores.",
+        "fechaSesion": "2026-10-21",
+        "horaFinSesion": "17:00",
+        "puntos": 100
+      }
+    }
+  ]
+}
