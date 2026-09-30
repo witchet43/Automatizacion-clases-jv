@@ -221,7 +221,8 @@ function diagnosticarProgresoClaseWeb_(course,p){
   const options=p&&typeof p==='object'?p:{};
   const soloClassroom=options.soloClassroom===true;
   const plan=soloClassroom?null:leerPlaneacionSiguienteClase_(course.materia);
-  const works=listarCourseWorkClase_(course.id);
+  let works=listarCourseWorkClase_(course.id);
+  if(options.soloDrafts===true)works=works.filter(function(w){return String(w.state||'').toUpperCase()==='DRAFT';});
   const detalle=options.detalle===true;
   const active=works.map(function(w){
     const item={
@@ -236,8 +237,14 @@ function diagnosticarProgresoClaseWeb_(course,p){
       item.workType=String(w.workType||'');
       item.maxPoints=w.maxPoints===undefined||w.maxPoints===null?null:Number(w.maxPoints);
       item.materials=(w.materials||[]).map(function(m){
-        if(m&&m.form)return {type:'FORM',formUrl:String(m.form.formUrl||''),title:String(m.form.title||'')};
-        if(m&&m.link)return {type:'LINK',url:String(m.link.url||''),title:String(m.link.title||'')};
+        if(m&&m.form){
+          const formUrl=String(m.form.formUrl||'');
+          return {type:'FORM',formUrl:formUrl,title:String(m.form.title||''),formSnapshot:inspeccionarFormularioDiagnosticoWeb_(formUrl)};
+        }
+        if(m&&m.link){
+          const linkUrl=String(m.link.url||'');
+          return {type:'LINK',url:linkUrl,title:String(m.link.title||''),formSnapshot:/docs\.google\.com\/forms\//i.test(linkUrl)?inspeccionarFormularioDiagnosticoWeb_(linkUrl):null};
+        }
         if(m&&m.driveFile){
           const h=m.driveFile.driveFile||m.driveFile;
           return {type:'DRIVE_FILE',id:String(h.id||''),title:String(h.title||''),alternateLink:String(h.alternateLink||'')};
@@ -257,6 +264,24 @@ function diagnosticarProgresoClaseWeb_(course,p){
     planningSkipped:soloClassroom,
     courseWork:active
   };
+}
+
+function inspeccionarFormularioDiagnosticoWeb_(url){
+  const out={ok:false,title:'',description:'',published:null,items:[],error:''};
+  if(!String(url||'').trim())return out;
+  try{
+    const form=FormApp.openByUrl(String(url));
+    out.ok=true;
+    out.title=String(form.getTitle()||'');
+    out.description=String(form.getDescription()||'');
+    try{out.published=form.supportsAdvancedResponderPermissions&&form.supportsAdvancedResponderPermissions()===true?form.isPublished():null;}catch(ignore){}
+    out.items=form.getItems().map(function(item,index){
+      let title='';
+      try{title=String(item.getTitle()||'');}catch(ignore){}
+      return {index:index+1,type:String(item.getType()||''),title:title};
+    });
+  }catch(err){out.error=String(err&&err.message?err.message:err);}
+  return out;
 }
 
 function validarEntradaQuizAsistenciaWeb_(p){

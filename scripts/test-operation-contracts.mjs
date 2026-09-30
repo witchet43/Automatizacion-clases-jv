@@ -81,3 +81,7 @@ assert.match(web,/POSTFLIGHT_DUPLICATE_DRAFT/);
 assert.match(web,/options\.detalle===true/);
 assert.match(web,/item\.description=String\(w\.description/);
 assert.match(web,/formUrl/);
+
+assert.match(web,/soloDrafts===true/);
+assert.match(web,/inspeccionarFormularioDiagnosticoWeb_/);
+assert.match(web,/FormApp\.openByUrl/);
