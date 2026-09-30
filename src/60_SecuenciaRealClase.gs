@@ -25,8 +25,11 @@ function evidenciaSesionReal_(row, works) {
     return byTitle||(tituloEsPlaceholder&&byId);
   });
   const gammaUrl=String(row.gammaUrl||'').trim();
+  const gammaState=String(row.gammaState||'').trim();
+  const gammaDescriptor=[String(row.gamma||''),gammaUrl,gammaState].join(' ');
+  const gammaNoAplica=/\bno\s+aplica\b/i.test(gammaDescriptor);
   const gammaVerificada=/^https:\/\/gamma\.app\/docs\//i.test(gammaUrl)&&
-    /\bverificad[ao]\b/i.test(String(row.gammaState||''));
+    /\bverificad[ao]\b/i.test(gammaState);
   return {
     session:String(row.session||''),
     unit:String(row.unit||''),
@@ -35,10 +38,12 @@ function evidenciaSesionReal_(row, works) {
     classroomStates:matches.map(function(w){return String(w.state).toUpperCase();}),
     gammaUrl:gammaUrl,
     gammaVerificada:gammaVerificada,
+    gammaNoAplica:gammaNoAplica,
     recursoPreparado:matches.length>0,
-    // DRAFT + Gamma verificada acredita preparación integral del paquete, nunca impartición.
-    paquetePreparado:gammaVerificada&&matches.length>0,
-    materialPreparado:gammaVerificada&&matches.length>0,
+    // DRAFT + (Gamma verificada o Gamma explícitamente no aplicable) acredita preparación integral.
+    // Nunca equivale a sesión impartida.
+    paquetePreparado:(gammaVerificada||gammaNoAplica)&&matches.length>0,
+    materialPreparado:(gammaVerificada||gammaNoAplica)&&matches.length>0,
     publicado:matches.some(function(w){return String(w.state||'').toUpperCase()==='PUBLISHED';})
   };
 }
@@ -107,5 +112,13 @@ function validarSecuenciaRealRegresion(){
   let blocked=false;try{seleccionarSiguienteClasePorEstadoReal_([rows[0],rows[1],unver,rows[3]],prepared,'14',{explicitTarget:true});}
   catch(err){blocked=/BLOCKED_GAMMA_UNVERIFIED/.test(String(err));}
   if(!blocked)throw new Error('REGRESSION_SEQUENCE: una Gamma existente no verificada debe bloquear solo esa sesión explícita.');
-  return {ok:true,source:'PLANNING_REAL_PREPARATION_STATE',regressions:6,readOnly:true,currentDateUsed:false,calendarUsed:false};
+  const noGamma=rows.map(function(r){return Object.assign({},r);});
+  noGamma[2].gammaUrl='PENDIENTE / No aplica';
+  noGamma[2].gammaState='NO APLICA — sesión integradora';
+  const noGammaEvidence=evidenciaSesionReal_(noGamma[2],partial);
+  if(!noGammaEvidence.gammaNoAplica||!noGammaEvidence.paquetePreparado)
+    throw new Error('REGRESSION_SEQUENCE: una sesión con Gamma explícitamente NO APLICA debe quedar preparada con recurso real.');
+  if(next(noGamma,partial)!=='15')
+    throw new Error('REGRESSION_SEQUENCE: Gamma NO APLICA no debe bloquear el avance del paquete.');
+  return {ok:true,source:'PLANNING_REAL_PREPARATION_STATE',regressions:8,readOnly:true,currentDateUsed:false,calendarUsed:false};
 }

@@ -28,6 +28,8 @@ assert.match(policy, /SAVED_COUNTER_AS_PROGRESS:\s*false/);
 assert.match(policy, /CURRENT_DATE_ALLOWED_FOR_IDENTITY_OR_SEQUENCE:\s*false/);
 assert.match(policy, /CALENDAR_ALLOWED_FOR_IDENTITY_OR_SEQUENCE:\s*false/);
 assert.match(policy, /RESOURCES_BEFORE_GAMMA:\s*true/);
+assert.match(source, /gammaNoAplica/);
+assert.match(source, /gammaVerificada\|\|gammaNoAplica/);
 
 // El estado de las fuentes se simula. Ningún reloj o propiedad de progreso
 // existe en el entorno; consultar cualquiera de ellos falla la prueba.
