@@ -31,7 +31,7 @@ const ACADEMIC_WEB = Object.freeze({
     'sistemas-operativos':Object.freeze({id:'875776451793',materia:'Sistemas Operativos'}),
     'so':Object.freeze({id:'875776451793',materia:'Sistemas Operativos'})
   }),
-  ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase','diagnosticarClase','auditarIdentidadClassroom','purgeWordCanonical']),
+  ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase','diagnosticarClase','auditarIdentidadClassroom']),
   FAST_PATHS:Object.freeze({
     quizAsistencia:Object.freeze({singleExternalInput:'materia',firstExternalAction:'WEB_APP',preflightReadsAllowed:false,documentationRead:false,auxiliaryReads:false,diagnosticOnlyAfterError:true})
   })
@@ -65,11 +65,6 @@ function ejecutarServicioAcademicoWeb_(params){
     if(action==='auditarIdentidadClassroom'){
       const audit=auditarIdentidadClassroomWeb_(p);
       return respuestaAcademicaWeb_(Object.assign({ok:true,transport:'WEB_APP',action:action},audit));
-    }
-    if(action==='purgeWordCanonical'){
-      if(String(p.confirm||'')!=='DELETE_ALL_WORD_CANONICAL')throw new Error('CONFIRMACION_DESTRUCTIVA_REQUERIDA');
-      const purge=purgarWordCarpetasCanonicas_();
-      return respuestaAcademicaWeb_(Object.assign({ok:true,transport:'WEB_APP',action:action},purge));
     }
     const course=resolverCursoFastPathAcademicoWeb_(action,p)||resolverCursoAcademicoWeb_(p);
     let result;
@@ -116,48 +111,6 @@ function validarContratoOperacionWeb_(action){
   const contracts=ACADEMIC_POLICY&&ACADEMIC_POLICY.EXECUTION?ACADEMIC_POLICY.EXECUTION.OPERATION_CONTRACTS:null;
   if(!contracts||!contracts[action])throw new Error('CONTRATO_OPERACION_NO_DEFINIDO: '+action);
   return contracts[action];
-}
-
-function purgarWordCarpetasCanonicas_(){
-  const roots=[
-    {materia:'Sistemas Distribuidos',id:'1ZFy_wx2FNGkZ1D_C3xh_xaqyh0MrmTrc'},
-    {materia:'Administración',id:'1csmH-1aeMOoar2m6puCEzDsr2fxsvKU5'},
-    {materia:'Algoritmos y Estructuras de Datos',id:'1nTRFpd3X-Q4fxr6cMeGq2i6WtmsKqaRc'},
-    {materia:'Análisis y Diseño de Sistemas Computacionales',id:'1GfdgLVWRmoMXK7YP4djHc26_4lQc61Li'},
-    {materia:'Ética y Legislación Informática',id:'1ZxMVn8cmyVG8QNef5yB70E0UxFVp2H0u'},
-    {materia:'Introducción a las Tecnologías de Información',id:'1pTsD-jKdWCpzHRjH33WuYwqE4m-MtDL3'},
-    {materia:'Tópico I',id:'1uMHks6vgVKd8eaVpaoDsAT6vmhOnfNzI'},
-    {materia:'Sistemas Operativos',id:'1DW8Iz2l6sTSH5jHK4GCEcKzZd1JzQXy7'}
-  ];
-  const deleted=[],errors=[];
-  roots.forEach(function(root){purgarWordRecursivo_(root.id,root.materia,'',deleted,errors);});
-  return {destructive:true,scope:'CANONICAL_ACADEMIC_DRIVE_FOLDERS_RECURSIVE',roots:roots.length,deletedCount:deleted.length,errorCount:errors.length,deleted:deleted,errors:errors};
-}
-
-function purgarWordRecursivo_(folderId,materia,path,deleted,errors){
-  let token;
-  do{
-    const page=Drive.Files.list({
-      q:"'"+String(folderId).replace(/'/g,"\\'")+"' in parents and trashed=false",
-      pageSize:1000,pageToken:token,fields:'nextPageToken,files(id,name,mimeType)'
-    });
-    (page.files||[]).forEach(function(f){
-      const name=String(f.name||''),current=path?path+'/'+name:name;
-      if(String(f.mimeType)==='application/vnd.google-apps.folder'){
-        if(!/^LEGACY\b|NO USAR/i.test(name))purgarWordRecursivo_(String(f.id),materia,current,deleted,errors);
-        return;
-      }
-      const mime=String(f.mimeType||'');
-      if(mime!=='application/vnd.openxmlformats-officedocument.wordprocessingml.document'&&mime!=='application/msword')return;
-      try{
-        Drive.Files.remove(String(f.id));
-        deleted.push({materia:materia,id:String(f.id),name:name,path:current,mimeType:mime});
-      }catch(err){
-        errors.push({materia:materia,id:String(f.id),name:name,path:current,error:String(err&&err.message?err.message:err)});
-      }
-    });
-    token=page.nextPageToken;
-  }while(token);
 }
 
 function auditarIdentidadClassroomWeb_(p){
