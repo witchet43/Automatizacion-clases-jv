@@ -75,5 +75,5 @@ assert.match(didactics,/Fecha\\s\*:/);
 
 console.log('OK: contratos transversales, acción explícita, preflight único, Docs desacoplados, identidad resuelta por Classroom, clase verificable e importación\/revisión sin ambigüedad.');
 
-assert.match(webApp,/deduplicarDraftsExactosClaseWeb_/);
-assert.match(webApp,/POSTFLIGHT_DUPLICATE_DRAFT/);
+assert.match(web,/deduplicarDraftsExactosClaseWeb_/);
+assert.match(web,/POSTFLIGHT_DUPLICATE_DRAFT/);
