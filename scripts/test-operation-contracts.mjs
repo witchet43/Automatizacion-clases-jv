@@ -90,3 +90,8 @@ assert.match(policy,/eliminarDrafts:Object\.freeze/);
 assert.match(web,/eliminarCourseWorkDraftsWeb_/);
 assert.match(web,/BLOCKED_DELETE_NON_DRAFT/);
 assert.match(web,/POSTFLIGHT_DELETE_DRAFT_FAILED/);
+
+assert.match(policy,/AUTONOMOUS_MATERIALS: Object\.freeze/);
+assert.match(policy,/PRIOR_COURSEWORK_REQUIRED:false/);
+assert.match(policy,/ALL_NECESSARY_CONTEXT_INLINE:true/);
+assert.match(policy,/SELF_CONTAINED_STUDENT_EVIDENCE:true/);
