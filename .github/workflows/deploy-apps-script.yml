@@ -6,6 +6,9 @@ on:
     paths:
       - 'src/**'
       - 'scripts/test-*.mjs'
+      - 'scripts/academic-context.mjs'
+      - 'scripts/verify-academic-webapp.mjs'
+      - 'config/academic-context.json'
       - '.clasp.json'
       - 'package.json'
       - '.github/workflows/deploy-apps-script.yml'
@@ -13,7 +16,7 @@ on:
 
 concurrency:
   group: apps-script-production
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -32,6 +35,12 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Verify canonical context and startup regressions
+        run: |
+          node scripts/academic-context.mjs check
+          node scripts/test-academic-context.mjs
+          node scripts/test-operation-contracts.mjs
 
       - name: Validate Apps Script source
         shell: bash
@@ -287,3 +296,6 @@ jobs:
         run: |
           set -euo pipefail
           npm run apps-script:deploy
+
+      - name: Verify deployed Web App without creating resources
+        run: node scripts/verify-academic-webapp.mjs

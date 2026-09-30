@@ -9,24 +9,23 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: apps-script-production
+  cancel-in-progress: false
+
 jobs:
   execute:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate canonical configuration
+        run: node scripts/academic-context.mjs check
       - name: Execute canonical academic Web App
-        shell: bash
-        run: |
-          set -euo pipefail
-          request_file="$(git diff-tree --no-commit-id --name-only -r HEAD -- '.academic-requests/*.json' | tail -n1)"
-          test -n "$request_file"
-
-          endpoint="https://script.google.com/macros/s/AKfycbz2rCuB9jUsbnt0tj0RgHmr3lguOZjVL34a_2F_yhggiwLNTOEn8QdsdbFv4SK6aGxr/exec"
-          response="$(curl -fsSL --max-time 60             -H 'Content-Type: application/json'             --data-binary @"$request_file"             "$endpoint")"
-
-          echo "$response"
-          printf '%s' "$response" | grep -q '"ok":true'
+        run: node scripts/execute-academic-request.mjs

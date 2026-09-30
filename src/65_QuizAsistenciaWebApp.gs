@@ -60,11 +60,12 @@ function ejecutarServicioAcademicoWeb_(params){
     if(!action)throw new Error('ACCION_REQUERIDA');
     if(ACADEMIC_WEB.ACTIONS.indexOf(action)<0)throw new Error('ACCION_NO_PERMITIDA');
     validarContratoOperacionWeb_(action);
+    const operationalContext=validarArranqueAcademicoWeb_(action,p);
 
     if(action==='quizAsistencia')validarEntradaQuizAsistenciaWeb_(p);
     if(action==='auditarIdentidadClassroom'){
       const audit=auditarIdentidadClassroomWeb_(p);
-      return respuestaAcademicaWeb_(Object.assign({ok:true,transport:'WEB_APP',action:action},audit));
+      return respuestaAcademicaWeb_(Object.assign({ok:true,transport:'WEB_APP',action:action,operationalContext:operationalContext},audit));
     }
     const course=resolverCursoFastPathAcademicoWeb_(action,p)||resolverCursoAcademicoWeb_(p);
     let result;
@@ -96,6 +97,7 @@ function ejecutarServicioAcademicoWeb_(params){
       ok:true,
       transport:'WEB_APP',
       action:action,
+      operationalContext:operationalContext,
       courseId:course.id,
       materia:course.materia
     },result&&typeof result==='object'?result:{result:result}));
@@ -292,6 +294,7 @@ function normalizarPayloadAcademicoWeb_(course,p){
   delete out.courseKey;
   delete out.courseId;
   delete out.params;
+  delete out.operationalContext;
   out.courseId=course.id;
   if(!String(out.materia||'').trim())out.materia=course.materia;
   return out;

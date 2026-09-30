@@ -105,6 +105,8 @@ function crearExamen(params) {
  * canónico nunca se infiere del título del recurso.
  */
 function prepararContextoGuardrailRecurso_(params, tipo) {
+  validarConfiguracionContextoAcademico_();
+  validarSolicitudContextoAcademico_(params);
   const p = params && typeof params === 'object' ? Object.assign({}, params) : {};
   const courseId = String(p.courseId || '').trim();
   let materia = String(p.materia || '').trim();

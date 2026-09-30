@@ -1,4 +1,6 @@
-{
+// Generated from config/academic-context.json. Do not edit.
+const ACADEMIC_CONTEXT_CONFIG = {
+  "manifestSha256": "23bb9384d64ba741bbd6dc82630e57408b44ecd7178f89d864333f4360447680",
   "schemaVersion": 1,
   "contractVersion": "1.0.0",
   "repository": "witchet43/Automatizacion-clases-jv",
@@ -305,4 +307,4 @@
     "dispatcher": "src/65_QuizAsistenciaWebApp.gs",
     "postflight": "src/52_MasterPostflight.gs"
   }
-}
+};
