@@ -158,7 +158,9 @@ function prepararRecursoConDocumentoEditable_(p) {
     const nuevo=crearGoogleDocumentoPractica_({
       titulo:p.titulo,
       descripcion:'Trabaja directamente en tu copia personal de este documento. Completa los apartados y entrega la evidencia solicitada.',
-      contenidoDocumento:respuesta
+      contenidoDocumento:respuesta,
+      courseId:p.courseId,
+      tipo:p.tipo
     });
     ids.push(String(nuevo.id));
     p.documentoCreadoPorScript=true;
