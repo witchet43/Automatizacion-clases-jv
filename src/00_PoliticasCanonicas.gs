@@ -156,6 +156,10 @@ const ACADEMIC_POLICY = Object.freeze({
     PRACTICE_STUDENT_COPY: true,
     PRACTICE_DOCUMENT_FORMAT: 'GOOGLE_DOC',
     ACADEMIC_DOCUMENT_FORMAT: 'GOOGLE_DOC_NATIVE_ONLY',
+    CANONICAL_RESOURCE_FOLDERS: Object.freeze({PRACTICA:'Prácticas',TAREA:'Tareas',ACTIVIDAD:'Actividades en clase'}),
+    CREATE_DIRECTLY_IN_CANONICAL_FOLDER: true,
+    COMBINED_RESOURCE_FOLDER_ALLOWED: false,
+    ROOT_LEVEL_RESOURCE_DOC_ALLOWED: false,
     WORD_FILES_ALLOWED: false,
     WORD_MIME_TYPES_FORBIDDEN: Object.freeze(['application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/msword']),
     STUDENT_IDENTITY_FIELDS_ALLOWED: false,
@@ -234,6 +238,14 @@ function validarPoliticasCanonicas_(){
   if(!p.GAMMA||p.GAMMA.COVER_SESSION_NUMBER_ALLOWED!==false||p.GAMMA.REQUIRE_TOPIC_NUMBER_ON_COVER!==true) throw new Error('La portada Gamma debe incluir Unidad + Tema/Subtema oficial y excluir número de sesión.');
     if(!p.DOCUMENTS||p.DOCUMENTS.STUDENT_IDENTITY_FIELDS_ALLOWED!==false||p.DOCUMENTS.CLASSROOM_IS_IDENTITY_SOURCE!==true) throw new Error('Los Google Docs de Classroom no deben pedir Nombre del alumno, Grupo ni Fecha: Classroom identifica la entrega.');
   if(p.DOCUMENTS.WORD_FILES_ALLOWED!==false||p.DOCUMENTS.ACADEMIC_DOCUMENT_FORMAT!=='GOOGLE_DOC_NATIVE_ONLY') throw new Error('Los archivos Word están prohibidos en las carpetas académicas canónicas; usar Google Docs nativos.');
+  if(!p.DOCUMENTS.CANONICAL_RESOURCE_FOLDERS||
+      p.DOCUMENTS.CANONICAL_RESOURCE_FOLDERS.PRACTICA!=='Prácticas'||
+      p.DOCUMENTS.CANONICAL_RESOURCE_FOLDERS.TAREA!=='Tareas'||
+      p.DOCUMENTS.CANONICAL_RESOURCE_FOLDERS.ACTIVIDAD!=='Actividades en clase'||
+      p.DOCUMENTS.CREATE_DIRECTLY_IN_CANONICAL_FOLDER!==true||
+      p.DOCUMENTS.COMBINED_RESOURCE_FOLDER_ALLOWED!==false||
+      p.DOCUMENTS.ROOT_LEVEL_RESOURCE_DOC_ALLOWED!==false)
+    throw new Error('Cada materia debe separar Prácticas, Tareas y Actividades en clase en carpetas canónicas distintas.');
   if(p.DOCUMENTS.IDENTITY_AUDIT_SCOPE!=='DRIVE_CANONICAL_FOLDERS_THEN_CLASSROOM_DRAFT_PUBLISHED') throw new Error('La auditoría de identidad debe iniciar en carpetas canónicas de Drive y después contrastar Classroom DRAFT/PUBLISHED.');
     if(p.CLASSROOM.DEFAULT_COURSEWORK_STATE!=='DRAFT') throw new Error('El estado automático ordinario de Classroom debe ser DRAFT.');
   const did=p.CLASSROOM.DIDACTIC_INSTRUCTIONS;
