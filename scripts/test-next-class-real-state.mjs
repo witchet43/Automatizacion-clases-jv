@@ -22,9 +22,12 @@ assert.match(resolverCode, /seleccionarSiguienteClasePorEstadoReal_/);
 assert.match(generatorCode, /resolverSiguienteClase\(/);
 assert.match(generatorCode, /BLOCKED_UNSUPPORTED_CLASS_GENERATOR/);
 assert.match(guards, /const real = isClassPackage \? resolverSiguienteClase\(/);
-assert.match(policy, /SOURCE:\s*'CLASSROOM_GAMMA_REAL_STATE'/);
+assert.match(policy, /SOURCE:\s*'FIRST_INCOMPLETE_CANONICAL_PACKAGE_BY_REAL_PREPARATION'/);
 assert.match(policy, /SYSTEM_DATE_AS_PROGRESS:\s*false/);
 assert.match(policy, /SAVED_COUNTER_AS_PROGRESS:\s*false/);
+assert.match(policy, /CURRENT_DATE_ALLOWED_FOR_IDENTITY_OR_SEQUENCE:\s*false/);
+assert.match(policy, /CALENDAR_ALLOWED_FOR_IDENTITY_OR_SEQUENCE:\s*false/);
+assert.match(policy, /RESOURCES_BEFORE_GAMMA:\s*true/);
 
 // El estado de las fuentes se simula. Ningún reloj o propiedad de progreso
 // existe en el entorno; consultar cualquiera de ellos falla la prueba.
@@ -63,9 +66,9 @@ ctx.PropertiesService={getScriptProperties:()=>{throw Error('PROHIBIDO_USAR_CONT
 ctx.Date=class extends Date {constructor(){throw Error('PROHIBIDO_USAR_FECHA_ACTUAL');}static now(){throw Error('PROHIBIDO_USAR_RELOJ');}};
 vm.runInContext(resolver,ctx,{filename:'41_SiguienteClase.gs'});
 let state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
-assert.equal(state.target.session,'13');
-assert.equal(state.sequenceSource,'CLASSROOM_GAMMA_REAL_STATE');
-assert.equal(state.evidence.gammaVerificada,true);
+assert.equal(state.target.session,'14');
+assert.equal(state.sequenceSource,'PLANNING_REAL_PREPARATION_STATE');
+assert.equal(state.evidence.gammaVerificada,false);
 assert.equal(state.evidence.publicado,false);
 const explicit=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática','15',{explicitTarget:true});
 assert.equal(explicit.target.session,'15');
@@ -77,15 +80,14 @@ data[3][6]='Gamma generado y verificado';
 data[3][7]='Actividad 7: 100000000003 (DRAFT)';
 works.push({id:'100000000003',title:'Actividad 7',state:'DRAFT'});
 state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
-assert.equal(state.target.session,'13');
-assert.equal(state.progress.lastPublished,0); // 2.2 y 2.3 están preparadas, NO publicadas.
+assert.equal(state.target.session,'15');
+assert.equal(state.progress.lastPublished,0); // 2.2 y 2.3 están preparadas en DRAFT; no se necesita publicarlas para seguir preparando.
 works[1].state='PUBLISHED';
 state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
-assert.equal(state.target.session,'14');
-assert.equal(state.evidence.publicado,false);
+assert.equal(state.target.session,'15');
 works[2].state='PUBLISHED';
 state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
 assert.equal(state.target.session,'15');
 vm.runInContext(generator,ctx,{filename:'44_NomenclaturaRecursos.gs'});
 assert.throws(()=>ctx.generarSiguienteClase({materia:'UAQ - Ética y Legislación Informática'}),/BLOCKED_UNSUPPORTED_CLASS_GENERATOR/);
-console.log('OK: selección por evidencia Classroom/Gamma; huecos, DRAFT ≠ PUBLISHED, sin fecha ni contadores, preflight y materia segura.');
+console.log('OK: selección del siguiente paquete a preparar por recursos reales + Gamma; DRAFT preparado permite continuar, DRAFT no equivale a impartido, sin fecha/Calendar/contadores.');

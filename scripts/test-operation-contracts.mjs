@@ -29,7 +29,7 @@ assert.doesNotMatch(web,/p\.action\|\|'quizAsistencia'/);
 assert.match(web,/p\.courseId\|\|p\.course\|\|p\.courseKey\|\|p\.materia/);
 assert.match(web,/crearGoogleDocumentoAcademico_/);
 assert.doesNotMatch(web,/crearGoogleDocumentoPractica_\(\{/);
-assert.match(web,/PARCIAL_NO_VERIFICABLE/);
+assert.match(web,/MATERIALES_LISTOS_PARA_GAMMA/);
 assert.match(web,/expectedResourceTypes/);
 
 assert.match(practice,/return crearGoogleDocumentoAcademico_\(\{titulo:titulo,html:html,courseId:p\.courseId,tipo:p\.tipo\|\|'PRACTICA'\}\)/);
@@ -42,6 +42,10 @@ assert.match(policy,/calificarEstadoEntrega:Object\.freeze\(\{mode:'ADMIN_PROTEC
 assert.match(policy,/VERIFY_BY_PLANNING_URL_FIRST: true/);
 assert.match(policy,/TITLE_SEARCH_ONLY_IF_URL_MISSING: true/);
 assert.match(policy,/RESOLVE_FOLDER_BEFORE_GENERATE: true/);
+assert.match(policy,/RESOURCES_BEFORE_GAMMA: true/);
+assert.match(policy,/REQUIRE_VERIFIED_RESOURCE_REFERENCES: true/);
+assert.match(policy,/CURRENT_DATE_ALLOWED_FOR_IDENTITY_OR_SEQUENCE: false/);
+assert.match(policy,/CALENDAR_ALLOWED_FOR_IDENTITY_OR_SEQUENCE: false/);
 assert.match(policy,/STUDENT_IDENTITY_FIELDS_ALLOWED: false/);
 assert.match(policy,/CLASSROOM_IS_IDENTITY_SOURCE: true/);
 assert.match(policy,/IDENTITY_AUDIT_SCOPE: 'DRIVE_CANONICAL_FOLDERS_THEN_CLASSROOM_DRAFT_PUBLISHED'/);

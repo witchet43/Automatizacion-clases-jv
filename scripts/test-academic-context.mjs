@@ -33,8 +33,10 @@ for(const action of ['actividad','tarea','practica','quiz','examen','resolverCla
   calls=[];const r=run(good({action}));assert.equal(r.ok,true);assert.deepEqual(calls,[action]);checks++;
 }
 calls=[];
-const pkg=run(good({action:'clase',gammaUrl:'https://gamma.app/docs/verified',expectedResourceTypes:['actividad','tarea'],resources:[{type:'actividad',params:{}},{type:'tarea',params:{}}]}));
-assert.equal(pkg.ok,true);assert.equal(pkg.packageStatus,'COMPLETO');assert.deepEqual(calls,['actividad','tarea']);
+blocked(good({action:'clase',gammaUrl:'https://gamma.app/docs/verified',expectedResourceTypes:['actividad'],resources:[{type:'actividad',params:{}}]}),/CLASE_RECURSOS_PRIMERO/);
+calls=[];
+const pkg=run(good({action:'clase',expectedResourceTypes:['actividad','tarea'],resources:[{type:'actividad',params:{}},{type:'tarea',params:{}}]}));
+assert.equal(pkg.ok,true);assert.equal(pkg.packageStatus,'MATERIALES_LISTOS_PARA_GAMMA');assert.equal(pkg.nextPhase,'GENERATE_AND_VERIFY_GAMMA_REFERENCING_RESOURCE_IDS_URLS');assert.deepEqual(calls,['actividad','tarea']);
 assert.ok(pkg.resources.every(r=>r.result.state==='DRAFT'));checks++;
 calls=[];assert.equal(run(good({action:'material',params:{titulo:'Material',contenidoDocumento:'Contenido'}})).ok,true);assert.deepEqual(calls,['material']);checks++;
 // Server-side source drift blocks before any action; FAST_PATH still works.

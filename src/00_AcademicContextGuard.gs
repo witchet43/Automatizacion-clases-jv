@@ -2,8 +2,9 @@
 function validarConfiguracionContextoAcademico_() {
   if(typeof ACADEMIC_CONTEXT_CONFIG==='undefined')throw new Error('ACADEMIC_CONTEXT_CONFIG_MISSING');
   const c=ACADEMIC_CONTEXT_CONFIG;
-  if(c.contractVersion!=='1.0.0'||c.repository!=='witchet43/Automatizacion-clases-jv'||
-     c.rules.courseWorkState!=='DRAFT'||c.rules.calendarSelectsClass!==false||
+  if(c.contractVersion!=='1.1.0'||c.repository!=='witchet43/Automatizacion-clases-jv'||
+     c.rules.courseWorkState!=='DRAFT'||c.rules.calendarSelectsClass!==false||c.rules.currentDateSelectsClass!==false||
+     c.rules.resourcesBeforeGamma!==true||c.rules.gammaReferencesVerifiedResources!==true||
      c.workflow.name!=='Academic Web App'||!/^[a-f0-9]{64}$/.test(c.manifestSha256))
     throw new Error('ACADEMIC_CONTEXT_CONFIG_INVALID');
   if(JSON.stringify(c.courses)!==JSON.stringify(ACADEMIC_WEB.COURSES)||
