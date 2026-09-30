@@ -1,0 +1,4 @@
+{
+  "action": "purgeWordCanonical",
+  "confirm": "DELETE_ALL_WORD_CANONICAL"
+}
