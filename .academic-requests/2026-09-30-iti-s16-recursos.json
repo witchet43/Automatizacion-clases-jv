@@ -1,0 +1,112 @@
+{
+  "action": "clase",
+  "materia": "Introducción a las Tecnologías de Información",
+  "sesion": "16",
+  "expectedResourceTypes": [
+    "actividad",
+    "tarea",
+    "quiz"
+  ],
+  "resources": [
+    {
+      "type": "actividad",
+      "params": {
+        "sesionCanonica": 16,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "unidad": "Unidad 2",
+        "topicName": "Unidad 2",
+        "temaSubtema": "2.2.1 Software del sistema operativo + 2.2.2 Tipos del sistema operativo",
+        "titulo": "Actividad 18 - La misma tarea en dos sistemas operativos",
+        "descripcion": "Compara cómo se realizan tareas equivalentes en Windows y Linux para reconocer la función del sistema operativo y diferencias de administración entre plataformas.\n\nTrabaja únicamente sobre tu propio equipo o el entorno de laboratorio autorizado. Usa Windows Terminal/PowerShell y WSL/Ubuntu o una VM Linux preconfigurada.\n\n1. Identifica la versión del sistema operativo en Windows y en Linux.\n2. Navega a una carpeta de trabajo y muestra su contenido en ambos sistemas.\n3. Lista procesos en ejecución e identifica al menos tres procesos reconocibles en cada plataforma.\n4. Consulta información básica de red sin modificar la configuración.\n5. Revisa el almacenamiento disponible y utilizado.\n6. Localiza una aplicación instalada en Windows y el paquete o aplicación equivalente en Linux.\n7. Construye una matriz comparativa con: tarea realizada, evidencia Windows, evidencia Linux, propósito, diferencia de interfaz/administración y observación sobre licencia o distribución.\n8. Clasifica y justifica cuatro sistemas operativos distintos considerando plataforma de uso, tipo de dispositivo y propósito principal.\n\nEvidencia: matriz comparativa Windows/Linux, capturas o salidas verificables de las acciones realizadas y clasificación razonada de cuatro sistemas operativos.\n\nCriterios de revisión: equivalencia real de las acciones comparadas, evidencia suficiente, interpretación correcta de la función del sistema operativo, claridad de las diferencias y justificación de la clasificación.",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "tarea",
+      "params": {
+        "sesionCanonica": 16,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "unidad": "Unidad 2",
+        "topicName": "Unidad 2",
+        "temaSubtema": "Preparación para 2.2.3 Estructura del sistema operativo + 2.2.4 Sistemas operativos como gestores",
+        "titulo": "Tarea 04 - Preparar observación de procesos",
+        "descripcion": "Prepara el entorno que usarás para observar procesos y consumo de recursos en la siguiente sesión.\n\n1. Verifica que puedes abrir Administrador de tareas y Monitor de recursos en Windows.\n2. Instala o verifica Process Explorer de Microsoft Sysinternals. Si no puedes instalar software en el equipo, registra la restricción y confirma que dispones de Administrador de tareas y Monitor de recursos.\n3. Identifica tres procesos que reconozcas y registra para cada uno: nombre, aplicación o servicio al que pertenece, CPU observada, memoria observada y cualquier actividad visible de disco o red.\n4. Añade una observación breve sobre qué recurso parece utilizar más cada proceso.\n\nEvidencia: completa la tabla en tu copia individual y agrega una captura donde puedan identificarse los tres procesos observados. No incluyas datos sensibles.\n\nCriterios de revisión: tres procesos identificados correctamente, métricas observables registradas, relación proceso–aplicación/servicio y evidencia legible.",
+        "contenidoDocumento": "TAREA 04 — PREPARAR OBSERVACIÓN DE PROCESOS\n\nPropósito\nDejar listo el entorno de observación para analizar procesos y recursos gestionados por el sistema operativo.\n\nPreparación del entorno\n• Verifica acceso a Administrador de tareas.\n• Verifica acceso a Monitor de recursos.\n• Instala o verifica Process Explorer de Microsoft Sysinternals. Si el equipo no permite instalarlo, registra esa restricción y trabaja con las herramientas incluidas en Windows.\n\nObservación de procesos\nIdentifica tres procesos que reconozcas y completa para cada uno:\nProceso | Aplicación o servicio | CPU observada | Memoria observada | Disco o red observable | Recurso que parece utilizar más\n\nProceso 1:\nProceso 2:\nProceso 3:\n\nEvidencia\nAgrega una captura legible donde aparezcan los tres procesos observados. No incluyas información sensible.\n\nCierre\nEscribe una conclusión breve: ¿por qué un sistema operativo necesita administrar de forma separada procesos y recursos?",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "quiz",
+      "params": {
+        "sesionCanonica": 16,
+        "explicitSequenceOverride": true,
+        "unidad": "Unidad 2",
+        "topicName": "Unidad 2",
+        "temaSubtema": "Práctica 02 - Radiografía de placa y rutas de datos",
+        "titulo": "Quiz 2 - Práctica 02: chipset y rutas de datos",
+        "descripcion": "Comprobación breve de comprensión sobre chipset/PCH, buses, compatibilidad y rutas de datos trabajadas en la Práctica 02.",
+        "puntos": 20,
+        "preguntas": [
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "¿Cuál describe mejor la función general del chipset/PCH en una computadora moderna?",
+            "opciones": [
+              "Coordinar diversas interfaces de entrada/salida y su comunicación con el procesador",
+              "Almacenar permanentemente el sistema operativo",
+              "Ejecutar por sí mismo todos los programas de usuario",
+              "Sustituir a la memoria RAM durante la ejecución"
+            ],
+            "respuestaCorrecta": "Coordinar diversas interfaces de entrada/salida y su comunicación con el procesador",
+            "puntos": 5,
+            "retroalimentacionCorrecta": "Correcto. El chipset/PCH participa en la coordinación de distintas interfaces y rutas de entrada/salida.",
+            "retroalimentacionIncorrecta": "Revisa el papel del chipset/PCH y qué componentes o interfaces dependen de él."
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "Si una unidad NVMe usa PCIe, ¿qué dato es más relevante para analizar una posible limitación de compatibilidad o rendimiento?",
+            "opciones": [
+              "La generación y cantidad de líneas PCIe disponibles",
+              "El color del disipador de la placa base",
+              "El nombre de la cuenta de Windows",
+              "La resolución del monitor"
+            ],
+            "respuestaCorrecta": "La generación y cantidad de líneas PCIe disponibles",
+            "puntos": 5,
+            "retroalimentacionCorrecta": "Correcto. Generación y número de líneas PCIe condicionan ancho de banda y compatibilidad.",
+            "retroalimentacionIncorrecta": "Piensa en la ruta física/lógica que usa NVMe para comunicarse con el sistema."
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "¿Qué representación muestra mejor una ruta de datos coherente para una aplicación que lee información desde una unidad de almacenamiento?",
+            "opciones": [
+              "Almacenamiento → controlador/interfaz → sistema operativo → memoria/CPU → aplicación",
+              "Monitor → teclado → ventilador → aplicación",
+              "CPU → bocinas → fuente de poder → archivo",
+              "Aplicación → impresora → BIOS → memoria USB"
+            ],
+            "respuestaCorrecta": "Almacenamiento → controlador/interfaz → sistema operativo → memoria/CPU → aplicación",
+            "puntos": 5,
+            "retroalimentacionCorrecta": "Correcto. La lectura atraviesa la interfaz/controlador y la gestión del sistema operativo antes de ser utilizada por la aplicación.",
+            "retroalimentacionIncorrecta": "Revisa el diagrama de interconexión y relaciona almacenamiento, interfaz, SO, memoria y CPU."
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "¿Por qué conviene contrastar lo detectado por CPU-Z o msinfo32 con la documentación del fabricante?",
+            "opciones": [
+              "Para validar modelo, interfaces y capacidades antes de concluir compatibilidad",
+              "Para cambiar automáticamente el hardware instalado",
+              "Para sustituir todas las mediciones del equipo por valores teóricos",
+              "Para evitar identificar el modelo de placa base"
+            ],
+            "respuestaCorrecta": "Para validar modelo, interfaces y capacidades antes de concluir compatibilidad",
+            "puntos": 5,
+            "retroalimentacionCorrecta": "Correcto. La evidencia local y la especificación del fabricante se complementan para justificar compatibilidad.",
+            "retroalimentacionIncorrecta": "Recuerda que la práctica pedía contrastar lo observado con especificaciones oficiales antes de decidir compatibilidad."
+          }
+        ]
+      }
+    }
+  ]
+}
