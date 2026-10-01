@@ -80,6 +80,10 @@ function resolverConsecutivoQuizAsistencia_(courseId){
       token=page.nextPageToken;
     }while(token);
   });
+  const counts={};
+  works.forEach(function(w){counts[w.numero]=(counts[w.numero]||0)+1;});
+  const duplicate=Object.keys(counts).find(function(n){return counts[n]>1;});
+  if(duplicate)throw new Error('QUIZ_ASISTENCIA_CONSECUTIVO_DUPLICADO: Quiz '+duplicate);
   const pub=works.filter(function(w){return w.state==='PUBLISHED';})
     .sort(function(a,b){return b.numero-a.numero;});
   const lastPublished=pub[0]||null;

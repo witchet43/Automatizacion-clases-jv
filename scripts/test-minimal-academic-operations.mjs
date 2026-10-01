@@ -77,11 +77,11 @@ function scenario(initial){
 }
 const quiz=(id,n,state,topicId='')=>({id:String(id),title:'Quiz '+n,state,workType:'ASSIGNMENT',topicId,materials:[],description:'',maxPoints:null,creationTime:'2026-09-20T00:00:00Z'});
 let s=scenario([]),r=s.run();assert.equal(r.title,'Quiz 1');assert.equal(r.state,'DRAFT');assert.equal(r.postflightVerified,true);assert.equal(r.emptyAssignmentVerified,true);assert.equal(r.creado,true);assert.equal(s.created,1);
-s=scenario([quiz(7,7,'PUBLISHED','UNIT_2'),quiz(8,8,'DRAFT','UNIT_2')]);r=s.run();assert.equal(r.title,'Quiz 8');assert.equal(r.reutilizado,true);assert.equal(r.ultimoQuizPublicado,'Quiz 7');assert.equal(r.duplicateCount,0);assert.equal(s.created,0);
-s=scenario([quiz(7,7,'PUBLISHED'),quiz(9,9,'DRAFT')]);r=s.run();assert.equal(r.title,'Quiz 8');assert.equal(s.created,1);
+s=scenario([quiz(7,7,'PUBLISHED','UNIT_2'),quiz(8,8,'DRAFT','UNIT_2')]);r=s.run();assert.equal(r.title,'Quiz 9');assert.equal(r.creado,true);assert.equal(r.ultimoQuizPublicado,'Quiz 7');assert.equal(r.duplicateCount,0);assert.equal(s.created,1);
+s=scenario([quiz(7,7,'PUBLISHED'),quiz(9,9,'DRAFT')]);r=s.run();assert.equal(r.title,'Quiz 10');assert.equal(s.created,1);
 s=scenario([quiz(7,7,'PUBLISHED'),quiz(8,8,'PUBLISHED')]);r=s.run();assert.equal(r.title,'Quiz 9');assert.equal(s.created,1);
 s=scenario([quiz(7,7,'PUBLISHED'),quiz(8,8,'DRAFT'),quiz(18,8,'DRAFT')]);assert.throws(()=>s.run(),/CONSECUTIVO_DUPLICADO/);
 s=scenario([quiz(7,7,'PUBLISHED')]);r=s.run();s.publish(r.workId);
 const retried=s.run();assert.equal(retried.workId,r.workId);assert.equal(retried.state,'PUBLISHED');assert.equal(s.created,1);
 const newRequest=s.run('new-request');assert.equal(newRequest.title,'Quiz 9');assert.equal(s.created,2);
-console.log('OK: FAST PATH de asistencia exige WEB_APP como primera acción externa, prohíbe preflight contextual y usa solo materia externamente; alias/courseId internos, último Quiz PUBLISHED, reutilización de DRAFT y sin planeación.');
+console.log('OK: FAST PATH de asistencia exige WEB_APP como primera acción externa, prohíbe preflight contextual y usa solo materia externamente; cada solicitud nueva avanza sobre el último Quiz existente (DRAFT o PUBLISHED) y la idempotencia reutiliza únicamente la misma solicitud.');
