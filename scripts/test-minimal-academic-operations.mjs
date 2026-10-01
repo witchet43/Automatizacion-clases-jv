@@ -24,6 +24,7 @@ assert.match(core,/function crearQuizAsistenciaRapido\(materia,requestIdExterno\
 assert.match(web,/singleExternalInput:'materia'/);
 assert.match(web,/QUIZ_ASISTENCIA_REQUIERE_MATERIA/);
 assert.match(web,/QUIZ_ASISTENCIA_PARAMETRO_NO_PERMITIDO/);
+assert.match(web,/requestId:true/);
 assert.doesNotMatch(fastResolver,/p\.courseId|p\.course\b|p\.courseKey/);
 assert.match(web,/documentationRead:false,auxiliaryReads:false/);
 assert.match(web,/firstExternalAction:'WEB_APP'/);
@@ -31,6 +32,8 @@ assert.match(web,/preflightReadsAllowed:false/);
 assert.match(web,/diagnosticOnlyAfterError:true/);
 const fastPathBlock=web.slice(web.indexOf("quizAsistencia:Object.freeze"),web.indexOf("})",web.indexOf("quizAsistencia:Object.freeze"))+2);
 assert.doesNotMatch(fastPathBlock,/courseId|courseKey|sesion|unidad|tema|fecha/);
+const executor=fs.readFileSync('scripts/execute-academic-request.mjs','utf8');
+assert.match(executor,/request\.requestId='GITHUB_REQUEST\|'/);
 assert.match(activeCourse,/REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION:\s*false/);
 assert.doesNotMatch(activeCourse,/clasesSinTema|if\s*\(!temaSubtema\)/);
 assert.match(guards,/validarPlaneacionCanonicaReadOnly_\(subject\)/);

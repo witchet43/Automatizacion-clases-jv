@@ -306,7 +306,7 @@ function inspeccionarFormularioDiagnosticoWeb_(url){
 }
 
 function validarEntradaQuizAsistenciaWeb_(p){
-  const allowed={action:true,materia:true};
+  const allowed={action:true,materia:true,requestId:true};
   Object.keys(p||{}).forEach(function(key){
     if(!allowed[key])throw new Error('QUIZ_ASISTENCIA_PARAMETRO_NO_PERMITIDO: '+key);
   });
