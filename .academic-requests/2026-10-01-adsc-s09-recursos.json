@@ -1,0 +1,97 @@
+{
+  "action": "clase",
+  "materia": "Análisis y Diseño de Sistemas Computacionales",
+  "sesion": "9",
+  "expectedResourceTypes": [
+    "actividad",
+    "quiz"
+  ],
+  "resources": [
+    {
+      "type": "actividad",
+      "params": {
+        "sesionCanonica": 9,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "unidad": "Unidad 2",
+        "topicName": "Unidad 2",
+        "temaSubtema": "Alcance y justificación del tipo de sistema",
+        "titulo": "Actividad 9 - Diagrama de contexto y frontera del sistema",
+        "descripcion": "Transforma el análisis previo de alcance en un modelo visual del sistema.\n\nUsa la Tarea previa 09 como insumo, no como producto final de esta actividad.\n\n1. Define una frontera clara del sistema propuesto.\n2. Coloca fuera de la frontera a los actores y sistemas externos relevantes.\n3. Representa con flechas los intercambios de información entre cada elemento externo y el sistema; etiqueta cada flujo con información concreta, no con verbos genéricos.\n4. Dentro de la frontera coloca únicamente las capacidades principales que sí pertenecen al alcance inicial.\n5. Añade una zona de exclusiones con al menos tres capacidades o responsabilidades que deliberadamente quedan fuera del alcance.\n6. Identifica al menos dos puntos de interfaz o dependencia con elementos externos y marca quién es responsable de cada lado.\n7. Usa el diagrama para justificar qué tipo de sistema corresponde mejor al proyecto según usuarios, nivel organizacional, información y decisiones que apoya.\n8. Selecciona una alternativa de clasificación que podría parecer viable y explica, usando el propio diagrama, por qué no es la opción principal.\n\nEvidencia: diagrama de contexto y frontera legible, archivo editable o enlace al modelo, y justificación breve del tipo de sistema seleccionado y la alternativa descartada.\n\nCriterios de revisión: frontera inequívoca, actores/sistemas externos bien ubicados, flujos de información concretos, alcance consistente, exclusiones explícitas y justificación apoyada en el modelo.",
+        "contenidoDocumento": "ACTIVIDAD 9 — DIAGRAMA DE CONTEXTO Y FRONTERA DEL SISTEMA\n\nPropósito\nConvertir el análisis de alcance en un modelo visual que permita ver qué pertenece al sistema, qué queda fuera, con quién se relaciona y qué información cruza su frontera.\n\nPunto de partida\nUsa la Tarea previa 09 como insumo. No copies la tabla: transforma sus decisiones en un diagrama.\n\n1. FRONTERA DEL SISTEMA\nDibuja un contenedor claramente identificado con el nombre provisional del sistema.\nDentro del contenedor coloca solo las capacidades principales incluidas en el alcance inicial.\n\n2. ACTORES Y SISTEMAS EXTERNOS\nColoca fuera de la frontera a:\n• actores humanos relevantes;\n• áreas u organizaciones externas;\n• sistemas externos con los que exista intercambio de información.\n\n3. FLUJOS DE INFORMACIÓN\nConecta cada actor o sistema externo con la frontera mediante flechas etiquetadas.\nCada etiqueta debe indicar información concreta, por ejemplo: solicitud, estado, autorización, reporte, catálogo, confirmación o datos de identificación.\nEvita etiquetas vagas como “usa”, “manda datos” o “procesa”.\n\n4. EXCLUSIONES\nAgrega un bloque separado titulado “Fuera del alcance inicial”.\nIncluye al menos tres capacidades, responsabilidades o procesos que deliberadamente no serán atendidos en esta etapa.\n\n5. INTERFACES Y RESPONSABILIDADES\nSelecciona dos intercambios del diagrama y documenta:\n• elemento externo;\n• información intercambiada;\n• responsabilidad del sistema;\n• responsabilidad externa.\n\n6. JUSTIFICACIÓN DEL TIPO DE SISTEMA\nA partir del diagrama explica:\n• quiénes son sus usuarios principales;\n• qué nivel organizacional atiende;\n• qué información procesa o produce;\n• qué decisiones apoya;\n• qué tipo de sistema representa mejor la propuesta.\n\n7. ALTERNATIVA DESCARTADA\nSelecciona otro tipo de sistema que pudiera parecer plausible. Explica qué elementos del diagrama muestran que no es la clasificación principal.\n\n8. REVISIÓN VISUAL\nComprueba:\n• la frontera se entiende sin explicación oral;\n• ningún actor externo quedó dentro del sistema;\n• ningún componente interno aparece como actor externo;\n• todos los flujos tienen nombre;\n• las capacidades dentro del sistema corresponden al alcance;\n• las exclusiones no aparecen escondidas como funciones internas.\n\nEvidencia de entrega\n• Diagrama de contexto y frontera.\n• Archivo editable o enlace al modelo.\n• Justificación breve del tipo de sistema.\n• Alternativa descartada con explicación basada en el diagrama.",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "quiz",
+      "params": {
+        "sesionCanonica": 9,
+        "explicitSequenceOverride": true,
+        "unidad": "Unidad 2",
+        "topicName": "Unidad 2",
+        "temaSubtema": "Alcance y justificación del tipo de sistema",
+        "titulo": "Quiz 4 - Alcance y tipología del sistema",
+        "descripcion": "Comprobación breve sobre alcance, frontera del sistema, actores externos y justificación del tipo de sistema a partir de la Tarea previa 09.",
+        "puntos": 20,
+        "preguntas": [
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "¿Cuál es la mejor evidencia de que una capacidad pertenece al alcance inicial del sistema?",
+            "opciones": [
+              "Está relacionada directamente con una necesidad o decisión que el proyecto debe atender",
+              "Es técnicamente posible implementarla",
+              "Aparece en un producto de software conocido",
+              "La solicitó cualquier persona sin analizar el problema"
+            ],
+            "respuestaCorrecta": "A",
+            "puntos": 5,
+            "retroalimentacionCorrecta": "Correcto. El alcance debe justificarse por necesidades, actores, información y decisiones del proyecto.",
+            "retroalimentacionIncorrecta": "Revisa la diferencia entre algo técnicamente posible y algo realmente justificado dentro del alcance."
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "En un diagrama de contexto, ¿dónde debe colocarse un sistema externo con el que la solución intercambia información?",
+            "opciones": [
+              "Fuera de la frontera del sistema, conectado mediante flujos de información",
+              "Dentro de la frontera como si fuera una función propia",
+              "Solo en una nota al pie sin conexión",
+              "En el centro del sistema junto con sus procesos internos"
+            ],
+            "respuestaCorrecta": "A",
+            "puntos": 5,
+            "retroalimentacionCorrecta": "Correcto. Un sistema externo no forma parte de la solución y se representa fuera de la frontera.",
+            "retroalimentacionIncorrecta": "Revisa el significado de frontera del sistema y la diferencia entre componente interno y elemento externo."
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "¿Qué etiqueta es más adecuada para un flujo entre un actor externo y el sistema?",
+            "opciones": [
+              "Solicitud de servicio",
+              "Usa",
+              "Proceso",
+              "Interacción"
+            ],
+            "respuestaCorrecta": "A",
+            "puntos": 5,
+            "retroalimentacionCorrecta": "Correcto. Los flujos deben nombrar la información o mensaje concreto que cruza la frontera.",
+            "retroalimentacionIncorrecta": "Busca una etiqueta que describa información concreta y no una acción vaga."
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "¿Qué argumento justifica mejor descartar una clasificación alternativa del sistema?",
+            "opciones": [
+              "El modelo muestra que los usuarios, decisiones e información principales corresponden mejor a otra tipología",
+              "La otra clasificación suena menos moderna",
+              "El equipo prefiere no utilizar ese nombre",
+              "La herramienta de diagramación no incluye un ícono para esa categoría"
+            ],
+            "respuestaCorrecta": "A",
+            "puntos": 5,
+            "retroalimentacionCorrecta": "Correcto. La tipología se justifica por evidencia del sistema, no por preferencias o etiquetas.",
+            "retroalimentacionIncorrecta": "La clasificación debe sustentarse en usuarios, información, nivel organizacional, decisiones y alcance."
+          }
+        ]
+      }
+    }
+  ]
+}
