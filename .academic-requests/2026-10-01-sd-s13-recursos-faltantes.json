@@ -1,0 +1,97 @@
+{
+  "action": "clase",
+  "materia": "Sistemas Distribuidos",
+  "sesion": "13",
+  "expectedResourceTypes": [
+    "quiz",
+    "tarea"
+  ],
+  "resources": [
+    {
+      "type": "quiz",
+      "params": {
+        "sesionCanonica": 13,
+        "explicitSequenceOverride": true,
+        "unidad": "Unidad 2",
+        "topicName": "Unidad 2",
+        "temaSubtema": "2.2.2 HTTP persistente y no persistente",
+        "titulo": "Quiz de Práctica 11 - Comparar métodos HTTP",
+        "descripcion": "Comprobación breve de comprensión sobre métodos HTTP y su uso antes de analizar reutilización de conexiones.",
+        "puntos": 20,
+        "preguntas": [
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "¿Qué método HTTP se utiliza normalmente para solicitar una representación de un recurso sin modificarlo?",
+            "opciones": [
+              "GET",
+              "POST",
+              "PUT",
+              "DELETE"
+            ],
+            "respuestaCorrecta": "A",
+            "puntos": 5,
+            "retroalimentacionCorrecta": "Correcto. GET se emplea para recuperar una representación del recurso.",
+            "retroalimentacionIncorrecta": "Revisa el propósito general de GET frente a métodos que envían o modifican información."
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "¿Qué método es más apropiado cuando un cliente envía datos para que el servidor procese una nueva operación?",
+            "opciones": [
+              "POST",
+              "GET",
+              "HEAD",
+              "OPTIONS"
+            ],
+            "respuestaCorrecta": "A",
+            "puntos": 5,
+            "retroalimentacionCorrecta": "Correcto. POST se utiliza comúnmente para enviar datos asociados con una operación.",
+            "retroalimentacionIncorrecta": "Revisa qué métodos envían información al servidor para procesamiento."
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "¿Qué parte de una solicitud HTTP indica directamente el método que se está utilizando?",
+            "opciones": [
+              "La línea inicial de la solicitud",
+              "El cuerpo de la respuesta",
+              "El certificado TLS",
+              "La dirección MAC"
+            ],
+            "respuestaCorrecta": "A",
+            "puntos": 5,
+            "retroalimentacionCorrecta": "Correcto. El método aparece en la línea inicial de la solicitud HTTP.",
+            "retroalimentacionIncorrecta": "Observa cómo comienza una petición HTTP antes de sus encabezados y cuerpo."
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "¿Por qué comparar varios métodos HTTP ayuda antes de estudiar conexiones persistentes?",
+            "opciones": [
+              "Porque permite separar la semántica de la petición de la forma en que se reutiliza la conexión",
+              "Porque cada método obliga a usar un puerto físico distinto",
+              "Porque cada método requiere un navegador diferente",
+              "Porque elimina la necesidad de TCP"
+            ],
+            "respuestaCorrecta": "A",
+            "puntos": 5,
+            "retroalimentacionCorrecta": "Correcto. El método define la operación HTTP, mientras que la persistencia describe el uso de la conexión de transporte.",
+            "retroalimentacionIncorrecta": "Distingue qué define la operación HTTP y qué define el comportamiento de la conexión TCP."
+          }
+        ]
+      }
+    },
+    {
+      "type": "tarea",
+      "params": {
+        "sesionCanonica": 13,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "unidad": "Unidad 2",
+        "topicName": "Unidad 2",
+        "temaSubtema": "2.2.2 HTTP persistente y no persistente",
+        "titulo": "Tarea 08 - Preparación: HTTPS y TLS",
+        "descripcion": "Prepara el siguiente subtema, 2.2.3 HTTPS.\n\n1. Explica con tus propias palabras la diferencia general entre HTTP y HTTPS.\n2. Define brevemente certificado digital, TLS, cifrado y autenticidad.\n3. Abre un sitio HTTPS de uso cotidiano y revisa desde el navegador la información disponible del certificado.\n4. Registra: dominio, entidad emisora, periodo de validez y cualquier dato adicional que ayude a identificar el certificado.\n5. Construye un esquema simple: navegador → establecimiento TLS → intercambio HTTP protegido → servidor.\n6. Cierra con una explicación breve de qué problema resuelve HTTPS que HTTP por sí solo no resuelve.\n\nEvidencia: captura de la información del certificado, cuatro conceptos definidos y esquema del establecimiento de una comunicación HTTPS. No incluyas datos personales ni credenciales.",
+        "contenidoDocumento": "TAREA 08 — PREPARACIÓN: HTTPS Y TLS\n\nPropósito\nPreparar el subtema 2.2.3 HTTPS identificando qué cambia cuando HTTP se protege mediante TLS.\n\n1. HTTP VS HTTPS\nExplica con tus propias palabras la diferencia general entre ambos.\n\n2. CONCEPTOS\nDefine brevemente:\n• Certificado digital\n• TLS\n• Cifrado\n• Autenticidad\n\n3. INSPECCIÓN DE UN CERTIFICADO\nAbre un sitio HTTPS de uso cotidiano y consulta la información del certificado desde el navegador.\nRegistra:\n• Dominio\n• Entidad emisora\n• Periodo de validez\n• Un dato adicional que consideres relevante\n\n4. ESQUEMA\nRepresenta:\nNavegador → establecimiento TLS → intercambio HTTP protegido → servidor\n\n5. CIERRE\nExplica brevemente qué problema resuelve HTTPS que HTTP por sí solo no resuelve.\n\nEvidencia\n• Captura legible del certificado sin información sensible.\n• Cuatro conceptos definidos.\n• Esquema de comunicación HTTPS.\n• Explicación final.",
+        "puntos": 100
+      }
+    }
+  ]
+}
