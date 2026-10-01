@@ -1,8 +1,9 @@
 /** Una sola operación para Quiz Sencillo / Quiz de Asistencia.
  * Entrada externa del FAST PATH: materia.
  * courseId, requestedAtLocal y requestId son detalles internos del motor.
- * Únicamente los Quiz N PUBLISHED deciden el próximo consecutivo.
- * Un Quiz N+1 DRAFT se reutiliza, no se incrementa el número por borradores.
+ * El próximo consecutivo se calcula con TODOS los Quiz N existentes
+ * (PUBLISHED y DRAFT). Una nueva solicitud explícita crea el siguiente número.
+ * La idempotencia solo reutiliza la MISMA solicitud mediante requestId.
  */
 function crearQuizAsistenciaMinimo_(params) {
   const p=params&&typeof params==='object'?params:{};
@@ -36,18 +37,6 @@ function crearQuizAsistenciaMinimo_(params) {
       props.deleteProperty(idempotencyKey);
     }
     const state=resolverConsecutivoQuizAsistencia_(courseId);
-    if(state.existing){
-      const work=Classroom.Courses.CourseWork.get(courseId,String(state.existing.id));
-      verificarQuizAsistenciaMinimo_(work,state.title,policy,false);
-      props.setProperty(idempotencyKey,JSON.stringify({workId:String(work.id)}));
-      return {ok:true,courseId:courseId,workId:String(work.id),
-        title:state.title,numero:state.numero,state:'DRAFT',
-        reutilizado:true,creado:false,requestId:requestId,
-        ultimoQuizPublicado:state.lastPublished?state.lastPublished.title:'',
-        ultimoQuizPublicadoWorkId:state.lastPublished?state.lastPublished.id:'',
-        duplicateCount:0,postflightVerified:true,emptyAssignmentVerified:true,
-        classroomUrl:work.alternateLink||''};
-    }
     const due=calcularSiguienteHoraNaturalQuizSencillo_(solicitud,policy);
     if(Date.now()>=due.utcMs)throw new Error('QUIZ_ASISTENCIA_VENCIMIENTO_PASADO');
     const body={title:state.title,workType:'ASSIGNMENT',state:'DRAFT',
@@ -93,13 +82,11 @@ function resolverConsecutivoQuizAsistencia_(courseId){
   });
   const pub=works.filter(function(w){return w.state==='PUBLISHED';})
     .sort(function(a,b){return b.numero-a.numero;});
-  const last=pub[0]||null;
-  const numero=last?last.numero+1:1, title='Quiz '+numero;
-  const hits=works.filter(function(w){return w.numero===numero;});
-  if(hits.length>1)throw new Error('QUIZ_ASISTENCIA_CONSECUTIVO_DUPLICADO: '+title);
-  if(hits.length&&hits[0].state==='PUBLISHED')
-    throw new Error('QUIZ_ASISTENCIA_ESTADO_CONFLICTIVO: '+title);
-  return {numero:numero,title:title,lastPublished:last,existing:hits[0]||null};
+  const lastPublished=pub[0]||null;
+  const all=works.slice().sort(function(a,b){return b.numero-a.numero;});
+  const lastExisting=all[0]||null;
+  const numero=lastExisting?lastExisting.numero+1:1, title='Quiz '+numero;
+  return {numero:numero,title:title,lastPublished:lastPublished,lastExisting:lastExisting};
 }
 function verificarQuizAsistenciaVacio_(work){
   return !!(work&&work.id&&work.workType==='ASSIGNMENT'&&
@@ -164,13 +151,13 @@ function normalizarNombreCursoRapido_(value){
  * La resolución de alias/courseId ocurre exclusivamente dentro del código.
  * El motor canónico conserva DRAFT, consecutivo, idempotencia y postflight.
  */
-function crearQuizAsistenciaRapido(materia){
+function crearQuizAsistenciaRapido(materia,requestIdExterno){
   const nombre=String(materia||'').trim();
   if(!nombre)throw new Error('QUIZ_ASISTENCIA_REQUIERE_MATERIA');
   const id=obtenerCourseIdPorNombre(nombre);
-
-  const requestId='QUIZ_ASISTENCIA_RAPIDO|'+id+'|'+
-    Utilities.formatDate(new Date(),'America/Mexico_City','yyyy-MM-dd-HH');
+  const requestId=String(requestIdExterno||'').trim() ||
+    ('QUIZ_ASISTENCIA_RAPIDO|'+id+'|'+
+      Utilities.formatDate(new Date(),'America/Mexico_City','yyyy-MM-dd-HH-mm-ss'));
 
   return crearQuizAsistencia({
     courseId:id,

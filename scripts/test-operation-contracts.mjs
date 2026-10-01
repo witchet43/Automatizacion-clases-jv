@@ -95,3 +95,10 @@ assert.match(policy,/AUTONOMOUS_MATERIALS: Object\.freeze/);
 assert.match(policy,/PRIOR_COURSEWORK_REQUIRED:false/);
 assert.match(policy,/ALL_NECESSARY_CONTEXT_INLINE:true/);
 assert.match(policy,/SELF_CONTAINED_STUDENT_EVIDENCE:true/);
+
+assert.match(web,/crearQuizAsistenciaRapido\(String\(p\.materia\|\|''\)\.trim\(\),String\(p\.requestId\|\|''\)\.trim\(\)\)/);
+const attendance=fs.readFileSync('src/64_QuizAsistenciaRapido.gs','utf8');
+assert.match(attendance,/const lastExisting=all\[0\]\|\|null;/);
+assert.match(attendance,/const numero=lastExisting\?lastExisting\.numero\+1:1/);
+assert.match(attendance,/requestIdExterno/);
+assert.doesNotMatch(attendance,/Un Quiz N\+1 DRAFT se reutiliza/);

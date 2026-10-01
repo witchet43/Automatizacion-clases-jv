@@ -72,7 +72,7 @@ function ejecutarServicioAcademicoWeb_(params){
     let result;
 
     if(action==='quizAsistencia'){
-      result=crearQuizAsistenciaRapido(String(p.materia||'').trim());
+      result=crearQuizAsistenciaRapido(String(p.materia||'').trim(),String(p.requestId||'').trim());
     }else if(action==='diagnosticarClase'){
       result=diagnosticarProgresoClaseWeb_(course,p);
     }else if(action==='eliminarDrafts'){
