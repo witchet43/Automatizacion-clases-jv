@@ -1,5 +1,5 @@
 name: Deploy Apps Script
-# Redeploy marker: restore canonical Web App access after verified HTTP 403 transport failure.
+# Redeploy marker: retry canonical Web App deployment after verified HTTP 403 on 2026-10-06.
 
 on:
   push:
