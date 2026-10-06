@@ -1,0 +1,86 @@
+{
+  "action": "quiz",
+  "materia": "Sistemas Distribuidos",
+  "params": {
+    "sesionCanonica": 17,
+    "explicitSequenceOverride": true,
+    "unidad": "Unidad 2",
+    "topicName": "Unidad 2",
+    "temaSubtema": "2.2.6 Estado usuario-servidor",
+    "titulo": "Quiz de Práctica 15 - Interpretar códigos y mensajes de respuesta HTTP",
+    "descripcion": "Comprobación breve de comprensión basada exclusivamente en la Práctica 15: interpretación de familias de respuestas HTTP, componentes observables, clasificación del resultado y decisiones del cliente.",
+    "puntos": 20,
+    "preguntas": [
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "¿Qué conjunto de familias de respuestas debía obtener y analizar la Práctica 15 como mínimo?",
+        "opciones": [
+          "2xx, 4xx y 5xx",
+          "1xx, 2xx y 3xx",
+          "2xx, 3xx y 4xx",
+          "3xx, 4xx y 5xx"
+        ],
+        "respuestaCorrecta": "A",
+        "puntos": 4,
+        "retroalimentacionCorrecta": "La práctica pide obtener respuestas de al menos tres familias: 2xx, 4xx y 5xx.",
+        "retroalimentacionIncorrecta": "Revisa el apartado de casos de la Práctica 15 y las tres familias exigidas."
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Para documentar cada respuesta HTTP en la Práctica 15, ¿qué conjunto de elementos debía registrarse?",
+        "opciones": [
+          "Código, texto de estado, headers relevantes y cuerpo de la respuesta",
+          "Solo la URL y el nombre del navegador",
+          "Dirección IP, puerto local y uso de CPU",
+          "Método de solicitud, sistema operativo y tamaño de pantalla"
+        ],
+        "respuestaCorrecta": "A",
+        "puntos": 4,
+        "retroalimentacionCorrecta": "La práctica exige registrar código, texto de estado, headers relevantes y cuerpo para cada caso.",
+        "retroalimentacionIncorrecta": "La evidencia solicitada se centra en los componentes observables de la respuesta HTTP."
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Según la clasificación usada en la Práctica 15, ¿cómo debe interpretarse una respuesta de la familia 4xx?",
+        "opciones": [
+          "Como error del cliente",
+          "Como éxito",
+          "Como error del servidor",
+          "Como respuesta informativa"
+        ],
+        "respuestaCorrecta": "A",
+        "puntos": 4,
+        "retroalimentacionCorrecta": "La práctica clasifica las respuestas 4xx como errores del cliente.",
+        "retroalimentacionIncorrecta": "Relaciona cada familia trabajada con la clasificación éxito, error del cliente o error del servidor."
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "¿Qué propósito tenía el árbol de decisión solicitado en la Práctica 15?",
+        "opciones": [
+          "Indicar qué debe hacer un cliente ante distintas familias de respuestas",
+          "Elegir automáticamente el método HTTP de todas las solicitudes",
+          "Sustituir el contenido de los headers por valores predeterminados",
+          "Determinar la topología física de la red"
+        ],
+        "respuestaCorrecta": "A",
+        "puntos": 4,
+        "retroalimentacionCorrecta": "El árbol de decisión debía orientar la reacción del cliente ante cada familia de respuestas observada.",
+        "retroalimentacionIncorrecta": "El árbol solicitado trata sobre la acción del cliente después de interpretar una respuesta HTTP."
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "¿Por qué la Práctica 15 pide no depender únicamente del código HTTP para explicar una falla?",
+        "opciones": [
+          "Porque el código por sí solo no siempre revela la causa raíz y debe interpretarse junto con el resto de la respuesta y la lógica de la aplicación",
+          "Porque los códigos HTTP no forman parte del protocolo",
+          "Porque todos los códigos significan exactamente lo mismo",
+          "Porque los headers siempre sustituyen al código de estado"
+        ],
+        "respuestaCorrecta": "A",
+        "puntos": 4,
+        "retroalimentacionCorrecta": "La práctica señala que el código no siempre basta para determinar la causa raíz; debe analizarse junto con otros elementos y el contexto de aplicación.",
+        "retroalimentacionIncorrecta": "Revisa el apartado de análisis de la Práctica 15 sobre las limitaciones de interpretar un código aislado."
+      }
+    ]
+  }
+}
