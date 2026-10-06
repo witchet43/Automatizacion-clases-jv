@@ -1,0 +1,23 @@
+name: Probe Replacement Academic Web App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/probe-replacement-webapp.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe anonymous Web App endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl -sS -L -o /tmp/body.txt -w '%{http_code}' 'https://script.google.com/macros/s/AKfycbx25kfTDXifZUjsAJbHDpJk-QA2sg5P5Y-j13Xau0P_zp9QjCIW0NMs0ARZf64exuvA/exec')"
+          echo "HTTP $code"
+          cat /tmp/body.txt
+          test "$code" = "200"
