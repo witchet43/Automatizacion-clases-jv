@@ -1,0 +1,30 @@
+name: Create Replacement Academic Web App
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/create-replacement-webapp.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - name: Restore clasp credentials
+        shell: bash
+        run: |
+          printf '%s' '${{ secrets.CLASPRC_JSON }}' > .clasprc.json
+          chmod 600 .clasprc.json
+      - name: Create replacement Web App deployment
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp create-deployment --description "Academic Web App canonical replacement"
