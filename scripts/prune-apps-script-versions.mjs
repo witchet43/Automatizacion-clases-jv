@@ -94,15 +94,11 @@ async function main() {
   }
 
   const victims = deletable.slice(0, need);
-  console.log('Deleting unreferenced versions: ' + victims.map(v => v.versionNumber).join(', '));
-  for (const v of victims) {
-    await jsonFetch(base + '/versions/' + encodeURIComponent(String(v.versionNumber)), {
-      method:'DELETE',
-      headers
-    });
-  }
+  console.error('Apps Script reached the version-history limit.');
+  console.error('Manual bulk deletion is required in Project History; the public Apps Script API does not expose version deletion.');
+  console.error('Suggested oldest unreferenced versions to delete: ' + victims.map(v => v.versionNumber).join(', '));
+  throw new Error('APPS_SCRIPT_VERSION_LIMIT_MANUAL_BULK_DELETE_REQUIRED');
 
-  console.log(`Pruned ${victims.length} unreferenced Apps Script versions; target count <= ${MAX_VERSIONS}.`);
 }
 
 main().catch(err => {
