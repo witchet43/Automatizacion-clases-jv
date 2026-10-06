@@ -35,10 +35,20 @@ function normalizarCreacionDirecta_(params,tipo){
 }
 
 function crearCourseWorkDirecto_(p){
+  const lock=LockService.getScriptLock();
+  if(!lock.tryLock(30000)) throw new Error('IDEMPOTENCY_LOCK_BUSY: otra creación académica está en curso; no se crea un duplicado. Reintentar después.');
+  try{
+    return crearCourseWorkDirectoBloqueado_(p);
+  }finally{
+    lock.releaseLock();
+  }
+}
+
+function crearCourseWorkDirectoBloqueado_(p){
   validarContratoCreacionDirecta_();
   const topicName=resolverNombreTemaDirecto_(p);
   const topicId=resolveTopicId_(p.courseId,p.topicId,topicName);
-  const existente=buscarCourseWorkDirectoExacto_(p.courseId,p.titulo,topicId);
+  const existente=buscarCourseWorkDirectoPorEvidencia_(p,topicId);
   // No reutilizar borradores antiguos con descripciones no conformes:
   // jamás se crea un duplicado ni se modifica el existente por implicación.
 
@@ -235,6 +245,38 @@ function resolverShareModeDirecto_(p){
   if(p&&p.tipo==='TAREA'&&ACADEMIC_POLICY.DOCUMENTS.TASK_STUDENT_COPY_DEFAULT===true)return 'STUDENT_COPY';
   if(p&&p.tipo==='ACTIVIDAD'&&ACADEMIC_POLICY.DOCUMENTS.ACTIVITY_DOC_STUDENT_COPY===true)return 'STUDENT_COPY';
   return 'VIEW';
+}
+
+function buscarCourseWorkDirectoPorEvidencia_(p,topicId){
+  const courseId=String(p.courseId||'').trim();
+  const titulo=String(p.titulo||'').trim();
+  const requestedDocs=idsGoogleDocumentosSolicitados_(p);
+  let token, matches=[];
+  do{
+    const page=Classroom.Courses.CourseWork.list(courseId,{pageSize:100,pageToken:token});
+    (page.courseWork||[]).forEach(function(w){
+      if(String(w.title||'').trim()!==titulo)return;
+      if(String(w.topicId||'')!==String(topicId||''))return;
+      if(String(w.state||'').toUpperCase()==='DELETED')return;
+      matches.push(w);
+    });
+    token=page.nextPageToken;
+  }while(token);
+
+  if(!matches.length)return null;
+
+  if(requestedDocs.length){
+    const strong=matches.filter(function(w){
+      const attached=idsGoogleDocumentosAdjuntos_(Array.isArray(w.materials)?w.materials:[]);
+      return requestedDocs.every(function(id){return attached.indexOf(id)>=0;});
+    });
+    if(strong.length===1)return strong[0];
+    if(strong.length>1)throw new Error('BLOCKED_IDEMPOTENCY_DUPLICATE: múltiples CourseWork coinciden por curso+título+tema+documentId.');
+    throw new Error('BLOCKED_IDEMPOTENCY_CONFLICT: existe CourseWork con mismo curso+título+tema pero no coincide el documentId solicitado.');
+  }
+
+  if(matches.length===1)return matches[0];
+  throw new Error('BLOCKED_IDEMPOTENCY_AMBIGUOUS: múltiples CourseWork coinciden por curso+título+tema; se requiere evidencia adicional antes de crear.');
 }
 
 function buscarCourseWorkDirectoExacto_(courseId,titulo,topicId){
