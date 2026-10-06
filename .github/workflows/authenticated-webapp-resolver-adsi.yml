@@ -1,0 +1,71 @@
+name: Authenticated Web App Resolver ADSI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/authenticated-webapp-resolver-adsi.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - name: Restore clasp credentials
+        shell: bash
+        run: |
+          printf '%s' '${{ secrets.CLASPRC_JSON }}' > .clasprc.json
+          chmod 600 .clasprc.json
+      - name: Resolve next ADSI class through canonical Web App with owner OAuth
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import {prepareRequest} from './scripts/academic-context.mjs';
+          const creds=JSON.parse(fs.readFileSync('.clasprc.json','utf8'));
+          const found=[];
+          function walk(v){
+            if(!v||typeof v!=='object')return;
+            if(v.refresh_token&&v.client_id&&v.client_secret)found.push(v);
+            for(const x of Object.values(v))walk(x);
+          }
+          walk(creds);
+          if(!found.length)throw new Error('No OAuth refresh credentials found in clasp config');
+          const c=found[0];
+          const tokenResp=await fetch('https://oauth2.googleapis.com/token',{
+            method:'POST',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:new URLSearchParams({
+              client_id:c.client_id,
+              client_secret:c.client_secret,
+              refresh_token:c.refresh_token,
+              grant_type:'refresh_token'
+            })
+          });
+          if(!tokenResp.ok)throw new Error('OAuth refresh failed '+tokenResp.status);
+          const tok=await tokenResp.json();
+          const {endpoint,request}=prepareRequest({action:'resolverClase',materia:'Análisis y Diseño de Sistemas Computacionales'});
+          const response=await fetch(endpoint,{
+            method:'POST',
+            headers:{
+              'Content-Type':'application/json',
+              'Authorization':'Bearer '+tok.access_token
+            },
+            body:JSON.stringify(request),
+            redirect:'follow'
+          });
+          const body=await response.text();
+          console.log('HTTP '+response.status);
+          console.log(body);
+          if(!response.ok)process.exit(1);
+          const result=JSON.parse(body);
+          if(result.ok!==true)process.exit(1);
+          NODE
