@@ -33,7 +33,7 @@ assert.match(web,/diagnosticOnlyAfterError:true/);
 const fastPathBlock=web.slice(web.indexOf("quizAsistencia:Object.freeze"),web.indexOf("})",web.indexOf("quizAsistencia:Object.freeze"))+2);
 assert.doesNotMatch(fastPathBlock,/courseId|courseKey|sesion|unidad|tema|fecha/);
 const executor=fs.readFileSync('scripts/execute-academic-request.mjs','utf8');
-assert.match(executor,/request\.requestId='GITHUB_REQUEST\|'/);
+assert.doesNotMatch(executor,/request\.requestId='GITHUB_REQUEST\|'/);
 assert.match(activeCourse,/REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION:\s*false/);
 assert.doesNotMatch(activeCourse,/clasesSinTema|if\s*\(!temaSubtema\)/);
 assert.match(guards,/validarPlaneacionCanonicaReadOnly_\(subject\)/);
