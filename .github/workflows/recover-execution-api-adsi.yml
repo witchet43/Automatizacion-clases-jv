@@ -1,0 +1,69 @@
+name: Recover ADSI via Execution API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/recover-execution-api-adsi.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - name: Restore clasp credentials
+        shell: bash
+        run: |
+          printf '%s' '${{ secrets.CLASPRC_JSON }}' > .clasprc.json
+          chmod 600 .clasprc.json
+      - name: Update existing Execution API deployment to current code
+        env:
+          clasp_config_auth: .clasprc.json
+        run: npx clasp update-deployment AKfycbwvhillpOawsMRFwVjRx4iiO4IbVZcTgFE8-ZXvesVlwEhtrooqmS-8DQ2huxKWp3e6 --description "Execution API recovery current"
+      - name: Resolve next ADSI class
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const creds=JSON.parse(fs.readFileSync('.clasprc.json','utf8'));
+          const found=[];
+          function walk(v){
+            if(!v||typeof v!=='object')return;
+            if(v.refresh_token&&v.client_id&&v.client_secret)found.push(v);
+            for(const x of Object.values(v))walk(x);
+          }
+          walk(creds);
+          if(!found.length)throw new Error('No OAuth refresh credentials found');
+          const c=found[0];
+          const tr=await fetch('https://oauth2.googleapis.com/token',{
+            method:'POST',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:new URLSearchParams({client_id:c.client_id,client_secret:c.client_secret,refresh_token:c.refresh_token,grant_type:'refresh_token'})
+          });
+          if(!tr.ok)throw new Error('OAuth refresh failed '+tr.status);
+          const tok=await tr.json();
+          const body={
+            function:'resolverSiguienteClase',
+            parameters:['Análisis y Diseño de Sistemas Computacionales','',{}],
+            devMode:false
+          };
+          const response=await fetch('https://script.googleapis.com/v1/scripts/AKfycbwvhillpOawsMRFwVjRx4iiO4IbVZcTgFE8-ZXvesVlwEhtrooqmS-8DQ2huxKWp3e6:run',{
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok.access_token},
+            body:JSON.stringify(body)
+          });
+          const out=await response.text();
+          console.log('HTTP '+response.status);
+          console.log(out);
+          if(!response.ok)process.exit(1);
+          const json=JSON.parse(out);
+          if(json.error)process.exit(1);
+          NODE
