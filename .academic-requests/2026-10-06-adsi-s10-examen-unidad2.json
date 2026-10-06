@@ -1,0 +1,347 @@
+{
+  "action": "clase",
+  "materia": "Análisis y Diseño de Sistemas Computacionales",
+  "expectedResourceTypes": [
+    "examen"
+  ],
+  "resources": [
+    {
+      "type": "examen",
+      "params": {
+        "materia": "Análisis y Diseño de Sistemas Computacionales",
+        "unidad": "Unidad 2",
+        "temaSubtema": "Evaluación de la Unidad 2",
+        "titulo": "Examen Unidad 2 - Tipología de Sistemas de Información",
+        "descripcion": "Evaluación individual teórico-práctica de la Unidad 2 sobre criterios de clasificación de los sistemas de información, niveles operacional/táctico/estratégico, funciones de negocio, entradas–procesamiento–salidas, alcance, frontera del sistema y justificación de la tipología. El instrumento contiene 25 reactivos y vale 100 puntos. Las respuestas correctas y la retroalimentación permanecen ocultas durante la aplicación.",
+        "barajarPreguntas": false,
+        "preguntas": [
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "Una plataforma universitaria registra cada reporte de luminaria dañada, asigna un técnico y actualiza el estado del ticket. ¿Cuál es el nivel organizacional predominante de ese uso?",
+            "opciones": [
+              "Estratégico",
+              "Operativo",
+              "Táctico",
+              "Corporativo"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "El coordinador de mantenimiento consulta cada semana el porcentaje de reportes resueltos por edificio para redistribuir cuadrillas. ¿Qué nivel de apoyo predomina?",
+            "opciones": [
+              "Operativo",
+              "Táctico",
+              "Estratégico",
+              "Transaccional externo"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "La dirección universitaria analiza tendencias semestrales de fallas para decidir inversiones de infraestructura. ¿Qué nivel predomina?",
+            "opciones": [
+              "Estratégico",
+              "Operativo",
+              "Táctico",
+              "Técnico"
+            ],
+            "respuestaCorrecta": "A",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "Un equipo afirma: “Nuestro sistema es de tipo web porque usa una aplicación en navegador”. ¿Cuál es el problema principal de esa clasificación?",
+            "opciones": [
+              "La tecnología no sustituye criterios como función, usuarios, alcance o decisiones",
+              "Toda aplicación web es estratégica",
+              "Un SI no puede usar navegador",
+              "La interfaz define siempre el nivel organizacional"
+            ],
+            "respuestaCorrecta": "A",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "Un sistema solo automatiza el registro y autorización de préstamos dentro de un laboratorio específico. ¿Qué alcance está mejor sustentado?",
+            "opciones": [
+              "Organización completa",
+              "Área o departamento",
+              "Proceso específico",
+              "Ecosistema interorganizacional"
+            ],
+            "respuestaCorrecta": "C",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "¿Cuál evidencia permite clasificar mejor un SI por usuarios?",
+            "opciones": [
+              "El lenguaje de programación utilizado",
+              "Los roles que generan, consumen o validan información",
+              "El color de la interfaz",
+              "El número de pantallas"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "Para clasificar un SI por tipo de decisión, ¿qué conjunto de elementos aporta mejor evidencia?",
+            "opciones": [
+              "Sistema operativo, navegador y base de datos",
+              "Usuario decisor, información requerida, evento detonador y consecuencia",
+              "Nombre del proyecto y logotipo",
+              "Cantidad de tablas y campos"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "Un mismo SI registra transacciones diarias y además genera resúmenes semanales para coordinación. ¿Cuál afirmación es correcta?",
+            "opciones": [
+              "Debe clasificarse exclusivamente como operativo",
+              "Puede apoyar niveles operativo y táctico simultáneamente",
+              "Debe reclasificarse como estratégico",
+              "La clasificación múltiple es inválida"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "Un sistema de citas psicológicas se aloja en la nube. ¿Qué criterio determina mejor su función de negocio?",
+            "opciones": [
+              "El proveedor de nube",
+              "El proceso organizacional que atiende",
+              "El lenguaje de programación",
+              "El tamaño del equipo de desarrollo"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "El equipo incluye en el alcance una integración con pagos que “se podría desarrollar después”, pero aún no está aprobada ni implementada. ¿Cómo debe tratarse?",
+            "opciones": [
+              "Como parte del alcance actual",
+              "Como evidencia estratégica",
+              "Como posibilidad futura, no como alcance implementado",
+              "Como función de negocio principal"
+            ],
+            "respuestaCorrecta": "C",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "Una operación se ejecuta muchas veces al día, sigue reglas claras y requiere respuesta inmediata. ¿Qué tipo de decisión describe mejor?",
+            "opciones": [
+              "Operativa estructurada",
+              "Estratégica no estructurada",
+              "Estratégica de largo plazo",
+              "Táctica exclusivamente externa"
+            ],
+            "respuestaCorrecta": "A",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "Un jefe de área compara indicadores mensuales y decide cómo distribuir recursos entre varias actividades. ¿Qué nivel se ajusta mejor?",
+            "opciones": [
+              "Operativo",
+              "Táctico",
+              "Estratégico",
+              "Personal"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "El rectorado evalúa escenarios de crecimiento institucional para los próximos cinco años. ¿Qué nivel corresponde?",
+            "opciones": [
+              "Operativo",
+              "Táctico",
+              "Estratégico",
+              "Transaccional"
+            ],
+            "respuestaCorrecta": "C",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "En un sistema de préstamo de equipo, “matrícula del alumno, identificador del equipo y fecha solicitada” corresponden principalmente a:",
+            "opciones": [
+              "Salidas",
+              "Entradas",
+              "Procesamiento",
+              "Exclusiones"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "En ese mismo sistema, verificar disponibilidad y validar que el alumno no tenga adeudos corresponde a:",
+            "opciones": [
+              "Entrada",
+              "Salida",
+              "Procesamiento",
+              "Actor externo"
+            ],
+            "respuestaCorrecta": "C",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "“Confirmación del préstamo y fecha límite de devolución” corresponde principalmente a:",
+            "opciones": [
+              "Entrada",
+              "Procesamiento",
+              "Salida",
+              "Regla de alcance"
+            ],
+            "respuestaCorrecta": "C",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "¿Cuál secuencia representa correctamente el modelo básico de tratamiento de información?",
+            "opciones": [
+              "Salida → entrada → decisión → proceso",
+              "Entrada → procesamiento → salida",
+              "Usuario → interfaz → base de datos",
+              "Alcance → tecnología → salida"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "Una función de negocio recibe solicitudes, valida reglas y genera una resolución. ¿Qué error conceptual habría si la resolución se registrara como entrada?",
+            "opciones": [
+              "Se confundiría el resultado producido con los datos recibidos",
+              "Se convertiría automáticamente en sistema estratégico",
+              "Cambiaría el nivel jerárquico del usuario",
+              "El sistema dejaría de tener alcance"
+            ],
+            "respuestaCorrecta": "A",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "En un diagrama de contexto, ¿dónde debe colocarse un estudiante que solicita un servicio al sistema?",
+            "opciones": [
+              "Dentro de la frontera como módulo",
+              "Fuera de la frontera como actor externo",
+              "Dentro de la base de datos",
+              "En la zona de exclusiones"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "Un sistema usa una pasarela bancaria externa para procesar pagos. ¿Cómo debe representarse la pasarela?",
+            "opciones": [
+              "Como capacidad interna del sistema",
+              "Como sistema externo conectado mediante flujos de información",
+              "Como usuario táctico",
+              "Como proceso de negocio interno"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "¿Cuál es la mejor etiqueta para un flujo de información?",
+            "opciones": [
+              "Datos",
+              "Usa",
+              "Confirmación de pago",
+              "Interacción"
+            ],
+            "respuestaCorrecta": "C",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "¿Cuál diferencia es correcta?",
+            "opciones": [
+              "“Fuera del sistema” y “fuera del alcance” significan exactamente lo mismo",
+              "Un actor externo está fuera del sistema, mientras una función excluida deliberadamente está fuera del alcance",
+              "Todo lo externo está fuera del alcance",
+              "Todo lo fuera del alcance debe representarse como actor"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "El sistema llama a un servicio externo para enviar SMS. ¿Cuál descripción es más precisa?",
+            "opciones": [
+              "Enviar físicamente el SMS es capacidad interna",
+              "La solicitud de envío puede ser responsabilidad del sistema y la entrega del SMS responsabilidad externa",
+              "El proveedor de SMS debe colocarse dentro de la frontera",
+              "El SMS convierte al sistema en estratégico"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "Un diagrama muestra usuarios operativos, registro de solicitudes, confirmaciones, reglas rutinarias y ausencia de análisis histórico. ¿Qué tipo de sistema queda mejor sustentado?",
+            "opciones": [
+              "DSS de soporte a decisiones",
+              "TPS de procesamiento de transacciones",
+              "Sistema estratégico ejecutivo",
+              "Sistema experto"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          },
+          {
+            "tipo": "OPCION_MULTIPLE",
+            "pregunta": "Un equipo propone clasificar su solución como DSS, pero su diagrama no muestra datos históricos agregados, modelos de análisis ni usuarios tácticos. ¿Cuál es la mejor conclusión?",
+            "opciones": [
+              "DSS sigue siendo correcto porque es una categoría más avanzada",
+              "La clasificación debe descartarse o quedar como alternativa no sustentada por la evidencia actual",
+              "Todo sistema con reportes es un DSS",
+              "El diagrama no tiene relación con la tipología"
+            ],
+            "respuestaCorrecta": "B",
+            "puntos": 4,
+            "obligatoria": true
+          }
+        ]
+      }
+    }
+  ]
+}
