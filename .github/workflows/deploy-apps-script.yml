@@ -1,5 +1,5 @@
 name: Deploy Apps Script
-# Redeploy marker: retry canonical Web App deployment after verified HTTP 403 on 2026-10-06.
+# Redeploy marker: canonical Web App deployment after Apps Script version cleanup confirmed by docente on 2026-10-06.
 
 on:
   push:
