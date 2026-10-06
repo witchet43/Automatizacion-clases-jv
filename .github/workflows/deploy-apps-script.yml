@@ -290,6 +290,11 @@ jobs:
           clasp_config_auth: .clasprc.json
         run: npx clasp push --force
 
+      - name: Prune unreferenced Apps Script versions
+        env:
+          clasp_config_auth: .clasprc.json
+        run: node scripts/prune-apps-script-versions.mjs
+
       - name: Update canonical Web App deployment
         env:
           clasp_config_auth: .clasprc.json
