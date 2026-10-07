@@ -4,7 +4,7 @@
   "params": {
     "materia": "Algoritmos y Estructuras de Datos",
     "unidad": "Unidad 2",
-    "temaSubtema": "2.3 Colas: representación y operaciones básicas",
+    "temaSubtema": "2.2.3 Aplicaciones de pilas; 2.3 Colas: representación y operaciones básicas",
     "titulo": "Examen Unidad 2 - Algoritmos y Estructuras de Datos",
     "descripcion": "Examen de la Unidad 2. Cobertura: 2.1, 2.1.1, 2.1.2, 2.2, 2.2.3 y 2.3. Se excluye 2.3.1.",
     "preguntas": [
