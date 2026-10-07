@@ -14,6 +14,10 @@ export function readContext() {
       manifest.workflow.name !== 'Academic Web App' || manifest.contractVersion !== '1.1.0' ||
       manifest.rules.courseWorkState !== 'DRAFT' || manifest.rules.calendarSelectsClass !== false || manifest.rules.currentDateSelectsClass !== false ||
       manifest.rules.resourcesBeforeGamma !== true || manifest.rules.gammaReferencesVerifiedResources !== true ||
+      manifest.rules.routeResolution !== 'MANIFEST_OPERATION_ONLY' ||
+      manifest.rules.workModeRole !== 'FORBIDDEN_FOR_CANONICAL_ACADEMIC_OPERATIONS' ||
+      manifest.rules.gammaFolderRequired !== true || manifest.rules.gammaCreationMustPassFolderIds !== true ||
+      manifest.rules.gammaThemeRequired !== true || manifest.rules.gammaCreationMustPassThemeId !== true ||
       JSON.stringify(manifest.fastPaths) !== '["quizAsistencia"]') throw Error('ACADEMIC_CONTEXT_INVALID');
   for (const key of ['bootstrap','master','classGuide','runbook']) {
     const doc = manifest.documents[key];
@@ -24,7 +28,13 @@ export function readContext() {
   for (const path of ['src/65_QuizAsistenciaWebApp.gs','src/39_MasterGuardrails.gs']) vm.runInContext(fs.readFileSync(path,'utf8'),ctx);
   const courses = JSON.parse(vm.runInContext('JSON.stringify(ACADEMIC_WEB.COURSES)',ctx));
   const planning = JSON.parse(vm.runInContext('JSON.stringify(MASTER_GUARDRAILS.PLANNING_SOURCES)',ctx));
-  if (JSON.stringify(courses)!==JSON.stringify(manifest.courses) || JSON.stringify(planning)!==JSON.stringify(manifest.planningSources)) throw Error('ACADEMIC_REGISTRY_DRIFT');
+  const manifestCourseIdentity = Object.fromEntries(Object.entries(manifest.courses).map(([k,v])=>[k,{id:v.id,materia:v.materia}]));
+  if (JSON.stringify(courses)!==JSON.stringify(manifestCourseIdentity) || JSON.stringify(planning)!==JSON.stringify(manifest.planningSources)) throw Error('ACADEMIC_REGISTRY_DRIFT');
+  for (const [key,course] of Object.entries(manifest.courses)) {
+    if (course.materia?.startsWith('Introducción a las Tecnologías de Información') || key==='introduccion-tecnologias-informacion') {
+      if (course.gammaFolderId!=='fo_w669f3b2oumuiuf' || course.gammaThemeId!=='bfm8ztqy1whsib8') throw Error('ACADEMIC_GAMMA_CONFIG_INVALID: '+key);
+    }
+  }
   return { manifest, digest };
 }
 export function envelope(manifest,digest) {
