@@ -1,0 +1,72 @@
+{
+  "action": "quiz",
+  "materia": "Introducción a las Tecnologías de Información",
+  "params": {
+    "sesionCanonica": 18,
+    "explicitSequenceOverride": true,
+    "unidad": "Unidad 2",
+    "topicName": "Unidad 2",
+    "temaSubtema": "2.2.5 Software de aplicación + 2.2.6 Ciclo de vida del software + 2.2.7 Capas de software",
+    "titulo": "Quiz 3 - Práctica 03: kernel/usuario, procesos y gestión de recursos",
+    "descripcion": "Comprobación breve de comprensión sobre los conceptos trabajados en la Práctica 03: separación espacio de usuario/kernel, procesos y función del sistema operativo como gestor de recursos.",
+    "puntos": 20,
+    "preguntas": [
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "En una arquitectura de sistema operativo, ¿qué describe mejor al kernel?",
+        "opciones": [
+          "La parte central del sistema operativo que gestiona recursos y media entre software y hardware",
+          "Una aplicación de usuario que únicamente muestra ventanas",
+          "Un archivo temporal creado por el navegador",
+          "Un controlador exclusivo para dispositivos de red"
+        ],
+        "respuestaCorrecta": "A",
+        "puntos": 5,
+        "retroalimentacionCorrecta": "El kernel es el núcleo del sistema operativo y participa en la gestión de recursos y acceso al hardware.",
+        "retroalimentacionIncorrecta": "Distingue entre aplicaciones de usuario y el núcleo que administra recursos del sistema."
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Si al cerrar una aplicación disminuye el número de procesos asociados y baja el consumo de memoria, ¿qué evidencia aporta esa observación?",
+        "opciones": [
+          "Que el sistema operativo asignaba recursos a procesos de esa aplicación y los libera o reasigna al finalizar",
+          "Que la memoria RAM se convierte en almacenamiento permanente",
+          "Que el procesador deja de ejecutar cualquier otro proceso",
+          "Que todos los servicios del sistema operativo también se cierran"
+        ],
+        "respuestaCorrecta": "A",
+        "puntos": 5,
+        "retroalimentacionCorrecta": "La observación relaciona directamente ciclo de vida de procesos con asignación y liberación de recursos.",
+        "retroalimentacionIncorrecta": "Piensa en qué ocurre con los recursos asignados a una aplicación cuando sus procesos terminan."
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "¿Cuál de las siguientes relaciones representa mejor una ruta por capas observada en la Práctica 03?",
+        "opciones": [
+          "Aplicación → espacio de usuario → kernel → hardware",
+          "Hardware → documento → navegador → usuario",
+          "Kernel → usuario → archivo → aplicación",
+          "Red → teclado → monitor → proceso"
+        ],
+        "respuestaCorrecta": "A",
+        "puntos": 5,
+        "retroalimentacionCorrecta": "La ruta muestra cómo una aplicación en espacio de usuario solicita servicios del kernel para acceder al hardware.",
+        "retroalimentacionIncorrecta": "Recuerda el diagrama de capas solicitado en la práctica."
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "¿Qué interpretación es correcta al observar CPU, memoria, disco y red por proceso?",
+        "opciones": [
+          "Son evidencias de recursos que el sistema operativo mide y administra entre procesos y servicios",
+          "Son propiedades fijas del hardware que nunca cambian durante la ejecución",
+          "Solo sirven para identificar el nombre comercial del procesador",
+          "Indican que cada aplicación controla directamente todo el hardware sin intervención del sistema operativo"
+        ],
+        "respuestaCorrecta": "A",
+        "puntos": 5,
+        "retroalimentacionCorrecta": "Las métricas por proceso ayudan a observar la función del sistema operativo como gestor de recursos.",
+        "retroalimentacionIncorrecta": "Relaciona las métricas observables con la asignación de recursos entre procesos."
+      }
+    ]
+  }
+}
