@@ -342,7 +342,12 @@
     "gammaThemeResolutionSource": "MANIFEST_COURSE",
     "gammaThemeMustBeResolvedBeforeGeneration": true,
     "gammaCreationMustPassThemeId": true,
-    "gammaThemePostflightRequired": true
+    "gammaThemePostflightRequired": true,
+    "classSequenceGapAuditRequired": true,
+    "classSequenceGapAuditTrigger": "EVERY_NEW_OR_NEXT_CLASS_REQUEST",
+    "classSequenceGapAuditSource": "CANONICAL_PLANNING_PLUS_REAL_PREPARATION_STATE",
+    "classSequenceGapPolicy": "RECONCILE_SAFE_UNAMBIGUOUS_GAPS_BEFORE_ADVANCING",
+    "blockLaterClassWhenPriorGapUnresolved": true
   },
   "startup": {
     "read": [
@@ -353,7 +358,7 @@
     ],
     "onMissingOrMismatch": "BLOCK_BEFORE_SIDE_EFFECTS",
     "classSequence": "Use canonical planning order plus real prepared Classroom resources and verified Gamma only to identify the first incomplete package. DRAFT + verified Gamma counts as prepared, not taught. Current/system date and Calendar never participate. Explicit session/tema remains authoritative when supplied.",
-    "execution": "Identify canonical target → design required academic resources → materialize/reuse Google resources through Academic Web App → postflight real resource IDs/URLs → resolve canonical Gamma folder AND theme from manifest BEFORE generation → generate Gamma with folderIds and themeId → verify title, content, resource references, canonical folder AND canonical theme → record all real IDs/URLs/states in target planning."
+    "execution": "Identify operationKey → resolve manifest.operations[operationKey] → use only its executionRoute. For every new/next-class request, perform the mandatory sequence-gap audit first: canonical planning order + real Classroom/Gamma preparation state → first incomplete canonical package. Reconcile any safe unambiguous earlier gap before advancing; block later-class generation if an earlier gap remains unresolved. Then design required academic resources → materialize/reuse Google resources through the declared Academic Web App route → postflight real resource IDs/URLs → resolve canonical Gamma folder AND theme from manifest BEFORE generation → generate Gamma with folderIds and themeId → verify title, content, resource references, canonical folder AND canonical theme → record all real IDs/URLs/states in target planning."
   },
   "code": {
     "guard": "src/00_AcademicContextGuard.gs",
