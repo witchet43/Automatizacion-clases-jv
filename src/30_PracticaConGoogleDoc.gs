@@ -144,22 +144,25 @@ function normalizarContenidoPractica_(value) {
 function construirHtmlPractica_(titulo, descripcion, contenido) {
   const parts = [
     '<!doctype html><html><head><meta charset="utf-8"><title>' + escaparHtmlPractica_(titulo) + '</title></head><body>',
-    '<h1>' + escaparHtmlPractica_(titulo) + '</h1>'
+    '<h1>' + escaparHtmlPractica_(titulo) + '</h1>',
+    '<h2>Instrucciones</h2>'
   ];
-  if (descripcion) {
-    parts.push('<h2>Instrucciones</h2><p>' + escaparHtmlPractica_(descripcion) + '</p>');
-  }
-  parts.push('<h2>Desarrollo</h2>');
   if (contenido.length) {
-    contenido.forEach(function(linea) { parts.push('<p>' + escaparHtmlPractica_(linea) + '</p>'); });
+    parts.push('<p>Trabaja directamente en tu copia personal de este documento. Completa los apartados y conserva toda la evidencia solicitada.</p>');
+    parts.push('<h2>Desarrollo</h2>');
+    parts.push(renderizarLineasDocumentoAcademico_(titulo,contenido));
   } else {
+    if (descripcion) parts.push('<p>' + escaparHtmlPractica_(descripcion) + '</p>');
+    parts.push('<h2>Desarrollo</h2>');
     parts.push('<p>Realiza aquí la evidencia solicitada para esta práctica.</p>');
     parts.push('<p>Reflexión 1: ¿Qué aprendiste durante la práctica?</p>');
     parts.push('<p>Reflexión 2: ¿Qué dificultad encontraste y cómo la resolviste?</p>');
     parts.push('<p>Reflexión 3: ¿Cómo aplicarías lo realizado en otro contexto?</p>');
   }
   parts.push('</body></html>');
-  return parts.join('');
+  const html=parts.join('');
+  validarFormatoHtmlDocumentoAcademico_(html,titulo);
+  return html;
 }
 
 function escaparHtmlPractica_(value) {
