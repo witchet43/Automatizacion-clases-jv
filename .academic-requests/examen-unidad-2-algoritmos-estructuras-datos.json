@@ -1,0 +1,338 @@
+{
+  "action": "examen",
+  "courseId": "871156334717",
+  "params": {
+    "materia": "Algoritmos y Estructuras de Datos",
+    "unidad": "Unidad 2",
+    "temaSubtema": "2.3 Colas: representación y operaciones básicas",
+    "titulo": "Examen Unidad 2 - Algoritmos y Estructuras de Datos",
+    "descripcion": "Examen de la Unidad 2. Cobertura: 2.1, 2.1.1, 2.1.2, 2.2, 2.2.3 y 2.3. Se excluye 2.3.1.",
+    "preguntas": [
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Un sistema almacenará como máximo 20 mediciones y necesita consultar frecuentemente cualquier posición mediante su índice. El número máximo de elementos nunca cambiará. ¿Cuál es la representación más adecuada?",
+        "opciones": [
+          "Lista simplemente enlazada",
+          "Arreglo de capacidad fija",
+          "Pila enlazada",
+          "Cola enlazada"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Se tiene Nodo* cabeza = nullptr; y se desea insertar un nuevo nodo nuevo al inicio de una lista simplemente enlazada. ¿Cuál secuencia mantiene correctamente la lista?",
+        "opciones": [
+          "cabeza = nuevo; nuevo->siguiente = nullptr;",
+          "nuevo->siguiente = cabeza; cabeza = nuevo;",
+          "cabeza->siguiente = nuevo; nuevo = cabeza;",
+          "nuevo = cabeza; cabeza->siguiente = nuevo;"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Analiza: Nodo* aux = cabeza; cabeza = cabeza->siguiente; delete aux; cout << aux->dato; ¿Cuál es el problema principal?",
+        "opciones": [
+          "cabeza deja de apuntar a la lista",
+          "Se intenta utilizar memoria después de haber sido liberada",
+          "delete elimina toda la lista",
+          "El nodo siguiente también se elimina automáticamente"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Una lista contiene cabeza → 8 → 12 → 20 → nullptr. Se ejecuta un recorrido que incrementa contador una vez por cada nodo hasta nullptr. ¿Cuál es el valor final de contador?",
+        "opciones": [
+          "2",
+          "3",
+          "4",
+          "Depende de la dirección de memoria de cabeza"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Un arreglo contiene [10, 20, 30, 40, _] y se desea insertar 15 entre 10 y 20, conservando el orden. ¿Qué operación adicional es necesaria?",
+        "opciones": [
+          "Desplazar hacia la derecha los elementos posteriores",
+          "Crear obligatoriamente un nuevo arreglo dinámico",
+          "Cambiar los elementos por punteros",
+          "Eliminar 20 antes de insertar 15"
+        ],
+        "respuestaCorrecta": "A",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "En una lista simplemente enlazada circular no vacía, ¿qué debe ocurrir con el enlace del último nodo?",
+        "opciones": [
+          "Debe apuntar a nullptr",
+          "Debe apuntar al nodo anterior",
+          "Debe apuntar nuevamente al primer nodo",
+          "Debe apuntarse a sí mismo obligatoriamente"
+        ],
+        "respuestaCorrecta": "C",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Se tiene un nodo intermedio actual en A ⇄ actual ⇄ B. ¿Qué actualizaciones son necesarias para retirar correctamente actual antes de liberar su memoria?",
+        "opciones": [
+          "A->siguiente = B; B->anterior = A;",
+          "A->anterior = B; B->siguiente = A;",
+          "actual->siguiente = A; actual->anterior = B;",
+          "A = nullptr; B = nullptr;"
+        ],
+        "respuestaCorrecta": "A",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "¿Cuál problema se adapta mejor a una lista circular?",
+        "opciones": [
+          "Ejecutar continuamente turnos entre jugadores y regresar al primero después del último",
+          "Consultar directamente por índice un arreglo fijo",
+          "Deshacer la última acción realizada",
+          "Atender solicitudes estrictamente por orden de llegada"
+        ],
+        "respuestaCorrecta": "A",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Un programa necesita recorrer una colección tanto hacia el elemento siguiente como hacia el anterior sin comenzar nuevamente desde el inicio. ¿Qué estructura resulta más adecuada?",
+        "opciones": [
+          "Lista simplemente enlazada",
+          "Lista doblemente ligada",
+          "Pila",
+          "Cola"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Una lista simplemente enlazada contiene n nodos y no se conoce la posición del elemento buscado. En el peor caso, ¿qué comportamiento se espera?",
+        "opciones": [
+          "Acceso directo O(1)",
+          "Recorrer hasta n nodos, O(n)",
+          "Examinar siempre exactamente dos nodos",
+          "Buscar únicamente desde el último nodo"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Una pila inicia vacía y se ejecuta: push(4), push(7), push(9), pop(), top(). ¿Qué valor devuelve top()?",
+        "opciones": [
+          "4",
+          "7",
+          "9",
+          "La pila queda vacía"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Un editor necesita implementar Deshacer: la última acción realizada debe ser la primera que pueda revertirse. ¿Qué estructura representa naturalmente este comportamiento?",
+        "opciones": [
+          "Cola FIFO",
+          "Pila LIFO",
+          "Arreglo ordenado obligatoriamente",
+          "Lista circular únicamente"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Al revisar una expresión con paréntesis mediante una pila, cuando aparece un paréntesis de cierre, ¿qué debe hacerse?",
+        "opciones": [
+          "Insertarlo al fondo de una cola",
+          "Compararlo con el elemento disponible en el tope y desapilar la apertura correspondiente",
+          "Eliminar toda la pila",
+          "Ignorarlo porque las pilas solo almacenan números"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Antes de ejecutar pop() sobre una pila, ¿qué validación evita intentar eliminar un elemento inexistente?",
+        "opciones": [
+          "size() > 100",
+          "top() == 0",
+          "Comprobar que la pila no esté vacía",
+          "Comprobar que el último elemento sea positivo"
+        ],
+        "respuestaCorrecta": "C",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Una pila contiene [5, 11, 18], donde 18 es el tope. Después de ejecutar únicamente top(), ¿cuál es el estado de la pila?",
+        "opciones": [
+          "[5, 11]",
+          "[18]",
+          "[5, 11, 18]",
+          "[]"
+        ],
+        "respuestaCorrecta": "C",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Se insertan en una pila, en este orden: A, B, C, D. Después se extraen todos los elementos mediante pop(). ¿En qué orden salen?",
+        "opciones": [
+          "A, B, C, D",
+          "D, C, B, A",
+          "A, D, B, C",
+          "B, C, D, A"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Una cola inicia vacía: enqueue(10), enqueue(20), enqueue(30), dequeue(), front(). ¿Qué valor devuelve front()?",
+        "opciones": [
+          "10",
+          "20",
+          "30",
+          "La cola queda vacía"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Los trabajos enviados a una impresora deben procesarse en el mismo orden en el que fueron recibidos. ¿Qué estructura representa correctamente esta política?",
+        "opciones": [
+          "Pila, porque usa LIFO",
+          "Cola, porque usa FIFO",
+          "Lista circular, porque siempre vuelve al primero",
+          "Pila, porque pop() elimina el elemento más antiguo"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Una cola enlazada está vacía: frente = nullptr; final = nullptr. Se inserta el primer nodo n. ¿Cuál debe ser el estado correcto después de la operación?",
+        "opciones": [
+          "frente apunta a n y final permanece en nullptr",
+          "frente y final apuntan a n",
+          "Solo final apunta a n",
+          "n->siguiente debe apuntar a sí mismo"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Una cola enlazada contiene un solo nodo. Después de desencolarlo correctamente, ¿qué estado deben tener frente y final?",
+        "opciones": [
+          "Ambos deben conservar la dirección del nodo eliminado",
+          "frente debe ser nullptr y final debe conservar la dirección anterior",
+          "Ambos deben quedar en nullptr",
+          "frente debe apuntar a final->siguiente"
+        ],
+        "respuestaCorrecta": "C",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Analiza: queue<int> q; q.push(3); q.push(6); q.push(9); q.pop(); cout << q.front(); ¿Qué imprime?",
+        "opciones": [
+          "3",
+          "6",
+          "9",
+          "No imprime ningún valor"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Un sistema recibe tickets de soporte y debe atender primero el ticket que lleva más tiempo esperando. ¿Qué estructura debe utilizar?",
+        "opciones": [
+          "Pila",
+          "Cola",
+          "Lista circular obligatoriamente",
+          "Pila doble"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "¿Cuál descripción distingue correctamente una pila de una cola?",
+        "opciones": [
+          "En ambas estructuras la inserción y eliminación siempre ocurren sobre el mismo extremo",
+          "La pila inserta y elimina en el tope; la cola inserta al final y elimina desde el frente",
+          "La cola elimina por el final y la pila inserta por el frente",
+          "La pila permite acceso aleatorio por índice y la cola no"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Supón que una estructura denominada Cola realiza tanto la inserción como la eliminación exclusivamente sobre el mismo extremo. ¿Qué comportamiento terminaría reproduciendo?",
+        "opciones": [
+          "Una pila LIFO",
+          "Una cola FIFO correcta",
+          "Una lista circular",
+          "Un arreglo de acceso aleatorio"
+        ],
+        "respuestaCorrecta": "A",
+        "puntos": 4,
+        "obligatoria": true
+      },
+      {
+        "tipo": "OPCION_MULTIPLE",
+        "pregunta": "Un programa debe almacenar una cantidad desconocida de registros. Además, necesita insertar y eliminar nodos sin desplazar físicamente todos los elementos posteriores. ¿Cuál alternativa es más apropiada?",
+        "opciones": [
+          "Arreglo estático de tamaño fijo",
+          "Lista dinámica enlazada",
+          "Pila exclusivamente",
+          "Cola exclusivamente"
+        ],
+        "respuestaCorrecta": "B",
+        "puntos": 4,
+        "obligatoria": true
+      }
+    ]
+  }
+}
