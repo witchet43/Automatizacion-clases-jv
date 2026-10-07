@@ -5,11 +5,18 @@ function validarConfiguracionContextoAcademico_() {
   if(c.contractVersion!=='1.1.0'||c.repository!=='witchet43/Automatizacion-clases-jv'||
      c.rules.courseWorkState!=='DRAFT'||c.rules.calendarSelectsClass!==false||c.rules.currentDateSelectsClass!==false||
      c.rules.resourcesBeforeGamma!==true||c.rules.gammaReferencesVerifiedResources!==true||
+     c.rules.gammaFolderRequired!==true||c.rules.gammaCreationMustPassFolderIds!==true||
+     c.rules.gammaThemeRequired!==true||c.rules.gammaCreationMustPassThemeId!==true||
      c.workflow.name!=='Academic Web App'||!/^[a-f0-9]{64}$/.test(c.manifestSha256))
     throw new Error('ACADEMIC_CONTEXT_CONFIG_INVALID');
-  if(JSON.stringify(c.courses)!==JSON.stringify(ACADEMIC_WEB.COURSES)||
+  const manifestCourseIdentity={};
+  Object.keys(c.courses||{}).forEach(function(k){manifestCourseIdentity[k]={id:c.courses[k].id,materia:c.courses[k].materia};});
+  if(JSON.stringify(manifestCourseIdentity)!==JSON.stringify(ACADEMIC_WEB.COURSES)||
      JSON.stringify(c.planningSources)!==JSON.stringify(MASTER_GUARDRAILS.PLANNING_SOURCES))
     throw new Error('ACADEMIC_CONTEXT_REGISTRY_DRIFT');
+  const iti=c.courses['introduccion-tecnologias-informacion'];
+  if(!iti||iti.gammaFolderId!=='fo_w669f3b2oumuiuf'||iti.gammaThemeId!=='bfm8ztqy1whsib8')
+    throw new Error('ACADEMIC_GAMMA_CONFIG_INVALID');
   if(c.documents.master.id!==MASTER_GUARDRAILS.MASTER_DOCUMENT_ID)
     throw new Error('ACADEMIC_CONTEXT_MASTER_DRIFT');
   return c;
