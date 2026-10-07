@@ -1,6 +1,6 @@
 // Generated from config/academic-context.json. Do not edit.
 const ACADEMIC_CONTEXT_CONFIG = {
-  "manifestSha256": "ef62128167f7ba62921b6cf4aeb332746896d2a98e742fe2b7a3ec452eb3f21d",
+  "manifestSha256": "f25061b6eb253c17f8d79061670dad690d9c52ae544cb0331c2a34ffee60ce79",
   "schemaVersion": 1,
   "contractVersion": "1.1.0",
   "repository": "witchet43/Automatizacion-clases-jv",
@@ -349,7 +349,13 @@ const ACADEMIC_CONTEXT_CONFIG = {
     "classSequenceGapAuditTrigger": "EVERY_NEW_OR_NEXT_CLASS_REQUEST",
     "classSequenceGapAuditSource": "CANONICAL_PLANNING_PLUS_REAL_PREPARATION_STATE",
     "classSequenceGapPolicy": "RECONCILE_SAFE_UNAMBIGUOUS_GAPS_BEFORE_ADVANCING",
-    "blockLaterClassWhenPriorGapUnresolved": true
+    "blockLaterClassWhenPriorGapUnresolved": true,
+    "academicDocumentFormattingRequired": true,
+    "academicDocumentFormattingPostflightRequired": true,
+    "academicDocumentHeadingHierarchy": "H1_H2_H3",
+    "academicDocumentNativeListsRequired": true,
+    "academicDocumentFlatStructuredParagraphsForbidden": true,
+    "academicDocumentDuplicateStructuralHeadersForbidden": true
   },
   "startup": {
     "read": [
