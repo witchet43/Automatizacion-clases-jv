@@ -1,6 +1,6 @@
 // Generated from config/academic-context.json. Do not edit.
 const ACADEMIC_CONTEXT_CONFIG = {
-  "manifestSha256": "20c502399490a5528880b62813676cbf13f0d0f7e05fd341736bee6a738288bc",
+  "manifestSha256": "ef62128167f7ba62921b6cf4aeb332746896d2a98e742fe2b7a3ec452eb3f21d",
   "schemaVersion": 1,
   "contractVersion": "1.1.0",
   "repository": "witchet43/Automatizacion-clases-jv",
@@ -344,7 +344,12 @@ const ACADEMIC_CONTEXT_CONFIG = {
     "gammaThemeResolutionSource": "MANIFEST_COURSE",
     "gammaThemeMustBeResolvedBeforeGeneration": true,
     "gammaCreationMustPassThemeId": true,
-    "gammaThemePostflightRequired": true
+    "gammaThemePostflightRequired": true,
+    "classSequenceGapAuditRequired": true,
+    "classSequenceGapAuditTrigger": "EVERY_NEW_OR_NEXT_CLASS_REQUEST",
+    "classSequenceGapAuditSource": "CANONICAL_PLANNING_PLUS_REAL_PREPARATION_STATE",
+    "classSequenceGapPolicy": "RECONCILE_SAFE_UNAMBIGUOUS_GAPS_BEFORE_ADVANCING",
+    "blockLaterClassWhenPriorGapUnresolved": true
   },
   "startup": {
     "read": [
@@ -355,7 +360,7 @@ const ACADEMIC_CONTEXT_CONFIG = {
     ],
     "onMissingOrMismatch": "BLOCK_BEFORE_SIDE_EFFECTS",
     "classSequence": "Use canonical planning order plus real prepared Classroom resources and verified Gamma only to identify the first incomplete package. DRAFT + verified Gamma counts as prepared, not taught. Current/system date and Calendar never participate. Explicit session/tema remains authoritative when supplied.",
-    "execution": "Identify canonical target → design required academic resources → materialize/reuse Google resources through Academic Web App → postflight real resource IDs/URLs → resolve canonical Gamma folder AND theme from manifest BEFORE generation → generate Gamma with folderIds and themeId → verify title, content, resource references, canonical folder AND canonical theme → record all real IDs/URLs/states in target planning."
+    "execution": "Identify operationKey → resolve manifest.operations[operationKey] → use only its executionRoute. For every new/next-class request, perform the mandatory sequence-gap audit first: canonical planning order + real Classroom/Gamma preparation state → first incomplete canonical package. Reconcile any safe unambiguous earlier gap before advancing; block later-class generation if an earlier gap remains unresolved. Then design required academic resources → materialize/reuse Google resources through the declared Academic Web App route → postflight real resource IDs/URLs → resolve canonical Gamma folder AND theme from manifest BEFORE generation → generate Gamma with folderIds and themeId → verify title, content, resource references, canonical folder AND canonical theme → record all real IDs/URLs/states in target planning."
   },
   "code": {
     "guard": "src/00_AcademicContextGuard.gs",
