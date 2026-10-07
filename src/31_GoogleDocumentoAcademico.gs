@@ -31,6 +31,7 @@ function crearGoogleDocumentoAcademico_(params){
     String(p.descripcion||p.description||'').trim(),
     p.contenidoDocumento!==undefined?p.contenidoDocumento:p.googleDocContent
   ));
+  validarFormatoHtmlDocumentoAcademico_(html,titulo);
   const media=Utilities.newBlob(html,'text/html',titulo+'.html');
   const folderId=resolverCarpetaDocumentoAcademico_(p.courseId,p.tipo);
 
