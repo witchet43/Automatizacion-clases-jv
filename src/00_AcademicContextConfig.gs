@@ -1,6 +1,6 @@
 // Generated from config/academic-context.json. Do not edit.
 const ACADEMIC_CONTEXT_CONFIG = {
-  "manifestSha256": "add632bae9339795b40d875eb1e299b24e91fe114e0851d8d1adf81081e614cd",
+  "manifestSha256": "7389a4e5f49c1825baf8031845ee5a6593ea1bad4f9e3ddcc9e0b9ca96b406ae",
   "schemaVersion": 1,
   "contractVersion": "1.1.0",
   "repository": "witchet43/Automatizacion-clases-jv",
@@ -292,7 +292,9 @@ const ACADEMIC_CONTEXT_CONFIG = {
     "resourcesBeforeGamma": true,
     "gammaReferencesVerifiedResources": true,
     "currentDateRole": "NEVER_FOR_CLASS_IDENTITY_OR_SEQUENCE",
-    "calendarRoleInClassGeneration": "NONE"
+    "calendarRoleInClassGeneration": "NONE",
+    "routeResolution": "MANIFEST_OPERATION_ONLY",
+    "workModeRole": "FORBIDDEN_FOR_CANONICAL_ACADEMIC_OPERATIONS"
   },
   "startup": {
     "read": [
@@ -311,5 +313,113 @@ const ACADEMIC_CONTEXT_CONFIG = {
     "entrypoints": "src/22_EntrypointsRecursosSeguros.gs",
     "dispatcher": "src/65_QuizAsistenciaWebApp.gs",
     "postflight": "src/52_MasterPostflight.gs"
+  },
+  "operations": {
+    "quizAsistencia": {
+      "executionRoute": "FAST_PATH_WEB_APP",
+      "workflow": "Academic Web App",
+      "requestDirectory": ".academic-requests",
+      "webAppAction": "quizAsistencia",
+      "requiresPostflight": true,
+      "fastPath": true
+    },
+    "actividad": {
+      "executionRoute": "ACADEMIC_WEB_APP",
+      "workflow": "Academic Web App",
+      "requestDirectory": ".academic-requests",
+      "webAppAction": "actividad",
+      "entrypoint": "crearActividad",
+      "requiresPostflight": true,
+      "courseWorkState": "DRAFT"
+    },
+    "tarea": {
+      "executionRoute": "ACADEMIC_WEB_APP",
+      "workflow": "Academic Web App",
+      "requestDirectory": ".academic-requests",
+      "webAppAction": "tarea",
+      "entrypoint": "crearTarea",
+      "requiresPostflight": true,
+      "courseWorkState": "DRAFT"
+    },
+    "practica": {
+      "executionRoute": "ACADEMIC_WEB_APP",
+      "workflow": "Academic Web App",
+      "requestDirectory": ".academic-requests",
+      "webAppAction": "practica",
+      "entrypoint": "crearPractica",
+      "requiresPostflight": true,
+      "courseWorkState": "DRAFT"
+    },
+    "quiz": {
+      "executionRoute": "ACADEMIC_WEB_APP",
+      "workflow": "Academic Web App",
+      "requestDirectory": ".academic-requests",
+      "webAppAction": "quiz",
+      "entrypoint": "crearQuiz",
+      "requiresPostflight": true,
+      "courseWorkState": "DRAFT",
+      "formPublished": false
+    },
+    "examen": {
+      "executionRoute": "ACADEMIC_WEB_APP",
+      "workflow": "Academic Web App",
+      "requestDirectory": ".academic-requests",
+      "webAppAction": "examen",
+      "entrypoint": "crearExamen",
+      "requiresPostflight": true,
+      "courseWorkState": "DRAFT",
+      "formPublished": false,
+      "requiresAcademicApproval": true
+    },
+    "material": {
+      "executionRoute": "ACADEMIC_WEB_APP",
+      "workflow": "Academic Web App",
+      "requestDirectory": ".academic-requests",
+      "webAppAction": "material",
+      "entrypoint": "crearMaterialDidacticoWeb_",
+      "requiresPostflight": true
+    },
+    "clase": {
+      "executionRoute": "ACADEMIC_WEB_APP",
+      "workflow": "Academic Web App",
+      "requestDirectory": ".academic-requests",
+      "webAppAction": "clase",
+      "entrypoint": "crearPaqueteClaseWeb_",
+      "requiresPostflight": true,
+      "resourcesBeforeGamma": true
+    },
+    "resolverClase": {
+      "executionRoute": "ACADEMIC_WEB_APP",
+      "workflow": "Academic Web App",
+      "requestDirectory": ".academic-requests",
+      "webAppAction": "resolverClase",
+      "requiresPostflight": true,
+      "readOnly": true
+    },
+    "diagnosticarClase": {
+      "executionRoute": "ACADEMIC_WEB_APP",
+      "workflow": "Academic Web App",
+      "requestDirectory": ".academic-requests",
+      "webAppAction": "diagnosticarClase",
+      "requiresPostflight": true,
+      "readOnly": true
+    },
+    "auditarIdentidadClassroom": {
+      "executionRoute": "ACADEMIC_WEB_APP",
+      "workflow": "Academic Web App",
+      "requestDirectory": ".academic-requests",
+      "webAppAction": "auditarIdentidadClassroom",
+      "requiresPostflight": true,
+      "readOnly": true
+    },
+    "eliminarDrafts": {
+      "executionRoute": "ACADEMIC_WEB_APP",
+      "workflow": "Academic Web App",
+      "requestDirectory": ".academic-requests",
+      "webAppAction": "eliminarDrafts",
+      "requiresPostflight": true,
+      "destructive": true,
+      "requiresExplicitAuthorization": true
+    }
   }
 };
