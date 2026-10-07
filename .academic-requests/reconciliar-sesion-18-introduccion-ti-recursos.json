@@ -1,0 +1,39 @@
+{
+  "action": "clase",
+  "materia": "Introducción a las Tecnologías de Información",
+  "sesion": "18",
+  "expectedResourceTypes": [
+    "tarea",
+    "actividad"
+  ],
+  "resources": [
+    {
+      "type": "tarea",
+      "params": {
+        "sesionCanonica": 18,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "unidad": "Unidad 2",
+        "topicName": "Unidad 2",
+        "temaSubtema": "2.2.5 Software de aplicación + 2.2.6 Ciclo de vida del software + 2.2.7 Capas de software",
+        "titulo": "Tarea 05 - Elegir una aplicación web pública para rastreo",
+        "descripcion": "Propósito: llegar preparado a la sesión sobre software de aplicación, capas de software y ciclo de vida con una aplicación web pública seleccionada y una hipótesis inicial de cómo funciona.\n\n1. Elige una aplicación o sitio web público que puedas abrir sin utilizar datos sensibles ni información privada. Ejemplos válidos: portal de noticias, buscador, sitio institucional, catálogo público o aplicación web de demostración.\n2. Registra el nombre y la URL pública de la aplicación elegida.\n3. Describe con tus propias palabras qué función principal ofrece al usuario.\n4. Identifica al menos tres elementos visibles de la interfaz: entrada, salida, navegación, formulario, contenido dinámico u otros.\n5. Escribe una hipótesis inicial de qué capas podrían intervenir desde que el usuario realiza una acción hasta que obtiene una respuesta. Incluye, como mínimo: interfaz/aplicación, red o servicio remoto, sistema operativo y hardware.\n6. Abre Chrome DevTools únicamente para verificar que puedes acceder a las pestañas Network y Application. No modifiques datos del sitio ni ejecutes acciones de seguridad ofensiva.\n7. En Network observa una carga normal de la página y registra tres tipos de recurso que aparezcan, por ejemplo documento, script, imagen, fuente o solicitud XHR/fetch. No es necesario interpretar todavía todos los detalles.\n8. En Application identifica qué apartados están disponibles para el sitio —por ejemplo Storage, Cookies, Local Storage o Session Storage— y anota cuáles aparecen, sin copiar datos personales.\n9. Lee como referencia IBM Think «What Is Software Development?» https://www.ibm.com/think/topics/software-development y revisa únicamente tipos de software y una visión general del proceso de desarrollo.\n10. Complementa con IBM «Software Development Life Cycle (SDLC)» https://www.ibm.com/think/topics/sdlc y anota las fases generales que identifiques.\n\nEvidencia previa: aplicación/URL elegida, función principal, tres elementos de interfaz, hipótesis de capas, tres tipos de recurso observados en Network, apartados visibles en Application y lista breve de fases generales del SDLC.\n\nReglas: no usar credenciales ajenas, no inspeccionar datos privados, no intentar evadir controles de acceso y no profundizar todavía en ingeniería de software; la tarea es preparación para la clase.",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "actividad",
+      "params": {
+        "sesionCanonica": 18,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "unidad": "Unidad 2",
+        "topicName": "Unidad 2",
+        "temaSubtema": "2.2.5 Software de aplicación + 2.2.6 Ciclo de vida del software + 2.2.7 Capas de software",
+        "titulo": "Actividad 19 - Rastreo de una aplicación web por capas",
+        "descripcion": "Propósito: observar una aplicación web pública como sistema de capas y relacionar evidencia visible del navegador con software de aplicación, comunicaciones, sistema operativo, hardware y fases básicas del ciclo de vida del software.\n\nTrabaja con un sitio o aplicación web pública que no requiera datos sensibles. No realices pruebas de penetración, evasión de controles ni manipulación de sesiones ajenas.\n\n1. Abre la aplicación pública elegida en Chrome y registra su URL y función principal.\n2. En Chrome DevTools → Network recarga la página y selecciona al menos seis solicitudes representativas. Para cada una registra: tipo de recurso, dominio destino, método cuando esté visible, código de estado cuando esté visible y qué función aparente cumple.\n3. Agrupa las solicitudes observadas en categorías como interfaz/contenido, lógica en cliente, datos/API, recursos estáticos o servicios externos.\n4. En DevTools → Application revisa qué mecanismos de almacenamiento aparecen disponibles para ese sitio. Registra únicamente nombres de mecanismos y evidencia no sensible; no copies tokens, identificadores de sesión ni datos personales.\n5. Abre Administrador de tareas de Windows o Process Explorer y localiza los procesos del navegador asociados a la ejecución. Registra al menos tres procesos o grupos de procesos y las métricas observables de CPU y memoria.\n6. Construye un diagrama en diagrams.net con el recorrido: Usuario → Interfaz web → Código/aplicación en navegador → Solicitudes de red/servicios → Sistema operativo → CPU/RAM/almacenamiento/red. Añade al menos dos dependencias entre capas.\n7. Elige una funcionalidad concreta de la aplicación, por ejemplo búsqueda, navegación, consulta de contenido o envío de un formulario público no sensible. Describe qué capas participan y qué evidencia de DevTools o del sistema respalda tu interpretación.\n8. Relaciona esa funcionalidad con las fases generales del ciclo de vida del software: requisitos, diseño, desarrollo, pruebas, despliegue y mantenimiento. Para cada fase escribe un ejemplo breve de una decisión o actividad que tendría sentido para esa funcionalidad.\n9. Identifica dos posibles fallas en capas diferentes —por ejemplo recurso web no disponible, problema de red, proceso del navegador sin respuesta o almacenamiento local inconsistente— y explica qué evidencia revisarías primero.\n10. Cierra con una conclusión técnica de 5–7 líneas que responda: ¿por qué una aplicación web no es únicamente la interfaz que ve el usuario?\n\nEvidencia: capturas anotadas de Network y Application sin datos sensibles, tabla de seis solicitudes, evidencia de procesos del navegador, diagrama de capas, mapa funcionalidad↔fase del SDLC, análisis de dos fallas y conclusión.\n\nCriterios de revisión: evidencia técnica y tabla de solicitudes 25 puntos; interpretación de capas 25 puntos; diagrama y dependencias 20 puntos; relación funcionalidad↔SDLC 20 puntos; fallas y conclusión 10 puntos.",
+        "puntos": 100
+      }
+    }
+  ]
+}
