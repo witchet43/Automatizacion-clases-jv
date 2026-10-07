@@ -347,7 +347,13 @@
     "classSequenceGapAuditTrigger": "EVERY_NEW_OR_NEXT_CLASS_REQUEST",
     "classSequenceGapAuditSource": "CANONICAL_PLANNING_PLUS_REAL_PREPARATION_STATE",
     "classSequenceGapPolicy": "RECONCILE_SAFE_UNAMBIGUOUS_GAPS_BEFORE_ADVANCING",
-    "blockLaterClassWhenPriorGapUnresolved": true
+    "blockLaterClassWhenPriorGapUnresolved": true,
+    "academicDocumentFormattingRequired": true,
+    "academicDocumentFormattingPostflightRequired": true,
+    "academicDocumentHeadingHierarchy": "H1_H2_H3",
+    "academicDocumentNativeListsRequired": true,
+    "academicDocumentFlatStructuredParagraphsForbidden": true,
+    "academicDocumentDuplicateStructuralHeadersForbidden": true
   },
   "startup": {
     "read": [
