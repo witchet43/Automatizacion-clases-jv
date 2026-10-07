@@ -1,6 +1,6 @@
 // Generated from config/academic-context.json. Do not edit.
 const ACADEMIC_CONTEXT_CONFIG = {
-  "manifestSha256": "00420ac3258dbe0a7ff2cdd3f9eabb901bc6cee2b69429be27a7aa0659d2f687",
+  "manifestSha256": "20c502399490a5528880b62813676cbf13f0d0f7e05fd341736bee6a738288bc",
   "schemaVersion": 1,
   "contractVersion": "1.1.0",
   "repository": "witchet43/Automatizacion-clases-jv",
@@ -69,55 +69,73 @@ const ACADEMIC_CONTEXT_CONFIG = {
       "id": "871158466533",
       "materia": "Sistemas Distribuidos",
       "gammaFolderId": "fo_2538kazbe3ajvec",
-      "gammaFolderName": "UAQ - Sistemas Distribuidos"
+      "gammaFolderName": "UAQ - Sistemas Distribuidos",
+      "gammaThemeId": "bfm8ztqy1whsib8",
+      "gammaThemeName": "UAQ"
     },
     "analisis-diseno-sistemas-computacionales": {
       "id": "871158479566",
       "materia": "Análisis y Diseño de Sistemas Computacionales",
       "gammaFolderId": "fo_1hj2ia8k72bkc44",
-      "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales"
+      "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales",
+      "gammaThemeId": "bfm8ztqy1whsib8",
+      "gammaThemeName": "UAQ"
     },
     "analisis-y-diseno-de-sistemas-computacionales": {
       "id": "871158479566",
       "materia": "Análisis y Diseño de Sistemas Computacionales",
       "gammaFolderId": "fo_1hj2ia8k72bkc44",
-      "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales"
+      "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales",
+      "gammaThemeId": "bfm8ztqy1whsib8",
+      "gammaThemeName": "UAQ"
     },
     "analisis-diseno-sistemas-informacion": {
       "id": "871158479566",
       "materia": "Análisis y Diseño de Sistemas Computacionales",
       "gammaFolderId": "fo_1hj2ia8k72bkc44",
-      "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales"
+      "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales",
+      "gammaThemeId": "bfm8ztqy1whsib8",
+      "gammaThemeName": "UAQ"
     },
     "analisis-y-diseno-de-sistemas-de-informacion": {
       "id": "871158479566",
       "materia": "Análisis y Diseño de Sistemas Computacionales",
       "gammaFolderId": "fo_1hj2ia8k72bkc44",
-      "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales"
+      "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales",
+      "gammaThemeId": "bfm8ztqy1whsib8",
+      "gammaThemeName": "UAQ"
     },
     "introduccion-tecnologias-informacion": {
       "id": "871156721160",
       "materia": "Introducción a las Tecnologías de Información",
       "gammaFolderId": "fo_w669f3b2oumuiuf",
-      "gammaFolderName": "UAQ - Introducción a las Tecnologías de Información"
+      "gammaFolderName": "UAQ - Introducción a las Tecnologías de Información",
+      "gammaThemeId": "bfm8ztqy1whsib8",
+      "gammaThemeName": "UAQ"
     },
     "administracion": {
       "id": "871158187513",
       "materia": "Administración",
       "gammaFolderId": "fo_wjv2a486s6v5zmq",
-      "gammaFolderName": "UAQ - Administración"
+      "gammaFolderName": "UAQ - Administración",
+      "gammaThemeId": "bfm8ztqy1whsib8",
+      "gammaThemeName": "UAQ"
     },
     "etica-legislacion-informatica": {
       "id": "871149624583",
       "materia": "Ética y Legislación Informática",
       "gammaFolderId": "fo_mkvfyu7wjyluhjq",
-      "gammaFolderName": "UAQ - Ética y Legislación Informática"
+      "gammaFolderName": "UAQ - Ética y Legislación Informática",
+      "gammaThemeId": "bfm8ztqy1whsib8",
+      "gammaThemeName": "UAQ"
     },
     "algoritmos-estructuras-datos": {
       "id": "871156334717",
       "materia": "Algoritmos y Estructuras de Datos",
       "gammaFolderId": "fo_wwpxeb1f3dghq31",
-      "gammaFolderName": "UAQ - Algoritmos y Estructuras de Datos"
+      "gammaFolderName": "UAQ - Algoritmos y Estructuras de Datos",
+      "gammaThemeId": "bfm8ztqy1whsib8",
+      "gammaThemeName": "UAQ"
     },
     "sistemas-operativos": {
       "id": "875776451793",
@@ -321,7 +339,12 @@ const ACADEMIC_CONTEXT_CONFIG = {
     "gammaFolderResolutionSource": "MANIFEST_COURSE",
     "gammaFolderMustBeResolvedBeforeGeneration": true,
     "gammaFolderPostflightRequired": true,
-    "gammaCreationMustPassFolderIds": true
+    "gammaCreationMustPassFolderIds": true,
+    "gammaThemeRequired": true,
+    "gammaThemeResolutionSource": "MANIFEST_COURSE",
+    "gammaThemeMustBeResolvedBeforeGeneration": true,
+    "gammaCreationMustPassThemeId": true,
+    "gammaThemePostflightRequired": true
   },
   "startup": {
     "read": [
@@ -332,7 +355,7 @@ const ACADEMIC_CONTEXT_CONFIG = {
     ],
     "onMissingOrMismatch": "BLOCK_BEFORE_SIDE_EFFECTS",
     "classSequence": "Use canonical planning order plus real prepared Classroom resources and verified Gamma only to identify the first incomplete package. DRAFT + verified Gamma counts as prepared, not taught. Current/system date and Calendar never participate. Explicit session/tema remains authoritative when supplied.",
-    "execution": "Identify canonical target → design required academic resources → materialize/reuse Google resources through Academic Web App → postflight real resource IDs/URLs → resolve canonical Gamma folder from manifest BEFORE generation → generate Gamma with folderIds → verify title, content, resource references AND canonical folder → record all real IDs/URLs/states in target planning."
+    "execution": "Identify canonical target → design required academic resources → materialize/reuse Google resources through Academic Web App → postflight real resource IDs/URLs → resolve canonical Gamma folder AND theme from manifest BEFORE generation → generate Gamma with folderIds and themeId → verify title, content, resource references, canonical folder AND canonical theme → record all real IDs/URLs/states in target planning."
   },
   "code": {
     "guard": "src/00_AcademicContextGuard.gs",
