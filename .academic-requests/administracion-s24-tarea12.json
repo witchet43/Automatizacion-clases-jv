@@ -1,0 +1,26 @@
+{
+  "action": "clase",
+  "materia": "Administración",
+  "sesion": "24",
+  "expectedResourceTypes": [
+    "tarea"
+  ],
+  "resources": [
+    {
+      "type": "tarea",
+      "params": {
+        "sesionCanonica": 24,
+        "explicitSequenceOverride": true,
+        "unidad": "Unidad 4",
+        "topicName": "Unidad 4",
+        "temaSubtema": "4.3.4 Finanzas",
+        "titulo": "Tarea 12 - Preparación para decisiones financieras básicas",
+        "descripcion": "Propósito: llegar preparado al tema 4.3.4 Finanzas con vocabulario básico y una lectura inicial de cómo un administrador relaciona ingresos, costos, presupuesto y resultado para tomar decisiones.\n\nCaso base\nUna pequeña empresa de servicios planea el siguiente mes con estos datos:\n- Ingresos estimados: $180,000\n- Costos fijos: $72,000\n- Costos variables estimados: $54,000\n- Presupuesto disponible para una mejora: máximo $30,000\n\nOpciones de mejora:\nA) Campaña comercial: costo $24,000; incremento esperado de ingresos $36,000.\nB) Capacitación operativa: costo $18,000; ahorro esperado de costos $27,000.\nC) Equipo adicional: costo $29,000; ahorro esperado de costos $18,000 e incremento esperado de ingresos $14,000.\n\nInstrucciones\n1. Define con tus propias palabras: ingreso, costo fijo, costo variable, presupuesto, utilidad y flujo de efectivo.\n2. Con los datos del caso calcula la utilidad estimada antes de elegir una mejora: ingresos menos costos fijos y variables.\n3. Para cada opción calcula el beneficio económico esperado simple: incremento de ingresos + ahorro esperado − costo de la opción.\n4. Identifica cuáles opciones caben dentro del presupuesto máximo de $30,000.\n5. Elige preliminarmente una opción y justifica tu decisión en 4–6 líneas. No busques todavía una respuesta “correcta”: interesa reconocer qué información financiera usarías para decidir.\n6. Explica por qué una opción con mayor ingreso esperado no necesariamente es la mejor decisión financiera.\n7. Escribe dos datos adicionales que pedirías antes de autorizar la inversión.\n\nEvidencia previa: definiciones breves, cálculos básicos, comparación de las tres opciones, decisión preliminar y dos datos adicionales requeridos.\n\nNo profundices todavía en estados financieros completos ni indicadores avanzados; esos elementos se trabajarán en clase.",
+        "contenidoDocumento": "TAREA 12 — PREPARACIÓN PARA DECISIONES FINANCIERAS BÁSICAS\n\nUnidad 4 · Tema 4.3.4 Finanzas\n\nPropósito\nLlegar preparado al tema de Finanzas con vocabulario esencial y una primera aproximación a cómo un administrador utiliza ingresos, costos y presupuesto para decidir.\n\nCASO BASE\nUna pequeña empresa de servicios planea el siguiente mes con estos datos:\n\nIngresos estimados: $180,000\nCostos fijos: $72,000\nCostos variables estimados: $54,000\nPresupuesto máximo disponible para una mejora: $30,000\n\nOPCIONES DE MEJORA\nA. Campaña comercial\nCosto: $24,000\nIncremento esperado de ingresos: $36,000\n\nB. Capacitación operativa\nCosto: $18,000\nAhorro esperado de costos: $27,000\n\nC. Equipo adicional\nCosto: $29,000\nAhorro esperado de costos: $18,000\nIncremento esperado de ingresos: $14,000\n\n1. VOCABULARIO INICIAL\nDefine con tus propias palabras:\n- Ingreso\n- Costo fijo\n- Costo variable\n- Presupuesto\n- Utilidad\n- Flujo de efectivo\n\n2. RESULTADO BASE\nCalcula la utilidad estimada antes de elegir cualquier mejora:\nUtilidad estimada = Ingresos − Costos fijos − Costos variables\n\nMuestra tu operación y resultado.\n\n3. COMPARACIÓN DE ALTERNATIVAS\nCompleta la tabla:\n\nOpción | Costo de la opción | Incremento de ingresos | Ahorro esperado | Beneficio económico esperado simple | ¿Cabe en el presupuesto?\n\nUsa para esta preparación:\nBeneficio esperado simple = incremento de ingresos + ahorro esperado − costo de la opción\n\n4. DECISIÓN PRELIMINAR\nElige una opción y justifica tu decisión en 4–6 líneas. No se busca todavía una respuesta única; explica qué información financiera utilizaste.\n\n5. PREGUNTAS DE PREPARACIÓN\n- ¿Por qué una alternativa con mayor incremento de ingresos no necesariamente produce la mejor decisión financiera?\n- ¿Qué dos datos adicionales pedirías antes de autorizar la inversión?\n- ¿Qué diferencia observas entre “tener presupuesto para pagar una opción” y “que la opción sea financieramente conveniente”?\n\nEvidencia de entrega\nIncluye en esta misma copia:\n- seis definiciones breves;\n- cálculo de utilidad base;\n- tabla comparativa completa;\n- decisión preliminar justificada;\n- respuesta a las tres preguntas finales.\n\nCriterios de revisión\n- Conceptos básicos correctamente expresados: 25 puntos.\n- Cálculos y tabla comparativa: 30 puntos.\n- Decisión justificada con evidencia: 25 puntos.\n- Preguntas de preparación y claridad: 20 puntos.",
+        "fechaSiguienteSesion": "2026-10-21",
+        "horaInicioSiguienteSesion": "15:00",
+        "puntos": 100
+      }
+    }
+  ]
+}
