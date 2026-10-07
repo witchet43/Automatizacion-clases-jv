@@ -65,47 +65,69 @@
   "courses": {
     "sistemas-distribuidos": {
       "id": "871158466533",
-      "materia": "Sistemas Distribuidos"
+      "materia": "Sistemas Distribuidos",
+      "gammaFolderId": "fo_2538kazbe3ajvec",
+      "gammaFolderName": "UAQ - Sistemas Distribuidos"
     },
     "analisis-diseno-sistemas-computacionales": {
       "id": "871158479566",
-      "materia": "Análisis y Diseño de Sistemas Computacionales"
+      "materia": "Análisis y Diseño de Sistemas Computacionales",
+      "gammaFolderId": "fo_1hj2ia8k72bkc44",
+      "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales"
     },
     "analisis-y-diseno-de-sistemas-computacionales": {
       "id": "871158479566",
-      "materia": "Análisis y Diseño de Sistemas Computacionales"
+      "materia": "Análisis y Diseño de Sistemas Computacionales",
+      "gammaFolderId": "fo_1hj2ia8k72bkc44",
+      "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales"
     },
     "analisis-diseno-sistemas-informacion": {
       "id": "871158479566",
-      "materia": "Análisis y Diseño de Sistemas Computacionales"
+      "materia": "Análisis y Diseño de Sistemas Computacionales",
+      "gammaFolderId": "fo_1hj2ia8k72bkc44",
+      "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales"
     },
     "analisis-y-diseno-de-sistemas-de-informacion": {
       "id": "871158479566",
-      "materia": "Análisis y Diseño de Sistemas Computacionales"
+      "materia": "Análisis y Diseño de Sistemas Computacionales",
+      "gammaFolderId": "fo_1hj2ia8k72bkc44",
+      "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales"
     },
     "introduccion-tecnologias-informacion": {
       "id": "871156721160",
-      "materia": "Introducción a las Tecnologías de Información"
+      "materia": "Introducción a las Tecnologías de Información",
+      "gammaFolderId": "fo_w669f3b2oumuiuf",
+      "gammaFolderName": "UAQ - Introducción a las Tecnologías de Información"
     },
     "administracion": {
       "id": "871158187513",
-      "materia": "Administración"
+      "materia": "Administración",
+      "gammaFolderId": "fo_wjv2a486s6v5zmq",
+      "gammaFolderName": "UAQ - Administración"
     },
     "etica-legislacion-informatica": {
       "id": "871149624583",
-      "materia": "Ética y Legislación Informática"
+      "materia": "Ética y Legislación Informática",
+      "gammaFolderId": "fo_mkvfyu7wjyluhjq",
+      "gammaFolderName": "UAQ - Ética y Legislación Informática"
     },
     "algoritmos-estructuras-datos": {
       "id": "871156334717",
-      "materia": "Algoritmos y Estructuras de Datos"
+      "materia": "Algoritmos y Estructuras de Datos",
+      "gammaFolderId": "fo_wwpxeb1f3dghq31",
+      "gammaFolderName": "UAQ - Algoritmos y Estructuras de Datos"
     },
     "sistemas-operativos": {
       "id": "875776451793",
-      "materia": "Sistemas Operativos"
+      "materia": "Sistemas Operativos",
+      "gammaFolderId": "fo_oig9jvuoy9kbmdw",
+      "gammaFolderName": "ITQ - Sistemas Operativos"
     },
     "so": {
       "id": "875776451793",
-      "materia": "Sistemas Operativos"
+      "materia": "Sistemas Operativos",
+      "gammaFolderId": "fo_oig9jvuoy9kbmdw",
+      "gammaFolderName": "ITQ - Sistemas Operativos"
     }
   },
   "planningSources": {
@@ -292,7 +314,12 @@
     "currentDateRole": "NEVER_FOR_CLASS_IDENTITY_OR_SEQUENCE",
     "calendarRoleInClassGeneration": "NONE",
     "routeResolution": "MANIFEST_OPERATION_ONLY",
-    "workModeRole": "FORBIDDEN_FOR_CANONICAL_ACADEMIC_OPERATIONS"
+    "workModeRole": "FORBIDDEN_FOR_CANONICAL_ACADEMIC_OPERATIONS",
+    "gammaFolderRequired": true,
+    "gammaFolderResolutionSource": "MANIFEST_COURSE",
+    "gammaFolderMustBeResolvedBeforeGeneration": true,
+    "gammaFolderPostflightRequired": true,
+    "gammaCreationMustPassFolderIds": true
   },
   "startup": {
     "read": [
@@ -303,7 +330,7 @@
     ],
     "onMissingOrMismatch": "BLOCK_BEFORE_SIDE_EFFECTS",
     "classSequence": "Use canonical planning order plus real prepared Classroom resources and verified Gamma only to identify the first incomplete package. DRAFT + verified Gamma counts as prepared, not taught. Current/system date and Calendar never participate. Explicit session/tema remains authoritative when supplied.",
-    "execution": "Identify canonical target → design required academic resources → materialize/reuse Google resources through Academic Web App → postflight real resource IDs/URLs → generate/verify Gamma last, explicitly referencing those verified resources → record all real IDs/URLs and states in target planning."
+    "execution": "Identify canonical target → design required academic resources → materialize/reuse Google resources through Academic Web App → postflight real resource IDs/URLs → resolve canonical Gamma folder from manifest BEFORE generation → generate Gamma with folderIds → verify title, content, resource references AND canonical folder → record all real IDs/URLs/states in target planning."
   },
   "code": {
     "guard": "src/00_AcademicContextGuard.gs",
