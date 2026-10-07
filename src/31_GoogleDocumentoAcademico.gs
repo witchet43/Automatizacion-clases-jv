@@ -91,10 +91,72 @@ function construirHtmlDocumentoAcademico_(titulo,descripcion,contenido){
   const parts=['<!doctype html><html><head><meta charset="utf-8"><title>'+
     escaparHtmlDocumentoAcademico_(titulo)+'</title></head><body>',
     '<h1>'+escaparHtmlDocumentoAcademico_(titulo)+'</h1>'];
-  if(descripcion)parts.push('<p>'+escaparHtmlDocumentoAcademico_(descripcion)+'</p>');
-  lines.forEach(function(line){parts.push('<p>'+escaparHtmlDocumentoAcademico_(line)+'</p>');});
+  if(descripcion&&!lines.length)parts.push('<p>'+escaparHtmlDocumentoAcademico_(descripcion)+'</p>');
+  if(lines.length)parts.push(renderizarLineasDocumentoAcademico_(titulo,lines));
   parts.push('</body></html>');
   return parts.join('');
+}
+
+function normalizarClaveFormatoDocumento_(value){
+  return String(value==null?'':value)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+}
+
+function esEncabezadoNivel2Documento_(line){
+  const k=normalizarClaveFormatoDocumento_(line);
+  return /^(proposito|objetivo|material previo principal|materiales|herramientas|reglas de seguridad|indicaciones|referencia rapida|ejemplos previos|fase de aplicacion en clase|resultados esperados|errores frecuentes|evidencia obligatoria|evidencia de entrega|producto de entrega|entregable|criterios de evaluacion|criterios de revision|pregunta de cierre|checklist de entrega|rubrica.*|guia de los comandos|criterios de clasificacion|casos|reglas)$/.test(k);
+}
+
+function esEncabezadoNivel3Documento_(line){
+  const s=String(line||'').trim();
+  return /^\d+\.\s+[A-ZÁÉÍÓÚÜÑ0-9][A-ZÁÉÍÓÚÜÑ0-9 /+().,:;_-]{3,}$/.test(s)||
+    /^(Ejercicio|Ejemplo|Parte)\s+[A-Z0-9]+\b/i.test(s);
+}
+
+function renderizarLineasDocumentoAcademico_(titulo,lines){
+  const titleKey=normalizarClaveFormatoDocumento_(titulo);
+  const out=[];
+  let listType='';
+  function closeList(){if(listType){out.push(listType==='ul'?'</ul>':'</ol>');listType='';}}
+  (lines||[]).forEach(function(raw){
+    const line=String(raw==null?'':raw).trim();
+    if(!line){closeList();return;}
+    const key=normalizarClaveFormatoDocumento_(line);
+    if(!key||key===titleKey||key==='indicaciones para el alumno'||key==='desarrollo')return;
+    if(esEncabezadoNivel2Documento_(line)){
+      closeList();out.push('<h2>'+escaparHtmlDocumentoAcademico_(line)+'</h2>');return;
+    }
+    if(esEncabezadoNivel3Documento_(line)){
+      closeList();out.push('<h3>'+escaparHtmlDocumentoAcademico_(line)+'</h3>');return;
+    }
+    const bullet=line.match(/^[-•]\s+(.+)$/);
+    if(bullet){
+      if(listType!=='ul'){closeList();out.push('<ul>');listType='ul';}
+      out.push('<li>'+escaparHtmlDocumentoAcademico_(bullet[1])+'</li>');return;
+    }
+    const numbered=line.match(/^\d+\.\s+(.+)$/);
+    if(numbered){
+      if(listType!=='ol'){closeList();out.push('<ol>');listType='ol';}
+      out.push('<li>'+escaparHtmlDocumentoAcademico_(numbered[1])+'</li>');return;
+    }
+    closeList();out.push('<p>'+escaparHtmlDocumentoAcademico_(line)+'</p>');
+  });
+  closeList();
+  return out.join('');
+}
+
+function validarFormatoHtmlDocumentoAcademico_(html,titulo){
+  const body=String(html||'');
+  if(!/<h1>[^<]+<\/h1>/i.test(body))throw new Error('BLOCKED_DOCUMENT_FORMAT: falta título H1 en '+String(titulo||'documento')+'.');
+  const flat=(body.match(/<p>([^<]{450,})<\/p>/gi)||[]).filter(function(p){
+    return /(DESARROLLO|EVIDENCIA DE ENTREGA|GUIA DE LOS COMANDOS|GUÍA DE LOS COMANDOS)/i.test(p);
+  });
+  if(flat.length)throw new Error('BLOCKED_DOCUMENT_FORMAT_FLAT_BLOCK: se detectó contenido académico estructurado dentro de un párrafo gigante.');
+  if(/<p>\s*(DESARROLLO|INDICACIONES PARA EL ALUMNO)\s*<\/p>/i.test(body)){
+    throw new Error('BLOCKED_DOCUMENT_FORMAT_REDUNDANT_HEADER: encabezado estructural quedó como párrafo plano.');
+  }
+  return true;
 }
 
 function normalizarContenidoDocumentoAcademico_(value){
