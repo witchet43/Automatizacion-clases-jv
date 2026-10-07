@@ -1,6 +1,4 @@
 {
-  "action": "diagnosticarClase",
-  "materia": "Algoritmos y Estructuras de Datos",
-  "soloClassroom": true,
-  "detalle": true
+  "action": "resolverClase",
+  "materia": "Introducción a las Tecnologías de Información"
 }
