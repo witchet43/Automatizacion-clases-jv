@@ -66,6 +66,18 @@ function normalizarYValidarEstructuraDocumentoAcademico_(documentId){
   const doc=DocumentApp.openById(id);
   const body=doc.getBody();
 
+  // Cada ejercicio académico debe iniciar en una página nueva.
+  for(let i=body.getNumChildren()-1;i>=0;i--){
+    const child=body.getChild(i);
+    if(child.getType()!==DocumentApp.ElementType.PARAGRAPH)continue;
+    const text=String(child.asParagraph().getText()||'').trim();
+    if(!/^Ejercicio\s+\d+\b/i.test(text))continue;
+    const prev=i>0?body.getChild(i-1):null;
+    if(!prev||prev.getType()!==DocumentApp.ElementType.PAGE_BREAK){
+      body.insertPageBreak(i);
+    }
+  }
+
   // Reparación segura: una tabla nunca debe heredar un marcador de lista vacío.
   for(let i=body.getNumChildren()-1;i>=1;i--){
     const child=body.getChild(i);
@@ -94,6 +106,16 @@ function normalizarYValidarEstructuraDocumentoAcademico_(documentId){
       if(prev.getType()===DocumentApp.ElementType.LIST_ITEM && !String(prev.asListItem().getText()||'').trim()){
         verify.saveAndClose();
         throw new Error('BLOCKED_DOCUMENT_ORPHAN_LIST_BEFORE_TABLE: una tabla quedó precedida por un marcador de lista vacío.');
+      }
+    }
+    if(child.getType()===DocumentApp.ElementType.PARAGRAPH){
+      const text=String(child.asParagraph().getText()||'').trim();
+      if(/^Ejercicio\s+\d+\b/i.test(text)){
+        const prev=i>0?verifyBody.getChild(i-1):null;
+        if(!prev||prev.getType()!==DocumentApp.ElementType.PAGE_BREAK){
+          verify.saveAndClose();
+          throw new Error('BLOCKED_DOCUMENT_EXERCISE_PAGE_BREAK: cada ejercicio debe iniciar en una página nueva.');
+        }
       }
     }
   }
