@@ -37,10 +37,24 @@
   ],
   "gamma": {
     "titleMustUseCanonicalTopicNumberAndName": true,
-    "forbiddenTitleMetadata": ["Clase", "Sesión", "fecha", "día", "horario", "aula"],
+    "forbiddenTitleMetadata": [
+      "Clase",
+      "Sesión",
+      "fecha",
+      "día",
+      "horario",
+      "aula"
+    ],
     "mustContinuePreviousTopic": true,
     "mustPrepareAssociatedActivity": true,
-    "mustNotReplaceFullClassPackage": true
+    "mustNotReplaceFullClassPackage": true,
+    "canonicalTitleSource": "subjects.<materia>.canonicalSequence",
+    "canonicalTitleFormat": "<número oficial> - <nombre oficial>",
+    "requireExactTitleBeforeGeneration": true,
+    "requireExactTitlePostflight": true,
+    "blockRegistrationOnTitleMismatch": true,
+    "repairExistingGammaInsteadOfRegenerate": true,
+    "titleMustNotAppendSubjectName": true
   },
   "subjects": {
     "Sistemas Operativos": {
