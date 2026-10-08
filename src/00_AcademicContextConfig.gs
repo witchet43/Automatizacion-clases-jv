@@ -1,6 +1,6 @@
 // Generated from config/academic-context.json. Do not edit.
 const ACADEMIC_CONTEXT_CONFIG = {
-  "manifestSha256": "8084bc47b0274922b8386fc1d9d5e9c3008d5b8fe453bd063a64d67f2c34a42f",
+  "manifestSha256": "5ac28821eef7b9d5552a82ccbf00814f70e4507da9449445128b64ed6315f698",
   "schemaVersion": 1,
   "contractVersion": "1.1.0",
   "repository": "witchet43/Automatizacion-clases-jv",
@@ -142,16 +142,16 @@ const ACADEMIC_CONTEXT_CONFIG = {
       "materia": "Sistemas Operativos",
       "gammaFolderId": "fo_oig9jvuoy9kbmdw",
       "gammaFolderName": "ITQ - Sistemas Operativos",
-      "gammaThemeId": "default-light",
-      "gammaThemeName": "Basic Light"
+      "gammaThemeMode": "PROVIDER_DEFAULT",
+      "gammaThemeConstraint": "GAMMA_GENERATE_REJECTS_THEME_ID"
     },
     "so": {
       "id": "875776451793",
       "materia": "Sistemas Operativos",
       "gammaFolderId": "fo_oig9jvuoy9kbmdw",
       "gammaFolderName": "ITQ - Sistemas Operativos",
-      "gammaThemeId": "default-light",
-      "gammaThemeName": "Basic Light"
+      "gammaThemeMode": "PROVIDER_DEFAULT",
+      "gammaThemeConstraint": "GAMMA_GENERATE_REJECTS_THEME_ID"
     }
   },
   "planningSources": {
@@ -359,7 +359,10 @@ const ACADEMIC_CONTEXT_CONFIG = {
     "academicDocumentHeadingHierarchy": "H1_H2_H3",
     "academicDocumentNativeListsRequired": true,
     "academicDocumentFlatStructuredParagraphsForbidden": true,
-    "academicDocumentDuplicateStructuralHeadersForbidden": true
+    "academicDocumentDuplicateStructuralHeadersForbidden": true,
+    "gammaThemeModeResolutionSource": "MANIFEST_COURSE",
+    "gammaThemeProviderDefaultAllowedWhenCourseModeProviderDefault": true,
+    "gammaThemePostflightRequiredForExplicitThemeOnly": true
   },
   "startup": {
     "read": [
