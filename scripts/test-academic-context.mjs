@@ -3,6 +3,17 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import {bundle,bundlePath,prepareRequest,readContext} from './academic-context.mjs';
 assert.equal(fs.readFileSync(bundlePath,'utf8'),bundle());
+
+// Gamma canonical naming is machine-checked to prevent ad-hoc titles.
+const masterRules=JSON.parse(fs.readFileSync('config/master-rules.json','utf8'));
+assert.equal(masterRules.gamma.titleMustUseCanonicalTopicNumberAndName,true);
+assert.equal(masterRules.gamma.canonicalTitleSource,'subjects.<materia>.canonicalSequence');
+assert.equal(masterRules.gamma.canonicalTitleFormat,'<número oficial> - <nombre oficial>');
+assert.equal(masterRules.gamma.requireExactTitleBeforeGeneration,true);
+assert.equal(masterRules.gamma.requireExactTitlePostflight,true);
+assert.equal(masterRules.gamma.blockRegistrationOnTitleMismatch,true);
+assert.equal(masterRules.gamma.repairExistingGammaInsteadOfRegenerate,true);
+assert.equal(masterRules.gamma.titleMustNotAppendSubjectName,true);
 const {manifest}=readContext();
 let calls=[];
 const ctx=vm.createContext({
