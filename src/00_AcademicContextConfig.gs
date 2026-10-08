@@ -1,6 +1,6 @@
 // Generated from config/academic-context.json. Do not edit.
 const ACADEMIC_CONTEXT_CONFIG = {
-  "manifestSha256": "f25061b6eb253c17f8d79061670dad690d9c52ae544cb0331c2a34ffee60ce79",
+  "manifestSha256": "8084bc47b0274922b8386fc1d9d5e9c3008d5b8fe453bd063a64d67f2c34a42f",
   "schemaVersion": 1,
   "contractVersion": "1.1.0",
   "repository": "witchet43/Automatizacion-clases-jv",
@@ -141,13 +141,17 @@ const ACADEMIC_CONTEXT_CONFIG = {
       "id": "875776451793",
       "materia": "Sistemas Operativos",
       "gammaFolderId": "fo_oig9jvuoy9kbmdw",
-      "gammaFolderName": "ITQ - Sistemas Operativos"
+      "gammaFolderName": "ITQ - Sistemas Operativos",
+      "gammaThemeId": "default-light",
+      "gammaThemeName": "Basic Light"
     },
     "so": {
       "id": "875776451793",
       "materia": "Sistemas Operativos",
       "gammaFolderId": "fo_oig9jvuoy9kbmdw",
-      "gammaFolderName": "ITQ - Sistemas Operativos"
+      "gammaFolderName": "ITQ - Sistemas Operativos",
+      "gammaThemeId": "default-light",
+      "gammaThemeName": "Basic Light"
     }
   },
   "planningSources": {
