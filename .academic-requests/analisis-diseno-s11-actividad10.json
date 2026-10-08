@@ -1,0 +1,16 @@
+{
+  "action": "actividad",
+  "courseId": "871158479566",
+  "params": {
+    "sesionCanonica": 11,
+    "explicitSequenceOverride": true,
+    "backfillDraft": true,
+    "unidad": "3",
+    "topicName": "Unidad 3",
+    "temaSubtema": "Panorama de metodologías para el diseño de SI",
+    "titulo": "Actividad 10 - Selección de enfoque metodológico",
+    "descripcion": "INDICACIONES PARA EL ALUMNO\n\nAbre tu copia personal del Google Documento adjunto y desarrolla la Ficha 11. Compara enfoques metodológicos, representa visualmente sus diferencias y justifica una decisión preliminar aplicable al proyecto del equipo.",
+    "documentId": "1ufu8e7brceQrMi7y1X1Y-Ss7V9uWfJYJLQBOV8XpT7A",
+    "puntos": 100
+  }
+}
