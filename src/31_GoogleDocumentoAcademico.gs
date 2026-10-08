@@ -186,10 +186,15 @@ function renderizarLineasDocumentoAcademico_(titulo,lines){
       if(listType!=='ul'){closeList();out.push('<ul>');listType='ul';}
       out.push('<li>'+escaparHtmlDocumentoAcademico_(bullet[1])+'</li>');i++;continue;
     }
-    const numbered=line.match(/^\d+\.\s+(.+)$/);
+    const numbered=line.match(/^(\d+)\.\s+(.+)$/);
     if(numbered){
-      if(listType!=='ol'){closeList();out.push('<ol>');listType='ol';}
-      out.push('<li>'+escaparHtmlDocumentoAcademico_(numbered[1])+'</li>');i++;continue;
+      const explicitNumber=Math.max(1,Number(numbered[1])||1);
+      if(listType!=='ol'){
+        closeList();
+        out.push('<ol'+(explicitNumber!==1?' start="'+explicitNumber+'"':'')+'>');
+        listType='ol';
+      }
+      out.push('<li>'+escaparHtmlDocumentoAcademico_(numbered[2])+'</li>');i++;continue;
     }
     closeList();out.push('<p>'+escaparHtmlDocumentoAcademico_(line)+'</p>');
     i++;
