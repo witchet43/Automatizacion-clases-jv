@@ -114,34 +114,86 @@ function esEncabezadoNivel3Documento_(line){
     /^(Ejercicio|Ejemplo|Parte)\s+[A-Z0-9]+\b/i.test(s);
 }
 
+function esFilaTablaPipeDocumento_(line){
+  const s=String(line==null?'':line).trim();
+  if(!/^\|.*\|$/.test(s))return false;
+  const cells=s.slice(1,-1).split('|').map(function(x){return String(x).trim();});
+  return cells.length>=2&&cells.some(function(x){return x!=='';});
+}
+
+function parsearFilaTablaPipeDocumento_(line){
+  return String(line==null?'':line).trim().slice(1,-1).split('|').map(function(x){return String(x).trim();});
+}
+
+function esSeparadorMarkdownTablaDocumento_(cells){
+  return Array.isArray(cells)&&cells.length>0&&cells.every(function(x){
+    return /^:?-{3,}:?$/.test(String(x||'').trim());
+  });
+}
+
+function renderizarTablaPipeDocumento_(rows){
+  const parsed=(rows||[]).map(parsearFilaTablaPipeDocumento_).filter(function(c){return !esSeparadorMarkdownTablaDocumento_(c);});
+  if(parsed.length<2)return '';
+  const cols=parsed[0].length;
+  if(cols<2||parsed.some(function(r){return r.length!==cols;}))return '';
+  const out=['<table border="1"><thead><tr>'];
+  parsed[0].forEach(function(cell){out.push('<th>'+escaparHtmlDocumentoAcademico_(cell)+'</th>');});
+  out.push('</tr></thead><tbody>');
+  parsed.slice(1).forEach(function(row){
+    out.push('<tr>');
+    row.forEach(function(cell){out.push('<td>'+escaparHtmlDocumentoAcademico_(cell)+'</td>');});
+    out.push('</tr>');
+  });
+  out.push('</tbody></table>');
+  return out.join('');
+}
+
 function renderizarLineasDocumentoAcademico_(titulo,lines){
   const titleKey=normalizarClaveFormatoDocumento_(titulo);
   const out=[];
   let listType='';
   function closeList(){if(listType){out.push(listType==='ul'?'</ul>':'</ol>');listType='';}}
-  (lines||[]).forEach(function(raw){
+  let i=0;
+  while(i<(lines||[]).length){
+    const raw=lines[i];
     const line=String(raw==null?'':raw).trim();
-    if(!line){closeList();return;}
+    if(!line){closeList();i++;continue;}
+    if(esFilaTablaPipeDocumento_(line)){
+      const tableLines=[];
+      let j=i;
+      while(j<lines.length&&esFilaTablaPipeDocumento_(String(lines[j]==null?'':lines[j]).trim())){
+        tableLines.push(String(lines[j]).trim());
+        j++;
+      }
+      const tableHtml=renderizarTablaPipeDocumento_(tableLines);
+      if(tableHtml){
+        closeList();
+        out.push(tableHtml);
+        i=j;
+        continue;
+      }
+    }
     const key=normalizarClaveFormatoDocumento_(line);
-    if(!key||key===titleKey||key==='indicaciones para el alumno'||key==='desarrollo')return;
+    if(!key||key===titleKey||key==='indicaciones para el alumno'||key==='desarrollo'){i++;continue;}
     if(esEncabezadoNivel2Documento_(line)){
-      closeList();out.push('<h2>'+escaparHtmlDocumentoAcademico_(line)+'</h2>');return;
+      closeList();out.push('<h2>'+escaparHtmlDocumentoAcademico_(line)+'</h2>');i++;continue;
     }
     if(esEncabezadoNivel3Documento_(line)){
-      closeList();out.push('<h3>'+escaparHtmlDocumentoAcademico_(line)+'</h3>');return;
+      closeList();out.push('<h3>'+escaparHtmlDocumentoAcademico_(line)+'</h3>');i++;continue;
     }
     const bullet=line.match(/^[-•]\s+(.+)$/);
     if(bullet){
       if(listType!=='ul'){closeList();out.push('<ul>');listType='ul';}
-      out.push('<li>'+escaparHtmlDocumentoAcademico_(bullet[1])+'</li>');return;
+      out.push('<li>'+escaparHtmlDocumentoAcademico_(bullet[1])+'</li>');i++;continue;
     }
     const numbered=line.match(/^\d+\.\s+(.+)$/);
     if(numbered){
       if(listType!=='ol'){closeList();out.push('<ol>');listType='ol';}
-      out.push('<li>'+escaparHtmlDocumentoAcademico_(numbered[1])+'</li>');return;
+      out.push('<li>'+escaparHtmlDocumentoAcademico_(numbered[1])+'</li>');i++;continue;
     }
     closeList();out.push('<p>'+escaparHtmlDocumentoAcademico_(line)+'</p>');
-  });
+    i++;
+  }
   closeList();
   return out.join('');
 }
@@ -155,6 +207,9 @@ function validarFormatoHtmlDocumentoAcademico_(html,titulo){
   if(flat.length)throw new Error('BLOCKED_DOCUMENT_FORMAT_FLAT_BLOCK: se detectó contenido académico estructurado dentro de un párrafo gigante.');
   if(/<p>\s*(DESARROLLO|INDICACIONES PARA EL ALUMNO)\s*<\/p>/i.test(body)){
     throw new Error('BLOCKED_DOCUMENT_FORMAT_REDUNDANT_HEADER: encabezado estructural quedó como párrafo plano.');
+  }
+  if(/<p>\s*\|[^<\n]+\|\s*<\/p>/i.test(body)){
+    throw new Error('BLOCKED_DOCUMENT_FORMAT_PIPE_TABLE: una estructura tabular quedó como texto con pipes en lugar de tabla nativa.');
   }
   return true;
 }
