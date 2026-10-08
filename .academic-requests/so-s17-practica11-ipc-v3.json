@@ -1,0 +1,25 @@
+{
+  "action": "clase",
+  "materia": "Sistemas Operativos",
+  "sesion": "17",
+  "expectedResourceTypes": [
+    "practica"
+  ],
+  "resources": [
+    {
+      "type": "practica",
+      "params": {
+        "sesionCanonica": 17,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "unidad": "Unidad 2",
+        "topicName": "Unidad 2",
+        "temaSubtema": "Comunicación entre procesos (IPC)",
+        "titulo": "Práctica 11 - Comunicación entre procesos (IPC) con named pipes",
+        "descripcion": "Implementa comunicación entre dos procesos en Windows 10/11 mediante un named pipe con PowerShell y .NET. Trabaja en tu copia individual, documenta emisor, receptor, canal IPC, mensajes enviados/recibidos y reflexiones.",
+        "contenidoDocumento": "PRÁCTICA 11 — COMUNICACIÓN ENTRE PROCESOS (IPC) CON NAMED PIPES\n\nUnidad 2 · Comunicación entre procesos (IPC)\n\nPropósito\nImplementar comunicación entre dos procesos en Windows 10/11 mediante un named pipe y explicar qué elementos participan en el intercambio.\n\nRequisitos\n- Windows 10/11.\n- PowerShell 5.1 o PowerShell 7.\n- Dos ventanas de PowerShell con permisos normales.\n- Equipo propio o laboratorio autorizado.\n\n1. CONCEPTOS PREVIOS\nResponde con tus propias palabras:\n- ¿Qué problema resuelve IPC?\n- ¿Qué es un named pipe?\n- ¿Qué diferencia hay entre proceso emisor y receptor?\n- ¿Qué dato identifica el canal de comunicación?\n\n2. PROCESO RECEPTOR\nFunción del bloque: crear el extremo servidor del pipe, esperar una conexión, leer una línea de texto y mostrarla.\nParámetros importantes: $pipeName define el nombre compartido; PipeDirection::In indica recepción; WaitForConnection() mantiene al proceso esperando hasta que exista un emisor.\nLectura del resultado: si aparece “Esperando conexión...”, el receptor está listo. Cuando llegue un mensaje debe mostrarse “Mensaje recibido: ...”.\n\nEjecuta en la primera ventana:\n$pipeName = 'SO_IPC_Clase'\n$server = [System.IO.Pipes.NamedPipeServerStream]::new($pipeName,[System.IO.Pipes.PipeDirection]::In)\nWrite-Host 'Esperando conexión...'\n$server.WaitForConnection()\n$reader = [System.IO.StreamReader]::new($server)\n$mensaje = $reader.ReadLine()\nWrite-Host \"Mensaje recibido: $mensaje\"\n$reader.Dispose()\n$server.Dispose()\n\nCaptura evidencia del receptor esperando conexión.\n\n3. PROCESO EMISOR\nFunción del bloque: conectarse al named pipe creado por el receptor y enviar una línea de texto.\nParámetros importantes: '.' representa el equipo local; $pipeName debe coincidir con el receptor; PipeDirection::Out indica envío.\nLectura del resultado: si Connect() termina sin error, el cliente encontró el pipe. El receptor debe mostrar el mismo texto enviado.\n\nEjecuta en la segunda ventana:\n$pipeName = 'SO_IPC_Clase'\n$client = [System.IO.Pipes.NamedPipeClientStream]::new('.', $pipeName,[System.IO.Pipes.PipeDirection]::Out)\n$client.Connect()\n$writer = [System.IO.StreamWriter]::new($client)\n$writer.AutoFlush = $true\n$writer.WriteLine('Hola desde el proceso emisor')\n$writer.Dispose()\n$client.Dispose()\n\nCaptura evidencia del envío.\n\n4. VERIFICAR RECEPCIÓN\nRegresa al receptor y comprueba que aparezca:\nMensaje recibido: Hola desde el proceso emisor\n\nInserta una captura legible.\n\n5. SEGUNDO INTERCAMBIO\nRepite el procedimiento con un mensaje propio diferente. Registra:\n- mensaje enviado;\n- mensaje recibido;\n- orden en que iniciaste receptor y emisor;\n- qué observaste si intentaste conectar sin receptor disponible.\n\n6. MAPA DEL IPC\nCompleta:\nElemento | En esta práctica | Función\nProceso receptor | | \nProceso emisor | | \nCanal IPC | | \nNombre del pipe | | \nDato transferido | | \nClases .NET utilizadas | | \n\n7. DIAGRAMA\nRepresenta:\nProceso emisor → Named Pipe → Proceso receptor\nIncluye nombre del pipe y mensaje transferido.\n\n8. REFLEXIÓN\n1. ¿Por qué los procesos pueden comunicarse sin compartir directamente las mismas variables?\n2. ¿Qué ventaja ofrece que el sistema operativo proporcione mecanismos IPC?\n3. ¿Qué diferencia conceptual existe entre comunicar procesos mediante un pipe y compartir memoria?\n\nEvidencia de entrega\n- Respuestas previas.\n- Código de receptor y emisor.\n- Captura del receptor esperando.\n- Captura del mensaje recibido.\n- Segundo intercambio documentado.\n- Tabla IPC.\n- Diagrama.\n- Tres reflexiones.\n\nCriterios de revisión\n- Ejecución correcta: 30 puntos.\n- Evidencia de envío/recepción: 25 puntos.\n- Identificación de elementos IPC: 20 puntos.\n- Diagrama: 10 puntos.\n- Reflexión conceptual: 15 puntos.",
+        "puntos": 100
+      }
+    }
+  ]
+}
