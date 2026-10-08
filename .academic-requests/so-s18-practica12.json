@@ -1,0 +1,17 @@
+{
+  "action": "practica",
+  "courseId": "875776451793",
+  "materia": "Sistemas Operativos",
+  "params": {
+    "sesionCanonica": 18,
+    "explicitSequenceOverride": true,
+    "backfillDraft": true,
+    "unidad": "Unidad 2",
+    "topicName": "Unidad 2",
+    "temaSubtema": "Concurrencia y condiciones de carrera",
+    "titulo": "Práctica 12 - Condición de carrera con contador compartido",
+    "descripcion": "Provoca y observa una condición de carrera en Windows 10/11 mediante varias tareas que modifican un contador compartido sin sincronización. Registra resultados y analiza por qué pueden variar.",
+    "contenidoDocumento": "PRÁCTICA 12 — CONDICIÓN DE CARRERA CON CONTADOR COMPARTIDO\n\nUnidad 2 · Tema 2.10 - Concurrencia y condiciones de carrera\n\nPropósito\nObservar una condición de carrera mediante varias tareas que modifican un contador compartido sin sincronización.\n\nEjercicio 1 — Referencia secuencial\n1. Implementa un contador de referencia de forma secuencial.\n2. Realiza 800000 incrementos.\n3. Registra el resultado final.\n4. Explica por qué el resultado debe ser determinista.\n\nEjercicio 2 — Acceso concurrente\n1. Implementa 8 tareas que compartan una misma variable contador.\n2. Haz que cada tarea realice 100000 incrementos sobre esa variable.\n3. Ejecuta el experimento cinco veces sin mutex, semáforo ni lock.\n4. Calcula el valor esperado si no se perdiera ningún incremento.\n5. Registra para cada ejecución el valor esperado, valor obtenido y diferencia.\n6. Compara los cinco resultados.\n\nResultados\n- Ejecución 1: esperado / obtenido / diferencia.\n- Ejecución 2: esperado / obtenido / diferencia.\n- Ejecución 3: esperado / obtenido / diferencia.\n- Ejecución 4: esperado / obtenido / diferencia.\n- Ejecución 5: esperado / obtenido / diferencia.\n\nAnálisis\n1. Identifica el dato compartido.\n2. Identifica la sección crítica.\n3. Explica por qué pueden perderse actualizaciones.\n4. Explica por qué distintas ejecuciones pueden producir resultados distintos.\n5. Relaciona el comportamiento con interleaving y atomicidad.\n\nEvidencia de entrega\n- Código utilizado.\n- Resultado secuencial.\n- Resultados de cinco ejecuciones concurrentes.\n- Registro comparativo de resultados.\n- Cinco respuestas de análisis.\n\nCriterios de revisión\n- Ejecución correcta: 30 puntos.\n- Evidencia de resultados: 25 puntos.\n- Identificación de sección crítica: 20 puntos.\n- Explicación de race condition, interleaving y atomicidad: 25 puntos.",
+    "puntos": 100
+  }
+}
