@@ -140,16 +140,18 @@
       "materia": "Sistemas Operativos",
       "gammaFolderId": "fo_oig9jvuoy9kbmdw",
       "gammaFolderName": "ITQ - Sistemas Operativos",
-      "gammaThemeMode": "PROVIDER_DEFAULT",
-      "gammaThemeConstraint": "GAMMA_GENERATE_REJECTS_THEME_ID"
+      "gammaThemeId": "bfm8ztqy1whsib8",
+      "gammaThemeName": "UAQ",
+      "gammaThemePolicy": "REQUIRED_EXACT_NO_FALLBACK"
     },
     "so": {
       "id": "875776451793",
       "materia": "Sistemas Operativos",
       "gammaFolderId": "fo_oig9jvuoy9kbmdw",
       "gammaFolderName": "ITQ - Sistemas Operativos",
-      "gammaThemeMode": "PROVIDER_DEFAULT",
-      "gammaThemeConstraint": "GAMMA_GENERATE_REJECTS_THEME_ID"
+      "gammaThemeId": "bfm8ztqy1whsib8",
+      "gammaThemeName": "UAQ",
+      "gammaThemePolicy": "REQUIRED_EXACT_NO_FALLBACK"
     }
   },
   "planningSources": {
@@ -358,9 +360,8 @@
     "academicDocumentNativeListsRequired": true,
     "academicDocumentFlatStructuredParagraphsForbidden": true,
     "academicDocumentDuplicateStructuralHeadersForbidden": true,
-    "gammaThemeModeResolutionSource": "MANIFEST_COURSE",
-    "gammaThemeProviderDefaultAllowedWhenCourseModeProviderDefault": true,
-    "gammaThemePostflightRequiredForExplicitThemeOnly": true
+    "gammaThemeFallbackAllowed": false,
+    "gammaThemeUnsupportedBehavior": "BLOCK_BEFORE_GENERATION_NO_CREDITS"
   },
   "startup": {
     "read": [
