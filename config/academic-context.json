@@ -140,16 +140,16 @@
       "materia": "Sistemas Operativos",
       "gammaFolderId": "fo_oig9jvuoy9kbmdw",
       "gammaFolderName": "ITQ - Sistemas Operativos",
-      "gammaThemeId": "default-light",
-      "gammaThemeName": "Basic Light"
+      "gammaThemeMode": "PROVIDER_DEFAULT",
+      "gammaThemeConstraint": "GAMMA_GENERATE_REJECTS_THEME_ID"
     },
     "so": {
       "id": "875776451793",
       "materia": "Sistemas Operativos",
       "gammaFolderId": "fo_oig9jvuoy9kbmdw",
       "gammaFolderName": "ITQ - Sistemas Operativos",
-      "gammaThemeId": "default-light",
-      "gammaThemeName": "Basic Light"
+      "gammaThemeMode": "PROVIDER_DEFAULT",
+      "gammaThemeConstraint": "GAMMA_GENERATE_REJECTS_THEME_ID"
     }
   },
   "planningSources": {
@@ -357,7 +357,10 @@
     "academicDocumentHeadingHierarchy": "H1_H2_H3",
     "academicDocumentNativeListsRequired": true,
     "academicDocumentFlatStructuredParagraphsForbidden": true,
-    "academicDocumentDuplicateStructuralHeadersForbidden": true
+    "academicDocumentDuplicateStructuralHeadersForbidden": true,
+    "gammaThemeModeResolutionSource": "MANIFEST_COURSE",
+    "gammaThemeProviderDefaultAllowedWhenCourseModeProviderDefault": true,
+    "gammaThemePostflightRequiredForExplicitThemeOnly": true
   },
   "startup": {
     "read": [
