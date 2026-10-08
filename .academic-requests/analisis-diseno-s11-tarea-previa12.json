@@ -1,0 +1,16 @@
+{
+  "action": "tarea",
+  "courseId": "871158479566",
+  "params": {
+    "sesionCanonica": 12,
+    "explicitSequenceOverride": true,
+    "backfillDraft": true,
+    "unidad": "3",
+    "topicName": "Unidad 3",
+    "temaSubtema": "Ciclo de vida y etapas metodológicas del desarrollo de SI",
+    "titulo": "Tarea previa 12 - Ciclo de vida y etapas metodológicas del desarrollo de SI",
+    "descripcion": "Prepárate para el tema 3.2 sobre ciclo de vida y etapas metodológicas del desarrollo de Sistemas de Información.\n1. Revisa qué significa SDLC y cuáles son sus fases principales.\n2. Identifica qué producto o resultado verificable debería existir al terminar cada fase.\n3. Revisa los cuatro valores del Manifiesto Ágil.\n4. Elabora un esquema visual propio del ciclo de vida con etapas, productos y responsables.\n5. Agrega al menos dos bucles de retroalimentación entre etapas.\n6. Explica brevemente qué cambia cuando el desarrollo es iterativo en lugar de estrictamente secuencial.\nEvidencia: Esquema visual del ciclo de vida acompañado de una explicación breve.",
+    "contenidoDocumento": "TAREA PREVIA 12 — CICLO DE VIDA Y ETAPAS METODOLÓGICAS DEL DESARROLLO DE SI\n\nUnidad 3 · Tema 3.2 Ciclo de vida y etapas metodológicas del desarrollo de SI\n\nPROPÓSITO\nPreparar los conceptos necesarios para modelar el ciclo de vida de un Sistema de Información como un conjunto de etapas relacionadas, productos verificables y bucles de retroalimentación.\n\nMATERIAL PRINCIPAL\nIBM — What is the software development lifecycle (SDLC)?\n\nMATERIAL COMPLEMENTARIO\nManifesto for Agile Software Development, versión en español.\n\nDESARROLLO\n1. Revisa qué significa SDLC y cuáles son sus fases principales.\n2. Identifica qué producto o resultado verificable debería existir al terminar cada fase.\n3. Revisa los cuatro valores del Manifiesto Ágil.\n4. Elabora un esquema visual propio del ciclo de vida. Puede ser flujo, ciclo o mapa de etapas.\n5. Para cada etapa incluye nombre de la etapa, producto o evidencia esperada, actor o rol principalmente responsable y relación con la etapa anterior y la siguiente.\n6. Agrega al menos dos flechas de retroalimentación que muestren cuándo sería necesario regresar a una etapa previa.\n7. Cierra con una explicación breve de qué cambia cuando el desarrollo se realiza de manera iterativa en lugar de estrictamente secuencial.\n\nPRODUCTO DE ENTREGA\nUn esquema visual del ciclo de vida acompañado de una explicación breve. El esquema debe permitir identificar etapas, productos, responsables y retroalimentación.\n\nCRITERIOS DE REVISIÓN\n- Identificación adecuada de las etapas: 25 puntos.\n- Productos o evidencias por etapa: 25 puntos.\n- Relaciones y retroalimentación representadas correctamente: 25 puntos.\n- Relación con los valores ágiles y explicación de iteración: 15 puntos.\n- Claridad visual y redacción propia: 10 puntos.",
+    "puntos": 100
+  }
+}
