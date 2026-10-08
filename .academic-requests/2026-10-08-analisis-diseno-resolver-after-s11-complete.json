@@ -1,0 +1,10 @@
+{
+  "action": "resolverClase",
+  "materia": "Análisis y Diseño de Sistemas de Información",
+  "options": {
+    "includePlanning": true,
+    "includeClassroom": true,
+    "includeGamma": true,
+    "gapAudit": true
+  }
+}
