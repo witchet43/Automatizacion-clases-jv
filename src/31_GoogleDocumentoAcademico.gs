@@ -89,7 +89,18 @@ function crearGoogleDocumentoAcademicoViaRest_(titulo,html,targetMime,folderId){
 function construirHtmlDocumentoAcademico_(titulo,descripcion,contenido){
   const lines=normalizarContenidoDocumentoAcademico_(contenido);
   const parts=['<!doctype html><html><head><meta charset="utf-8"><title>'+
-    escaparHtmlDocumentoAcademico_(titulo)+'</title></head><body>',
+    escaparHtmlDocumentoAcademico_(titulo)+'</title>'+
+    '<style>'+
+    'body{font-family:Arial,sans-serif;line-height:1.15;}'+
+    'h1{margin:0 0 12pt 0;}'+
+    'h2{margin:14pt 0 8pt 0;}'+
+    'h3{margin:12pt 0 6pt 0;}'+
+    'p{margin:0 0 7pt 0;}'+
+    'ul,ol{margin-top:4pt;margin-bottom:9pt;}'+
+    'li{margin-bottom:3pt;}'+
+    'table{margin-top:8pt;margin-bottom:10pt;border-collapse:collapse;}'+
+    'th,td{padding:5pt;}'+
+    '</style></head><body>',
     '<h1>'+escaparHtmlDocumentoAcademico_(titulo)+'</h1>'];
   if(descripcion&&!lines.length)parts.push('<p>'+escaparHtmlDocumentoAcademico_(descripcion)+'</p>');
   if(lines.length)parts.push(renderizarLineasDocumentoAcademico_(titulo,lines));
@@ -105,13 +116,14 @@ function normalizarClaveFormatoDocumento_(value){
 
 function esEncabezadoNivel2Documento_(line){
   const k=normalizarClaveFormatoDocumento_(line);
-  return /^(proposito|objetivo|material previo principal|materiales|herramientas|reglas de seguridad|indicaciones|referencia rapida|ejemplos previos|fase de aplicacion en clase|resultados esperados|errores frecuentes|evidencia obligatoria|evidencia de entrega|producto de entrega|entregable|criterios de evaluacion|criterios de revision|pregunta de cierre|checklist de entrega|rubrica.*|guia de los comandos|criterios de clasificacion|casos|reglas)$/.test(k);
+  return /^(proposito|objetivo|recordatorio|material previo principal|materiales|herramientas|reglas de seguridad|indicaciones|referencia rapida|ejemplos previos|fase de aplicacion en clase|resultados esperados|errores frecuentes|evidencia obligatoria|evidencia de entrega|producto de entrega|entregable|criterios de evaluacion|criterios de revision|pregunta de cierre|checklist de entrega|rubrica.*|guia de los comandos|criterios de clasificacion|casos|reglas)$/.test(k);
 }
 
 function esEncabezadoNivel3Documento_(line){
   const s=String(line||'').trim();
   return /^\d+\.\s+[A-ZÁÉÍÓÚÜÑ0-9][A-ZÁÉÍÓÚÜÑ0-9 /+().,:;_-]{3,}$/.test(s)||
-    /^(Ejercicio|Ejemplo|Parte)\s+[A-Z0-9]+\b/i.test(s);
+    /^(Ejercicio|Ejemplo|Parte)\s+[A-Z0-9]+\b/i.test(s)||
+    /^(Datos|Instrucciones)\s+del\s+ejercicio\s+\d+$/i.test(s);
 }
 
 function esFilaTablaPipeDocumento_(line){
