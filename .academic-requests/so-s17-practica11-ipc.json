@@ -1,0 +1,25 @@
+{
+  "action": "clase",
+  "materia": "Sistemas Operativos",
+  "sesion": "17",
+  "expectedResourceTypes": [
+    "practica"
+  ],
+  "resources": [
+    {
+      "type": "practica",
+      "params": {
+        "sesionCanonica": 17,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "unidad": "Unidad 2",
+        "topicName": "Unidad 2",
+        "temaSubtema": "Comunicación entre procesos (IPC)",
+        "titulo": "Práctica 11 - Comunicación entre procesos (IPC) con named pipes",
+        "descripcion": "Propósito: implementar y observar comunicación entre dos procesos en Windows 10/11 mediante un named pipe usando PowerShell y .NET, diferenciando emisor, receptor, canal IPC y evidencia del intercambio.\n\nTrabaja directamente en tu copia individual del Google Documento. Ejecuta únicamente los comandos incluidos en la práctica sobre tu propio equipo o el entorno de laboratorio autorizado. Registra el código utilizado, las salidas obtenidas y las capturas solicitadas.\n\nEvidencia: código del proceso receptor, código del proceso emisor, captura del mensaje recibido, identificación de los elementos del mecanismo IPC y respuestas de reflexión.",
+        "contenidoDocumento": "PRÁCTICA 11 — COMUNICACIÓN ENTRE PROCESOS (IPC) CON NAMED PIPES\n\nUnidad 2 · Comunicación entre procesos (IPC)\n\nPropósito\nImplementar comunicación entre dos procesos en Windows 10/11 mediante un named pipe y explicar qué elementos participan en el intercambio.\n\nRequisitos\n- Windows 10/11.\n- PowerShell 5.1 o PowerShell 7.\n- Dos ventanas de PowerShell abiertas con permisos normales.\n- Trabajar únicamente en el equipo propio o del laboratorio autorizado.\n\n1. IDENTIFICAR EL MECANISMO IPC\nAntes de ejecutar código, responde con tus propias palabras:\n- ¿Qué problema resuelve IPC?\n- ¿Qué es un named pipe?\n- ¿Qué diferencia hay entre el proceso emisor y el receptor?\n- ¿Qué información identifica al canal de comunicación?\n\n2. CREAR EL PROCESO RECEPTOR\nEn la primera ventana de PowerShell ejecuta:\n\n$pipeName = 'SO_IPC_Clase'\n$server = New-Object System.IO.Pipes.NamedPipeServerStream($pipeName,[System.IO.Pipes.PipeDirection]::In)\nWrite-Host 'Esperando conexión...'\n$server.WaitForConnection()\n$reader = New-Object System.IO.StreamReader($server)\n$mensaje = $reader.ReadLine()\nWrite-Host \"Mensaje recibido: $mensaje\"\n$reader.Dispose()\n$server.Dispose()\n\nRegistra una captura donde se observe que el receptor queda esperando conexión.\n\n3. CREAR EL PROCESO EMISOR\nEn la segunda ventana de PowerShell ejecuta:\n\n$pipeName = 'SO_IPC_Clase'\n$client = New-Object System.IO.Pipes.NamedPipeClientStream('.', $pipeName,[System.IO.Pipes.PipeDirection]::Out)\n$client.Connect()\n$writer = New-Object System.IO.StreamWriter($client)\n$writer.AutoFlush = $true\n$writer.WriteLine('Hola desde el proceso emisor')\n$writer.Dispose()\n$client.Dispose()\n\nRegistra una captura del emisor después de completar el envío.\n\n4. VERIFICAR LA RECEPCIÓN\nRegresa a la primera ventana y verifica que aparezca:\nMensaje recibido: Hola desde el proceso emisor\n\nInserta una captura donde pueda leerse el mensaje recibido.\n\n5. SEGUNDO INTERCAMBIO\nRepite la prueba cambiando el mensaje por uno propio. Usa un texto breve que permita reconocer que la segunda ejecución fue diferente.\n\nRegistra:\n- mensaje enviado;\n- mensaje recibido;\n- si fue necesario iniciar primero al receptor o al emisor;\n- qué ocurrió si intentaste conectar sin que el receptor estuviera listo.\n\n6. MAPA DEL IPC\nCompleta la tabla:\nElemento | En esta práctica | Función\nProceso receptor | | \nProceso emisor | | \nCanal IPC | | \nNombre del pipe | | \nDato transferido | | \nAPI/.NET utilizada | | \n\n7. DIAGRAMA\nDibuja un diagrama sencillo:\nProceso emisor → Named Pipe → Proceso receptor\n\nAñade en el diagrama el nombre del pipe y el mensaje transferido.\n\n8. REFLEXIÓN\nResponde:\n1. ¿Por qué los dos procesos no necesitan compartir directamente las mismas variables para comunicarse?\n2. ¿Qué ventaja ofrece un mecanismo IPC proporcionado por el sistema operativo?\n3. ¿Qué diferencia conceptual encuentras entre comunicar procesos y compartir memoria directamente?\n\nEvidencia de entrega\n- Respuestas iniciales.\n- Código del receptor.\n- Código del emisor.\n- Captura del receptor esperando conexión.\n- Captura del mensaje recibido.\n- Segundo intercambio documentado.\n- Tabla del mecanismo IPC.\n- Diagrama.\n- Tres respuestas de reflexión.\n\nCriterios de revisión\n- Ejecución correcta del intercambio: 30 puntos.\n- Evidencia del envío y recepción: 25 puntos.\n- Identificación de elementos IPC: 20 puntos.\n- Diagrama técnico: 10 puntos.\n- Reflexión y explicación conceptual: 15 puntos.",
+        "puntos": 100
+      }
+    }
+  ]
+}
