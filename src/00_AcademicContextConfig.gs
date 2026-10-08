@@ -1,6 +1,6 @@
 // Generated from config/academic-context.json. Do not edit.
 const ACADEMIC_CONTEXT_CONFIG = {
-  "manifestSha256": "5ac28821eef7b9d5552a82ccbf00814f70e4507da9449445128b64ed6315f698",
+  "manifestSha256": "becc5561753fb8a6badd0cfe99dc95f58f9770dc20265340529982e156d53994",
   "schemaVersion": 1,
   "contractVersion": "1.1.0",
   "repository": "witchet43/Automatizacion-clases-jv",
@@ -142,16 +142,18 @@ const ACADEMIC_CONTEXT_CONFIG = {
       "materia": "Sistemas Operativos",
       "gammaFolderId": "fo_oig9jvuoy9kbmdw",
       "gammaFolderName": "ITQ - Sistemas Operativos",
-      "gammaThemeMode": "PROVIDER_DEFAULT",
-      "gammaThemeConstraint": "GAMMA_GENERATE_REJECTS_THEME_ID"
+      "gammaThemeId": "bfm8ztqy1whsib8",
+      "gammaThemeName": "UAQ",
+      "gammaThemePolicy": "REQUIRED_EXACT_NO_FALLBACK"
     },
     "so": {
       "id": "875776451793",
       "materia": "Sistemas Operativos",
       "gammaFolderId": "fo_oig9jvuoy9kbmdw",
       "gammaFolderName": "ITQ - Sistemas Operativos",
-      "gammaThemeMode": "PROVIDER_DEFAULT",
-      "gammaThemeConstraint": "GAMMA_GENERATE_REJECTS_THEME_ID"
+      "gammaThemeId": "bfm8ztqy1whsib8",
+      "gammaThemeName": "UAQ",
+      "gammaThemePolicy": "REQUIRED_EXACT_NO_FALLBACK"
     }
   },
   "planningSources": {
@@ -360,9 +362,8 @@ const ACADEMIC_CONTEXT_CONFIG = {
     "academicDocumentNativeListsRequired": true,
     "academicDocumentFlatStructuredParagraphsForbidden": true,
     "academicDocumentDuplicateStructuralHeadersForbidden": true,
-    "gammaThemeModeResolutionSource": "MANIFEST_COURSE",
-    "gammaThemeProviderDefaultAllowedWhenCourseModeProviderDefault": true,
-    "gammaThemePostflightRequiredForExplicitThemeOnly": true
+    "gammaThemeFallbackAllowed": false,
+    "gammaThemeUnsupportedBehavior": "BLOCK_BEFORE_GENERATION_NO_CREDITS"
   },
   "startup": {
     "read": [
