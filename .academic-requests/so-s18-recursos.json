@@ -1,0 +1,41 @@
+{
+  "action": "clase",
+  "materia": "Sistemas Operativos",
+  "sesion": "18",
+  "expectedResourceTypes": [
+    "tarea",
+    "practica"
+  ],
+  "resources": [
+    {
+      "type": "tarea",
+      "params": {
+        "sesionCanonica": 18,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "unidad": "Unidad 2",
+        "topicName": "Unidad 2",
+        "temaSubtema": "Concurrencia y condiciones de carrera",
+        "titulo": "Tarea 18 - Concurrencia y condiciones de carrera",
+        "descripcion": "Preparación previa sobre concurrencia, interleavings, sección crítica, atomicidad y condiciones de carrera.",
+        "contenidoDocumento": "TAREA 18 — CONCURRENCIA Y CONDICIONES DE CARRERA\n\nUnidad 2 · Tema 2.10 - Concurrencia y condiciones de carrera\n\nPropósito\nPreparar los conceptos necesarios para reconocer problemas de acceso concurrente a datos compartidos.\n\nActividad previa\n1. Define concurrencia.\n2. Explica qué es un interleaving.\n3. Describe una sección crítica.\n4. Explica qué significa atomicidad.\n5. Construye un ejemplo de dos hilos que modifiquen un mismo dato.\n6. Predice qué puede ocurrir con un contador compartido sin sincronización.\n\nEvidencia de entrega\n- Seis respuestas completas.\n- Ejemplo propio.\n- Predicción razonada.",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "practica",
+      "params": {
+        "sesionCanonica": 18,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "unidad": "Unidad 2",
+        "topicName": "Unidad 2",
+        "temaSubtema": "Concurrencia y condiciones de carrera",
+        "titulo": "Práctica 12 - Condición de carrera con contador compartido",
+        "descripcion": "Provoca y observa una condición de carrera en Windows 10/11 usando varias tareas que incrementan un contador compartido. Registra resultados variables y analiza la sección crítica.",
+        "contenidoDocumento": "PRÁCTICA 12 — CONDICIÓN DE CARRERA CON CONTADOR COMPARTIDO\n\nUnidad 2 · Tema 2.10 - Concurrencia y condiciones de carrera\n\nPropósito\nObservar una condición de carrera mediante varias tareas que modifican un contador compartido sin sincronización.\n\nEjercicio 1 — Referencia secuencial\n1. Ejecuta un contador de referencia de forma secuencial.\n2. Registra el resultado.\n3. Explica por qué el resultado es determinista.\n\nEjercicio 2 — Acceso concurrente\n1. Implementa varias tareas que incrementen repetidamente un mismo contador compartido.\n2. Ejecuta el experimento cinco veces.\n3. Calcula el valor esperado.\n4. Registra cada resultado.\n5. Compara resultados obtenidos contra el esperado.\n\n| Ejecución | Valor esperado | Valor obtenido | Diferencia |\n| 1 | | | |\n| 2 | | | |\n| 3 | | | |\n| 4 | | | |\n| 5 | | | |\n\nAnálisis\n1. Identifica el dato compartido.\n2. Identifica la sección crítica.\n3. Explica por qué pueden perderse actualizaciones.\n4. Explica por qué el resultado puede variar.\n5. Relaciona el experimento con interleaving y atomicidad.\n\nEvidencia de entrega\n- Código utilizado.\n- Resultados de cinco ejecuciones.\n- Tabla completa.\n- Cinco respuestas de análisis.",
+        "puntos": 100
+      }
+    }
+  ]
+}
