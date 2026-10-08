@@ -1,0 +1,45 @@
+{
+  "action": "clase",
+  "courseId": "871158479566",
+  "materia": "Análisis y Diseño de Sistemas de Información",
+  "expectedResourceTypes": [
+    "actividad",
+    "tarea"
+  ],
+  "resources": [
+    {
+      "type": "actividad",
+      "params": {
+        "sesionCanonica": 12,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "unidad": "3",
+        "topicName": "Unidad 3",
+        "temaSubtema": "Ciclo de vida y etapas metodológicas del desarrollo de SI",
+        "titulo": "Actividad 11 - Diagrama del ciclo de vida del proyecto",
+        "descripcion": "Construye un diagrama visual del ciclo de vida de un Sistema de Información aplicado al proyecto del equipo. Representa etapas, productos verificables, responsables, decisiones y bucles de retroalimentación. El resultado debe mostrar relaciones y dependencias, no una lista de fases.\n\nEvidencia: diagrama navegable del ciclo de vida del proyecto con productos, responsables y al menos dos bucles de retroalimentación, acompañado de una justificación breve de las decisiones de modelado.",
+        "contenidoDocumento": "ACTIVIDAD 11 — DIAGRAMA DEL CICLO DE VIDA DEL PROYECTO\n\nUnidad 3 · Tema 3.2 Ciclo de vida y etapas metodológicas del desarrollo de SI\n\nPROPÓSITO\n\nModelar el ciclo de vida de un Sistema de Información como un sistema de etapas relacionadas, productos verificables, responsables y bucles de retroalimentación.\n\nCASO BASE\n\nEl equipo desarrolla un Sistema de Información para atender una necesidad organizacional real. El proyecto debe atravesar análisis, definición de requisitos, diseño, construcción, pruebas, implementación y evolución. Durante el proceso pueden aparecer cambios, errores, nueva información o retroalimentación de usuarios que obliguen a regresar a etapas anteriores.\n\nRESPONSABILIDAD INDIVIDUAL\n\nCada integrante debe hacerse responsable de una sección distinta del ciclo de vida y documentar sus decisiones de modelado.\n\nDESARROLLO\n\n1. Identifica las etapas principales del ciclo de vida del sistema.\n2. Para cada etapa registra el propósito, producto o evidencia verificable y responsable principal.\n3. Conecta las etapas con flechas que expliquen la transición entre productos y decisiones.\n4. Incorpora al menos dos bucles de retroalimentación hacia etapas anteriores.\n5. Señala un punto donde la participación del usuario pueda modificar una decisión ya tomada.\n6. Señala un riesgo de continuar a la siguiente etapa sin haber validado el producto anterior.\n7. Integra las secciones individuales en un único diagrama coherente.\n8. Revisa que el modelo represente dependencias y retroalimentación, no solamente una secuencia lineal.\n\nPRODUCTO VISUAL\n\nElabora el diagrama en diagrams.net, Mermaid u otra herramienta de modelado visual equivalente. Debe incluir:\n- etapas claramente identificadas;\n- productos o evidencias por etapa;\n- responsables;\n- transiciones;\n- al menos dos bucles de retroalimentación;\n- un punto de validación con usuario;\n- un riesgo asociado a una transición.\n\nJUSTIFICACIÓN\n\nAgrega una explicación breve de:\n- por qué organizaste las etapas de esa manera;\n- dónde colocaste los bucles de retroalimentación;\n- qué transición consideras más crítica y por qué.\n\nEVIDENCIA EN GITHUB / PROJECTS\n\n- Issue individual por integrante.\n- Archivo fuente editable del diagrama.\n- Commit sustantivo.\n- Pull Request individual cuando corresponda.\n- Revisión cruzada.\n- Evidencia de integración del diagrama final del equipo.\n\nENTREGABLE\n\nDiagrama del ciclo de vida del proyecto con productos, responsables y retroalimentación, acompañado de una justificación breve.\n\nCRITERIOS DE REVISIÓN\n\n- Coherencia de etapas y transiciones: 30 puntos.\n- Productos y responsables correctamente vinculados: 20 puntos.\n- Calidad de los bucles de retroalimentación: 20 puntos.\n- Justificación de decisiones de modelado: 20 puntos.\n- Claridad visual y trazabilidad individual: 10 puntos.",
+        "fechaSesion": "2026-09-03",
+        "horaFinSesion": "15:00",
+        "puntos": 100
+      }
+    },
+    {
+      "type": "tarea",
+      "params": {
+        "sesionCanonica": 13,
+        "explicitSequenceOverride": true,
+        "backfillDraft": true,
+        "unidad": "3",
+        "topicName": "Unidad 3",
+        "temaSubtema": "Selección y adaptación de un enfoque metodológico",
+        "titulo": "Tarea previa 13 - Selección y adaptación de un enfoque metodológico",
+        "descripcion": "Prepárate para seleccionar y adaptar un enfoque metodológico al contexto de un proyecto de Sistemas de Información. Compara un enfoque secuencial y uno iterativo usando cinco criterios: retroalimentación, cambios, entregables, participación del usuario y riesgo. Incluye un ejemplo de proyecto donde cada enfoque sería adecuado y concluye qué condiciones deberían influir en la decisión.\n\nEvidencia: comparación visual de ambos enfoques, dos ejemplos contextualizados y una conclusión razonada.",
+        "contenidoDocumento": "TAREA PREVIA 13 — SELECCIÓN Y ADAPTACIÓN DE UN ENFOQUE METODOLÓGICO\n\nUnidad 3 · Tema 3.3 Selección y adaptación de un enfoque metodológico\n\nPROPÓSITO\n\nPreparar criterios para elegir y adaptar un enfoque metodológico según las características reales de un proyecto de Sistemas de Información.\n\nFUENTES DE CONSULTA\n\nIBM — What is the software development lifecycle (SDLC)?\nhttps://www.ibm.com/think/topics/software-development-life-cycle\n\nManifesto for Agile Software Development — versión en español\nhttps://agilemanifesto.org/iso/es/manifesto.html\n\nDESARROLLO\n\n1. Revisa la diferencia entre un flujo secuencial y un flujo iterativo.\n2. Representa ambos enfoques mediante dos diagramas simples.\n3. Compara los enfoques usando estos cinco criterios:\n   - frecuencia de retroalimentación;\n   - facilidad para incorporar cambios;\n   - forma de producir entregables;\n   - participación del usuario;\n   - gestión del riesgo.\n4. Para cada criterio explica una consecuencia práctica para el proyecto.\n5. Propón un ejemplo de proyecto donde un enfoque secuencial resulte razonable y justifica por qué.\n6. Propón un ejemplo diferente donde un enfoque iterativo resulte más adecuado y justifica por qué.\n7. Identifica una condición que podría obligar a adaptar el enfoque elegido.\n8. Cierra con una conclusión breve: ¿qué información del contexto debería conocerse antes de decidir una metodología?\n\nPRODUCTO DE ENTREGA\n\nUna comparación visual de los dos enfoques, acompañada de:\n- cinco criterios comparados;\n- dos ejemplos contextualizados;\n- una condición de adaptación;\n- una conclusión razonada.\n\nCRITERIOS DE REVISIÓN\n\n- Diferenciación correcta de los enfoques: 25 puntos.\n- Comparación basada en criterios: 25 puntos.\n- Pertinencia de los ejemplos: 20 puntos.\n- Capacidad para relacionar contexto y adaptación: 20 puntos.\n- Claridad visual y redacción propia: 10 puntos.",
+        "fechaSiguienteSesion": "2026-09-08",
+        "horaInicioSiguienteSesion": "13:00",
+        "puntos": 100
+      }
+    }
+  ]
+}
