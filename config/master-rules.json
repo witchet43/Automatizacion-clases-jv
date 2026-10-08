@@ -17,7 +17,14 @@
     "reuseExistingResources": true,
     "blockDuplicates": true,
     "requirePreflight": true,
-    "requirePostflight": true
+    "requirePostflight": true,
+    "freshChatMustProduceEquivalentOperationalDecision": true,
+    "conversationalMemoryOperationalRole": "NONE",
+    "canonicalBootstrapRequiredForEveryAcademicOperation": true,
+    "canonicalSourcesOnlyForIdentitySequenceNamingAndRouting": true,
+    "failClosedOnMissingAmbiguousOrMismatchedCanonicalData": true,
+    "noInferenceFallbackFromConversationMemory": true,
+    "deterministicInputsProduceDeterministicIdentityAndNaming": true
   },
   "requiredClassPackage": [
     "unidad",
