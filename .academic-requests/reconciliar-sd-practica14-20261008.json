@@ -1,0 +1,18 @@
+{
+  "action": "practica",
+  "courseId": "871158466533",
+  "params": {
+    "materia": "Sistemas Distribuidos",
+    "sesionCanonica": 15,
+    "explicitSequenceOverride": true,
+    "unidad": "Unidad 2",
+    "topicName": "Unidad 2",
+    "temaSubtema": "2.2.4 Mensajes de requerimiento HTTP",
+    "titulo": "Práctica 14 - Construir peticiones HTTP controlando método, headers y cuerpo",
+    "descripcion": "Práctica formal para construir y documentar peticiones HTTP controlando método, URL, headers y cuerpo con curl y Hoppscotch. Trabaja directamente en tu copia individual del documento adjunto y entrega allí la evidencia solicitada.",
+    "documentId": "1YTFqiz9VxUDL2DkkXNaEDUxOlVwXgriuGPPnii4hiqM",
+    "puntos": 100,
+    "shareMode": "STUDENT_COPY",
+    "studentCopy": true
+  }
+}
