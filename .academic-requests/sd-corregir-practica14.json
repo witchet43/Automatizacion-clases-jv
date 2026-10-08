@@ -1,0 +1,16 @@
+{
+  "action": "practica",
+  "courseId": "871158466533",
+  "materia": "Sistemas Distribuidos",
+  "params": {
+    "unidad": "Unidad 2",
+    "topicName": "Unidad 2",
+    "temaSubtema": "2.2.4 Mensajes de requerimiento HTTP",
+    "sesionCanonica": 15,
+    "explicitSequenceOverride": true,
+    "titulo": "Práctica 14 - Construir peticiones HTTP controlando método, headers y cuerpo",
+    "descripcion": "Completa de manera individual la Práctica 14 directamente en tu copia personal de Google Docs. Construye y documenta peticiones HTTP controlando método, URL, headers y cuerpo con las herramientas indicadas. Registra la evidencia solicitada en el mismo documento.",
+    "documentId": "1YTFqiz9VxUDL2DkkXNaEDUxOlVwXgriuGPPnii4hiqM",
+    "puntos": 100
+  }
+}
