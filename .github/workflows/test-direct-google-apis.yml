@@ -1,0 +1,51 @@
+name: Test direct Google APIs
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/test-direct-google-apis.yml'
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore clasp credentials
+        shell: bash
+        run: |
+          printf '%s' '${{ secrets.CLASPRC_JSON }}' > .clasprc.json
+          chmod 600 .clasprc.json
+      - name: Probe Classroom and Forms APIs
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const creds=JSON.parse(fs.readFileSync('.clasprc.json','utf8'));
+          const found=[];
+          function walk(v){
+            if(!v||typeof v!=='object') return;
+            if(v.refresh_token&&v.client_id&&v.client_secret) found.push(v);
+            for(const x of Object.values(v)) walk(x);
+          }
+          walk(creds);
+          if(!found.length) throw new Error('No OAuth refresh credentials found');
+          const c=found[0];
+          const tr=await fetch('https://oauth2.googleapis.com/token',{
+            method:'POST',
+            headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:new URLSearchParams({client_id:c.client_id,client_secret:c.client_secret,refresh_token:c.refresh_token,grant_type:'refresh_token'})
+          });
+          if(!tr.ok) throw new Error('token refresh '+tr.status);
+          const tok=await tr.json();
+          for(const [name,url] of [
+            ['classroom','https://classroom.googleapis.com/v1/courses/871158479566/courseWork/889508620258'],
+            ['forms','https://forms.googleapis.com/v1/forms/1klPaT07xI_rD7mA7h8ZKExNZ9K70S_SFhOE3LejU1NY']
+          ]){
+            const r=await fetch(url,{headers:{Authorization:'Bearer '+tok.access_token}});
+            const body=await r.text();
+            console.log(name+' HTTP '+r.status);
+            console.log(body.slice(0,2000));
+          }
+          NODE
