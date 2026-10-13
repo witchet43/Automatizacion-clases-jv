@@ -26,4 +26,4 @@ jobs:
           clasp_config_auth: .clasprc.json
         shell: bash
         run: |
-          npx clasp run resolverSiguienteClase --params '["Análisis y Diseño de Sistemas Computacionales"]'
+          npx clasp run resolverSiguienteClase --params '["Análisis y Diseño de Sistemas Computacionales"]' --nondev
