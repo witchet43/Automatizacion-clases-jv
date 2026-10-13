@@ -28,10 +28,16 @@ function prepararPracticaConGoogleDoc_(params) {
     if (policy.CREATE_GOOGLE_DOCUMENT_IF_MISSING !== true) {
       throw new Error('PRÁCTICA requiere documentId de un Google Documento.');
     }
-    const creado = crearGoogleDocumentoPractica_(p);
-    documentId = creado.id;
-    creadoPorScript = true;
-    p.documentoNombre = creado.name;
+    const existente = resolverDocumentoPracticaExistente_(p);
+    if (existente) {
+      documentId = existente.id;
+      p.documentoNombre = existente.name;
+    } else {
+      const creado = crearGoogleDocumentoPractica_(p);
+      documentId = creado.id;
+      creadoPorScript = true;
+      p.documentoNombre = creado.name;
+    }
   }
 
   const file = obtenerArchivoPracticaConReintento_(documentId);
@@ -50,6 +56,53 @@ function prepararPracticaConGoogleDoc_(params) {
   p.documentoCreadoPorScript = creadoPorScript;
   p.documentoNombre = p.documentoNombre || name;
   return p;
+}
+
+/**
+ * Idempotencia para documentos de prácticas: priorizar el adjunto real de Classroom,
+ * posteriormente el archivo único de la carpeta canónica. Nunca escoger al azar.
+ */
+function resolverDocumentoPracticaExistente_(p) {
+  const title = String(p.titulo || p.title || '').trim();
+  const courseId = String(p.courseId || '').trim();
+  if (!title || !courseId) throw new Error('PRACTICA_IDEMPOTENCE_CONTEXT_REQUIRED: courseId y titulo son obligatorios.');
+  const linked = {};
+  let pageToken = null;
+  do {
+    const opts = {pageSize:100};
+    if (pageToken) opts.pageToken = pageToken;
+    const data = Classroom.Courses.CourseWork.list(courseId, opts);
+    (data.courseWork || []).forEach(function(w) {
+      if (String(w.title || '').trim() !== title) return;
+      if (['DRAFT','PUBLISHED'].indexOf(String(w.state || '').toUpperCase()) < 0) return;
+      (w.materials || []).forEach(function(m) {
+        const f = m && m.driveFile && m.driveFile.driveFile;
+        if (f && f.id) linked[String(f.id)] = true;
+      });
+    });
+    pageToken = data.nextPageToken || null;
+  } while (pageToken);
+  const ids = Object.keys(linked);
+  if (ids.length > 1) throw new Error('PRACTICA_DUPLICATE_CLASSROOM_DOCUMENTS: ' + title + ' => ' + ids.join(','));
+  if (ids.length === 1) {
+    const f = obtenerArchivoPracticaConReintento_(ids[0]);
+    if (f.trashed || f.mimeType !== 'application/vnd.google-apps.document') throw new Error('PRACTICA_LINKED_DOCUMENT_INVALID: ' + ids[0]);
+    return {id:ids[0],name:String(f.name || title)};
+  }
+  const folderId = resolverCarpetaDocumentoAcademico_(courseId,'PRACTICA');
+  const escaped = title.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const query = "name = '" + escaped + "' and '" + folderId + "' in parents and trashed = false and mimeType = 'application/vnd.google-apps.document'";
+  const candidates = [];
+  let next = null;
+  do {
+    const opts = {q:query,pageSize:100,fields:'nextPageToken,files(id,name,mimeType,trashed)'};
+    if (next) opts.pageToken = next;
+    const data = Drive.Files.list(opts);
+    (data.files || []).forEach(function(f){ candidates.push(f); });
+    next = data.nextPageToken || null;
+  } while (next);
+  if (candidates.length > 1) throw new Error('PRACTICA_DUPLICATE_DRIVE_DOCUMENTS: ' + title + ' => ' + candidates.map(function(f){return f.id;}).join(','));
+  return candidates.length ? {id:String(candidates[0].id),name:String(candidates[0].name)} : null;
 }
 
 function rechazarVencimientoPractica_(params) {
