@@ -1,5 +1,5 @@
 name: Deploy Apps Script
-# Redeploy marker: canonical Web App deployment after Apps Script version cleanup confirmed by docente on 2026-10-06.
+# Redeploy marker: refresh canonical Web App for ADSI Unit 2 exam finalization on 2026-10-13.
 
 on:
   push:
