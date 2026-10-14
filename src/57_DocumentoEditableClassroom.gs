@@ -139,10 +139,35 @@ function asegurarCopiasDocumentosBorrador_(courseId,work,idsEsperados) {
   return work;
 }
 
+function idsGoogleDocumentosAccesiblesSolicitados_(p) {
+  const valid=[];
+  idsGoogleDocumentosSolicitados_(p).forEach(function(id){
+    try{
+      const file=Drive.Files.get(String(id),{fields:'id,mimeType,trashed'});
+      if(file.trashed===true){
+        console.warn('Documento solicitado en papelera; se recuperará por identidad canónica: '+id);
+        return;
+      }
+      if(String(file.mimeType)!==DOCUMENTO_EDITABLE_CLASSROOM.MIME)
+        throw new Error('BLOCKED_GOOGLE_DOC: el archivo solicitado no es un Google Documento nativo: '+id);
+      valid.push(String(id));
+    }catch(err){
+      const msg=String(err&&err.message?err.message:err);
+      if(/^BLOCKED_GOOGLE_DOC:/.test(msg))throw err;
+      if(/file not found|not found|does not exist|insufficient|permission denied|no access/i.test(msg)){
+        console.warn('Documento solicitado obsoleto o inaccesible; se resolverá/recreará de forma idempotente: '+id);
+        return;
+      }
+      throw err;
+    }
+  });
+  return valid;
+}
+
 function prepararRecursoConDocumentoEditable_(p) {
   if(!requiereDocumentoEditableClassroom_(p))return p;
   const original=String(p.descripcion||'').trim();
-  const ids=idsGoogleDocumentosSolicitados_(p);
+  let ids=idsGoogleDocumentosAccesiblesSolicitados_(p);
   if(!ids.length){
     const raw=p.contenidoDocumento!==undefined?p.contenidoDocumento:
       p.googleDocContent!==undefined?p.googleDocContent:original;
@@ -162,16 +187,15 @@ function prepararRecursoConDocumentoEditable_(p) {
       courseId:p.courseId,
       tipo:p.tipo
     });
-    ids.push(String(nuevo.id));
+    ids=[String(nuevo.id)];
     p.documentoCreadoPorScript=true;
   }
-  ids.forEach(function(id){
-    const file=Drive.Files.get(String(id),{fields:'id,mimeType,trashed'});
-    if(file.trashed||String(file.mimeType)!==DOCUMENTO_EDITABLE_CLASSROOM.MIME)
-      throw new Error('BLOCKED_GOOGLE_DOC: no es un Google Documento nativo vigente y accesible: '+id);
-  });
   p.documentId=ids[0];
-  p.documentIds=ids;
+  p.googleDocId='';
+  p.documentIds=ids.slice();
+  p.links=(Array.isArray(p.links)?p.links:[]).filter(function(link){
+    return !extraerIdGoogleDocumentoDeUrl_(link&&link.url);
+  });
   p.shareMode='STUDENT_COPY';
   p.studentCopy=true;
   p.descripcion='INDICACIONES PARA EL ALUMNO\n\nAbre tu copia personal del Google Documento adjunto, complétala y entrega tu trabajo mediante Classroom. No redactes la evidencia en este campo.';

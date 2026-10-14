@@ -24,6 +24,26 @@ function prepararPracticaConGoogleDoc_(params) {
 
   let documentId = String(p.documentId || p.googleDocId || '').trim();
   let creadoPorScript = false;
+  let suppliedFile = null;
+  if (documentId) {
+    try {
+      suppliedFile = obtenerArchivoPracticaConReintento_(documentId);
+      if (suppliedFile.trashed === true) {
+        console.warn('PRÁCTICA recibió un documentId en papelera; se resolverá/recreará por identidad canónica: ' + documentId);
+        documentId = '';
+        suppliedFile = null;
+      } else if (String(suppliedFile.mimeType || '') !== policy.GOOGLE_DOCUMENT_MIME) {
+        throw new Error('PRÁCTICA requiere un Google Documento nativo. Archivo recibido: ' + String(suppliedFile.name || documentId) + ' (' + String(suppliedFile.mimeType || '') + ').');
+      }
+    } catch (err) {
+      const msg = String(err && err.message ? err.message : err);
+      if (/file not found|not found|does not exist|insufficient|permission denied|no access/i.test(msg)) {
+        console.warn('PRÁCTICA recibió un documentId obsoleto o inaccesible; se resolverá/recreará de forma idempotente: ' + documentId);
+        documentId = '';
+        suppliedFile = null;
+      } else throw err;
+    }
+  }
   if (!documentId) {
     if (policy.CREATE_GOOGLE_DOCUMENT_IF_MISSING !== true) {
       throw new Error('PRÁCTICA requiere documentId de un Google Documento.');
@@ -40,7 +60,7 @@ function prepararPracticaConGoogleDoc_(params) {
     }
   }
 
-  const file = obtenerArchivoPracticaConReintento_(documentId);
+  const file = suppliedFile || obtenerArchivoPracticaConReintento_(documentId);
   const mime = String(file.mimeType || '');
   const name = String(file.name || '');
   if (file.trashed === true) {
@@ -177,6 +197,8 @@ function obtenerArchivoPracticaConReintento_(documentId) {
       return Drive.Files.get(String(documentId), {fields:'id,name,mimeType,trashed'});
     } catch (err) {
       lastErr = err;
+      const msg=String(err&&err.message?err.message:err);
+      if(/file not found|not found|does not exist|insufficient|permission denied|no access/i.test(msg))throw err;
       Utilities.sleep(250 * (i + 1));
     }
   }

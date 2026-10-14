@@ -8,45 +8,25 @@ const IMPORT_REQUEST = Object.freeze({
   ERROR: 'ERROR'
 });
 
-function instalarMonitorSolicitudesImportacion() {
+function desinstalarMonitorSolicitudesImportacion_() {
+  let removed=0;
   ScriptApp.getProjectTriggers()
-    .filter(t => t.getHandlerFunction() === 'procesarSolicitudesImportacion')
-    .forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('procesarSolicitudesImportacion').timeBased().everyMinutes(1).create();
-  return {
-    ok: true,
-    instalado: true,
-    handler: 'procesarSolicitudesImportacion',
-    frecuenciaMinutos: 1,
-    adaptadores: ['REVISION_TAREAS','CALIFICACIONES_ADMINISTRATIVAS']
-  };
+    .filter(function(t){return t.getHandlerFunction()==='procesarSolicitudesImportacion';})
+    .forEach(function(t){ScriptApp.deleteTrigger(t);removed++;});
+  return removed;
 }
 
-/**
- * Dispatcher ligero. Cada procesador de solicitud es responsable únicamente de
- * traducir una fila de control a parámetros de una operación canónica.
- */
-function procesarSolicitudesImportacion() {
-  return ejecutarConNotificacionError_('MONITOR_SOLICITUDES_IMPORTACION', {}, function () {
-    try { procesarRevisionNocturnaSiCorresponde_(); }
-    catch (nightErr) {
-      notificarErrorScript_('REVISION_NOCTURNA_INFRAESTRUCTURA', nightErr, {});
-      console.error('Revisión nocturna: ' + mensajeErrorOperacion_(nightErr));
-    }
+function instalarMonitorSolicitudesImportacion() {
+  const removed=desinstalarMonitorSolicitudesImportacion_();
+  return {ok:true,instalado:false,descomisionado:true,triggersEliminados:removed,
+    motivo:'Las operaciones administrativas se ejecutan bajo demanda; no existe polling cada minuto.'};
+}
 
-    const lock = LockService.getScriptLock();
-    if (!lock.tryLock(1000)) return {procesado: false, motivo: 'LOCK'};
-    try {
-      ejecutarAdaptadorSolicitud_('revisión de tareas', procesarSolicitudRevisionTareas_);
-      ejecutarAdaptadorSolicitud_('promedios de unidad', procesarSolicitudPromediosUnidad_);
-      ejecutarAdaptadorSolicitud_('publicación de calificación de unidad', procesarSolicitudPublicarCalificacionUnidad_);
-      ejecutarAdaptadorSolicitud_('recálculo final directo', procesarSolicitudRecalculoFinalUnidadCero_);
-      ejecutarAdaptadorSolicitud_('reconciliación de importación', procesarSolicitudReconciliarImportacion_);
-      return procesarSolicitudImportacionCalificaciones_();
-    } finally {
-      lock.releaseLock();
-    }
-  });
+/** Compatibilidad con triggers heredados: se elimina y no toca Sheets/locks. */
+function procesarSolicitudesImportacion() {
+  return {ok:true,descomisionado:true,
+    triggersEliminados:desinstalarMonitorSolicitudesImportacion_(),
+    recursosModificados:0};
 }
 
 function procesarSolicitudImportacionCalificaciones_() {

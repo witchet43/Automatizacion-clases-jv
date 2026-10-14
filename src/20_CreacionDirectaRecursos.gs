@@ -250,10 +250,11 @@ function resolverShareModeDirecto_(p){
 function buscarCourseWorkDirectoPorEvidencia_(p,topicId){
   const courseId=String(p.courseId||'').trim();
   const titulo=String(p.titulo||'').trim();
-  const requestedDocs=idsGoogleDocumentosSolicitados_(p);
+  const requestedDocs=typeof idsGoogleDocumentosAccesiblesSolicitados_==='function'
+    ?idsGoogleDocumentosAccesiblesSolicitados_(p):idsGoogleDocumentosSolicitados_(p);
   let token, matches=[];
   do{
-    const page=Classroom.Courses.CourseWork.list(courseId,{pageSize:100,pageToken:token});
+    const page=listarCourseWorkPaginaConReintento_(courseId,{pageSize:100,pageToken:token});
     (page.courseWork||[]).forEach(function(w){
       if(String(w.title||'').trim()!==titulo)return;
       if(String(w.topicId||'')!==String(topicId||''))return;
@@ -282,7 +283,7 @@ function buscarCourseWorkDirectoPorEvidencia_(p,topicId){
 function buscarCourseWorkDirectoExacto_(courseId,titulo,topicId){
   let token;
   do{
-    const page=Classroom.Courses.CourseWork.list(String(courseId),{pageSize:100,pageToken:token});
+    const page=listarCourseWorkPaginaConReintento_(String(courseId),{pageSize:100,pageToken:token});
     const hit=(page.courseWork||[]).find(w=>String(w.title||'').trim()===titulo&&String(w.topicId||'')===String(topicId||'')&&String(w.state||'').toUpperCase()!=='DELETED');
     if(hit) return hit;
     token=page.nextPageToken;

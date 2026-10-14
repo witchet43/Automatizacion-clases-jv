@@ -1,11 +1,18 @@
 /**
- * Limpieza transitoria de triggers de experimentos retirados.
- * No contiene lógica académica ni crea recursos.
+ * Limpieza transitoria de triggers de mecanismos retirados.
+ * Los handlers existen únicamente para permitir que un trigger legado se
+ * ejecute una última vez, se elimine y deje de generar correos de error.
  */
-function monitorearQuizAbiertoOpenAI() {
+function eliminarTriggersLegacyPorHandler_(handler) {
   let removed=0;
   ScriptApp.getProjectTriggers()
-    .filter(function(t) { return t.getHandlerFunction() === 'monitorearQuizAbiertoOpenAI'; })
-    .forEach(function(t) { ScriptApp.deleteTrigger(t); removed++; });
-  return {ok:true,descomisionado:true,triggersEliminados:removed};
+    .filter(function(t){return t.getHandlerFunction()===handler;})
+    .forEach(function(t){ScriptApp.deleteTrigger(t);removed++;});
+  return removed;
+}
+function monitorearQuizAbiertoOpenAI() {
+  return {ok:true,descomisionado:true,triggersEliminados:eliminarTriggersLegacyPorHandler_('monitorearQuizAbiertoOpenAI')};
+}
+function evaluarEntregas() {
+  return {ok:true,descomisionado:true,triggersEliminados:eliminarTriggersLegacyPorHandler_('evaluarEntregas')};
 }
