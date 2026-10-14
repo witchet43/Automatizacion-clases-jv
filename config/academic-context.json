@@ -461,7 +461,16 @@
     "introTiPracticalMultiOsAllowed": false,
     "introTiOtherOsInstructionMode": "CONCEPTUAL_ONLY",
     "introTiHistoricalPublishedResourcesPolicy": "LEAVE_AS_IS",
-    "introTiFutureMaterialsPolicy": "WINDOWS_BASELINE_REQUIRED"
+    "introTiFutureMaterialsPolicy": "WINDOWS_BASELINE_REQUIRED",
+    "routineMutationGateway": "UAQ_EXECUTOR",
+    "routineMutationExternalAction": "uaqExecutor",
+    "directRoutineMutationRequestAllowed": false,
+    "routineOperationSourceInspectionAllowed": false,
+    "routineOperationWorkflowInspectionAllowed": false,
+    "routineOperationMaxAcademicRequests": 1,
+    "routineOperationPostflightMode": "BUILT_IN_RESULT",
+    "routineOperationAlternativeRouteAllowed": false,
+    "routineOperationGatewayFailureBehavior": "BLOCK_NO_ALTERNATE_ROUTE"
   },
   "startup": {
     "read": [
@@ -492,7 +501,9 @@
       "fastPath": true,
       "contentIsData": true,
       "sourceMutationAllowed": false,
-      "deploymentAllowed": false
+      "deploymentAllowed": false,
+      "externalRequestAllowed": false,
+      "internalGateway": "UAQ_EXECUTOR"
     },
     "actividad": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -504,7 +515,9 @@
       "courseWorkState": "DRAFT",
       "contentIsData": true,
       "sourceMutationAllowed": false,
-      "deploymentAllowed": false
+      "deploymentAllowed": false,
+      "externalRequestAllowed": false,
+      "internalGateway": "UAQ_EXECUTOR"
     },
     "tarea": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -516,7 +529,9 @@
       "courseWorkState": "DRAFT",
       "contentIsData": true,
       "sourceMutationAllowed": false,
-      "deploymentAllowed": false
+      "deploymentAllowed": false,
+      "externalRequestAllowed": false,
+      "internalGateway": "UAQ_EXECUTOR"
     },
     "practica": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -528,7 +543,9 @@
       "courseWorkState": "DRAFT",
       "contentIsData": true,
       "sourceMutationAllowed": false,
-      "deploymentAllowed": false
+      "deploymentAllowed": false,
+      "externalRequestAllowed": false,
+      "internalGateway": "UAQ_EXECUTOR"
     },
     "quiz": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -541,7 +558,9 @@
       "formPublished": false,
       "contentIsData": true,
       "sourceMutationAllowed": false,
-      "deploymentAllowed": false
+      "deploymentAllowed": false,
+      "externalRequestAllowed": false,
+      "internalGateway": "UAQ_EXECUTOR"
     },
     "examen": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -555,7 +574,9 @@
       "requiresAcademicApproval": true,
       "contentIsData": true,
       "sourceMutationAllowed": false,
-      "deploymentAllowed": false
+      "deploymentAllowed": false,
+      "externalRequestAllowed": false,
+      "internalGateway": "UAQ_EXECUTOR"
     },
     "material": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -566,7 +587,9 @@
       "requiresPostflight": true,
       "contentIsData": true,
       "sourceMutationAllowed": false,
-      "deploymentAllowed": false
+      "deploymentAllowed": false,
+      "externalRequestAllowed": false,
+      "internalGateway": "UAQ_EXECUTOR"
     },
     "clase": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -582,7 +605,9 @@
       "gammaCreationDecisionRequiresLiveVerification": true,
       "notionNotesRequired": true,
       "notionNotesRoute": "NOTION_CONNECTOR",
-      "notionEvidenceInput": "options.notionLiveEvidence"
+      "notionEvidenceInput": "options.notionLiveEvidence",
+      "externalRequestAllowed": false,
+      "internalGateway": "UAQ_EXECUTOR"
     },
     "resolverClase": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -645,6 +670,32 @@
       "requiresPostflight": true,
       "destructive": true,
       "requiresExplicitAuthorization": true,
+      "contentIsData": true,
+      "sourceMutationAllowed": false,
+      "deploymentAllowed": false
+    },
+    "uaqExecutor": {
+      "executionRoute": "ACADEMIC_WEB_APP",
+      "workflow": "Academic Web App",
+      "requestDirectory": ".academic-requests",
+      "webAppAction": "uaqExecutor",
+      "requiresPostflight": true,
+      "gateway": true,
+      "allowedOperations": [
+        "quizAsistencia",
+        "actividad",
+        "tarea",
+        "practica",
+        "quiz",
+        "examen",
+        "material",
+        "clase"
+      ],
+      "maxAcademicRequests": 1,
+      "sourceInspectionAllowed": false,
+      "workflowInspectionAllowed": false,
+      "alternativeRouteAllowed": false,
+      "failureBehavior": "BLOCK_NO_ALTERNATE_ROUTE",
       "contentIsData": true,
       "sourceMutationAllowed": false,
       "deploymentAllowed": false

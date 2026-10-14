@@ -28,6 +28,20 @@ for(const key of [
   'notionDuplicateNotesAllowed','notionPlanningStateIsAuthority','introTiPracticalMultiOsAllowed'
 ]) assert.equal(manifest.rules[key],false,key);
 assert.equal(manifest.rules.recoveryRoute,'SAME_CANONICAL_WEB_APP_ONLY');
+assert.equal(manifest.rules.routineMutationGateway,'UAQ_EXECUTOR');
+assert.equal(manifest.rules.routineMutationExternalAction,'uaqExecutor');
+assert.equal(manifest.rules.directRoutineMutationRequestAllowed,false);
+assert.equal(manifest.rules.routineOperationSourceInspectionAllowed,false);
+assert.equal(manifest.rules.routineOperationWorkflowInspectionAllowed,false);
+assert.equal(manifest.rules.routineOperationMaxAcademicRequests,1);
+assert.equal(manifest.rules.routineOperationPostflightMode,'BUILT_IN_RESULT');
+assert.equal(manifest.rules.routineOperationAlternativeRouteAllowed,false);
+assert.equal(manifest.rules.routineOperationGatewayFailureBehavior,'BLOCK_NO_ALTERNATE_ROUTE');
+assert.equal(manifest.operations.uaqExecutor.gateway,true);
+for(const op of manifest.operations.uaqExecutor.allowedOperations){
+  assert.equal(manifest.operations[op].externalRequestAllowed,false,op+' externalRequestAllowed');
+  assert.equal(manifest.operations[op].internalGateway,'UAQ_EXECUTOR',op+' internalGateway');
+}
 assert.equal(manifest.rules.gammaLiveEvidenceSource,'GAMMA_LIVE_CONNECTOR');
 assert.equal(manifest.rules.gammaPlanningStatusRole,'REFERENCE_ONLY');
 assert.equal(manifest.rules.notionNotesRoute,'NOTION_CONNECTOR');
@@ -61,6 +75,9 @@ for(const [name,op] of Object.entries(manifest.operations)){
   assert.equal(op.deploymentAllowed,false,name+' deploymentAllowed');
 }
 assert.match(academic,/assert-academic-request-data-only\.mjs/);
+const requestGuard=fs.readFileSync('scripts/assert-academic-request-data-only.mjs','utf8');
+assert.match(requestGuard,/DIRECT_ROUTINE_ACTION_FORBIDDEN_USE_UAQ_EXECUTOR/);
+assert.match(requestGuard,/UAQ_EXECUTOR_OPERATION_INVALID/);
 assert.match(deploy,/assert-platform-change-authorized\.mjs/);
 const onBlock=(deploy.match(/on:[\s\S]*?concurrency:/)||[''])[0];
 assert.match(onBlock,/\.platform-changes\/\*\*/);

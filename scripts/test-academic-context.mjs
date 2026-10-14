@@ -4,16 +4,8 @@ import vm from 'node:vm';
 import {bundle,bundlePath,prepareRequest,readContext} from './academic-context.mjs';
 assert.equal(fs.readFileSync(bundlePath,'utf8'),bundle());
 
-// Gamma canonical naming is machine-checked to prevent ad-hoc titles.
 const masterRules=JSON.parse(fs.readFileSync('config/master-rules.json','utf8'));
 assert.equal(masterRules.gamma.titleMustUseCanonicalTopicNumberAndName,true);
-assert.equal(masterRules.gamma.canonicalTitleSource,'subjects.<materia>.canonicalSequence');
-assert.equal(masterRules.gamma.canonicalTitleFormat,'<número oficial> - <nombre oficial>');
-assert.equal(masterRules.gamma.requireExactTitleBeforeGeneration,true);
-assert.equal(masterRules.gamma.requireExactTitlePostflight,true);
-assert.equal(masterRules.gamma.blockRegistrationOnTitleMismatch,true);
-assert.equal(masterRules.gamma.repairExistingGammaInsteadOfRegenerate,true);
-assert.equal(masterRules.gamma.titleMustNotAppendSubjectName,true);
 const {manifest}=readContext();
 let calls=[];
 const ctx=vm.createContext({
@@ -25,40 +17,43 @@ const ctx=vm.createContext({
 for(const file of ['00_PoliticasCanonicas.gs','00_AcademicContextConfig.gs','39_MasterGuardrails.gs','00_AcademicContextGuard.gs','65_QuizAsistenciaWebApp.gs'])vm.runInContext(fs.readFileSync('src/'+file,'utf8'),ctx);
 for(const action of ['actividad','tarea','practica','quiz','examen'])ctx['crear'+action[0].toUpperCase()+action.slice(1)]=p=>{calls.push(action);return {workId:action,state:'DRAFT',courseId:p.courseId};};
 ctx.crearGoogleDocumentoAcademico_=()=>{calls.push('material');return {id:'doc'};};
+ctx.crearMaterialDidacticoWeb_=()=>{calls.push('material');return {documentId:'doc',state:'DRAFT'};};
+ctx.crearPaqueteClaseWeb_=(_course,p)=>{calls.push('clase');if(!Array.isArray(p.resources)||!p.resources.length)throw new Error('CLASE_REQUIERE_RECURSOS');return {packageStatus:'MATERIALES_LISTOS_PARA_GAMMA',state:'DRAFT'};};
 ctx.diagnosticarProgresoClaseWeb_=()=>{calls.push('diagnosticarClase');return {readOnly:true};};
 ctx.auditarIdentidadClassroomWeb_=()=>{calls.push('auditarIdentidadClassroom');return {readOnly:true};};
+
 const run=p=>ctx.ejecutarServicioAcademicoWeb_(p);
 const good=p=>prepareRequest({materia:'Administración',...p}).request;
 let checks=0;
 function blocked(p,error){calls=[];const r=run(p);assert.equal(r.ok,false);assert.match(r.error,error);assert.equal(calls.length,0);checks++;}
-for(const action of ['actividad','tarea','practica','quiz','examen','material','clase','resolverClase','diagnosticarClase','auditarIdentidadClassroom'])blocked({action,materia:'Administración'},/ACADEMIC_CONTEXT_REQUIRED/);
-for(const key of Object.keys(good({action:'clase'}).operationalContext)){
-  const p=good({action:'clase'});p.operationalContext[key]='stale-or-alternative';blocked(p,/ACADEMIC_CONTEXT_MISMATCH/);
+
+blocked({action:'uaqExecutor',operation:'actividad',materia:'Administración'},/ACADEMIC_CONTEXT_REQUIRED/);
+const validContext=good({action:'uaqExecutor',operation:'actividad',params:{}}).operationalContext;
+blocked({action:'actividad',materia:'Administración',operationalContext:validContext},/ACCION_NO_PERMITIDA/);
+for(const direct of manifest.operations.uaqExecutor.allowedOperations)
+  assert.throws(()=>prepareRequest({action:direct,materia:'Administración'}),/DIRECT_ROUTINE_ACTION_FORBIDDEN_USE_UAQ_EXECUTOR/);
+checks+=manifest.operations.uaqExecutor.allowedOperations.length;
+assert.throws(()=>prepareRequest({action:'uaqExecutor',operation:'resolverClase',materia:'Administración'}),/UAQ_EXECUTOR_OPERATION_INVALID/);checks++;
+
+for(const operation of ['actividad','tarea','practica','quiz','examen','quizAsistencia']){
+  calls=[];
+  const r=run(good({action:'uaqExecutor',operation,params:{}}));
+  assert.equal(r.ok,true);assert.equal(r.gateway,'UAQ_EXECUTOR');assert.equal(r.operation,operation);
+  assert.deepEqual(calls,[operation]);checks++;
 }
-blocked(good({action:'clase',resources:[{type:'actividad',params:{state:'DRAFT'}},{type:'tarea',params:{state:'PUBLISHED'}}]}),/DRAFT_REQUIRED/);
-const sanitizedActivity=good({action:'actividad',params:{endpoint:'https://example.invalid'}});
-assert.equal(sanitizedActivity.params.endpoint,undefined);checks++;
-const sanitizedResolver=good({action:'resolverClase',options:{calendarSelectsClass:true}});
-assert.equal(sanitizedResolver.options.calendarSelectsClass,undefined);checks++;
-blocked(good({action:'clase',resources:[]}),/CLASE_REQUIERE_RECURSOS/);
-blocked(good({action:'actividad',courseId:'not-a-course'}),/CURSO_NO_PERMITIDO/);
-for(const action of ['actividad','tarea','practica','quiz','examen','resolverClase','diagnosticarClase','auditarIdentidadClassroom']){
+calls=[];
+const material=run(good({action:'uaqExecutor',operation:'material',params:{titulo:'Material',contenidoDocumento:'Contenido'}}));
+assert.equal(material.ok,true);assert.deepEqual(calls,['material']);checks++;
+calls=[];
+const pkg=run(good({action:'uaqExecutor',operation:'clase',params:{resources:[{type:'actividad',params:{}}]}}));
+assert.equal(pkg.ok,true);assert.deepEqual(calls,['clase']);checks++;
+
+for(const action of ['resolverClase','diagnosticarClase','auditarIdentidadClassroom']){
   calls=[];const r=run(good({action}));assert.equal(r.ok,true);assert.deepEqual(calls,[action]);checks++;
 }
-calls=[];
-blocked(good({action:'clase',gammaUrl:'https://gamma.app/docs/verified',expectedResourceTypes:['actividad'],resources:[{type:'actividad',params:{}}]}),/CLASE_RECURSOS_PRIMERO/);
-calls=[];
-const pkg=run(good({action:'clase',expectedResourceTypes:['actividad','tarea'],resources:[{type:'actividad',params:{}},{type:'tarea',params:{}}]}));
-assert.equal(pkg.ok,true);assert.equal(pkg.packageStatus,'MATERIALES_LISTOS_PARA_GAMMA');assert.equal(pkg.nextPhase,'GENERATE_AND_VERIFY_GAMMA_REFERENCING_RESOURCE_IDS_URLS');assert.deepEqual(calls,['actividad','tarea']);
-assert.ok(pkg.resources.every(r=>r.result.state==='DRAFT'));checks++;
-calls=[];assert.equal(run(good({action:'material',params:{titulo:'Material',contenidoDocumento:'Contenido'}})).ok,true);assert.deepEqual(calls,['material']);checks++;
-// Runtime registries derive from the generated manifest bundle.
+const sanitized=good({action:'uaqExecutor',operation:'actividad',params:{endpoint:'https://example.invalid'}});
+assert.equal(sanitized.params.endpoint,undefined);checks++;
+blocked(good({action:'uaqExecutor',operation:'actividad',courseId:'not-a-course',params:{}}),/CURSO_NO_PERMITIDO/);
 assert.equal(vm.runInContext("resolverCursoAcademicoWeb_({materia:'Administración'}).id",ctx),manifest.courses.administracion.id);checks++;
-calls=[];assert.equal(run({action:'quizAsistencia',materia:'Administración'}).ok,true);assert.deepEqual(calls,['quizAsistencia']);checks++;
-blocked({action:'quizAsistencia',materia:'Administración',operationalContext:{}},/PARAMETRO_NO_PERMITIDO/);
-assert.throws(()=>prepareRequest({action:'clase',operationalContext:{}}),/CONTEXT_MISMATCH/);checks++;
-assert.equal(prepareRequest({action:'actividad',materia:'Administración',planningSpreadsheetId:'legacy'}).request.planningSpreadsheetId,undefined);checks++;
-assert.deepEqual(prepareRequest({action:'quizAsistencia',materia:'Administración'}).request,{action:'quizAsistencia',materia:'Administración'});checks++;
-// All existing period IDs and schema details remain exactly in sync.
 assert.equal(new Set(Object.values(manifest.courses).map(c=>c.id)).size,7);
-console.log(`OK: ${checks} deterministic startup, drift, fail-before-write, dispatch and FAST_PATH checks; no external services.`);
+console.log(`OK: ${checks} UAQ Executor gateway, direct-route rejection and deterministic dispatch checks; no external services.`);

@@ -29,6 +29,15 @@ export function readContext() {
       manifest.rules.platformChangeEvidenceRequired !== true ||
       manifest.rules.platformChangeMayMixWithAcademicRequest !== false ||
       manifest.rules.workModeAllowed !== false ||
+      manifest.rules.routineMutationGateway !== 'UAQ_EXECUTOR' ||
+      manifest.rules.routineMutationExternalAction !== 'uaqExecutor' ||
+      manifest.rules.directRoutineMutationRequestAllowed !== false ||
+      manifest.rules.routineOperationSourceInspectionAllowed !== false ||
+      manifest.rules.routineOperationWorkflowInspectionAllowed !== false ||
+      manifest.rules.routineOperationMaxAcademicRequests !== 1 ||
+      manifest.rules.routineOperationPostflightMode !== 'BUILT_IN_RESULT' ||
+      manifest.rules.routineOperationAlternativeRouteAllowed !== false ||
+      manifest.rules.routineOperationGatewayFailureBehavior !== 'BLOCK_NO_ALTERNATE_ROUTE' ||
       manifest.rules.workModeRole !== 'FORBIDDEN_FOR_CANONICAL_ACADEMIC_OPERATIONS' ||
       manifest.rules.gammaFolderRequired !== true || manifest.rules.gammaCreationMustPassFolderIds !== true ||
       manifest.rules.gammaThemeRequired !== true || manifest.rules.gammaCreationMustPassThemeId !== true ||
@@ -130,6 +139,16 @@ export function prepareRequest(request) {
   const {manifest,digest}=readContext();
   if (!request || typeof request!=='object' || Array.isArray(request)) throw Error('REQUEST_INVALID');
   request=stripInfrastructureOverrides(request);
+  const gateway=manifest.operations?.uaqExecutor;
+  const routineOps=Array.isArray(gateway?.allowedOperations)?gateway.allowedOperations:[];
+  if (routineOps.includes(request.action))
+    throw Error('DIRECT_ROUTINE_ACTION_FORBIDDEN_USE_UAQ_EXECUTOR: '+request.action);
+  if (request.action==='uaqExecutor') {
+    if (!routineOps.includes(request.operation))
+      throw Error('UAQ_EXECUTOR_OPERATION_INVALID: '+String(request.operation||''));
+    if (request.params && typeof request.params==='object' && request.params.action!==undefined)
+      throw Error('UAQ_EXECUTOR_NESTED_ACTION_FORBIDDEN');
+  }
   if (manifest.fastPaths.includes(request.action)) {
     if (Object.keys(request).some(k=>!['action','materia'].includes(k))) throw Error('FAST_PATH_INPUT_INVALID');
     return {endpoint:manifest.webApp.url,request};

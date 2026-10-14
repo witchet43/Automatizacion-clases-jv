@@ -20,7 +20,8 @@
  */
 const ACADEMIC_WEB = Object.freeze({
   COURSE_REGISTRY_SOURCE:'ACADEMIC_CONTEXT_CONFIG',
-  ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts']),
+  ACTIONS:Object.freeze(['uaqExecutor','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts']),
+  ROUTINE_OPERATIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase']),
   FAST_PATHS:Object.freeze({
     quizAsistencia:Object.freeze({singleExternalInput:'materia',firstExternalAction:'WEB_APP',preflightReadsAllowed:false,documentationRead:false,auxiliaryReads:false,diagnosticOnlyAfterError:true})
   })
@@ -109,6 +110,42 @@ function ejecutarServicioAcademicoWeb_(params){
       error:String(err&&err.message?err.message:err)
     });
   }
+}
+
+function ejecutarUaqExecutorWeb_(p){
+  const operation=String(p&&p.operation||'').trim();
+  if(ACADEMIC_WEB.ROUTINE_OPERATIONS.indexOf(operation)<0)
+    throw new Error('UAQ_EXECUTOR_OPERATION_INVALID: '+operation);
+  const source=p&&p.params&&typeof p.params==='object'?Object.assign({},p.params):{};
+  const course=resolverCursoAcademicoWeb_({
+    courseId:String(p&&p.courseId||source.courseId||'').trim(),
+    course:String(p&&p.course||'').trim(),
+    courseKey:String(p&&p.courseKey||'').trim(),
+    materia:String(p&&p.materia||source.materia||'').trim()
+  });
+  let result;
+  if(operation==='quizAsistencia'){
+    result=crearQuizAsistenciaRapido(String(course.materia||'').trim(),String(p&&p.requestId||source.requestId||'').trim());
+  }else if(operation==='clase'){
+    result=crearPaqueteClaseWeb_(course,source);
+  }else if(operation==='material'){
+    result=crearMaterialDidacticoWeb_(course,{params:source});
+  }else{
+    const payload=normalizarPayloadAcademicoWeb_(course,{params:source});
+    if(operation==='actividad')result=crearActividad(payload);
+    if(operation==='tarea')result=crearTarea(payload);
+    if(operation==='practica')result=crearPractica(payload);
+    if(operation==='quiz')result=crearQuiz(payload);
+    if(operation==='examen')result=crearExamen(payload);
+  }
+  return Object.assign({
+    gateway:'UAQ_EXECUTOR',
+    operation:operation,
+    courseId:String(course.id),
+    materia:String(course.materia),
+    alternativeRouteUsed:false,
+    gatewayPostflight:'ENTRYPOINT_RESULT'
+  },result&&typeof result==='object'?result:{result:result});
 }
 
 function validarContratoOperacionWeb_(action){
