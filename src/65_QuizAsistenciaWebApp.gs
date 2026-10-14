@@ -18,6 +18,7 @@
  * Gamma se genera DESPUÉS, con sus IDs/URLs reales verificados como referencias.
  * La fecha actual y Calendar nunca identifican ni secuencian la clase.
  */
+// UAQ_EXECUTOR_SINGLE_ROUTINE_GATEWAY: routine academic mutations enter only through uaqExecutor.
 const ACADEMIC_WEB = Object.freeze({
   COURSE_REGISTRY_SOURCE:'ACADEMIC_CONTEXT_CONFIG',
   ACTIONS:Object.freeze(['uaqExecutor','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts']),

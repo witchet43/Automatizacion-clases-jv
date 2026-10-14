@@ -3,7 +3,7 @@
   "authorized": true,
   "requestedByUser": true,
   "authorizationText": "Autoriza crear UAQ Executor como única puerta para operaciones académicas rutinarias.",
-  "reason": "Crear UAQ Executor como única puerta externa para operaciones académicas rutinarias y bloquear técnicamente las rutas directas que permiten reconstrucción o desvíos.",
+  "reason": "Autorización explícita vigente: desplegar UAQ Executor como única puerta externa de mutación académica rutinaria; rutas directas bloqueadas y sin alternativa automática.",
   "allowedChangedPaths": [
     "src/65_QuizAsistenciaWebApp.gs"
   ]
