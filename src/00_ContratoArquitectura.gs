@@ -47,7 +47,13 @@ const ARCHITECTURE_CONTRACT = Object.freeze({
   PLATFORM_CHANGE_MAY_SHARE_COMMIT_WITH_ACADEMIC_REQUEST: false,
   DEPLOY_TRIGGER: 'PLATFORM_CHANGE_EVIDENCE_ONLY',
   NEW_DEPLOYMENT_ALLOWED: false,
-  WORK_MODE_ALLOWED: false
+  WORK_MODE_ALLOWED: false,
+  PLANNING_GAMMA_STATE_IS_AUTHORITY: false,
+  GAMMA_LIVE_VERIFICATION_REQUIRED_BEFORE_REUSE: true,
+  GAMMA_LIVE_SEARCH_REQUIRED_BEFORE_CREATE: true,
+  GAMMA_ARCHIVED_COUNTS_AS_PREPARED: false,
+  GAMMA_ACTIVE_CANONICAL_ONLY_COUNTS_AS_VERIFIED: true,
+  GAMMA_POST_GENERATION_READ_REQUIRED: true
 });
 
 function validarContratoArquitectura_() {
@@ -87,5 +93,11 @@ function validarContratoArquitectura_() {
   if (c.DEPLOY_TRIGGER !== 'PLATFORM_CHANGE_EVIDENCE_ONLY') throw new Error('Deploy solo puede dispararse por evidencia de cambio de plataforma.');
   if (c.NEW_DEPLOYMENT_ALLOWED !== false) throw new Error('Solo se actualiza el deployment canónico existente.');
   if (c.WORK_MODE_ALLOWED !== false) throw new Error('Work mode no forma parte de esta arquitectura.');
+  if (c.PLANNING_GAMMA_STATE_IS_AUTHORITY !== false) throw new Error('La planeación no puede certificar el estado vivo de Gamma.');
+  if (c.GAMMA_LIVE_VERIFICATION_REQUIRED_BEFORE_REUSE !== true) throw new Error('Toda reutilización de Gamma exige verificación LIVE.');
+  if (c.GAMMA_LIVE_SEARCH_REQUIRED_BEFORE_CREATE !== true) throw new Error('Toda creación de Gamma exige búsqueda LIVE previa.');
+  if (c.GAMMA_ARCHIVED_COUNTS_AS_PREPARED !== false) throw new Error('Una Gamma archivada nunca acredita paquete preparado.');
+  if (c.GAMMA_ACTIVE_CANONICAL_ONLY_COUNTS_AS_VERIFIED !== true) throw new Error('Solo Gamma activa y canónica puede contarse como verificada.');
+  if (c.GAMMA_POST_GENERATION_READ_REQUIRED !== true) throw new Error('Toda Gamma generada debe leerse y verificarse antes de registrarla.');
   return Object.assign({}, c);
 }

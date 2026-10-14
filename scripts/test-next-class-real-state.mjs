@@ -30,7 +30,9 @@ assert.match(policy, /CURRENT_DATE_ALLOWED_FOR_IDENTITY_OR_SEQUENCE:\s*false/);
 assert.match(policy, /CALENDAR_ALLOWED_FOR_IDENTITY_OR_SEQUENCE:\s*false/);
 assert.match(policy, /RESOURCES_BEFORE_GAMMA:\s*true/);
 assert.match(source, /gammaNoAplica/);
-assert.match(source, /gammaVerificada\|\|gammaNoAplica/);
+assert.match(source, /planningGammaClaimedVerified/);
+assert.match(source, /GAMMA_LIVE_CONNECTOR/);
+assert.match(source, /gammaDecision/);
 
 // El estado de las fuentes se simula. Ningún reloj o propiedad de progreso
 // existe en el entorno; consultar cualquiera de ellos falla la prueba.
@@ -70,29 +72,47 @@ ctx.Date=class extends Date {constructor(){throw Error('PROHIBIDO_USAR_FECHA_ACT
 ctx.Utilities={sleep:()=>{}};
 vm.runInContext(classroomList,ctx,{filename:'42_SiguienteClaseDraftVisibility.gs'});
 vm.runInContext(resolver,ctx,{filename:'41_SiguienteClase.gs'});
+const live=(status,id)=>({source:'GAMMA_LIVE_CONNECTOR',status,gammaId:id,gammaUrl:'https://gamma.app/docs/live-'+id,title:'Tema',
+  archived:status==='LIVE_ARCHIVED',contentVerified:status==='LIVE_ACTIVE_CANONICAL',
+  canonicalTopicVerified:status==='LIVE_ACTIVE_CANONICAL',searchPerformed:true,activeEquivalentFound:false});
+
 let state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
+assert.equal(state.target.session,'13');
+assert.equal(state.sequenceSource,'GAMMA_LIVE_BOUNDARY_REQUIRED');
+assert.equal(state.gammaVerificationOnly,true);
+assert.equal(state.provisionalNextSession,'14');
+assert.equal(state.evidence.gammaVerificada,false);
+assert.equal(state.evidence.planningGammaClaimedVerified,true);
+
+state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{gammaLiveEvidence:{'13':live('LIVE_ACTIVE_CANONICAL','g13')}});
 assert.equal(state.target.session,'14');
 assert.equal(state.sequenceSource,'PLANNING_REAL_PREPARATION_STATE');
-assert.equal(state.evidence.gammaVerificada,false);
-assert.equal(state.evidence.publicado,false);
+
 const explicit=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática','15',{explicitTarget:true});
 assert.equal(explicit.target.session,'15');
 assert.equal(explicit.sequenceSource,'EXPLICIT_CANONICAL_SESSION');
+assert.equal(explicit.gammaDecision,'VERIFY_LIVE');
 
-// Aunque el ordenador esté en cualquier fecha, solo cambian los recursos reales.
+// Aunque el ordenador esté en cualquier fecha, solo cambian los recursos reales y Gamma LIVE.
 data[3][5]='https://gamma.app/docs/demo-14';
 data[3][6]='Gamma generado y verificado';
 data[3][7]='Actividad 7: 100000000003 (DRAFT)';
 works.push({id:'100000000003',title:'Actividad 7',state:'DRAFT'});
 state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
+assert.equal(state.target.session,'14');
+assert.equal(state.gammaVerificationOnly,true);
+state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{gammaLiveEvidence:{'14':live('LIVE_ACTIVE_CANONICAL','g14')}});
 assert.equal(state.target.session,'15');
-assert.equal(state.progress.lastPublished,0); // 2.2 y 2.3 están preparadas en DRAFT; no se necesita publicarlas para seguir preparando.
+assert.equal(state.progress.lastPublished,0);
+state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{gammaLiveEvidence:{'14':live('LIVE_ARCHIVED','g14')}});
+assert.equal(state.target.session,'14');
+assert.equal(state.gammaDecision,'CREATE');
 works[1].state='PUBLISHED';
-state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
+state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{gammaLiveEvidence:{'14':live('LIVE_ACTIVE_CANONICAL','g14')}});
 assert.equal(state.target.session,'15');
 works[2].state='PUBLISHED';
-state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
+state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{gammaLiveEvidence:{'14':live('LIVE_ACTIVE_CANONICAL','g14')}});
 assert.equal(state.target.session,'15');
 vm.runInContext(generator,ctx,{filename:'44_NomenclaturaRecursos.gs'});
 assert.throws(()=>ctx.generarSiguienteClase({materia:'UAQ - Ética y Legislación Informática'}),/BLOCKED_UNSUPPORTED_CLASS_GENERATOR/);
-console.log('OK: selección del siguiente paquete a preparar por recursos reales + Gamma; DRAFT preparado permite continuar, DRAFT no equivale a impartido, sin fecha/Calendar/contadores.');
+console.log('OK: selección usa Classroom real + verificación Gamma LIVE; planeación es referencia, Gamma archivada no acredita preparación, sin fecha/Calendar/contadores.');

@@ -12,14 +12,18 @@ const validate=fs.readFileSync('.github/workflows/validate-minimal-academic-oper
 assert.equal(manifest.operatingModel,'STATIC_WEB_APP_SERVICE');
 for(const key of [
   'staticWebAppDuringAcademicOperations','academicOperationsAreDataOnly','contentIsDataNotCode',
-  'platformChangeRequiresExplicitUserAuthorization','platformChangeEvidenceRequired'
+  'platformChangeRequiresExplicitUserAuthorization','platformChangeEvidenceRequired',
+  'gammaLiveVerificationRequiredBeforeReuse','gammaLiveSearchBeforeCreate',
+  'gammaPostGenerationReadRequired','gammaActiveCanonicalOnlyCountsAsVerified'
 ]) assert.equal(manifest.rules[key],true,key);
 for(const key of [
   'academicOperationMayModifySource','academicOperationMayModifyWorkflow','academicOperationMayModifyManifest',
   'academicOperationMayDeploy','academicFailureMayTriggerDevelopment','platformChangeMayMixWithAcademicRequest',
-  'workModeAllowed'
+  'workModeAllowed','planningGammaStateIsAuthority','gammaArchivedCountsAsPrepared'
 ]) assert.equal(manifest.rules[key],false,key);
 assert.equal(manifest.rules.recoveryRoute,'SAME_CANONICAL_WEB_APP_ONLY');
+assert.equal(manifest.rules.gammaLiveEvidenceSource,'GAMMA_LIVE_CONNECTOR');
+assert.equal(manifest.rules.gammaPlanningStatusRole,'REFERENCE_ONLY');
 assert.equal(manifest.platformChange.deployTrigger,'PLATFORM_CHANGE_EVIDENCE_ONLY');
 assert.equal(manifest.platformChange.updateExistingDeploymentOnly,true);
 assert.equal(manifest.platformChange.newDeploymentAllowed,false);

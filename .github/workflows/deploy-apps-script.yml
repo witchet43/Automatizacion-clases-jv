@@ -43,6 +43,7 @@ jobs:
           node scripts/test-architecture-boundaries.mjs
           node scripts/test-incident-regressions.mjs
           node scripts/test-static-webapp-contract.mjs
+          node scripts/test-gamma-live-state-contract.mjs
 
       - name: Validate Apps Script source
         shell: bash
@@ -64,8 +65,11 @@ jobs:
       - name: Regression - audit reconciles completed sessions without publishing
         run: node scripts/test-auditar-y-completar.mjs
 
-      - name: Regression - next class follows real Classroom and verified Gamma, never today
+      - name: Regression - next class follows real Classroom and live Gamma, never today
         run: node scripts/test-next-class-real-state.mjs
+
+      - name: Regression - Gamma planning claims never replace LIVE verification
+        run: node scripts/test-gamma-live-state-contract.mjs
 
       - name: Regression - every Google Doc gives each student an editable copy
         run: node scripts/test-google-doc-student-copy.mjs

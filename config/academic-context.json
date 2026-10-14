@@ -375,7 +375,15 @@
     "platformChangeRequiresExplicitUserAuthorization": true,
     "platformChangeEvidenceRequired": true,
     "platformChangeMayMixWithAcademicRequest": false,
-    "workModeAllowed": false
+    "workModeAllowed": false,
+    "planningGammaStateIsAuthority": false,
+    "gammaLiveVerificationRequiredBeforeReuse": true,
+    "gammaLiveSearchBeforeCreate": true,
+    "gammaArchivedCountsAsPrepared": false,
+    "gammaLiveEvidenceSource": "GAMMA_LIVE_CONNECTOR",
+    "gammaPostGenerationReadRequired": true,
+    "gammaActiveCanonicalOnlyCountsAsVerified": true,
+    "gammaPlanningStatusRole": "REFERENCE_ONLY"
   },
   "startup": {
     "read": [
@@ -491,7 +499,8 @@
       "resourcesBeforeGamma": true,
       "contentIsData": true,
       "sourceMutationAllowed": false,
-      "deploymentAllowed": false
+      "deploymentAllowed": false,
+      "gammaCreationDecisionRequiresLiveVerification": true
     },
     "resolverClase": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -502,7 +511,18 @@
       "readOnly": true,
       "contentIsData": true,
       "sourceMutationAllowed": false,
-      "deploymentAllowed": false
+      "deploymentAllowed": false,
+      "requiresGammaLiveVerification": true,
+      "gammaLiveEvidenceInput": "options.gammaLiveEvidence",
+      "gammaDecisionValues": [
+        "VERIFY_LIVE",
+        "REUSE",
+        "CREATE",
+        "REPAIR_OR_REVIEW",
+        "BLOCK",
+        "NOT_APPLICABLE",
+        "REUSE_ACTIVE_EQUIVALENT"
+      ]
     },
     "diagnosticarClase": {
       "executionRoute": "ACADEMIC_WEB_APP",

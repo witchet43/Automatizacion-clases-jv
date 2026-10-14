@@ -1,13 +1,103 @@
 /**
  * Fuente ejecutable única para "siguiente clase".
- * La fecha actual, el reloj, Calendar, memoria, contadores y propiedades guardadas
- * están PROHIBIDOS para identificar o secuenciar una clase.
- * La planeación aporta exclusivamente el orden canónico. Classroom acredita recursos
- * reales preparados y Gamma verificada acredita el componente visual del paquete.
- * DRAFT + Gamma verificada significa PAQUETE PREPARADO (no clase impartida) y permite
- * continuar preparando el siguiente paquete canónico.
+ *
+ * La planeación aporta orden y referencias, pero NUNCA certifica el estado actual
+ * de Gamma. Classroom se verifica contra Classroom real. Gamma solo se considera
+ * vigente cuando la operación actual aporta evidencia LIVE obtenida del conector
+ * de Gamma y esa evidencia acredita una presentación activa y canónica.
+ *
+ * Una anotación histórica como "GENERADA Y VERIFICADA" sirve únicamente como
+ * referencia para localizar un candidato; jamás equivale a verificación viva.
  */
-function evidenciaSesionReal_(row, works) {
+const GAMMA_LIVE_STATUSES = Object.freeze([
+  'LIVE_ACTIVE_CANONICAL',
+  'LIVE_ACTIVE_NON_CANONICAL',
+  'LIVE_ARCHIVED',
+  'LIVE_NOT_FOUND',
+  'LIVE_INACCESSIBLE'
+]);
+
+function normalizarGammaLiveEvidence_(row, gammaLiveEvidence) {
+  const session=String(row&&row.session||'').trim();
+  const map=gammaLiveEvidence&&typeof gammaLiveEvidence==='object'&&!Array.isArray(gammaLiveEvidence)
+    ? gammaLiveEvidence : {};
+  const raw=map[session]&&typeof map[session]==='object'?map[session]:null;
+  if(!raw){
+    return {
+      provided:false,
+      status:'NOT_CHECKED',
+      verified:false,
+      reusable:false,
+      createAllowed:false,
+      decision:'VERIFY_LIVE',
+      source:'',
+      gammaId:'',
+      gammaUrl:'',
+      title:'',
+      archived:null,
+      contentVerified:false,
+      canonicalTopicVerified:false,
+      searchPerformed:false,
+      activeEquivalentFound:false
+    };
+  }
+
+  const source=String(raw.source||'').trim();
+  if(source!=='GAMMA_LIVE_CONNECTOR')
+    throw new Error('GAMMA_LIVE_EVIDENCE_SOURCE_INVALID: '+session);
+
+  const status=String(raw.status||'').trim().toUpperCase();
+  if(GAMMA_LIVE_STATUSES.indexOf(status)<0)
+    throw new Error('GAMMA_LIVE_STATUS_INVALID: '+session+' '+status);
+
+  const searchPerformed=raw.searchPerformed===true;
+  const activeEquivalentFound=raw.activeEquivalentFound===true;
+  const archived=raw.archived===true;
+  const contentVerified=raw.contentVerified===true;
+  const canonicalTopicVerified=raw.canonicalTopicVerified===true;
+  const gammaId=String(raw.gammaId||'').trim();
+  const gammaUrl=String(raw.gammaUrl||'').trim();
+  const title=String(raw.title||'').trim();
+
+  if(status==='LIVE_ACTIVE_CANONICAL'){
+    if(archived||!contentVerified||!canonicalTopicVerified||!searchPerformed||(!gammaId&&!gammaUrl))
+      throw new Error('GAMMA_LIVE_ACTIVE_CANONICAL_INCOMPLETE: '+session);
+  }
+  if((status==='LIVE_ARCHIVED'||status==='LIVE_NOT_FOUND')&&!searchPerformed)
+    throw new Error('GAMMA_LIVE_SEARCH_REQUIRED_BEFORE_CREATE: '+session);
+  if(status==='LIVE_ARCHIVED'&&raw.archived!==true)
+    throw new Error('GAMMA_LIVE_ARCHIVED_FLAG_REQUIRED: '+session);
+
+  const verified=status==='LIVE_ACTIVE_CANONICAL'&&!archived&&contentVerified&&canonicalTopicVerified&&searchPerformed;
+  const createAllowed=(status==='LIVE_ARCHIVED'||status==='LIVE_NOT_FOUND')&&
+    searchPerformed&&!activeEquivalentFound;
+  let decision='BLOCK';
+  if(verified)decision='REUSE';
+  else if(createAllowed)decision='CREATE';
+  else if(status==='LIVE_ACTIVE_NON_CANONICAL')decision='REPAIR_OR_REVIEW';
+  else if(status==='LIVE_INACCESSIBLE')decision='BLOCK';
+  else if(status==='LIVE_ARCHIVED'||status==='LIVE_NOT_FOUND')decision='REUSE_ACTIVE_EQUIVALENT';
+
+  return {
+    provided:true,
+    status:status,
+    verified:verified,
+    reusable:verified,
+    createAllowed:createAllowed,
+    decision:decision,
+    source:source,
+    gammaId:gammaId,
+    gammaUrl:gammaUrl,
+    title:title,
+    archived:archived,
+    contentVerified:contentVerified,
+    canonicalTopicVerified:canonicalTopicVerified,
+    searchPerformed:searchPerformed,
+    activeEquivalentFound:activeEquivalentFound
+  };
+}
+
+function evidenciaSesionReal_(row, works, gammaLiveEvidence) {
   const titulo=String(row.practice||'').trim();
   const normal=function(s){return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');};
   const tituloNorm=normal(titulo);
@@ -15,21 +105,28 @@ function evidenciaSesionReal_(row, works) {
   const active=(works||[]).filter(function(w){
     return ['DRAFT','PUBLISHED'].indexOf(String(w.state||'').toUpperCase())>=0;
   });
-  // Un ID anotado en Sheets nunca se considera evidencia sin cotejarlo en Classroom.
-  // Si hay título de actividad/práctica, debe coincidir: una tarea de la sesión
-  // siguiente no prueba que la actividad de ESTA sesión ya existe.
   const tituloEsPlaceholder=!tituloNorm||/^(historico|histórico|actividad definida|practica definida|práctica definida|práctica formal(?:\s+de)?|practica formal(?:\s+de)?|actividad de|no aplica)/i.test(String(titulo||'').trim());
   const matches=active.filter(function(w){
     const byId=ids.indexOf(String(w.id))>=0;
     const byTitle=tituloNorm&&normal(w.title)===tituloNorm;
     return byTitle||(tituloEsPlaceholder&&byId);
   });
+
   const gammaUrl=String(row.gammaUrl||'').trim();
   const gammaState=String(row.gammaState||'').trim();
   const gammaDescriptor=[String(row.gamma||''),gammaUrl,gammaState].join(' ');
   const gammaNoAplica=/\bno\s+aplica\b/i.test(gammaDescriptor);
-  const gammaVerificada=/^https:\/\/gamma\.app\/docs\//i.test(gammaUrl)&&
+  const planningGammaClaimedVerified=/^https:\/\/gamma\.app\/docs\//i.test(gammaUrl)&&
     /\bverificad[ao]\b/i.test(gammaState);
+  const live=gammaNoAplica?{
+    provided:true,status:'NOT_APPLICABLE',verified:false,reusable:false,createAllowed:false,
+    decision:'NOT_APPLICABLE',source:'PLANNING_EXPLICIT_NOT_APPLICABLE',gammaId:'',gammaUrl:'',
+    title:'',archived:null,contentVerified:false,canonicalTopicVerified:false,
+    searchPerformed:false,activeEquivalentFound:false
+  }:normalizarGammaLiveEvidence_(row,gammaLiveEvidence);
+
+  const livePrepared=gammaNoAplica||live.verified;
+  const planningPrepared=gammaNoAplica||planningGammaClaimedVerified;
   return {
     session:String(row.session||''),
     unit:String(row.unit||''),
@@ -37,42 +134,83 @@ function evidenciaSesionReal_(row, works) {
     classroomIds:matches.map(function(w){return String(w.id);}),
     classroomStates:matches.map(function(w){return String(w.state).toUpperCase();}),
     gammaUrl:gammaUrl,
-    gammaVerificada:gammaVerificada,
+    gammaPlanningState:gammaState,
+    planningGammaClaimedVerified:planningGammaClaimedVerified,
+    gammaVerificada:live.verified,
     gammaNoAplica:gammaNoAplica,
+    gammaLiveEvidenceProvided:live.provided,
+    gammaLiveStatus:live.status,
+    gammaLiveSource:live.source,
+    gammaLiveId:live.gammaId,
+    gammaLiveUrl:live.gammaUrl,
+    gammaLiveTitle:live.title,
+    gammaLiveArchived:live.archived,
+    gammaLiveSearchPerformed:live.searchPerformed,
+    gammaLiveContentVerified:live.contentVerified,
+    gammaLiveCanonicalTopicVerified:live.canonicalTopicVerified,
+    gammaActiveEquivalentFound:live.activeEquivalentFound,
+    gammaDecision:live.decision,
+    gammaCanReuse:live.reusable,
+    gammaCanCreate:live.createAllowed,
+    gammaLiveVerificationRequired:!gammaNoAplica&&!live.provided,
     recursoPreparado:matches.length>0,
-    // DRAFT + (Gamma verificada o Gamma explícitamente no aplicable) acredita preparación integral.
-    // Nunca equivale a sesión impartida.
-    paquetePreparado:(gammaVerificada||gammaNoAplica)&&matches.length>0,
-    materialPreparado:(gammaVerificada||gammaNoAplica)&&matches.length>0,
+    planningPaquetePreparado:planningPrepared&&matches.length>0,
+    paquetePreparado:livePrepared&&matches.length>0,
+    materialPreparado:livePrepared&&matches.length>0,
     publicado:matches.some(function(w){return String(w.state||'').toUpperCase()==='PUBLISHED';})
   };
 }
+
 function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, options) {
   const plan=Array.isArray(rows)?rows:[], opts=options||{};
   if(!plan.length)throw new Error('BLOCKED_NO_CANONICAL_SESSIONS: la planeación está vacía.');
-  const seen=plan.map(function(row){return evidenciaSesionReal_(row,works);});
-  // Sesión explícita: validar su identidad en la planeación, sin inferir
-  // progreso ni exigir reconciliación para trabajar el tema pedido.
+  const liveMap=opts.gammaLiveEvidence&&typeof opts.gammaLiveEvidence==='object'
+    ? opts.gammaLiveEvidence : {};
+  const seen=plan.map(function(row){return evidenciaSesionReal_(row,works,liveMap);});
+
   const requested=String(requestedSession||'').trim();
   if(requested&&opts.explicitTarget===true){
     const index=plan.findIndex(function(r){return String(r.session||'').trim()===requested;});
     if(index<0)throw new Error('BLOCKED_UNKNOWN_CANONICAL_SESSION: '+requested);
-    const target=plan[index],evidence=seen[index];
-    if(/^https?:/i.test(String(evidence.gammaUrl||''))&&!evidence.gammaVerificada)
-      throw new Error('BLOCKED_GAMMA_UNVERIFIED: comprobar Gamma existente.');
-    return {complete:false,target:target,evidence:evidence,
+    return {
+      complete:false,target:plan[index],evidence:seen[index],
       source:'EXPLICIT_CANONICAL_SESSION',inferredSession:null,
-      lastPrepared:null,lastPublished:null,reconciliation:false,observed:seen};
+      lastPrepared:null,lastPublished:null,reconciliation:false,observed:seen,
+      gammaVerificationOnly:false,provisionalNextSession:null
+    };
   }
-  const lastPrepared=seen.reduce(function(last,e,i){return e.paquetePreparado?i:last;},-1);
-  const lastPublished=seen.reduce(function(last,e,i){return e.publicado?i:last;},-1);
-  // La operación resuelve la siguiente clase A PREPARAR, no pretende inferir qué fue impartido.
-  // Un paquete DRAFT + Gamma verificada es evidencia real suficiente de preparación.
-  // La fecha actual y Calendar no se consultan ni participan en esta decisión.
-  let inferred=lastPrepared>=0?lastPrepared+1:0, reconciliation=false;
-  if(inferred>=plan.length)return {complete:true, target:null,source:'PLANNING_REAL_PREPARATION_STATE',lastPrepared:lastPrepared,lastPublished:lastPublished,observed:seen};
 
-  let index=inferred;
+  const lastPlanningPrepared=seen.reduce(function(last,e,i){return e.planningPaquetePreparado?i:last;},-1);
+  const lastPublished=seen.reduce(function(last,e,i){return e.publicado?i:last;},-1);
+
+  // Para conservar velocidad no se vuelve a auditar todo el semestre. La frontera
+  // de avance que la planeación considera preparada se valida LIVE antes de avanzar.
+  // Si esa Gamma fue archivada/eliminada, la propia frontera vuelve a ser el objetivo.
+  if(lastPlanningPrepared>=0){
+    const boundary=seen[lastPlanningPrepared];
+    if(!boundary.gammaNoAplica&&!boundary.gammaLiveEvidenceProvided){
+      return {
+        complete:false,target:plan[lastPlanningPrepared],evidence:boundary,
+        source:'GAMMA_LIVE_BOUNDARY_REQUIRED',
+        lastPrepared:lastPlanningPrepared-1,lastPublished:lastPublished,
+        inferredSession:String(plan[lastPlanningPrepared].session),
+        reconciliation:false,observed:seen,gammaVerificationOnly:true,
+        provisionalNextSession:lastPlanningPrepared+1<plan.length?String(plan[lastPlanningPrepared+1].session):null
+      };
+    }
+  }
+
+  let inferred=0;
+  if(lastPlanningPrepared>=0){
+    inferred=seen[lastPlanningPrepared].paquetePreparado?lastPlanningPrepared+1:lastPlanningPrepared;
+  }
+  if(inferred>=plan.length)return {
+    complete:true,target:null,source:'PLANNING_REAL_PREPARATION_STATE',
+    lastPrepared:lastPlanningPrepared,lastPublished:lastPublished,observed:seen,
+    gammaVerificationOnly:false,provisionalNextSession:null
+  };
+
+  let index=inferred,reconciliation=false;
   if(requested){
     index=plan.findIndex(function(r){return String(r.session||'').trim()===requested;});
     if(index<0)throw new Error('BLOCKED_UNKNOWN_CANONICAL_SESSION: '+requested);
@@ -82,43 +220,80 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
       reconciliation=true;
     }
   }
-  const target=plan[index], evidence=seen[index];
-  if(/^https?:\/\//i.test(evidence.gammaUrl)&&!evidence.gammaVerificada)
-    throw new Error('BLOCKED_GAMMA_UNVERIFIED: existe URL Gamma sin estado de verificación; comprobar y reutilizar antes de generar.');
-  return {complete:false,target:target,evidence:evidence,source:'PLANNING_REAL_PREPARATION_STATE',
-    lastPrepared:lastPrepared,lastPublished:lastPublished,inferredSession:String(plan[inferred].session),
-    reconciliation:reconciliation,observed:seen};
+  return {
+    complete:false,target:plan[index],evidence:seen[index],
+    source:'PLANNING_REAL_PREPARATION_STATE',
+    lastPrepared:lastPlanningPrepared,lastPublished:lastPublished,
+    inferredSession:String(plan[inferred].session),reconciliation:reconciliation,
+    observed:seen,gammaVerificationOnly:false,provisionalNextSession:null
+  };
 }
-/** Pruebas puras, sin accesos a Classroom, Gamma, Drive ni modificaciones. */
+
+/** Pruebas puras: la planeación nunca puede certificar una Gamma viva. */
 function validarSecuenciaRealRegresion(){
-  const mk=function(n,unit,activity,gamma){return {session:String(n),unit:unit,topic:'2.'+n+' Tema',practice:activity,gammaUrl:gamma?'https://gamma.app/docs/test-'+n:'',gammaState:gamma?'Gamma generado y verificado':''};};
+  const mk=function(n,unit,activity,gamma){
+    return {session:String(n),unit:unit,topic:'2.'+n+' Tema',practice:activity,
+      gammaUrl:gamma?'https://gamma.app/docs/test-'+n:'',
+      gammaState:gamma?'Gamma generado y verificado':''};
+  };
+  const live=function(status,id){
+    return {source:'GAMMA_LIVE_CONNECTOR',status:status,gammaId:id||'g_test',
+      gammaUrl:'https://gamma.app/docs/live-'+(id||'g_test'),title:'Tema',
+      archived:status==='LIVE_ARCHIVED',contentVerified:status==='LIVE_ACTIVE_CANONICAL',
+      canonicalTopicVerified:status==='LIVE_ACTIVE_CANONICAL',searchPerformed:true,
+      activeEquivalentFound:false};
+  };
   const rows=[mk(12,'Unidad 2','Actividad 5',true),mk(13,'Unidad 2','Actividad 6',true),mk(14,'Unidad 2','Actividad 7',false),mk(15,'Unidad 2','Actividad 8',false)];
   const prepared=[
     {id:'100000000001',title:'Actividad 5',state:'PUBLISHED'},
     {id:'100000000002',title:'Actividad 6',state:'DRAFT'}
   ];
-  const next=function(r,x){return seleccionarSiguienteClasePorEstadoReal_(r,x).target.session;};
-  if(next(rows,prepared)!=='14')throw new Error('REGRESSION_SEQUENCE: DRAFT + Gamma verificada debe permitir preparar la sesión siguiente.');
+
+  const planningOnly=evidenciaSesionReal_(rows[1],prepared,{});
+  if(planningOnly.gammaVerificada||planningOnly.paquetePreparado||!planningOnly.planningGammaClaimedVerified)
+    throw new Error('REGRESSION_GAMMA_LIVE: la planeación no puede certificar Gamma viva.');
+
+  let state=seleccionarSiguienteClasePorEstadoReal_(rows,prepared);
+  if(state.target.session!=='13'||state.source!=='GAMMA_LIVE_BOUNDARY_REQUIRED'||!state.gammaVerificationOnly)
+    throw new Error('REGRESSION_GAMMA_LIVE: la frontera planeada debe requerir verificación LIVE antes de avanzar.');
+
+  state=seleccionarSiguienteClasePorEstadoReal_(rows,prepared,null,{gammaLiveEvidence:{'13':live('LIVE_ACTIVE_CANONICAL','g13')}});
+  if(state.target.session!=='14')
+    throw new Error('REGRESSION_GAMMA_LIVE: Gamma activa y canónica permite avanzar.');
+
   const partial=prepared.concat([{id:'100000000003',title:'Actividad 7',state:'DRAFT'}]);
-  if(next(rows,partial)!=='14')throw new Error('REGRESSION_SEQUENCE: recurso DRAFT sin Gamma conserva la misma sesión como paquete incompleto.');
   const withGamma=rows.map(function(r){return Object.assign({},r);});
-  withGamma[2].gammaUrl='https://gamma.app/docs/test-14';withGamma[2].gammaState='Gamma generado y verificado';
-  if(next(withGamma,partial)!=='15')throw new Error('REGRESSION_SEQUENCE: paquete DRAFT + Gamma verificada permite continuar a la sesión 15.');
-  const none=rows.map(function(r){return Object.assign({},r,{gammaUrl:'',gammaState:''});});
-  if(next(none,[])!=='12')throw new Error('REGRESSION_SEQUENCE: sin evidencia previa se inicia por la primera sesión canónica, nunca por fecha.');
-  if(seleccionarSiguienteClasePorEstadoReal_(rows,prepared,'15',{explicitTarget:true}).target.session!=='15')
-    throw new Error('REGRESSION_EXPLICIT_SESSION: la sesión explícita debe conservar su identidad sin usar fecha ni inferir progreso.');
-  const unver=Object.assign({},rows[2],{gammaUrl:'https://gamma.app/docs/no-verificada',gammaState:''});
-  let blocked=false;try{seleccionarSiguienteClasePorEstadoReal_([rows[0],rows[1],unver,rows[3]],prepared,'14',{explicitTarget:true});}
-  catch(err){blocked=/BLOCKED_GAMMA_UNVERIFIED/.test(String(err));}
-  if(!blocked)throw new Error('REGRESSION_SEQUENCE: una Gamma existente no verificada debe bloquear solo esa sesión explícita.');
+  withGamma[2].gammaUrl='https://gamma.app/docs/test-14';
+  withGamma[2].gammaState='Gamma generado y verificado';
+
+  state=seleccionarSiguienteClasePorEstadoReal_(withGamma,partial,null,{gammaLiveEvidence:{
+    '14':live('LIVE_ARCHIVED','g14')
+  }});
+  if(state.target.session!=='14'||state.evidence.gammaDecision!=='CREATE'||state.evidence.paquetePreparado)
+    throw new Error('REGRESSION_GAMMA_LIVE: Gamma archivada debe forzar CREATE, nunca paquete preparado.');
+
+  state=seleccionarSiguienteClasePorEstadoReal_(withGamma,partial,null,{gammaLiveEvidence:{
+    '14':live('LIVE_ACTIVE_CANONICAL','g14')
+  }});
+  if(state.target.session!=='15')
+    throw new Error('REGRESSION_GAMMA_LIVE: Gamma LIVE activa y canónica permite continuar.');
+
+  const explicit=seleccionarSiguienteClasePorEstadoReal_(rows,prepared,'15',{explicitTarget:true});
+  if(explicit.target.session!=='15'||explicit.evidence.gammaDecision!=='VERIFY_LIVE')
+    throw new Error('REGRESSION_EXPLICIT_SESSION: sesión explícita debe conservar identidad y exigir Gamma LIVE.');
+
   const noGamma=rows.map(function(r){return Object.assign({},r);});
   noGamma[2].gammaUrl='PENDIENTE / No aplica';
   noGamma[2].gammaState='NO APLICA — sesión integradora';
-  const noGammaEvidence=evidenciaSesionReal_(noGamma[2],partial);
+  const noGammaEvidence=evidenciaSesionReal_(noGamma[2],partial,{});
   if(!noGammaEvidence.gammaNoAplica||!noGammaEvidence.paquetePreparado)
-    throw new Error('REGRESSION_SEQUENCE: una sesión con Gamma explícitamente NO APLICA debe quedar preparada con recurso real.');
-  if(next(noGamma,partial)!=='15')
-    throw new Error('REGRESSION_SEQUENCE: Gamma NO APLICA no debe bloquear el avance del paquete.');
-  return {ok:true,source:'PLANNING_REAL_PREPARATION_STATE',regressions:8,readOnly:true,currentDateUsed:false,calendarUsed:false};
+    throw new Error('REGRESSION_SEQUENCE: Gamma NO APLICA puede acreditar paquete con recurso real.');
+
+  let invalidSource=false;
+  try{evidenciaSesionReal_(rows[1],prepared,{'13':{source:'PLANNING',status:'LIVE_ACTIVE_CANONICAL'}});}
+  catch(err){invalidSource=/GAMMA_LIVE_EVIDENCE_SOURCE_INVALID/.test(String(err));}
+  if(!invalidSource)throw new Error('REGRESSION_GAMMA_LIVE: evidencia no LIVE debe rechazarse.');
+
+  return {ok:true,source:'PLANNING_REAL_PREPARATION_STATE',regressions:8,readOnly:true,
+    currentDateUsed:false,calendarUsed:false,gammaPlanningIsAuthority:false,gammaLiveRequired:true};
 }

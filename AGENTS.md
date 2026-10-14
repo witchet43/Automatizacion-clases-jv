@@ -41,3 +41,25 @@ No mezclar `.academic-requests/**` y `.platform-changes/**` en el mismo commit.
 7. Si el motor requiere código nuevo, STOP y pedir autorización explícita de PLATFORM_CHANGE.
 
 No usar memoria para reconstruir IDs, endpoints, algoritmos o avance. Calendar y la fecha actual no seleccionan clase. CourseWork ordinario permanece DRAFT y Forms sin publicar.
+
+
+## Gamma LIVE — regla obligatoria sin excepción
+
+La planeación es referencia histórica; **nunca certifica el estado actual de Gamma**. Un texto como `GENERADA Y VERIFICADA` o una URL guardada no permite declarar una Gamma reutilizable.
+
+Para una clase o Gamma:
+1. Resolver la sesión por Web App.
+2. Si Gamma aplica, verificar el servicio Gamma real mediante el conector: consultar la URL/ID registrada y buscar también por título/tema con archivadas incluidas.
+3. Leer la Gamma candidata antes de reutilizarla y comprobar que está activa, no archivada y corresponde al tema canónico.
+4. Pasar esa evidencia a `resolverClase` en `options.gammaLiveEvidence[sesion]` con `source: "GAMMA_LIVE_CONNECTOR"`.
+5. Obedecer `gammaDecision`:
+   - `REUSE`: reutilizar.
+   - `CREATE`: generar una nueva Gamma.
+   - `REUSE_ACTIVE_EQUIVALENT`: no generar; usar el equivalente activo encontrado.
+   - `REPAIR_OR_REVIEW`: corregir/revisar el existente; no duplicar.
+   - `BLOCK`: detenerse.
+   - `VERIFY_LIVE`: todavía falta consultar Gamma real.
+6. `CREATE` solo es válido si se ejecutó búsqueda LIVE y no existe equivalente activo.
+7. Después de generar, esperar `completed`, leer la nueva Gamma, comprobar título/contenido/estado activo y volver a aportar evidencia `LIVE_ACTIVE_CANONICAL` antes de declarar el paquete preparado.
+
+Una Gamma archivada, eliminada, inaccesible o solo “verificada” en Sheets **nunca** acredita una clase preparada.

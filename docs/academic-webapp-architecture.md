@@ -50,3 +50,16 @@ Work mode no forma parte de esta arquitectura. GitHub, GitHub Actions, Apps Scri
 ## Garantía buscada
 
 Una operación académica rutinaria debe producir cero cambios de código y cero deployments. Muchos recursos académicos con cero deployments es el comportamiento correcto, no una omisión.
+
+
+## Autoridad LIVE de Gamma
+
+La planeación no certifica Gamma. Sus campos URL/ID/estado son referencias para localizar candidatos.
+
+Para decidir reutilización o creación, el orquestador debe consultar Gamma real. La evidencia se entrega a `resolverClase` en `options.gammaLiveEvidence[sesion]` y debe declarar `source: GAMMA_LIVE_CONNECTOR`.
+
+Estados permitidos: `LIVE_ACTIVE_CANONICAL`, `LIVE_ACTIVE_NON_CANONICAL`, `LIVE_ARCHIVED`, `LIVE_NOT_FOUND`, `LIVE_INACCESSIBLE`.
+
+Solo `LIVE_ACTIVE_CANONICAL` con búsqueda realizada, contenido leído/verificado y tema canónico confirmado acredita Gamma preparada. `LIVE_ARCHIVED` y `LIVE_NOT_FOUND` permiten `CREATE` únicamente si la búsqueda LIVE no encontró un equivalente activo. La respuesta `REUSE_ACTIVE_EQUIVALENT` prohíbe regenerar.
+
+Después de cualquier generación Gamma, el estado `completed` de la herramienta no basta: debe ejecutarse lectura/verificación real antes de registrar o declarar preparado el paquete.

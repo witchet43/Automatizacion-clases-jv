@@ -32,6 +32,14 @@ export function readContext() {
       manifest.rules.workModeRole !== 'FORBIDDEN_FOR_CANONICAL_ACADEMIC_OPERATIONS' ||
       manifest.rules.gammaFolderRequired !== true || manifest.rules.gammaCreationMustPassFolderIds !== true ||
       manifest.rules.gammaThemeRequired !== true || manifest.rules.gammaCreationMustPassThemeId !== true ||
+      manifest.rules.planningGammaStateIsAuthority !== false ||
+      manifest.rules.gammaLiveVerificationRequiredBeforeReuse !== true ||
+      manifest.rules.gammaLiveSearchBeforeCreate !== true ||
+      manifest.rules.gammaArchivedCountsAsPrepared !== false ||
+      manifest.rules.gammaLiveEvidenceSource !== 'GAMMA_LIVE_CONNECTOR' ||
+      manifest.rules.gammaPostGenerationReadRequired !== true ||
+      manifest.rules.gammaActiveCanonicalOnlyCountsAsVerified !== true ||
+      manifest.rules.gammaPlanningStatusRole !== 'REFERENCE_ONLY' ||
       JSON.stringify(manifest.fastPaths) !== '["quizAsistencia"]') throw Error('ACADEMIC_CONTEXT_INVALID');
   if (!manifest.platformChange || manifest.platformChange.authorizationRequired !== true ||
       manifest.platformChange.authorizationSource !== 'EXPLICIT_CURRENT_USER_REQUEST' ||

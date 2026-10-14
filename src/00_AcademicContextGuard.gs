@@ -8,6 +8,14 @@ function validarConfiguracionContextoAcademico_() {
      c.rules.resourcesBeforeGamma!==true||c.rules.gammaReferencesVerifiedResources!==true||
      c.rules.gammaFolderRequired!==true||c.rules.gammaCreationMustPassFolderIds!==true||
      c.rules.gammaThemeRequired!==true||c.rules.gammaCreationMustPassThemeId!==true||
+     c.rules.planningGammaStateIsAuthority!==false||
+     c.rules.gammaLiveVerificationRequiredBeforeReuse!==true||
+     c.rules.gammaLiveSearchBeforeCreate!==true||
+     c.rules.gammaArchivedCountsAsPrepared!==false||
+     c.rules.gammaLiveEvidenceSource!=='GAMMA_LIVE_CONNECTOR'||
+     c.rules.gammaPostGenerationReadRequired!==true||
+     c.rules.gammaActiveCanonicalOnlyCountsAsVerified!==true||
+     c.rules.gammaPlanningStatusRole!=='REFERENCE_ONLY'||
      c.rules.staticWebAppDuringAcademicOperations!==true||
      c.rules.academicOperationsAreDataOnly!==true||
      c.rules.academicOperationMayModifySource!==false||

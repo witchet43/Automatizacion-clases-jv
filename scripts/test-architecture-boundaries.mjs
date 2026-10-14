@@ -25,6 +25,13 @@ if (manifest.rules?.platformChangeRequiresExplicitUserAuthorization !== true ||
   fail.push('platform changes require explicit user authorization evidence');
 if (manifest.rules?.platformChangeMayMixWithAcademicRequest !== false) fail.push('platform and academic lanes must be isolated');
 if (manifest.rules?.workModeAllowed !== false) fail.push('Work mode must remain forbidden for this project');
+if (manifest.rules?.planningGammaStateIsAuthority !== false) fail.push('planning Gamma state must never be authority');
+if (manifest.rules?.gammaLiveVerificationRequiredBeforeReuse !== true) fail.push('Gamma reuse must require LIVE verification');
+if (manifest.rules?.gammaLiveSearchBeforeCreate !== true) fail.push('Gamma creation must require LIVE search');
+if (manifest.rules?.gammaArchivedCountsAsPrepared !== false) fail.push('archived Gamma must not count as prepared');
+if (manifest.rules?.gammaLiveEvidenceSource !== 'GAMMA_LIVE_CONNECTOR') fail.push('Gamma LIVE evidence source must be connector');
+if (manifest.rules?.gammaPostGenerationReadRequired !== true) fail.push('generated Gamma must be read/verified');
+if (manifest.rules?.gammaActiveCanonicalOnlyCountsAsVerified !== true) fail.push('only active canonical Gamma may count as verified');
 for (const [name, op] of Object.entries(manifest.operations || {})) {
   const expected = name === 'quizAsistencia' ? 'FAST_PATH_WEB_APP' : 'ACADEMIC_WEB_APP';
   if (op.executionRoute !== expected) fail.push(`operation ${name} has non-canonical route ${op.executionRoute}`);
@@ -47,7 +54,13 @@ const requiredContract = [
   /ACADEMIC_FAILURE_GRANTS_DEVELOPMENT_AUTHORIZATION:\s*false/,
   /PLATFORM_CHANGE_REQUIRES_EXPLICIT_USER_AUTHORIZATION:\s*true/,
   /DEPLOY_TRIGGER:\s*'PLATFORM_CHANGE_EVIDENCE_ONLY'/,
-  /WORK_MODE_ALLOWED:\s*false/
+  /WORK_MODE_ALLOWED:\s*false/,
+  /PLANNING_GAMMA_STATE_IS_AUTHORITY:\s*false/,
+  /GAMMA_LIVE_VERIFICATION_REQUIRED_BEFORE_REUSE:\s*true/,
+  /GAMMA_LIVE_SEARCH_REQUIRED_BEFORE_CREATE:\s*true/,
+  /GAMMA_ARCHIVED_COUNTS_AS_PREPARED:\s*false/,
+  /GAMMA_ACTIVE_CANONICAL_ONLY_COUNTS_AS_VERIFIED:\s*true/,
+  /GAMMA_POST_GENERATION_READ_REQUIRED:\s*true/
 ];
 if (requiredContract.some(re => !re.test(contract))) fail.push('architecture contract is missing anti-divergence invariants');
 

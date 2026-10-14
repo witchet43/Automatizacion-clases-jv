@@ -58,3 +58,10 @@ No se permite mezclar una solicitud académica con un cambio de plataforma en el
 CourseWork ordinario: DRAFT. Forms: no publicados. Google Docs entregables: STUDENT_COPY. La secuencia de clase proviene de planeación + Classroom real + Gamma verificada, nunca de la fecha actual o Calendar.
 
 **La señal de salud esperada es poder crear decenas de recursos académicos con cero modificaciones de código y cero deployments.**
+
+
+## Verificación LIVE de Gamma
+
+La planeación ya no es autoridad sobre la existencia o vigencia de una Gamma. `GENERADA Y VERIFICADA` se trata como referencia histórica.
+
+`resolverClase` acepta `options.gammaLiveEvidence` por sesión. Solo `LIVE_ACTIVE_CANONICAL`, obtenido del conector Gamma tras búsqueda real y lectura de contenido, puede establecer `gammaVerificada=true`. Una Gamma archivada o no encontrada devuelve decisión `CREATE` únicamente cuando la búsqueda LIVE confirmó que no existe un equivalente activo. Esto evita tanto falsos “completado” como regeneraciones que consumen créditos.
