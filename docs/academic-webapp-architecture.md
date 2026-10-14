@@ -78,3 +78,12 @@ Una creación de clase completa sigue:
 6. Solo Gamma LIVE + Notion LIVE + recurso Classroom real permiten `paquetePreparado=true`.
 
 Las notas son idempotentes por `materia + tema/subtema canónico + parentPageId`. Un duplicado bloquea el cierre del paquete.
+
+
+## Perfil de entorno por curso — Introducción a TI
+
+Antes del diseño de contenido se resuelve `studentEnvironmentProfile` del curso. Para Introducción a las Tecnologías de Información el perfil obligatorio es `ITI_WINDOWS_BASELINE_V1`.
+
+Esto significa que cualquier clase, tarea, actividad, práctica, Gamma o nota Notion futura debe ser ejecutable y demostrable en una sola computadora Windows. El orquestador no puede convertir la disponibilidad de un segundo sistema operativo, WSL, una VM, dual boot o un laboratorio especializado en precondición académica.
+
+Otros sistemas operativos son válidos como referencia conceptual, pero nunca como evidencia práctica requerida. Los recursos históricos ya publicados se conservan (`LEAVE_AS_IS`), sin que eso modifique la regla para contenido futuro.

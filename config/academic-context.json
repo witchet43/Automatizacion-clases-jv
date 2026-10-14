@@ -121,7 +121,45 @@
       "gammaThemeId": "bfm8ztqy1whsib8",
       "gammaThemeName": "UAQ",
       "notionNotesPageId": "3f9cd691-30bc-81f1-895a-f2e8c5a11430",
-      "notionNotesPageUrl": "https://app.notion.com/p/3f9cd69130bc81f1895af2e8c5a11430?pvs=204"
+      "notionNotesPageUrl": "https://app.notion.com/p/3f9cd69130bc81f1895af2e8c5a11430?pvs=204",
+      "studentEnvironmentProfile": {
+        "profileId": "ITI_WINDOWS_BASELINE_V1",
+        "appliesTo": "ALL_FUTURE_STUDENT_FACING_MATERIALS",
+        "requiredStudentEnvironment": "ONE_WINDOWS_COMPUTER",
+        "requiredPlatform": "WINDOWS",
+        "practicalWorkMustBeCompletableOnWindows": true,
+        "evidenceMustBeCollectableOnWindows": true,
+        "toolsMustRunOnWindows": true,
+        "labDependencyAllowed": false,
+        "secondOperatingSystemRequirementAllowed": false,
+        "linuxSubsystemRequirementAllowed": false,
+        "virtualMachineRequirementAllowed": false,
+        "dualBootRequirementAllowed": false,
+        "multiOperatingSystemPracticalComparisonAllowed": false,
+        "otherOperatingSystemsInstructionMode": "CONCEPTUAL_ONLY",
+        "conceptualExamplesMayMentionOtherOperatingSystems": true,
+        "conceptualExamplesMayRequireExecution": false,
+        "optionalExternalToolsRequireWindowsFallback": true,
+        "windowsNativeToolsPreferred": true,
+        "historicalPublishedResourcesPolicy": "LEAVE_AS_IS",
+        "futureMaterialsPolicy": "WINDOWS_BASELINE_REQUIRED",
+        "prohibitedStudentRequirements": [
+          "install or use a second operating system",
+          "use Linux/Ubuntu as a required practical environment",
+          "use WSL as a required practical environment",
+          "use a virtual machine as a required practical environment",
+          "use dual boot",
+          "produce evidence from a non-Windows operating system",
+          "compare two operating systems by executing both"
+        ],
+        "preflightQuestions": [
+          "Can the student complete the entire practical activity on one Windows computer?",
+          "Can every required evidence item be produced on Windows?",
+          "Does the activity avoid requiring WSL, Linux, Ubuntu, virtual machines, dual boot, or a second operating system?",
+          "If other operating systems are mentioned, are they conceptual examples only?",
+          "If an external tool is used, does it run on Windows and is there a Windows-compatible fallback when the tool is optional?"
+        ]
+      }
     },
     "administracion": {
       "id": "871158187513",
@@ -417,7 +455,13 @@
     "notionPlanningStateIsAuthority": false,
     "notionGammaReferenceRequiredWhenApplicable": true,
     "classPackageCompleteRequiresNotionNotes": true,
-    "classGenerationOrder": "GOOGLE_RESOURCES_THEN_GAMMA_THEN_NOTION_NOTES_THEN_POSTFLIGHT"
+    "classGenerationOrder": "GOOGLE_RESOURCES_THEN_GAMMA_THEN_NOTION_NOTES_THEN_POSTFLIGHT",
+    "courseEnvironmentProfileRequiredBeforeContentDesign": true,
+    "introTiWindowsBaselineRequired": true,
+    "introTiPracticalMultiOsAllowed": false,
+    "introTiOtherOsInstructionMode": "CONCEPTUAL_ONLY",
+    "introTiHistoricalPublishedResourcesPolicy": "LEAVE_AS_IS",
+    "introTiFutureMaterialsPolicy": "WINDOWS_BASELINE_REQUIRED"
   },
   "startup": {
     "read": [
@@ -428,7 +472,8 @@
     ],
     "onMissingOrMismatch": "BLOCK_BEFORE_SIDE_EFFECTS",
     "classSequence": "Use canonical planning order plus real prepared Classroom resources and verified Gamma only to identify the first incomplete package. DRAFT + verified Gamma counts as prepared, not taught. Current/system date and Calendar never participate. Explicit session/tema remains authoritative when supplied.",
-    "execution": "Identify operationKey → resolve manifest.operations[operationKey] → use only its executionRoute. For every new/next-class request, perform the mandatory sequence-gap audit first: canonical planning order + real Classroom/Gamma preparation state → first incomplete canonical package. Reconcile any safe unambiguous earlier gap before advancing; block later-class generation if an earlier gap remains unresolved. Then design required academic resources → materialize/reuse Google resources through the declared Academic Web App route → postflight real resource IDs/URLs → resolve canonical Gamma folder AND theme from manifest BEFORE generation → generate Gamma with folderIds and themeId → verify title, content, resource references, canonical folder AND canonical theme → record all real IDs/URLs/states in target planning."
+    "execution": "Identify operationKey → resolve manifest.operations[operationKey] → use only its executionRoute. For every new/next-class request, perform the mandatory sequence-gap audit first: canonical planning order + real Classroom/Gamma preparation state → first incomplete canonical package. Reconcile any safe unambiguous earlier gap before advancing; block later-class generation if an earlier gap remains unresolved. Then design required academic resources → materialize/reuse Google resources through the declared Academic Web App route → postflight real resource IDs/URLs → resolve canonical Gamma folder AND theme from manifest BEFORE generation → generate Gamma with folderIds and themeId → verify title, content, resource references, canonical folder AND canonical theme → record all real IDs/URLs/states in target planning.",
+    "courseEnvironment": "Before designing any class/task/activity/practice/Gamma/Notion note, resolve the target course in manifest.courses and obey studentEnvironmentProfile when present. For Introducción a las Tecnologías de Información, all future student-facing practical work must be completable on one Windows computer; other operating systems may appear only as conceptual examples and never as required execution environments. Previously published historical resources remain unchanged."
   },
   "code": {
     "guard": "src/00_AcademicContextGuard.gs",

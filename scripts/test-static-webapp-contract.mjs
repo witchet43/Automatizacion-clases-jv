@@ -18,13 +18,14 @@ for(const key of [
   'notionNotesRequiredForClassPackage','notionLiveVerificationRequired',
   'notionSearchBeforeCreate','notionPostCreateFetchRequired',
   'notionExactCanonicalTitleRequired','notionGammaReferenceRequiredWhenApplicable',
-  'classPackageCompleteRequiresNotionNotes'
+  'classPackageCompleteRequiresNotionNotes','courseEnvironmentProfileRequiredBeforeContentDesign',
+  'introTiWindowsBaselineRequired'
 ]) assert.equal(manifest.rules[key],true,key);
 for(const key of [
   'academicOperationMayModifySource','academicOperationMayModifyWorkflow','academicOperationMayModifyManifest',
   'academicOperationMayDeploy','academicFailureMayTriggerDevelopment','platformChangeMayMixWithAcademicRequest',
   'workModeAllowed','planningGammaStateIsAuthority','gammaArchivedCountsAsPrepared',
-  'notionDuplicateNotesAllowed','notionPlanningStateIsAuthority'
+  'notionDuplicateNotesAllowed','notionPlanningStateIsAuthority','introTiPracticalMultiOsAllowed'
 ]) assert.equal(manifest.rules[key],false,key);
 assert.equal(manifest.rules.recoveryRoute,'SAME_CANONICAL_WEB_APP_ONLY');
 assert.equal(manifest.rules.gammaLiveEvidenceSource,'GAMMA_LIVE_CONNECTOR');
@@ -32,6 +33,24 @@ assert.equal(manifest.rules.gammaPlanningStatusRole,'REFERENCE_ONLY');
 assert.equal(manifest.rules.notionNotesRoute,'NOTION_CONNECTOR');
 assert.equal(manifest.rules.notionLiveEvidenceSource,'NOTION_LIVE_CONNECTOR');
 assert.equal(manifest.rules.classGenerationOrder,'GOOGLE_RESOURCES_THEN_GAMMA_THEN_NOTION_NOTES_THEN_POSTFLIGHT');
+assert.equal(manifest.rules.introTiOtherOsInstructionMode,'CONCEPTUAL_ONLY');
+assert.equal(manifest.rules.introTiHistoricalPublishedResourcesPolicy,'LEAVE_AS_IS');
+assert.equal(manifest.rules.introTiFutureMaterialsPolicy,'WINDOWS_BASELINE_REQUIRED');
+const iti=manifest.courses['introduccion-tecnologias-informacion'];
+assert.equal(iti.studentEnvironmentProfile.profileId,'ITI_WINDOWS_BASELINE_V1');
+assert.equal(iti.studentEnvironmentProfile.requiredPlatform,'WINDOWS');
+assert.equal(iti.studentEnvironmentProfile.requiredStudentEnvironment,'ONE_WINDOWS_COMPUTER');
+assert.equal(iti.studentEnvironmentProfile.practicalWorkMustBeCompletableOnWindows,true);
+assert.equal(iti.studentEnvironmentProfile.evidenceMustBeCollectableOnWindows,true);
+assert.equal(iti.studentEnvironmentProfile.labDependencyAllowed,false);
+assert.equal(iti.studentEnvironmentProfile.secondOperatingSystemRequirementAllowed,false);
+assert.equal(iti.studentEnvironmentProfile.linuxSubsystemRequirementAllowed,false);
+assert.equal(iti.studentEnvironmentProfile.virtualMachineRequirementAllowed,false);
+assert.equal(iti.studentEnvironmentProfile.dualBootRequirementAllowed,false);
+assert.equal(iti.studentEnvironmentProfile.multiOperatingSystemPracticalComparisonAllowed,false);
+assert.equal(iti.studentEnvironmentProfile.otherOperatingSystemsInstructionMode,'CONCEPTUAL_ONLY');
+assert.equal(iti.studentEnvironmentProfile.historicalPublishedResourcesPolicy,'LEAVE_AS_IS');
+assert.equal(iti.studentEnvironmentProfile.futureMaterialsPolicy,'WINDOWS_BASELINE_REQUIRED');
 assert.equal(manifest.platformChange.deployTrigger,'PLATFORM_CHANGE_EVIDENCE_ONLY');
 assert.equal(manifest.platformChange.updateExistingDeploymentOnly,true);
 assert.equal(manifest.platformChange.newDeploymentAllowed,false);

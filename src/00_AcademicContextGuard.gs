@@ -28,6 +28,12 @@ function validarConfiguracionContextoAcademico_() {
      c.rules.notionGammaReferenceRequiredWhenApplicable!==true||
      c.rules.classPackageCompleteRequiresNotionNotes!==true||
      c.rules.classGenerationOrder!=='GOOGLE_RESOURCES_THEN_GAMMA_THEN_NOTION_NOTES_THEN_POSTFLIGHT'||
+     c.rules.courseEnvironmentProfileRequiredBeforeContentDesign!==true||
+     c.rules.introTiWindowsBaselineRequired!==true||
+     c.rules.introTiPracticalMultiOsAllowed!==false||
+     c.rules.introTiOtherOsInstructionMode!=='CONCEPTUAL_ONLY'||
+     c.rules.introTiHistoricalPublishedResourcesPolicy!=='LEAVE_AS_IS'||
+     c.rules.introTiFutureMaterialsPolicy!=='WINDOWS_BASELINE_REQUIRED'||
      c.rules.staticWebAppDuringAcademicOperations!==true||
      c.rules.academicOperationsAreDataOnly!==true||
      c.rules.academicOperationMayModifySource!==false||
@@ -70,6 +76,26 @@ function validarConfiguracionContextoAcademico_() {
   const iti=c.courses['introduccion-tecnologias-informacion'];
   if(!iti||iti.gammaFolderId!=='fo_w669f3b2oumuiuf'||iti.gammaThemeId!=='bfm8ztqy1whsib8')
     throw new Error('ACADEMIC_GAMMA_CONFIG_INVALID');
+  const env=iti.studentEnvironmentProfile;
+  if(!env||env.profileId!=='ITI_WINDOWS_BASELINE_V1'||
+     env.requiredStudentEnvironment!=='ONE_WINDOWS_COMPUTER'||
+     env.requiredPlatform!=='WINDOWS'||
+     env.practicalWorkMustBeCompletableOnWindows!==true||
+     env.evidenceMustBeCollectableOnWindows!==true||
+     env.toolsMustRunOnWindows!==true||
+     env.labDependencyAllowed!==false||
+     env.secondOperatingSystemRequirementAllowed!==false||
+     env.linuxSubsystemRequirementAllowed!==false||
+     env.virtualMachineRequirementAllowed!==false||
+     env.dualBootRequirementAllowed!==false||
+     env.multiOperatingSystemPracticalComparisonAllowed!==false||
+     env.otherOperatingSystemsInstructionMode!=='CONCEPTUAL_ONLY'||
+     env.conceptualExamplesMayRequireExecution!==false||
+     env.optionalExternalToolsRequireWindowsFallback!==true||
+     env.windowsNativeToolsPreferred!==true||
+     env.historicalPublishedResourcesPolicy!=='LEAVE_AS_IS'||
+     env.futureMaterialsPolicy!=='WINDOWS_BASELINE_REQUIRED')
+    throw new Error('ACADEMIC_ITI_WINDOWS_BASELINE_INVALID');
   if(c.documents.master.id!==MASTER_GUARDRAILS.MASTER_DOCUMENT_ID)
     throw new Error('ACADEMIC_CONTEXT_MASTER_DRIFT');
   return c;

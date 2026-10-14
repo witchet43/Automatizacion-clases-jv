@@ -1,0 +1,19 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Lo ya publicado pues que se quede así, lo que venga por delante, tiene que ser claro, no ambiguo y super definido en nuestra documentación",
+  "reason": "Formalizar un baseline futuro obligatorio de un solo entorno Windows para Introducción a las Tecnologías de la Información, preservando recursos históricos ya publicados.",
+  "createdAt": "2026-10-14",
+  "allowedChangedPaths": [
+    ".platform-changes/2026-10-14-iti-windows-baseline.json",
+    "AGENTS.md",
+    "README.md",
+    "config/academic-context.json",
+    "docs/academic-webapp-architecture.md",
+    "docs/iti-windows-baseline.md",
+    "scripts/academic-context.mjs",
+    "scripts/test-static-webapp-contract.mjs",
+    "src/00_AcademicContextGuard.gs"
+  ]
+}

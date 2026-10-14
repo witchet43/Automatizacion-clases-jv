@@ -52,6 +52,12 @@ export function readContext() {
       manifest.rules.notionGammaReferenceRequiredWhenApplicable !== true ||
       manifest.rules.classPackageCompleteRequiresNotionNotes !== true ||
       manifest.rules.classGenerationOrder !== 'GOOGLE_RESOURCES_THEN_GAMMA_THEN_NOTION_NOTES_THEN_POSTFLIGHT' ||
+      manifest.rules.courseEnvironmentProfileRequiredBeforeContentDesign !== true ||
+      manifest.rules.introTiWindowsBaselineRequired !== true ||
+      manifest.rules.introTiPracticalMultiOsAllowed !== false ||
+      manifest.rules.introTiOtherOsInstructionMode !== 'CONCEPTUAL_ONLY' ||
+      manifest.rules.introTiHistoricalPublishedResourcesPolicy !== 'LEAVE_AS_IS' ||
+      manifest.rules.introTiFutureMaterialsPolicy !== 'WINDOWS_BASELINE_REQUIRED' ||
       JSON.stringify(manifest.fastPaths) !== '["quizAsistencia"]') throw Error('ACADEMIC_CONTEXT_INVALID');
   if (!manifest.platformChange || manifest.platformChange.authorizationRequired !== true ||
       manifest.platformChange.authorizationSource !== 'EXPLICIT_CURRENT_USER_REQUEST' ||
@@ -82,6 +88,26 @@ export function readContext() {
       throw Error('ACADEMIC_NOTION_COURSE_CONFIG_MISSING: '+key);
     if (course.materia?.startsWith('Introducción a las Tecnologías de Información') || key==='introduccion-tecnologias-informacion') {
       if (course.gammaFolderId!=='fo_w669f3b2oumuiuf' || course.gammaThemeId!=='bfm8ztqy1whsib8') throw Error('ACADEMIC_GAMMA_CONFIG_INVALID: '+key);
+      const env=course.studentEnvironmentProfile;
+      if (!env || env.profileId!=='ITI_WINDOWS_BASELINE_V1' ||
+          env.requiredStudentEnvironment!=='ONE_WINDOWS_COMPUTER' ||
+          env.requiredPlatform!=='WINDOWS' ||
+          env.practicalWorkMustBeCompletableOnWindows!==true ||
+          env.evidenceMustBeCollectableOnWindows!==true ||
+          env.toolsMustRunOnWindows!==true ||
+          env.labDependencyAllowed!==false ||
+          env.secondOperatingSystemRequirementAllowed!==false ||
+          env.linuxSubsystemRequirementAllowed!==false ||
+          env.virtualMachineRequirementAllowed!==false ||
+          env.dualBootRequirementAllowed!==false ||
+          env.multiOperatingSystemPracticalComparisonAllowed!==false ||
+          env.otherOperatingSystemsInstructionMode!=='CONCEPTUAL_ONLY' ||
+          env.conceptualExamplesMayRequireExecution!==false ||
+          env.optionalExternalToolsRequireWindowsFallback!==true ||
+          env.windowsNativeToolsPreferred!==true ||
+          env.historicalPublishedResourcesPolicy!=='LEAVE_AS_IS' ||
+          env.futureMaterialsPolicy!=='WINDOWS_BASELINE_REQUIRED')
+        throw Error('ACADEMIC_ITI_WINDOWS_BASELINE_INVALID');
     }
   }
   return { manifest, digest };

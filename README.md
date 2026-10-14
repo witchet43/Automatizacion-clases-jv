@@ -76,3 +76,14 @@ Las notas docentes son componente obligatorio del paquete de clase. El orden can
 La raíz Notion y cada página padre por materia están registradas en el manifest. Cada nota usa como título exacto el tema/subtema canónico. Se busca antes de crear, se bloquean duplicados y se hace fetch posterior para validar contenido, parent, título y referencia a Gamma cuando aplica.
 
 `resolverClase` acepta `options.notionLiveEvidence[sesion]`. Sin evidencia `LIVE_CANONICAL`, la clase no puede marcarse preparada.
+
+
+## Baseline de entorno — Introducción a TI
+
+El curso **Introducción a las Tecnologías de Información** usa el perfil `ITI_WINDOWS_BASELINE_V1`.
+
+Para materiales futuros, el único entorno práctico asumido es **una computadora con Windows**. No se diseña trabajo que requiera Linux/Ubuntu, WSL, máquinas virtuales, dual boot, un segundo sistema operativo o un laboratorio multi-OS. Otros sistemas operativos pueden utilizarse únicamente como ejemplos conceptuales.
+
+Toda evidencia exigida al alumno debe poder generarse en Windows y toda herramienta obligatoria debe funcionar en Windows. Los recursos históricos ya publicados permanecen sin cambios (`LEAVE_AS_IS`); esa excepción no se hereda a contenido nuevo.
+
+La definición ejecutable está en `config/academic-context.json → courses.introduccion-tecnologias-informacion.studentEnvironmentProfile`.

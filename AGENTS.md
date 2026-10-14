@@ -74,3 +74,23 @@ La raíz y la página padre por materia viven en `config/academic-context.json`.
 La nota debe ser un guion útil para impartir la clase, no una copia de Gamma. Debe incluir como mínimo: Objetivo de la clase, Guion para exponer, Preguntas útiles, Errores conceptuales a corregir, Transición a la actividad, Cierre, Preparación siguiente y Conceptos clave. Cuando Gamma aplica, incluir la Gamma canónica de referencia.
 
 Después de crear/actualizar, hacer fetch real de Notion y pasar a `resolverClase` `options.notionLiveEvidence[sesion]` con `source: "NOTION_LIVE_CONNECTOR"`. Solo `LIVE_CANONICAL` permite declarar `paquetePreparado=true`. Una clase sin notas Notion verificadas está incompleta.
+
+
+## Introducción a TI — ITI_WINDOWS_BASELINE_V1
+
+Para **Introducción a las Tecnologías de Información**, antes de diseñar cualquier material futuro se debe leer `courses.introduccion-tecnologias-informacion.studentEnvironmentProfile`.
+
+Regla inequívoca: **todo trabajo práctico nuevo debe poder resolverse de principio a fin en una sola computadora con Windows**. No asumir laboratorio especializado ni segundo sistema operativo. No exigir WSL, Linux/Ubuntu, máquinas virtuales, dual boot ni evidencia obtenida fuera de Windows. Otros sistemas operativos pueden aparecer únicamente como ejemplos conceptuales; nunca como entorno de ejecución requerido.
+
+Las herramientas obligatorias deben funcionar en Windows. Cuando una herramienta externa sea opcional, debe existir alternativa compatible con Windows; preferir herramientas nativas cuando sean suficientes.
+
+Los recursos históricos ya publicados se conservan sin retrocorrección: `historicalPublishedResourcesPolicy = LEAVE_AS_IS`. Esta excepción histórica **no** autoriza repetir ese diseño en materiales nuevos.
+
+Checklist obligatorio antes de crear:
+1. ¿Todo puede resolverse en Windows?
+2. ¿Toda evidencia sale de Windows?
+3. ¿No requiere segundo SO, WSL, VM ni dual boot?
+4. Si aparecen otros SO, ¿son solo ejemplos conceptuales?
+5. Si hay herramienta externa, ¿funciona en Windows y tiene alternativa compatible cuando es opcional?
+
+Si cualquiera es NO, rediseñar antes de crear el recurso.
