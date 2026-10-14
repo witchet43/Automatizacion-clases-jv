@@ -30,7 +30,10 @@ const ARCHITECTURE_CONTRACT = Object.freeze({
   ALTERNATIVE_REMOTE_TRANSPORT_ALLOWED: false,
   DIRECT_GOOGLE_API_WORKFLOWS_ALLOWED: false,
   ONE_OFF_ACADEMIC_GENERATORS_ALLOWED: false,
-  RECOVERY_POLICY: 'CANONICAL_ROUTE_ONLY'
+  RECOVERY_POLICY: 'CANONICAL_ROUTE_ONLY',
+  INCIDENT_REGRESSION_REQUIRED: true,
+  PERIODIC_ACADEMIC_POLLING_ALLOWED: false,
+  GENERATED_MANIFEST_REGISTRY_REQUIRED: true
 });
 
 function validarContratoArquitectura_() {
@@ -50,5 +53,8 @@ function validarContratoArquitectura_() {
   if (c.DIRECT_GOOGLE_API_WORKFLOWS_ALLOWED !== false) throw new Error('Los workflows no pueden materializar recursos con APIs de Google directas.');
   if (c.ONE_OFF_ACADEMIC_GENERATORS_ALLOWED !== false) throw new Error('No se permiten generadores académicos específicos por materia/unidad.');
   if (c.RECOVERY_POLICY !== 'CANONICAL_ROUTE_ONLY') throw new Error('La recuperación debe permanecer en la ruta canónica.');
+  if (c.INCIDENT_REGRESSION_REQUIRED !== true) throw new Error('Toda causa raíz corregida debe quedar protegida por regresión.');
+  if (c.PERIODIC_ACADEMIC_POLLING_ALLOWED !== false) throw new Error('No se permite polling académico periódico como sustituto de operaciones bajo demanda.');
+  if (c.GENERATED_MANIFEST_REGISTRY_REQUIRED !== true) throw new Error('Cursos y planeaciones deben provenir del manifiesto generado.');
   return Object.assign({}, c);
 }
