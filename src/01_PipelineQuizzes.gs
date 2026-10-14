@@ -1,7 +1,11 @@
 /**
- * Pipeline: Sheets -> Forms -> Classroom.
- * Classroom coursework is always created and kept as DRAFT by this monitor.
- * This pipeline never publishes quiz coursework.
+ * Soporte compartido para construcción de Forms de quiz/examen.
+ *
+ * IMPORTANTE:
+ * - Sheets es únicamente configuración/auditoría.
+ * - La creación de recursos didácticos ocurre por entrypoints canónicos
+ *   invocados mediante el Academic Web App.
+ * - El antiguo monitor Sheets -> Forms -> Classroom está descomisionado.
  */
 const QUIZ_PIPELINE = Object.freeze({
   SPREADSHEET_ID: '1YLSPcDSpqvaAk7lLeL6O3CTcgeqdrBtmxCgmdF6ISeA',
@@ -38,170 +42,45 @@ function quizDescriptionForOutput_(value) {
   return clean_(value) === QUIZ_NO_DESCRIPTION_SENTINEL ? '' : quizDescription_(value);
 }
 
+/**
+ * Compatibilidad de desinstalación.
+ * Nunca instala el monitor histórico; elimina cualquier trigger residual.
+ */
 function instalarMonitorQuizzes() {
-  ScriptApp.getProjectTriggers()
-    .filter(t => t.getHandlerFunction() === 'procesarQuizzesAprobados')
-    .forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('procesarQuizzesAprobados').timeBased().everyMinutes(1).create();
+  const removed = desinstalarMonitorCreacionQuizzes_();
+  return {
+    ok: true,
+    instalado: false,
+    descomisionado: true,
+    triggersEliminados: removed,
+    motivo: 'La creación académica usa exclusivamente el Academic Web App.'
+  };
 }
 
+/**
+ * Stub de transición para triggers ya existentes en Apps Script.
+ * Si un trigger histórico lo invoca después del despliegue, se elimina a sí
+ * mismo y NO crea, modifica ni publica recursos académicos.
+ */
 function procesarQuizzesAprobados() {
-  // El mismo trigger de producción atiende las solicitudes de importación
-  // bajo demanda. Se ejecuta antes de tomar el lock del pipeline principal
-  // porque procesarSolicitudesImportacion() administra su propio lock.
-  try {
-    procesarSolicitudesImportacion();
-  } catch (err) {
-    console.error('Solicitud de importación: ' + String(err && err.message ? err.message : err));
-  }
-
-  const lock = LockService.getScriptLock();
-  if (!lock.tryLock(1000)) return;
-  try {
-    const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
-    const quizSheet = requireSheet_(ss, QUIZ_PIPELINE.QUIZZES_SHEET);
-    const questionSheet = requireSheet_(ss, QUIZ_PIPELINE.QUESTIONS_SHEET);
-    const quizzes = readObjects_(quizSheet);
-    const questions = readObjects_(questionSheet);
-    quizzes
-      .filter(x => {
-        const state = clean_(x.data.Estado);
-        return state === QUIZ_PIPELINE.APPROVED || state === QUIZ_PIPELINE.RETRACT;
-      })
-      .forEach(x => processOneQuiz_(quizSheet, x, questions));
-  } finally {
-    lock.releaseLock();
-  }
+  const removed = desinstalarMonitorCreacionQuizzes_();
+  return {
+    ok: true,
+    descomisionado: true,
+    triggersEliminados: removed,
+    recursosCreados: 0
+  };
 }
 
-function processOneQuiz_(sheet, record, allQuestions) {
-  const q = record.data;
-  const requestedState = clean_(q.Estado);
-  const quizId = required_(q, 'Quiz ID');
-  const courseId = required_(q, 'ID del curso');
-  const statusCol = column_(record, 'Estado');
-  const resultCol = column_(record, 'Resultado / error');
-  const updatedCol = column_(record, H.LAST_UPDATE);
-
-  sheet.getRange(record.row, statusCol).setValue(QUIZ_PIPELINE.PROCESSING);
-  sheet.getRange(record.row, resultCol).setValue('Procesando ' + quizId);
-  SpreadsheetApp.flush();
-
-  try {
-    const existingFormId = clean_(q['ID del Form']);
-    const existingClassroomId = clean_(q['ID actividad Classroom']);
-
-    if (requestedState === QUIZ_PIPELINE.RETRACT) {
-      if (!existingClassroomId) {
-        throw new Error('No se puede retirar a DRAFT: falta ID de Classroom.');
-      }
-      const work = Classroom.Courses.CourseWork.patch(
-        {state: 'DRAFT'},
-        courseId,
-        existingClassroomId,
-        {updateMask: 'state'}
-      );
-      writeOutputs_(sheet, record, {
-        Estado: QUIZ_PIPELINE.CREATED,
-        [H.LAST_UPDATE]: new Date(),
-        'URL actividad Classroom': work.alternateLink || clean_(q['URL actividad Classroom']),
-        'Resultado / error': 'RETIRADA a DRAFT. El pipeline no publica quizzes.'
-      });
-      return;
-    }
-
-    if (existingFormId && existingClassroomId) {
-      throw new Error('La fila ya contiene Form y actividad Classroom; se detuvo para evitar duplicados.');
-    }
-    if (!existingFormId && existingClassroomId) {
-      throw new Error('Estado inconsistente: existe ID de Classroom pero falta ID del Form.');
-    }
-
-    const items = allQuestions
-      .filter(x => clean_(x.data['Quiz ID']) === quizId)
-      .filter(x => clean_(x.data['ID del curso']) === courseId)
-      .sort((a, b) => Number(a.data.Orden) - Number(b.data.Orden));
-
-    if (!items.length) {
-      throw new Error('No hay preguntas asociadas al Quiz ID y curso indicados.');
-    }
-
-    const foreign = allQuestions.filter(x =>
-      clean_(x.data['Quiz ID']) === quizId &&
-      clean_(x.data['ID del curso']) !== courseId
-    );
-    if (foreign.length) {
-      throw new Error('Hay preguntas con el mismo Quiz ID asignadas a otro curso.');
-    }
-
-    const total = items.reduce((sum, x) => sum + Number(x.data.Puntos || 0), 0);
-    if (Number(q['Puntos totales']) !== total) {
-      throw new Error('Los puntos de las preguntas (' + total + ') no coinciden con Puntos totales.');
-    }
-
-    validateQuizFeedbackRequirements_(q, items);
-    assertNoManualEmailQuestions_(items.map(x => x.data.Pregunta), 'Preguntas Quiz');
-
-    let form;
-    let reusedForm = false;
-    if (existingFormId) {
-      try {
-        form = FormApp.openById(existingFormId);
-        reusedForm = true;
-      } catch (err) {
-        throw new Error('No se pudo reutilizar el Form existente ' + existingFormId + ': ' + (err && err.message ? err.message : err));
-      }
-    } else {
-      form = buildQuizForm_(q, items);
-    }
-
-    assertQuizFormNotPublished_(form);
-    assertNoManualEmailQuestions_(
-      form.getItems().map(item => item.getTitle()),
-      'Form creado'
-    );
-    verifyVerifiedEmail_(form.getId());
-
-    const topicId = resolveTopicId_(
-      courseId,
-      clean_(q['ID del tema']),
-      clean_(q['Unidad / tema'])
-    );
-
-    const work = Classroom.Courses.CourseWork.create({
-      title: clean_(q[H.TITLE]),
-      description: quizDescriptionForOutput_(q.Instrucciones),
-      workType: 'ASSIGNMENT',
-      state: 'DRAFT',
-      maxPoints: total,
-      topicId: topicId || undefined,
-      materials: [{
-        link: {
-          url: form.getPublishedUrl(),
-          title: clean_(q[H.TITLE])
-        }
-      }]
-    }, courseId);
-
-    writeOutputs_(sheet, record, {
-      Estado: QUIZ_PIPELINE.CREATED,
-      'ID del Form': form.getId(),
-      [H.FORM_EDIT_URL]: form.getEditUrl(),
-      'URL responder Form': form.getPublishedUrl(),
-      'ID actividad Classroom': work.id,
-      'URL actividad Classroom': work.alternateLink || '',
-      [H.CREATED_AT]: clean_(q[H.CREATED_AT]) || new Date(),
-      [H.LAST_UPDATE]: new Date(),
-      'Resultado / error': reusedForm
-        ? 'CREADA como DRAFT; Form existente reutilizado y actividad Classroom recreada.'
-        : 'CREADA como DRAFT; no publicada a alumnos.'
+function desinstalarMonitorCreacionQuizzes_() {
+  let removed = 0;
+  ScriptApp.getProjectTriggers()
+    .filter(function(t) { return t.getHandlerFunction() === 'procesarQuizzesAprobados'; })
+    .forEach(function(t) {
+      ScriptApp.deleteTrigger(t);
+      removed++;
     });
-  } catch (err) {
-    sheet.getRange(record.row, statusCol).setValue(QUIZ_PIPELINE.ERROR);
-    sheet.getRange(record.row, updatedCol).setValue(new Date());
-    sheet.getRange(record.row, resultCol)
-      .setValue(String(err && err.message ? err.message : err));
-  }
+  return removed;
 }
 
 function validateQuizFeedbackRequirements_(quiz, items) {

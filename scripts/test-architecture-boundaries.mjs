@@ -71,6 +71,11 @@ const forbiddenLegacyPaths = [
 ];
 for (const p of forbiddenLegacyPaths) if (fs.existsSync(path.join(root,p))) fail.push(`legacy path present: ${p}`);
 
+const pipelineSource = fs.readFileSync(path.join(srcDir,'01_PipelineQuizzes.gs'),'utf8');
+if (/CourseWork\.create\s*\(/.test(pipelineSource)) fail.push('01_PipelineQuizzes.gs must not create Classroom resources');
+if (/function\s+processOneQuiz_\s*\(/.test(pipelineSource)) fail.push('legacy Sheets -> Forms -> Classroom processor must not exist');
+if (!/descomisionado:\s*true/.test(pipelineSource)) fail.push('legacy quiz monitor must remain explicitly decommissioned');
+
 const forbiddenSourceSymbols = [
   'calcularYPublicarCalificacionUnidad1',
   'procesarSolicitudRepararCerosActividad_',
