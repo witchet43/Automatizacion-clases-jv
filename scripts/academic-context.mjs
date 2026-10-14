@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import crypto from 'node:crypto';
-import vm from 'node:vm';
 import { pathToFileURL } from 'node:url';
 
 export const manifestPath = 'config/academic-context.json';
@@ -23,13 +22,8 @@ export function readContext() {
     const doc = manifest.documents[key];
     if (!doc?.id || doc.url !== `https://docs.google.com/document/d/${doc.id}/edit`) throw Error('ACADEMIC_DOCUMENT_INVALID: '+key);
   }
-  // Detect drift against the actual existing registries, without network access.
-  const ctx = vm.createContext({});
-  for (const path of ['src/65_QuizAsistenciaWebApp.gs','src/39_MasterGuardrails.gs']) vm.runInContext(fs.readFileSync(path,'utf8'),ctx);
-  const courses = JSON.parse(vm.runInContext('JSON.stringify(ACADEMIC_WEB.COURSES)',ctx));
-  const planning = JSON.parse(vm.runInContext('JSON.stringify(MASTER_GUARDRAILS.PLANNING_SOURCES)',ctx));
-  const manifestCourseIdentity = Object.fromEntries(Object.entries(manifest.courses).map(([k,v])=>[k,{id:v.id,materia:v.materia}]));
-  if (JSON.stringify(courses)!==JSON.stringify(manifestCourseIdentity) || JSON.stringify(planning)!==JSON.stringify(manifest.planningSources)) throw Error('ACADEMIC_REGISTRY_DRIFT');
+  // Runtime course/planning registries are consumed directly from the generated
+  // manifest bundle. There is no handwritten second registry to drift.
   for (const [key,course] of Object.entries(manifest.courses)) {
     if (course.materia?.startsWith('Introducción a las Tecnologías de Información') || key==='introduccion-tecnologias-informacion') {
       if (course.gammaFolderId!=='fo_w669f3b2oumuiuf' || course.gammaThemeId!=='bfm8ztqy1whsib8') throw Error('ACADEMIC_GAMMA_CONFIG_INVALID: '+key);
@@ -40,9 +34,21 @@ export function readContext() {
 export function envelope(manifest,digest) {
   return {source:manifestPath,contractVersion:manifest.contractVersion,manifestSha256:digest,repository:manifest.repository,workflow:manifest.workflow.name,endpoint:manifest.webApp.url};
 }
+function stripInfrastructureOverrides(value) {
+  if (!value || typeof value!=='object') return value;
+  if (Array.isArray(value)) return value.map(stripInfrastructureOverrides);
+  const blocked=new Set(['endpoint','webAppUrl','transport','workflow','repository','planningSpreadsheetId','planningSource','calendarSelectsClass','scriptId']);
+  const out={};
+  for (const [key,v] of Object.entries(value)) {
+    if (blocked.has(key)) continue;
+    out[key]=stripInfrastructureOverrides(v);
+  }
+  return out;
+}
 export function prepareRequest(request) {
   const {manifest,digest}=readContext();
   if (!request || typeof request!=='object' || Array.isArray(request)) throw Error('REQUEST_INVALID');
+  request=stripInfrastructureOverrides(request);
   if (manifest.fastPaths.includes(request.action)) {
     if (Object.keys(request).some(k=>!['action','materia'].includes(k))) throw Error('FAST_PATH_INPUT_INVALID');
     return {endpoint:manifest.webApp.url,request};

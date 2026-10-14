@@ -111,16 +111,20 @@ function verificarQuizAsistenciaMinimo_(work,title,policy,newWork){
  * Course IDs canónicos del periodo julio-diciembre 2026.
  * Configuración estable: no consultar Classroom/Sheets/Calendar para resolverlos.
  */
-const COURSE_IDS_2026_JUL_DIC = Object.freeze({
-  'sistemas distribuidos':'871158466533',
-  'analisis y diseno de sistemas computacionales':'871158479566',
-  'analisis y diseno de sistemas de informacion':'871158479566',
-  'introduccion a las tecnologias de informacion':'871156721160',
-  'administracion':'871158187513',
-  'etica y legislacion informatica':'871149624583',
-  'algoritmos y estructuras de datos':'871156334717',
-  'sistemas operativos':'875776451793'
-});
+function courseIdsAcademicosRapidos_(){
+  if(typeof ACADEMIC_CONTEXT_CONFIG==='undefined'||!ACADEMIC_CONTEXT_CONFIG.courses)
+    throw new Error('ACADEMIC_CONTEXT_CONFIG_MISSING');
+  const out={};
+  Object.keys(ACADEMIC_CONTEXT_CONFIG.courses).forEach(function(key){
+    const c=ACADEMIC_CONTEXT_CONFIG.courses[key]||{};
+    if(!c.id)return;
+    const alias=normalizarNombreCursoRapido_(key);
+    const materia=normalizarNombreCursoRapido_(c.materia||'');
+    if(alias)out[alias]=String(c.id);
+    if(materia)out[materia]=String(c.id);
+  });
+  return out;
+}
 
 /**
  * Resuelve courseId exclusivamente desde el registro canónico local.
@@ -130,12 +134,13 @@ function obtenerCourseIdPorNombre(nombreMateria){
   const objetivo=normalizarNombreCursoRapido_(String(nombreMateria||'').trim());
   if(!objetivo)throw new Error('NOMBRE_MATERIA_REQUERIDO');
 
-  if(COURSE_IDS_2026_JUL_DIC[objetivo]) return COURSE_IDS_2026_JUL_DIC[objetivo];
+  const registry=courseIdsAcademicosRapidos_();
+  if(registry[objetivo]) return registry[objetivo];
 
-  const hits=Object.keys(COURSE_IDS_2026_JUL_DIC).filter(function(nombre){
+  const hits=Object.keys(registry).filter(function(nombre){
     return objetivo.indexOf(nombre)>=0 || nombre.indexOf(objetivo)>=0;
   });
-  if(hits.length===1)return COURSE_IDS_2026_JUL_DIC[hits[0]];
+  if(hits.length===1)return registry[hits[0]];
   if(hits.length===0)throw new Error('CURSO_NO_REGISTRADO: '+nombreMateria);
   throw new Error('CURSO_AMBIGUO: '+nombreMateria);
 }

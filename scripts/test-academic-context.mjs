@@ -22,7 +22,7 @@ const ctx=vm.createContext({
   crearQuizAsistenciaRapido:m=>{calls.push('quizAsistencia');return {workId:'attendance',state:'DRAFT'};},
   resolverSiguienteClase:()=>{calls.push('resolverClase');return {target:{session:'23'}};},
 });
-for(const file of ['00_PoliticasCanonicas.gs','39_MasterGuardrails.gs','00_AcademicContextConfig.gs','00_AcademicContextGuard.gs','65_QuizAsistenciaWebApp.gs'])vm.runInContext(fs.readFileSync('src/'+file,'utf8'),ctx);
+for(const file of ['00_PoliticasCanonicas.gs','00_AcademicContextConfig.gs','39_MasterGuardrails.gs','00_AcademicContextGuard.gs','65_QuizAsistenciaWebApp.gs'])vm.runInContext(fs.readFileSync('src/'+file,'utf8'),ctx);
 for(const action of ['actividad','tarea','practica','quiz','examen'])ctx['crear'+action[0].toUpperCase()+action.slice(1)]=p=>{calls.push(action);return {workId:action,state:'DRAFT',courseId:p.courseId};};
 ctx.crearGoogleDocumentoAcademico_=()=>{calls.push('material');return {id:'doc'};};
 ctx.diagnosticarProgresoClaseWeb_=()=>{calls.push('diagnosticarClase');return {readOnly:true};};
@@ -50,12 +50,12 @@ const pkg=run(good({action:'clase',expectedResourceTypes:['actividad','tarea'],r
 assert.equal(pkg.ok,true);assert.equal(pkg.packageStatus,'MATERIALES_LISTOS_PARA_GAMMA');assert.equal(pkg.nextPhase,'GENERATE_AND_VERIFY_GAMMA_REFERENCING_RESOURCE_IDS_URLS');assert.deepEqual(calls,['actividad','tarea']);
 assert.ok(pkg.resources.every(r=>r.result.state==='DRAFT'));checks++;
 calls=[];assert.equal(run(good({action:'material',params:{titulo:'Material',contenidoDocumento:'Contenido'}})).ok,true);assert.deepEqual(calls,['material']);checks++;
-// Server-side source drift blocks before any action; FAST_PATH still works.
-vm.runInContext("ACADEMIC_CONTEXT_CONFIG.courses.administracion.id='wrong'",ctx);
-blocked(good({action:'actividad'}),/REGISTRY_DRIFT/);
+// Runtime registries derive from the generated manifest bundle.
+assert.equal(vm.runInContext("resolverCursoAcademicoWeb_({materia:'Administración'}).id",ctx),manifest.courses.administracion.id);checks++;
 calls=[];assert.equal(run({action:'quizAsistencia',materia:'Administración'}).ok,true);assert.deepEqual(calls,['quizAsistencia']);checks++;
 blocked({action:'quizAsistencia',materia:'Administración',operationalContext:{}},/PARAMETRO_NO_PERMITIDO/);
 assert.throws(()=>prepareRequest({action:'clase',operationalContext:{}}),/CONTEXT_MISMATCH/);checks++;
+assert.equal(prepareRequest({action:'actividad',materia:'Administración',planningSpreadsheetId:'legacy'}).request.planningSpreadsheetId,undefined);checks++;
 assert.deepEqual(prepareRequest({action:'quizAsistencia',materia:'Administración'}).request,{action:'quizAsistencia',materia:'Administración'});checks++;
 // All existing period IDs and schema details remain exactly in sync.
 assert.equal(new Set(Object.values(manifest.courses).map(c=>c.id)).size,7);

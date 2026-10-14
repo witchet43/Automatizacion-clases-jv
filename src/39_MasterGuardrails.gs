@@ -13,24 +13,7 @@ const MASTER_GUARDRAILS = Object.freeze({
   MASTER_DOCUMENT_ID: '1lH7ME10VRX472PP54BdeE9evRbbjAUYowov3-slM5v8',
   PLANNING_SPREADSHEET_ID: '1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI',
   PLANNING_SHEET: 'Planeación maestra',
-  PLANNING_SOURCES: Object.freeze({
-    'itq - sistemas operativos': Object.freeze({spreadsheetId:'1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI',preferredSheet:'Planeación maestra',headerRow:1,columns:Object.freeze({session:'Clase',unit:'Unidad',topic:'Subtema curricular (desglose de planeación)'})}),
-    'sistemas operativos': Object.freeze({spreadsheetId:'1xsmIk26Jn-wyBq6KdW4b7lPrB_1lUHDn7d6pcRivKCI',preferredSheet:'Planeación maestra',headerRow:1,columns:Object.freeze({session:'Clase',unit:'Unidad',topic:'Subtema curricular (desglose de planeación)'})}),
-    'uaq - sistemas distribuidos': Object.freeze({spreadsheetId:'11QQnAbMCCoebc2o6Tm2_lROZvyfjFnVM89ZAcgBbr6I',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema / subtema'})}),
-    'sistemas distribuidos': Object.freeze({spreadsheetId:'11QQnAbMCCoebc2o6Tm2_lROZvyfjFnVM89ZAcgBbr6I',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema / subtema'})}),
-    'uaq - administracion': Object.freeze({spreadsheetId:'1G1MTtP9dRN8fM7vG7uOQoHkjbK2uOEoca3Aa2SxJqr4',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema / subtema'})}),
-    'administracion': Object.freeze({spreadsheetId:'1G1MTtP9dRN8fM7vG7uOQoHkjbK2uOEoca3Aa2SxJqr4',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema / subtema'})}),
-    'uaq - algoritmos y estructuras de datos': Object.freeze({spreadsheetId:'1Ujb02-K9k9xkEu7rPMsdV2v3E8MIFAUyP-yAmAwZwWc',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema / subtema'})}),
-    'algoritmos y estructuras de datos': Object.freeze({spreadsheetId:'1Ujb02-K9k9xkEu7rPMsdV2v3E8MIFAUyP-yAmAwZwWc',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema / subtema'})}),
-    'uaq - analisis y diseno de sistemas computacionales': Object.freeze({spreadsheetId:'1a7Icsnxciy2cK9xHOEBWBt_RbE0v9sM8ioRCfp95YAA',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema específico de la sesión'})}),
-    'analisis y diseno de sistemas computacionales': Object.freeze({spreadsheetId:'1a7Icsnxciy2cK9xHOEBWBt_RbE0v9sM8ioRCfp95YAA',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema específico de la sesión'})}),
-    'uaq - etica y legislacion informatica': Object.freeze({spreadsheetId:'16XoGCp7vPMD5dgvhMgQz_MUDfSvgLPrs9KfXKXwU-bQ',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema / subtema'})}),
-    'etica y legislacion informatica': Object.freeze({spreadsheetId:'16XoGCp7vPMD5dgvhMgQz_MUDfSvgLPrs9KfXKXwU-bQ',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema / subtema'})}),
-    'uaq - introduccion a las tecnologias de informacion': Object.freeze({spreadsheetId:'1j8_Qq0esbBhYOIqbkU9DywV-Zl3l-FW71KlKNRW8aS0',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema / subtema'})}),
-    'introduccion a las tecnologias de informacion': Object.freeze({spreadsheetId:'1j8_Qq0esbBhYOIqbkU9DywV-Zl3l-FW71KlKNRW8aS0',preferredSheet:'Planeación',headerRow:6,columns:Object.freeze({session:'Sesión',unit:'Unidad',topic:'Tema / subtema'})}),
-    'uaq - topico i': Object.freeze({spreadsheetId:'1Q-aVBDOli2ccjR3hgyZcpnXF5Uo6Nlh3yfW8Y7sEs5M',preferredSheet:'Planeación por sesión',headerRow:1,columns:Object.freeze({session:'Sesión',unit:'Unidad / bloque',topic:'Tema / subtema canónico'})}),
-    'topico i': Object.freeze({spreadsheetId:'1Q-aVBDOli2ccjR3hgyZcpnXF5Uo6Nlh3yfW8Y7sEs5M',preferredSheet:'Planeación por sesión',headerRow:1,columns:Object.freeze({session:'Sesión',unit:'Unidad / bloque',topic:'Tema / subtema canónico'})})
-  }),
+  PLANNING_SOURCES_SOURCE: 'ACADEMIC_CONTEXT_CONFIG',
   VALIDATION_COURSES: Object.freeze([
     'ITQ - Sistemas Operativos',
     'UAQ - Sistemas Distribuidos',
@@ -89,7 +72,14 @@ function preflightDocumentoMaestro(request) {
 
 function validarPaqueteClaseContraMaestro(request) {const preflight=preflightDocumentoMaestro(request);return{ok:true,preflight:preflight,requiredPackage:MASTER_GUARDRAILS.REQUIRED_PACKAGE.slice(),message:'Paquete validado: Gamma por sí solo NO constituye una clase completa.'};}
 function validateClassPackageRequest_(r){const missing=MASTER_GUARDRAILS.REQUIRED_PACKAGE.filter(function(k){return !String(r[k]==null?'':r[k]).trim();});if(missing.length)throw new Error('BLOCKED_INCOMPLETE_CLASS_PACKAGE: faltan '+missing.join(', ')+'. Gamma por sí solo no completa la clase.');}
-function resolvePlanningSource_(materia){const key=normalizeGuard_(materia),source=MASTER_GUARDRAILS.PLANNING_SOURCES[key];if(!source)throw new Error('BLOCKED_MASTER_RULE: no existe una fuente de planeación canónica configurada para '+materia+'.');return source;}
+function resolvePlanningSource_(materia){
+  const key=normalizeGuard_(materia);
+  if(typeof ACADEMIC_CONTEXT_CONFIG==='undefined'||!ACADEMIC_CONTEXT_CONFIG.planningSources)
+    throw new Error('ACADEMIC_CONTEXT_CONFIG_MISSING');
+  const source=ACADEMIC_CONTEXT_CONFIG.planningSources[key];
+  if(!source)throw new Error('BLOCKED_MASTER_RULE: no existe una fuente de planeación canónica configurada para '+materia+'.');
+  return source;
+}
 
 function loadCanonicalPlanning_(materia){
   const source=resolvePlanningSource_(materia);

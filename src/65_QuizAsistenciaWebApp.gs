@@ -19,24 +19,23 @@
  * La fecha actual y Calendar nunca identifican ni secuencian la clase.
  */
 const ACADEMIC_WEB = Object.freeze({
-  COURSES:Object.freeze({
-    'sistemas-distribuidos':Object.freeze({id:'871158466533',materia:'Sistemas Distribuidos'}),
-    'analisis-diseno-sistemas-computacionales':Object.freeze({id:'871158479566',materia:'Análisis y Diseño de Sistemas Computacionales'}),
-    'analisis-y-diseno-de-sistemas-computacionales':Object.freeze({id:'871158479566',materia:'Análisis y Diseño de Sistemas Computacionales'}),
-    'analisis-diseno-sistemas-informacion':Object.freeze({id:'871158479566',materia:'Análisis y Diseño de Sistemas Computacionales'}),
-    'analisis-y-diseno-de-sistemas-de-informacion':Object.freeze({id:'871158479566',materia:'Análisis y Diseño de Sistemas Computacionales'}),
-    'introduccion-tecnologias-informacion':Object.freeze({id:'871156721160',materia:'Introducción a las Tecnologías de Información'}),
-    'administracion':Object.freeze({id:'871158187513',materia:'Administración'}),
-    'etica-legislacion-informatica':Object.freeze({id:'871149624583',materia:'Ética y Legislación Informática'}),
-    'algoritmos-estructuras-datos':Object.freeze({id:'871156334717',materia:'Algoritmos y Estructuras de Datos'}),
-    'sistemas-operativos':Object.freeze({id:'875776451793',materia:'Sistemas Operativos'}),
-    'so':Object.freeze({id:'875776451793',materia:'Sistemas Operativos'})
-  }),
+  COURSE_REGISTRY_SOURCE:'ACADEMIC_CONTEXT_CONFIG',
   ACTIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts']),
   FAST_PATHS:Object.freeze({
     quizAsistencia:Object.freeze({singleExternalInput:'materia',firstExternalAction:'WEB_APP',preflightReadsAllowed:false,documentationRead:false,auxiliaryReads:false,diagnosticOnlyAfterError:true})
   })
 });
+function cursosAcademicosWeb_(){
+  if(typeof ACADEMIC_CONTEXT_CONFIG==='undefined'||!ACADEMIC_CONTEXT_CONFIG.courses)
+    throw new Error('ACADEMIC_CONTEXT_CONFIG_MISSING');
+  const out={};
+  Object.keys(ACADEMIC_CONTEXT_CONFIG.courses).forEach(function(key){
+    const c=ACADEMIC_CONTEXT_CONFIG.courses[key]||{};
+    if(c.id&&c.materia)out[key]={id:String(c.id),materia:String(c.materia)};
+  });
+  return out;
+}
+
 
 function doGet(e){
   return ejecutarServicioAcademicoWeb_(e&&e.parameter?e.parameter:{});
@@ -122,8 +121,8 @@ function auditarIdentidadClassroomWeb_(p){
   const options=p&&typeof p==='object'?p:{};
   const requested=String(options.materia||options.courseId||'').trim();
   const unique={};
-  Object.keys(ACADEMIC_WEB.COURSES).forEach(function(k){
-    const course=ACADEMIC_WEB.COURSES[k];
+  Object.keys(cursosAcademicosWeb_()).forEach(function(k){
+    const course=cursosAcademicosWeb_()[k];
     unique[String(course.id)]=course;
   });
   const materias=[];
@@ -328,17 +327,17 @@ function resolverCursoAcademicoWeb_(p){
   const raw=String(p.courseId||p.course||p.courseKey||p.materia||'').trim();
   if(!raw)throw new Error('CURSO_REQUERIDO');
   const norm=normalizarNombreCursoRapido_(raw).replace(/\s+/g,'-');
-  if(ACADEMIC_WEB.COURSES[norm])return ACADEMIC_WEB.COURSES[norm];
+  if(cursosAcademicosWeb_()[norm])return cursosAcademicosWeb_()[norm];
 
-  const byId=Object.keys(ACADEMIC_WEB.COURSES).map(function(k){
-    return ACADEMIC_WEB.COURSES[k];
+  const byId=Object.keys(cursosAcademicosWeb_()).map(function(k){
+    return cursosAcademicosWeb_()[k];
   }).find(function(c){return String(c.id)===raw;});
   if(byId)return byId;
 
   const objetivo=normalizarNombreCursoRapido_(raw);
   const unique={};
-  Object.keys(ACADEMIC_WEB.COURSES).forEach(function(k){
-    const c=ACADEMIC_WEB.COURSES[k];
+  Object.keys(cursosAcademicosWeb_()).forEach(function(k){
+    const c=cursosAcademicosWeb_()[k];
     unique[c.id]=c;
   });
   const hits=Object.keys(unique).map(function(id){return unique[id];}).filter(function(c){

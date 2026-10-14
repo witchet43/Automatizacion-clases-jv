@@ -9,11 +9,8 @@ function validarConfiguracionContextoAcademico_() {
      c.rules.gammaThemeRequired!==true||c.rules.gammaCreationMustPassThemeId!==true||
      c.workflow.name!=='Academic Web App'||!/^[a-f0-9]{64}$/.test(c.manifestSha256))
     throw new Error('ACADEMIC_CONTEXT_CONFIG_INVALID');
-  const manifestCourseIdentity={};
-  Object.keys(c.courses||{}).forEach(function(k){manifestCourseIdentity[k]={id:c.courses[k].id,materia:c.courses[k].materia};});
-  if(JSON.stringify(manifestCourseIdentity)!==JSON.stringify(ACADEMIC_WEB.COURSES)||
-     JSON.stringify(c.planningSources)!==JSON.stringify(MASTER_GUARDRAILS.PLANNING_SOURCES))
-    throw new Error('ACADEMIC_CONTEXT_REGISTRY_DRIFT');
+  if(!c.courses||!Object.keys(c.courses).length||!c.planningSources||!Object.keys(c.planningSources).length)
+    throw new Error('ACADEMIC_CONTEXT_REGISTRY_MISSING');
   const iti=c.courses['introduccion-tecnologias-informacion'];
   if(!iti||iti.gammaFolderId!=='fo_w669f3b2oumuiuf'||iti.gammaThemeId!=='bfm8ztqy1whsib8')
     throw new Error('ACADEMIC_GAMMA_CONFIG_INVALID');

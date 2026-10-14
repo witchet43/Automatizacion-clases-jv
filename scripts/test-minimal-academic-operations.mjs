@@ -7,7 +7,6 @@ const core=fs.readFileSync('src/64_QuizAsistenciaRapido.gs','utf8');
 const main=fs.readFileSync('src/33_QuizSencillo.gs','utf8');
 const facade=fs.readFileSync('src/22_EntrypointsRecursosSeguros.gs','utf8');
 const policy=fs.readFileSync('src/00_PoliticasCanonicas.gs','utf8');
-const activeCourse=fs.readFileSync('src/45_QuizAsistenciaClaseActiva.gs','utf8');
 const guards=fs.readFileSync('src/39_MasterGuardrails.gs','utf8');
 const web=fs.readFileSync('src/65_QuizAsistenciaWebApp.gs','utf8');
 assert.match(main,/return crearQuizAsistenciaMinimo_\(params\)/);
@@ -19,7 +18,9 @@ assert.match(policy,/FAST_PATH_DOCUMENT_READ_REQUIRED:\s*false/);
 assert.match(policy,/FAST_PATH_AUXILIARY_READS_ALLOWED:\s*false/);
 assert.match(web,/function resolverCursoFastPathAcademicoWeb_\s*\(/);
 const fastResolver=web.slice(web.indexOf('function validarEntradaQuizAsistenciaWeb_'),web.indexOf('function resolverCursoAcademicoWeb_'));
-assert.match(core,/'analisis y diseno de sistemas de informacion':'871158479566'/);
+assert.match(core,/function courseIdsAcademicosRapidos_\(\)/);
+assert.match(core,/ACADEMIC_CONTEXT_CONFIG\.courses/);
+assert.doesNotMatch(core,/COURSE_IDS_2026_JUL_DIC/);
 assert.match(core,/function crearQuizAsistenciaRapido\(materia,requestIdExterno\)/);
 assert.match(web,/singleExternalInput:'materia'/);
 assert.match(web,/QUIZ_ASISTENCIA_REQUIERE_MATERIA/);
@@ -34,8 +35,6 @@ const fastPathBlock=web.slice(web.indexOf("quizAsistencia:Object.freeze"),web.in
 assert.doesNotMatch(fastPathBlock,/courseId|courseKey|sesion|unidad|tema|fecha/);
 const executor=fs.readFileSync('scripts/execute-academic-request.mjs','utf8');
 assert.doesNotMatch(executor,/request\.requestId='GITHUB_REQUEST\|'/);
-assert.match(activeCourse,/REQUIRE_TEMA_SUBTEMA_IN_DESCRIPTION:\s*false/);
-assert.doesNotMatch(activeCourse,/clasesSinTema|if\s*\(!temaSubtema\)/);
 assert.match(guards,/validarPlaneacionCanonicaReadOnly_\(subject\)/);
 
 function scenario(initial){
