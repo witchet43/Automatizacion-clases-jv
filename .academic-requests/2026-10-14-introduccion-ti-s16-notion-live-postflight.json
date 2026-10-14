@@ -1,0 +1,37 @@
+{
+  "action": "resolverClase",
+  "materia": "Introducción a las Tecnologías de Información",
+  "sesion": "16",
+  "options": {
+    "explicitTarget": true,
+    "gammaLiveEvidence": {
+      "16": {
+        "source": "GAMMA_LIVE_CONNECTOR",
+        "status": "LIVE_ACTIVE_CANONICAL",
+        "gammaId": "1ztsrgy98cl4w7h",
+        "gammaUrl": "https://gamma.app/docs/221-Software-del-sistema-operativo-222-Tipos-del-sistema-operativ-1ztsrgy98cl4w7h",
+        "title": "2.2.1 Software del sistema operativo + 2.2.2 Tipos del sistema operativo",
+        "archived": false,
+        "contentVerified": true,
+        "canonicalTopicVerified": true,
+        "searchPerformed": true,
+        "activeEquivalentFound": false
+      }
+    },
+    "notionLiveEvidence": {
+      "16": {
+        "source": "NOTION_LIVE_CONNECTOR",
+        "status": "LIVE_CANONICAL",
+        "pageId": "3f9cd691-30bc-812f-9ac5-e31af4fb3f68",
+        "pageUrl": "https://app.notion.com/p/3f9cd69130bc812f9ac5e31af4fb3f68?pvs=204",
+        "parentPageId": "3f9cd691-30bc-81f1-895a-f2e8c5a11430",
+        "title": "2.2.1 Software del sistema operativo + 2.2.2 Tipos del sistema operativo",
+        "contentVerified": true,
+        "canonicalTopicVerified": true,
+        "gammaReferenceVerified": true,
+        "searchPerformed": true,
+        "duplicateCount": 1
+      }
+    }
+  }
+}
