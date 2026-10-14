@@ -1,12 +1,23 @@
 import assert from 'node:assert/strict';
 import {prepareRequest,readContext} from './academic-context.mjs';
 const {manifest}=readContext();
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function post(request){
-  const response=await fetch(manifest.webApp.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request),signal:AbortSignal.timeout(120000)});
-  assert.equal(response.ok,true);
-  return response.json();
+  let last=null;
+  for(let attempt=0;attempt<5;attempt++){
+    const response=await fetch(manifest.webApp.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request),signal:AbortSignal.timeout(120000)});
+    last=response;
+    if(response.ok){
+      const raw=await response.text();
+      if(/^\s*</.test(raw))throw Error('WEB_APP_AUTHORIZATION_REQUIRED');
+      try{return JSON.parse(raw);}catch{throw Error('WEB_APP_INVALID_JSON_RESPONSE');}
+    }
+    if([404,429,500,502,503,504].includes(response.status)&&attempt<4){await sleep(1000*(attempt+1));continue;}
+    if(response.status===403)throw Error('WEB_APP_AUTHORIZATION_REQUIRED');
+    throw Error('WEB_APP_HEALTH_HTTP_'+response.status);
+  }
+  throw Error('WEB_APP_HEALTH_HTTP_'+String(last&&last.status||'UNKNOWN'));
 }
-// No valid creation payload is sent by this post-deploy probe.
 const missing=await post({action:'clase',materia:'Administración',resources:[]});
 assert.equal(missing.ok,false);assert.equal(missing.error,'ACADEMIC_CONTEXT_REQUIRED');
 const empty=prepareRequest({action:'clase',materia:'Administración',resources:[]});

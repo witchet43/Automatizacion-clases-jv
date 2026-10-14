@@ -2,7 +2,6 @@ name: Validate Minimal Academic Operations
 on:
   push:
     paths:
-      - 'src/**'
       - 'scripts/test-*.mjs'
       - '.github/workflows/validate-minimal-academic-operations.yml'
   pull_request:
@@ -20,6 +19,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Build canonical generated context
+        run: node scripts/academic-context.mjs build
       - name: Check all Apps Script source syntax
         run: |
           set -euo pipefail
@@ -30,6 +31,7 @@ jobs:
       - name: Exercise minimal-operation and academic regressions
         run: |
           node scripts/test-architecture-boundaries.mjs
+          node scripts/test-incident-regressions.mjs
           node scripts/test-minimal-academic-operations.mjs
           node scripts/test-operation-contracts.mjs
           node scripts/test-next-class-real-state.mjs

@@ -25,7 +25,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate canonical configuration
-        run: node scripts/academic-context.mjs check
+      - name: Build and validate canonical configuration
+        run: |
+          node scripts/academic-context.mjs build
+          node scripts/academic-context.mjs check
       - name: Execute canonical academic Web App
         run: node scripts/execute-academic-request.mjs

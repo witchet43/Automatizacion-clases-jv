@@ -6,7 +6,6 @@ on:
     branches: [main]
     paths:
       - 'src/**'
-      - 'scripts/test-*.mjs'
       - 'scripts/academic-context.mjs'
       - 'scripts/verify-academic-webapp.mjs'
       - 'config/academic-context.json'
@@ -39,10 +38,12 @@ jobs:
 
       - name: Verify canonical context and startup regressions
         run: |
+          node scripts/academic-context.mjs build
           node scripts/academic-context.mjs check
           node scripts/test-academic-context.mjs
           node scripts/test-operation-contracts.mjs
           node scripts/test-architecture-boundaries.mjs
+          node scripts/test-incident-regressions.mjs
 
       - name: Validate Apps Script source
         shell: bash
@@ -286,15 +287,15 @@ jobs:
           done
           npx clasp apis
 
+      - name: Check Apps Script version capacity before mutation
+        env:
+          clasp_config_auth: .clasprc.json
+        run: node scripts/prune-apps-script-versions.mjs
+
       - name: Deploy to Google Apps Script
         env:
           clasp_config_auth: .clasprc.json
         run: npx clasp push --force
-
-      - name: Prune unreferenced Apps Script versions
-        env:
-          clasp_config_auth: .clasprc.json
-        run: node scripts/prune-apps-script-versions.mjs
 
       - name: Update canonical Web App deployment
         env:

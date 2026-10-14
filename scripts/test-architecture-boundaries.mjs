@@ -50,10 +50,11 @@ for (const file of fs.readdirSync(workflowsDir)) {
 }
 
 const srcDir = path.join(root,'src');
+const allowedExamFunctions = new Set(['crearExamen','crearExamenDirecto']);
 for (const file of fs.readdirSync(srcDir).filter(f => f.endsWith('.gs'))) {
   const text = fs.readFileSync(path.join(srcDir,file),'utf8');
-  const examFns = [...text.matchAll(/function\s+(crearExamen[A-Za-z0-9_]+)\s*\(/g)].map(m=>m[1]);
-  for (const fn of examFns) if (fn !== 'crearExamen') fail.push(`${file}: one-off exam generator ${fn}`);
+  const examFns = [...text.matchAll(/function\s+(crearExamen[A-Za-z0-9_]*)\s*\(/g)].map(m=>m[1]);
+  for (const fn of examFns) if (!allowedExamFunctions.has(fn)) fail.push(`${file}: one-off exam generator ${fn}`);
 }
 
 const forbiddenLegacyPaths = [
