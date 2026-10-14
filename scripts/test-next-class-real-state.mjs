@@ -6,6 +6,7 @@ import vm from 'node:vm';
 const read = p => fs.readFileSync(p, 'utf8');
 const source = read('src/60_SecuenciaRealClase.gs');
 const resolver = read('src/41_SiguienteClase.gs');
+const classroomList = read('src/42_SiguienteClaseDraftVisibility.gs');
 const generator = read('src/44_NomenclaturaRecursos.gs');
 const guards = read('src/39_MasterGuardrails.gs');
 const policy = read('src/00_PoliticasCanonicas.gs');
@@ -66,6 +67,8 @@ ctx.Classroom={Courses:{
 }};
 ctx.PropertiesService={getScriptProperties:()=>{throw Error('PROHIBIDO_USAR_CONTADOR_GUARDADO');}};
 ctx.Date=class extends Date {constructor(){throw Error('PROHIBIDO_USAR_FECHA_ACTUAL');}static now(){throw Error('PROHIBIDO_USAR_RELOJ');}};
+ctx.Utilities={sleep:()=>{}};
+vm.runInContext(classroomList,ctx,{filename:'42_SiguienteClaseDraftVisibility.gs'});
 vm.runInContext(resolver,ctx,{filename:'41_SiguienteClase.gs'});
 let state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
 assert.equal(state.target.session,'14');
