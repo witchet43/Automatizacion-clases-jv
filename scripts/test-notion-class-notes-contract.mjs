@@ -56,7 +56,8 @@ for(const [key,course] of Object.entries(manifest.courses)){
   assert.match(course.notionNotesPageUrl,/^https:\/\/app\.notion\.com\/p\//,key+' notionNotesPageUrl');
 }
 for(const heading of manifest.notion.requiredSections) assert.ok(guide.includes(heading),heading);
-assert.match(guide,/buscar antes de crear/i);
-assert.match(guide,/Gamma canónica verificada.*Notion Notes.*postflight/i);
+assert.match(guide,/Antes de crear/i);
+assert.match(guide,/buscar el título\/tema en Notion/i);
+assert.match(guide,/recursos Google → Gamma canónica verificada → Notion Notes → postflight resolverClase/i);
 
 console.log('PASS: notas Notion son componente obligatorio, idempotente y LIVE del paquete de clase.');
