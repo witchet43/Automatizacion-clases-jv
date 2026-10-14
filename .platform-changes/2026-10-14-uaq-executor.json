@@ -2,9 +2,9 @@
   "mode": "PLATFORM_CHANGE",
   "authorized": true,
   "requestedByUser": true,
-  "authorizationText": "Hazlo (UAQ Executor)",
+  "authorizationText": "Autoriza crear UAQ Executor como única puerta para operaciones académicas rutinarias.",
   "reason": "Crear UAQ Executor como única puerta externa para operaciones académicas rutinarias y bloquear técnicamente las rutas directas que permiten reconstrucción o desvíos.",
   "allowedChangedPaths": [
-    "scripts/test-static-webapp-contract.mjs"
+    "src/65_QuizAsistenciaWebApp.gs"
   ]
 }

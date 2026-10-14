@@ -149,6 +149,7 @@ function ejecutarUaqExecutorWeb_(p){
 }
 
 function validarContratoOperacionWeb_(action){
+  if(action==='uaqExecutor')return {mode:'GATEWAY',state:'DRAFT'};
   const contracts=ACADEMIC_POLICY&&ACADEMIC_POLICY.EXECUTION?ACADEMIC_POLICY.EXECUTION.OPERATION_CONTRACTS:null;
   if(!contracts||!contracts[action])throw new Error('CONTRATO_OPERACION_NO_DEFINIDO: '+action);
   return contracts[action];
