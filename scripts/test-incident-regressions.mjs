@@ -50,7 +50,9 @@ assert.match(academicWorkflow,/academic-context\.mjs build[\s\S]*academic-contex
 assert.match(deploy,/academic-context\.mjs build[\s\S]*academic-context\.mjs check/);
 assert.doesNotMatch(deploy,/^\s*-\s*'scripts\/test-\*\.mjs'/m);
 const pushBlock=(validate.match(/push:[\s\S]*?pull_request:/)||[''])[0];
-assert.doesNotMatch(pushBlock,/'src\/\*\*'/);
+assert.match(pushBlock,/'src\/\*\*'/);
+assert.match(pushBlock,/'config\/\*\*'/);
+assert.match(pushBlock,/'scripts\/\*\*'/);
 assert.doesNotMatch(prune,/method\s*:\s*['"]DELETE['"]/);
 
 console.log('PASS: incident root causes from the 10-day audit are protected by deterministic controls.');

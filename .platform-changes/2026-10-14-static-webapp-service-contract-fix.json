@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Haz todo ya, tienes mi autorización",
+  "reason": "Corregir el guardrail de autorización para checkout con historial suficiente y alinear las regresiones con la validación de cambios de plataforma en main.",
+  "createdAt": "2026-10-14",
+  "allowedChangedPaths": [
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    "scripts/test-incident-regressions.mjs",
+    "scripts/test-static-webapp-contract.mjs"
+  ]
+}
