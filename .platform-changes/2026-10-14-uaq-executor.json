@@ -2,15 +2,9 @@
   "mode": "PLATFORM_CHANGE",
   "authorized": true,
   "requestedByUser": true,
-  "authorizationText": "Hazlo",
+  "authorizationText": "Hazlo (UAQ Executor)",
   "reason": "Crear UAQ Executor como única puerta externa para operaciones académicas rutinarias y bloquear técnicamente las rutas directas que permiten reconstrucción o desvíos.",
   "allowedChangedPaths": [
-    "config/academic-context.json",
-    "src/65_QuizAsistenciaWebApp.gs",
-    "scripts/academic-context.mjs",
-    "scripts/assert-academic-request-data-only.mjs",
-    "scripts/test-academic-context.mjs",
-    "scripts/test-static-webapp-contract.mjs",
-    "scripts/verify-academic-webapp.mjs"
+    "scripts/test-static-webapp-contract.mjs"
   ]
 }
