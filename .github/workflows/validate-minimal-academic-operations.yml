@@ -29,6 +29,7 @@ jobs:
           done
       - name: Exercise minimal-operation and academic regressions
         run: |
+          node scripts/test-architecture-boundaries.mjs
           node scripts/test-minimal-academic-operations.mjs
           node scripts/test-operation-contracts.mjs
           node scripts/test-next-class-real-state.mjs

@@ -25,7 +25,12 @@ const ARCHITECTURE_CONTRACT = Object.freeze({
   BEHAVIOR_CHANGE_REQUIRES_REGRESSION: true,
   DOCUMENTATION_IS_EXECUTION_SOURCE: false,
   DEPLOYMENT_VERIFICATION_REQUIRED: true,
-  SILENT_SCRIPT_FAILURE_ALLOWED: false
+  SILENT_SCRIPT_FAILURE_ALLOWED: false,
+  ROUTE_SOURCE: 'MANIFEST_OPERATION',
+  ALTERNATIVE_REMOTE_TRANSPORT_ALLOWED: false,
+  DIRECT_GOOGLE_API_WORKFLOWS_ALLOWED: false,
+  ONE_OFF_ACADEMIC_GENERATORS_ALLOWED: false,
+  RECOVERY_POLICY: 'CANONICAL_ROUTE_ONLY'
 });
 
 function validarContratoArquitectura_() {
@@ -40,5 +45,10 @@ function validarContratoArquitectura_() {
   if (c.DOCUMENTATION_IS_EXECUTION_SOURCE !== false) throw new Error('La documentación no puede sustituir al código ejecutable.');
   if (c.DEPLOYMENT_VERIFICATION_REQUIRED !== true) throw new Error('Todo cambio debe verificarse después del despliegue.');
   if (c.SILENT_SCRIPT_FAILURE_ALLOWED !== false) throw new Error('Un error de script nunca puede quedar silencioso.');
+  if (c.ROUTE_SOURCE !== 'MANIFEST_OPERATION') throw new Error('La ruta debe resolverse exclusivamente desde el manifiesto.');
+  if (c.ALTERNATIVE_REMOTE_TRANSPORT_ALLOWED !== false) throw new Error('No se permiten transportes remotos alternativos.');
+  if (c.DIRECT_GOOGLE_API_WORKFLOWS_ALLOWED !== false) throw new Error('Los workflows no pueden materializar recursos con APIs de Google directas.');
+  if (c.ONE_OFF_ACADEMIC_GENERATORS_ALLOWED !== false) throw new Error('No se permiten generadores académicos específicos por materia/unidad.');
+  if (c.RECOVERY_POLICY !== 'CANONICAL_ROUTE_ONLY') throw new Error('La recuperación debe permanecer en la ruta canónica.');
   return Object.assign({}, c);
 }

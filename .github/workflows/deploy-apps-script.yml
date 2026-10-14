@@ -1,5 +1,5 @@
 name: Deploy Apps Script
-# Redeploy marker: refresh canonical Web App for ADSI Unit 2 exam finalization on 2026-10-13.
+# Canonical deployment only. Academic execution routes are enforced by regression.
 
 on:
   push:
@@ -42,6 +42,7 @@ jobs:
           node scripts/academic-context.mjs check
           node scripts/test-academic-context.mjs
           node scripts/test-operation-contracts.mjs
+          node scripts/test-architecture-boundaries.mjs
 
       - name: Validate Apps Script source
         shell: bash

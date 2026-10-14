@@ -1,118 +1,80 @@
-# Automatización de clases JV
+# Automatización académica JV
 
-Repositorio fuente del proyecto Google Apps Script **Pipeline Quizzes - Forms - Classroom**.
+Repositorio fuente del sistema académico Google Apps Script para Classroom, Forms y Drive. **GitHub es la fuente técnica de verdad; el manifiesto `config/academic-context.json` define la ruta operativa.**
 
-## Proyecto Apps Script vinculado
+## Arquitectura canónica
+
+Para toda operación académica registrada:
+
+`.academic-requests/` → **Academic Web App** → Web App canónico → entrypoint declarado → postflight real.
+
+La única excepción de arranque es `quizAsistencia`, que conserva su FAST_PATH pero sigue ejecutándose por el mismo Web App.
+
+No existen transportes alternativos de producción. Están prohibidos como mecanismos de recuperación o atajo:
+
+- Apps Script Execution API;
+- `clasp run`;
+- llamadas REST directas a Classroom o Forms desde GitHub Actions;
+- deployments Web App de reemplazo;
+- workflows específicos por materia, examen o incidente;
+- funciones generadoras one-off como `crearExamenUnidad2...`.
+
+Si el Web App falla, se recupera el estado real, se corrige la ruta canónica y se reintenta idempotentemente. No se reconstruye el algoritmo.
+
+## Proyecto Apps Script
 
 - Script ID: `1jR91MDwOUlEdWaLQkuKLca5x1Qz1tqPncgc-PApPB-dFDLYAdD2y_4FE`
-- El vínculo está definido en `.clasp.json`.
-- El código sincronizado vive en `src/`.
-- GitHub es la fuente de verdad; Apps Script es el entorno de ejecución.
-- Proyecto estándar de Google Cloud: `473915513985`.
-- El deployment API executable versionado se registra en `.apps-script-deployment.json`.
+- Configuración local: `.clasp.json`
+- Código Apps Script: `src/`
+- Proyecto Google Cloud: `473915513985`
 
-## Primera configuración en una computadora
+`clasp` se usa únicamente para administración del código/despliegue canónico: `push`, habilitación de servicios requeridos y actualización del deployment existente. No se usa como transporte de operaciones académicas.
 
-Requisitos: Node.js 22+ y acceso de Google a la cuenta propietaria/editora del Apps Script.
+## Desarrollo y despliegue
 
 ```bash
 npm install
-npm run clasp:login
-npm run clasp:status
-npm run clasp:open
+node scripts/academic-context.mjs check
+node scripts/test-architecture-boundaries.mjs
+node scripts/test-operation-contracts.mjs
 ```
 
-`clasp:open` debe abrir **Pipeline Quizzes - Forms - Classroom**. Antes del primer despliegue no ejecutes `clasp pull`, porque reemplazaría el contenido local por el proyecto remoto actual.
+El workflow **Validate Minimal Academic Operations** ejecuta sintaxis y regresiones. **Deploy Apps Script** vuelve a ejecutar controles, hace `clasp push --force`, actualiza el deployment Web App canónico y verifica el endpoint sin crear recursos.
 
-## Desplegar GitHub/local hacia Apps Script
+## Exámenes
 
-```bash
-git pull
-npm install
-npm run clasp:status
-npm run clasp:push
-```
+El flujo separa diseño y materialización:
 
-Después del `push`, abre Apps Script y ejecuta primero:
+1. Identificar cobertura real y diseñar el instrumento.
+2. Revisar/aprobar y congelar reactivos, opciones, claves y puntajes.
+3. Enviar el contenido aprobado como parámetros de `action=examen`.
+4. El Web App delega exclusivamente a `crearExamen(params)`.
+5. Verificar `quizId`, `formId`, `workId`, Form no publicado y CourseWork DRAFT.
 
-```javascript
-validarSoporteTiposQuiz()
-```
+Una falla técnica en los pasos 3–5 no autoriza generar otro examen ni implementar otro creador.
 
-Las ejecuciones remotas de GitHub Actions no usan `clasp run`. Usan el
-[Apps Script Execution API](https://developers.google.com/apps-script/api/reference/rest/v1/scripts/run),
-validan tanto el HTTP como el cuerpo de ejecución y después consultan los
-recursos reales antes de declarar éxito. La arquitectura y el alta OAuth están
-documentadas en [`docs/execution-api-architecture.md`](docs/execution-api-architecture.md).
+## Invariantes principales
 
-El monitor ya instalado seguirá invocando `procesarQuizzesAprobados()`; no es necesario reinstalarlo solo por actualizar código.
+- CourseWork ordinario automático: **DRAFT**.
+- Forms académicos: **no publicados**.
+- Calificación automática: solo `draftGrade`; no devolución/publicación automática.
+- Importación Forms → Classroom no requiere `TURNED_IN` cuando existe identidad exacta y puntaje completo.
+- Google Docs académicos que corresponda entregar: copia editable por alumno.
+- La secuencia de clase proviene de planeación + Classroom real + Gamma verificada, nunca de la fecha actual.
 
-## Flujo canónico de exámenes
+## Estructura relevante
 
-1. Registrar el examen y sus preguntas en las hojas `Quizzes` y `Preguntas Quiz`.
-2. Marcarlo como `APROBADA`. El pipeline crea el Google Form y la actividad de
-   Classroom enlazada y administrable por este proyecto.
-3. Publicar la actividad cuando corresponda y esperar las entregas.
-4. Cuando el docente solicite importar notas, ejecutar en Apps Script:
-
-```javascript
-importarCalificacionesAhora()
-```
-
-La función procesa los quizzes en estado `CREADA`, empata exclusivamente por
-correo exacto, conserva cualquier calificación existente, exige entregas
-`TURNED_IN` y escribe solo `draftGrade`. No devuelve trabajos ni publica notas.
-
-## Calificación final de Unidad 1
-
-Para crear o actualizar la actividad `Calificación final - Unidad 1` en el tema
-`Unidad 1`, ejecutar:
-
-```javascript
-calcularYPublicarCalificacionUnidad1()
-```
-
-Calcula por alumno el promedio de los exámenes publicados del tema al 70% y el
-promedio de las demás actividades publicadas del tema al 30%. Las actividades
-publicadas sin nota cuentan como cero. La función escribe el resultado como
-`draftGrade` y puede volver a ejecutarse para recalcularlo.
-
-El activador ya instalado de `monitorearCalificacionesQuizzesCadaMinuto`
-ejecuta también el recálculo de Unidad 1 una vez por cada bloque de cinco
-minutos. Todo el proceso corre dentro de Google Apps Script y no necesita una
-ejecución manual ni una sesión de Work.
-
-## Recuperar un cambio manual hecho en Apps Script
-
-Solo cuando conscientemente quieras traer cambios remotos al repositorio:
-
-```bash
-npm run clasp:pull
-```
-
-Después revisa el diff antes de hacer commit.
-
-## Estructura
-
-- `src/01_PipelineQuizzes.gs`: creación Sheets → Forms → Classroom y soporte de tipos de pregunta.
-- `src/02_ValidacionYUtilidades.gs`: validaciones, correo verificado y utilidades comunes.
-- `src/03_Actividad13YApi.gs`: herramientas heredadas de Actividad 13/13.1.
-- `src/04_MonitorCalificaciones.gs`: monitor de calificaciones de quizzes.
-- `src/GitHubCalificaciones.gs`: integración GitHub Actions → Classroom.
-- `src/EvaluacionIA.gs`: evaluación de respuestas abiertas con IA.
-- `src/appsscript.json`: manifiesto y scopes.
-
-## Tipos de pregunta del pipeline
-
-El generador soporta:
-
-- opción múltiple;
-- lista;
-- casillas con varias respuestas correctas (`A,B`, `A,C,D`, etc.);
-- respuesta corta con respuesta principal y variantes aceptadas.
-
-La función `validarSoporteTiposQuiz()` revisa los registros antes de crear Forms.
+- `config/academic-context.json`: manifiesto y operaciones.
+- `src/00_ContratoArquitectura.gs`: contrato ejecutable.
+- `src/00_PoliticasCanonicas.gs`: políticas deterministas.
+- `src/22_EntrypointsRecursosSeguros.gs`: entrypoints de recursos.
+- `src/65_QuizAsistenciaWebApp.gs`: dispatcher HTTP canónico.
+- `scripts/test-architecture-boundaries.mjs`: bloqueo de rutas paralelas.
+- `.github/workflows/academic-webapp.yml`: ejecución de solicitudes.
+- `.github/workflows/deploy-apps-script.yml`: despliegue.
+- `.github/workflows/validate-minimal-academic-operations.yml`: validación.
+- `docs/academic-webapp-architecture.md`: arquitectura operativa.
 
 ## Seguridad
 
-No subir tokens, claves API ni `.clasprc.json`. `GITHUB_TOKEN`, `OPENAI_API_KEY` y `GEMINI_API_KEY` deben permanecer en **Script Properties** de Apps Script.
+No subir secretos, tokens ni `.clasprc.json`. Las credenciales de despliegue permanecen en GitHub Secrets y las claves de servicios usadas por Apps Script en mecanismos privados apropiados.

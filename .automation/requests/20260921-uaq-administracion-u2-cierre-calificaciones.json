@@ -1,9 +1,0 @@
-{
-  "function": "cerrarUnidad",
-  "parameters": [
-    {
-      "courseId": "871158187513",
-      "unidad": 2
-    }
-  ]
-}
