@@ -87,3 +87,6 @@ Para materiales futuros, el único entorno práctico asumido es **una computador
 Toda evidencia exigida al alumno debe poder generarse en Windows y toda herramienta obligatoria debe funcionar en Windows. Los recursos históricos ya publicados permanecen sin cambios (`LEAVE_AS_IS`); esa excepción no se hereda a contenido nuevo.
 
 La definición ejecutable está en `config/academic-context.json → courses.introduccion-tecnologias-informacion.studentEnvironmentProfile`.
+
+
+La política de entorno de Introducción a TI se valida en CI como parte del contrato estático antes de cualquier deployment autorizado.
