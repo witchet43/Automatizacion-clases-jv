@@ -63,6 +63,16 @@ function ejecutarServicioAcademicoWeb_(params){
     validarContratoOperacionWeb_(action);
     const operationalContext=validarArranqueAcademicoWeb_(action,p);
 
+    if(action==='uaqExecutor'){
+      const gatewayResult=ejecutarUaqExecutorWeb_(p);
+      return respuestaAcademicaWeb_(Object.assign({
+        ok:true,
+        transport:'WEB_APP',
+        action:'uaqExecutor',
+        operation:String(p.operation||'').trim(),
+        operationalContext:operationalContext
+      },gatewayResult));
+    }
     if(action==='quizAsistencia')validarEntradaQuizAsistenciaWeb_(p);
     if(action==='auditarIdentidadClassroom'){
       const audit=auditarIdentidadClassroomWeb_(p);
