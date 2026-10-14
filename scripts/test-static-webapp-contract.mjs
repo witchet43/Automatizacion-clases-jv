@@ -7,6 +7,7 @@ const deploy=fs.readFileSync('.github/workflows/deploy-apps-script.yml','utf8');
 const agents=fs.readFileSync('AGENTS.md','utf8');
 const readme=fs.readFileSync('README.md','utf8');
 const architecture=fs.readFileSync('docs/academic-webapp-architecture.md','utf8');
+const validate=fs.readFileSync('.github/workflows/validate-minimal-academic-operations.yml','utf8');
 
 assert.equal(manifest.operatingModel,'STATIC_WEB_APP_SERVICE');
 for(const key of [
@@ -33,6 +34,8 @@ assert.match(deploy,/assert-platform-change-authorized\.mjs/);
 const onBlock=(deploy.match(/on:[\s\S]*?concurrency:/)||[''])[0];
 assert.match(onBlock,/\.platform-changes\/\*\*/);
 assert.doesNotMatch(onBlock,/src\/\*\*|config\/academic-context\.json|workflow_dispatch/);
+assert.match(validate,/fetch-depth:\s*2/);
+assert.match(validate,/assert-platform-change-authorized\.mjs/);
 for(const text of [agents,readme,architecture]){
   assert.match(text,/STATIC_WEB_APP_SERVICE/);
   assert.match(text,/data-only/i);

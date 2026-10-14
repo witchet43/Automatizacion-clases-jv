@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Explicit current-user approval received for this platform hardening.",
+  "reason": "Verify the STATIC_WEB_APP_SERVICE gate and validation history requirements.",
+  "createdAt": "2026-10-14",
+  "allowedChangedPaths": [
+    "scripts/test-static-webapp-contract.mjs"
+  ]
+}
