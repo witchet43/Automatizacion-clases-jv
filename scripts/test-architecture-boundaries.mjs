@@ -57,12 +57,35 @@ for (const file of fs.readdirSync(srcDir).filter(f => f.endsWith('.gs'))) {
 }
 
 const forbiddenLegacyPaths = [
+  'src/03_Actividad13YApi.gs',
+  'src/07_CalificacionUnidad1.gs',
+  'src/17_RepararCerosErroneosActividad.gs',
+  'src/19_MigrarActividadCalificacionDraft.gs',
+  'src/32_SolicitudEliminarCourseWorkBorrador.gs',
+  'src/45_QuizAsistenciaClaseActiva.gs',
+  'src/46_UnidadAbiertaQuizSencillo.gs',
   '.automation',
   '.attendance-requests',
   '.clasp-inspect',
   'docs/execution-api-architecture.md'
 ];
 for (const p of forbiddenLegacyPaths) if (fs.existsSync(path.join(root,p))) fail.push(`legacy path present: ${p}`);
+
+const forbiddenSourceSymbols = [
+  'calcularYPublicarCalificacionUnidad1',
+  'procesarSolicitudRepararCerosActividad_',
+  'procesarSolicitudMigrarActividadCalificacionDraft_',
+  'procesarSolicitudEliminarCourseWorkBorrador_',
+  'crearQuizDeAsistencia',
+  'resolverClaseActivaQuizAsistencia_',
+  'resolverUnidadAbiertaQuizSencillo_'
+];
+for (const file of fs.readdirSync(srcDir).filter(f => f.endsWith('.gs'))) {
+  const text = fs.readFileSync(path.join(srcDir,file),'utf8');
+  for (const symbol of forbiddenSourceSymbols) {
+    if (text.includes(symbol)) fail.push(`${file}: obsolete source symbol ${symbol}`);
+  }
+}
 
 if (fail.length) {
   console.error('Architecture boundary violations:\n- '+fail.join('\n- '));

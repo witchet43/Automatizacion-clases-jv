@@ -18,7 +18,7 @@ function instalarMonitorSolicitudesImportacion() {
     instalado: true,
     handler: 'procesarSolicitudesImportacion',
     frecuenciaMinutos: 1,
-    adaptadores: ['ELIMINAR_COURSEWORK_BORRADOR','REVISION_TAREAS','CALIFICACIONES_ADMINISTRATIVAS']
+    adaptadores: ['REVISION_TAREAS','CALIFICACIONES_ADMINISTRATIVAS']
   };
 }
 
@@ -37,10 +37,7 @@ function procesarSolicitudesImportacion() {
     const lock = LockService.getScriptLock();
     if (!lock.tryLock(1000)) return {procesado: false, motivo: 'LOCK'};
     try {
-      ejecutarAdaptadorSolicitud_('eliminación segura de CourseWork DRAFT', procesarSolicitudEliminarCourseWorkBorrador_);
       ejecutarAdaptadorSolicitud_('revisión de tareas', procesarSolicitudRevisionTareas_);
-      ejecutarAdaptadorSolicitud_('reparación de ceros erróneos', procesarSolicitudRepararCerosActividad_);
-      ejecutarAdaptadorSolicitud_('migración exclusiva de actividad a draft', procesarSolicitudMigrarActividadCalificacionDraft_);
       ejecutarAdaptadorSolicitud_('promedios de unidad', procesarSolicitudPromediosUnidad_);
       ejecutarAdaptadorSolicitud_('publicación de calificación de unidad', procesarSolicitudPublicarCalificacionUnidad_);
       ejecutarAdaptadorSolicitud_('recálculo final directo', procesarSolicitudRecalculoFinalUnidadCero_);
