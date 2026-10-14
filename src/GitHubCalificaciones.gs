@@ -10,7 +10,8 @@
  *
  * Automatización E2E:
  * - Crea idempotentemente registros en Evaluaciones GitHub para cada actividad/repositorio.
- * - Publica CourseWork solo cuando Estado Classroom = PUBLICAR, lo que representa autorización docente explícita.
+ * - Nunca publica CourseWork. Un valor heredado PUBLICAR se normaliza a BORRADOR;
+ *   la publicación visible corresponde exclusivamente al docente.
  */
 const GH_GRADE_SYNC = Object.freeze({
   SPREADSHEET_ID: '1YLSPcDSpqvaAk7lLeL6O3CTcgeqdrBtmxCgmdF6ISeA',
@@ -276,39 +277,22 @@ function ghAsegurarEvaluaciones_(evaluationSheet, evaluationData, activityData, 
 }
 
 function ghPublicarActividadesAutorizadas_(activitySheet, activityData, report) {
-  var publicadas = 0;
+  if (!activityData || !activityData.records) return 0;
   activityData.records.forEach(function(activity) {
-    if (ghClean_(activity['Estado Classroom']).toUpperCase() !== 'PUBLICAR') return;
-    var courseId = ghClean_(activity['ID curso']);
-    var workId = ghClean_(activity['ID Classroom']);
-    if (!courseId || !workId) return;
-
-    try {
-      var work = Classroom.Courses.CourseWork.get(courseId, workId);
-      if (work.state !== 'PUBLISHED') {
-        Classroom.Courses.CourseWork.patch(
-          {state: 'PUBLISHED'},
-          courseId,
-          workId,
-          {updateMask: 'state'}
-        );
-      }
-      var headers = activityData.headers;
-      var stateIndex = headers.indexOf('Estado Classroom');
-      var syncIndex = headers.indexOf('Última sincronización');
-      var obsIndex = headers.indexOf('Observaciones');
-      if (stateIndex >= 0) activitySheet.getRange(activity.__row, stateIndex + 1).setValue('PUBLICADA');
-      if (syncIndex >= 0) activitySheet.getRange(activity.__row, syncIndex + 1).setValue(new Date());
-      if (obsIndex >= 0) activitySheet.getRange(activity.__row, obsIndex + 1).setValue('Publicación visible autorizada por el docente y aplicada automáticamente por el monitor.');
-      publicadas++;
-    } catch (err) {
-      var message = String(err && err.message ? err.message : err);
-      if (report && report.errores) report.errores.push({actividad: ghClean_(activity['Actividad GitHub ID']), error: message});
-    }
+    var estado = ghClean_(activity['Estado Classroom']).toUpperCase();
+    if (estado !== 'PUBLICAR') return;
+    var headers = activityData.headers || [];
+    var stateIndex = headers.indexOf('Estado Classroom');
+    var syncIndex = headers.indexOf('Última sincronización');
+    var obsIndex = headers.indexOf('Observaciones');
+    if (stateIndex >= 0) activitySheet.getRange(activity.__row, stateIndex + 1).setValue('BORRADOR');
+    if (syncIndex >= 0) activitySheet.getRange(activity.__row, syncIndex + 1).setValue(new Date());
+    if (obsIndex >= 0) activitySheet.getRange(activity.__row, obsIndex + 1).setValue(
+      'Publicación automática deshabilitada. El CourseWork permanece DRAFT y la publicación es manual.'
+    );
   });
-  return publicadas;
+  return 0;
 }
-
 function ghObtenerResultado_(organization, repository, branch, expectedTests, maxPoints) {
   if (!organization || !repository) throw new Error('Falta organización o repositorio GitHub.');
   var fullName = organization + '/' + repository;

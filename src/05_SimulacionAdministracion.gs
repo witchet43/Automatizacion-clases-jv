@@ -16,21 +16,26 @@ const SIM_ADM = Object.freeze({
   CONFIG_MARK: '[SIM_CONFIGURADA]'
 });
 
-const SIM_ADM_BOOTSTRAP = (function () {
-  try {
-    const exists = ScriptApp.getProjectTriggers()
-      .some(t => t.getHandlerFunction() === 'procesarSimulacionesPendientes');
-    if (!exists) {
-      ScriptApp.newTrigger('procesarSimulacionesPendientes')
-        .timeBased()
-        .everyMinutes(1)
-        .create();
-    }
-  } catch (err) {
-    console.log('Bootstrap simulación: ' + err);
+/**
+ * La simulación no instala triggers durante la carga/despliegue del código.
+ * La instalación es una acción administrativa explícita.
+ */
+function instalarSimulacionAdministracion() {
+  const exists = ScriptApp.getProjectTriggers()
+    .some(function(t) { return t.getHandlerFunction() === 'procesarSimulacionesPendientes'; });
+  if (!exists) {
+    ScriptApp.newTrigger('procesarSimulacionesPendientes').timeBased().everyMinutes(1).create();
   }
-  return true;
-})();
+  return {ok:true,monitorInstalado:true};
+}
+
+function desinstalarSimulacionAdministracion() {
+  let removed=0;
+  ScriptApp.getProjectTriggers()
+    .filter(function(t) { return t.getHandlerFunction() === 'procesarSimulacionesPendientes'; })
+    .forEach(function(t) { ScriptApp.deleteTrigger(t); removed++; });
+  return {ok:true,triggersEliminados:removed};
+}
 
 function procesarSimulacionesPendientes() {
   const ss = SpreadsheetApp.openById(SIM_ADM.SPREADSHEET_ID);
@@ -160,6 +165,7 @@ function procesarRespuestaSimulacion(e) {
     reason: 'Pendiente de recálculo automático'
   });
   rebuildSimulationDashboard_(ss);
+  recalcularSimulacionAdministracionV2();
 }
 
 function loadSimulationImpacts_(ss) {

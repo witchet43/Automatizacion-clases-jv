@@ -64,6 +64,8 @@ const forbiddenLegacyPaths = [
   'src/32_SolicitudEliminarCourseWorkBorrador.gs',
   'src/45_QuizAsistenciaClaseActiva.gs',
   'src/46_UnidadAbiertaQuizSencillo.gs',
+  'src/EvaluacionIA.gs',
+  'src/ZZ_GitHubPublicacionE2E.gs',
   '.automation',
   '.attendance-requests',
   '.clasp-inspect',
@@ -75,6 +77,15 @@ const pipelineSource = fs.readFileSync(path.join(srcDir,'01_PipelineQuizzes.gs')
 if (/CourseWork\.create\s*\(/.test(pipelineSource)) fail.push('01_PipelineQuizzes.gs must not create Classroom resources');
 if (/function\s+processOneQuiz_\s*\(/.test(pipelineSource)) fail.push('legacy Sheets -> Forms -> Classroom processor must not exist');
 if (!/descomisionado:\s*true/.test(pipelineSource)) fail.push('legacy quiz monitor must remain explicitly decommissioned');
+
+const githubGrading = fs.readFileSync(path.join(srcDir,'GitHubCalificaciones.gs'),'utf8');
+if (/CourseWork\.patch\s*\(\s*\{state:\s*['"]PUBLISHED['"]/.test(githubGrading)) fail.push('GitHub grading must not auto-publish CourseWork');
+if (!/Publicación automática deshabilitada/.test(githubGrading)) fail.push('GitHub grading must preserve DRAFT-only publication policy');
+
+const simulation = fs.readFileSync(path.join(srcDir,'05_SimulacionAdministracion.gs'),'utf8');
+const simulationRecalc = fs.readFileSync(path.join(srcDir,'06_RecalculoSimulacionV2.gs'),'utf8');
+if (/const\s+SIM_ADM_BOOTSTRAP\s*=/.test(simulation)) fail.push('simulation must not auto-install triggers on source load');
+if (/const\s+SIM_V2_BOOTSTRAP\s*=/.test(simulationRecalc)) fail.push('simulation recalculation must not auto-install periodic triggers');
 
 const forbiddenSourceSymbols = [
   'calcularYPublicarCalificacionUnidad1',

@@ -20,23 +20,11 @@ const SIM_DECISION_PENALTY = Object.freeze({
   10: {A:5, B:3, C:0, D:6}
 });
 
-const SIM_V2_BOOTSTRAP = (function () {
-  try {
-    const exists = ScriptApp.getProjectTriggers()
-      .some(t => t.getHandlerFunction() === 'recalcularSimulacionAdministracionV2');
-    if (!exists) {
-      ScriptApp.newTrigger('recalcularSimulacionAdministracionV2')
-        .timeBased()
-        .everyMinutes(1)
-        .create();
-    }
-  } catch (err) {
-    console.log('Bootstrap recalculo V7: ' + err);
-  }
-  return true;
-})();
-
 function recalcularSimulacionAdministracionV2() {
+  // Elimina cualquier trigger periódico heredado: el recálculo se invoca por evento o manualmente.
+  ScriptApp.getProjectTriggers()
+    .filter(function(t) { return t.getHandlerFunction() === 'recalcularSimulacionAdministracionV2'; })
+    .forEach(function(t) { ScriptApp.deleteTrigger(t); });
   const ss = SpreadsheetApp.openById(SIM_ADM.SPREADSHEET_ID);
   const results = ss.getSheetByName(SIM_ADM.RESULTS_SHEET);
   const impactsSheet = ss.getSheetByName(SIM_ADM.IMPACTS_SHEET);
