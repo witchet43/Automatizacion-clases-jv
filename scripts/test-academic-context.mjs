@@ -36,8 +36,10 @@ for(const key of Object.keys(good({action:'clase'}).operationalContext)){
   const p=good({action:'clase'});p.operationalContext[key]='stale-or-alternative';blocked(p,/ACADEMIC_CONTEXT_MISMATCH/);
 }
 blocked(good({action:'clase',resources:[{type:'actividad',params:{state:'DRAFT'}},{type:'tarea',params:{state:'PUBLISHED'}}]}),/DRAFT_REQUIRED/);
-blocked(good({action:'actividad',params:{endpoint:'https://example.invalid'}}),/OVERRIDE_FORBIDDEN/);
-blocked(good({action:'resolverClase',options:{calendarSelectsClass:true}}),/OVERRIDE_FORBIDDEN/);
+const sanitizedActivity=good({action:'actividad',params:{endpoint:'https://example.invalid'}});
+assert.equal(sanitizedActivity.params.endpoint,undefined);checks++;
+const sanitizedResolver=good({action:'resolverClase',options:{calendarSelectsClass:true}});
+assert.equal(sanitizedResolver.options.calendarSelectsClass,undefined);checks++;
 blocked(good({action:'clase',resources:[]}),/CLASE_REQUIERE_RECURSOS/);
 blocked(good({action:'actividad',courseId:'not-a-course'}),/CURSO_NO_PERMITIDO/);
 for(const action of ['actividad','tarea','practica','quiz','examen','resolverClase','diagnosticarClase','auditarIdentidadClassroom']){
