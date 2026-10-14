@@ -10,9 +10,26 @@ const contract = fs.readFileSync(path.join(root,'src/00_ContratoArquitectura.gs'
 
 if (manifest.rules?.alternativeRoutesAllowed !== false) fail.push('manifest must keep alternativeRoutesAllowed=false');
 if (manifest.rules?.routeResolution !== 'MANIFEST_OPERATION_ONLY') fail.push('manifest must keep MANIFEST_OPERATION_ONLY');
+if (manifest.operatingModel !== 'STATIC_WEB_APP_SERVICE') fail.push('manifest must keep STATIC_WEB_APP_SERVICE');
+if (manifest.rules?.staticWebAppDuringAcademicOperations !== true) fail.push('academic Web App must remain static during academic operations');
+if (manifest.rules?.academicOperationsAreDataOnly !== true) fail.push('academic operations must be data-only');
+if (manifest.rules?.academicOperationMayModifySource !== false ||
+    manifest.rules?.academicOperationMayModifyWorkflow !== false ||
+    manifest.rules?.academicOperationMayModifyManifest !== false ||
+    manifest.rules?.academicOperationMayDeploy !== false)
+  fail.push('academic operations must not mutate/deploy platform');
+if (manifest.rules?.academicFailureMayTriggerDevelopment !== false) fail.push('academic failure must not authorize development');
+if (manifest.rules?.recoveryRoute !== 'SAME_CANONICAL_WEB_APP_ONLY') fail.push('recovery must use same canonical Web App');
+if (manifest.rules?.platformChangeRequiresExplicitUserAuthorization !== true ||
+    manifest.rules?.platformChangeEvidenceRequired !== true)
+  fail.push('platform changes require explicit user authorization evidence');
+if (manifest.rules?.platformChangeMayMixWithAcademicRequest !== false) fail.push('platform and academic lanes must be isolated');
+if (manifest.rules?.workModeAllowed !== false) fail.push('Work mode must remain forbidden for this project');
 for (const [name, op] of Object.entries(manifest.operations || {})) {
   const expected = name === 'quizAsistencia' ? 'FAST_PATH_WEB_APP' : 'ACADEMIC_WEB_APP';
   if (op.executionRoute !== expected) fail.push(`operation ${name} has non-canonical route ${op.executionRoute}`);
+  if (op.contentIsData !== true || op.sourceMutationAllowed !== false || op.deploymentAllowed !== false)
+    fail.push(`operation ${name} must remain data-only and non-deploying`);
 }
 if (Object.prototype.hasOwnProperty.call(appsscript,'executionApi')) fail.push('src/appsscript.json must not expose executionApi');
 
@@ -22,7 +39,15 @@ const requiredContract = [
   /ALTERNATIVE_REMOTE_TRANSPORT_ALLOWED:\s*false/,
   /DIRECT_GOOGLE_API_WORKFLOWS_ALLOWED:\s*false/,
   /ONE_OFF_ACADEMIC_GENERATORS_ALLOWED:\s*false/,
-  /RECOVERY_POLICY:\s*'CANONICAL_ROUTE_ONLY'/
+  /RECOVERY_POLICY:\s*'CANONICAL_ROUTE_ONLY'/,
+  /OPERATING_MODEL:\s*'STATIC_WEB_APP_SERVICE'/,
+  /ACADEMIC_OPERATIONS_ARE_DATA_ONLY:\s*true/,
+  /ACADEMIC_OPERATION_SOURCE_MUTATION_ALLOWED:\s*false/,
+  /ACADEMIC_OPERATION_DEPLOYMENT_ALLOWED:\s*false/,
+  /ACADEMIC_FAILURE_GRANTS_DEVELOPMENT_AUTHORIZATION:\s*false/,
+  /PLATFORM_CHANGE_REQUIRES_EXPLICIT_USER_AUTHORIZATION:\s*true/,
+  /DEPLOY_TRIGGER:\s*'PLATFORM_CHANGE_EVIDENCE_ONLY'/,
+  /WORK_MODE_ALLOWED:\s*false/
 ];
 if (requiredContract.some(re => !re.test(contract))) fail.push('architecture contract is missing anti-divergence invariants');
 
@@ -32,6 +57,13 @@ const allowedWorkflows = new Set([
   'deploy-apps-script.yml',
   'validate-minimal-academic-operations.yml'
 ]);
+const academicWorkflowText = fs.readFileSync(path.join(workflowsDir,'academic-webapp.yml'),'utf8');
+const deployWorkflowText = fs.readFileSync(path.join(workflowsDir,'deploy-apps-script.yml'),'utf8');
+if (!academicWorkflowText.includes('assert-academic-request-data-only.mjs')) fail.push('Academic Web App must enforce data-only request commits');
+if (!deployWorkflowText.includes('assert-platform-change-authorized.mjs')) fail.push('Deploy must enforce explicit platform-change authorization');
+const deployTriggerBlock=(deployWorkflowText.match(/on:[\s\S]*?concurrency:/)||[''])[0];
+if (!/\.platform-changes\/\*\*/.test(deployTriggerBlock) || /src\/\*\*|workflow_dispatch/.test(deployTriggerBlock))
+  fail.push('Deploy must trigger only from .platform-changes evidence');
 for (const file of fs.readdirSync(workflowsDir)) {
   if (!allowedWorkflows.has(file)) fail.push(`non-canonical workflow present: ${file}`);
   const text = fs.readFileSync(path.join(workflowsDir,file),'utf8');

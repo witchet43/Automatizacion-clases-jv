@@ -1,60 +1,52 @@
-# Arquitectura canónica del Academic Web App
+# Arquitectura canónica — STATIC_WEB_APP_SERVICE
 
-## Regla central
+## Contrato
 
-`config/academic-context.json` es el manifiesto ejecutable. Cada operación resuelve primero `operationKey` y usa exclusivamente `manifest.operations[operationKey].executionRoute`.
+La Web App desplegada es un servicio de producción estático para todas las operaciones declaradas en `config/academic-context.json`. El contenido académico es dato, no código.
 
-La ruta vigente es:
+## Carril A — ACADEMIC_OPERATION
 
-`.academic-requests/` → workflow **Academic Web App** → Web App canónico → dispatcher → entrypoint declarado → postflight.
+Ruta única:
 
-`quizAsistencia` usa `FAST_PATH_WEB_APP`; todas las demás operaciones registradas usan `ACADEMIC_WEB_APP`.
+`.academic-requests/<requestId>.json → Academic Web App → Web App canónico → dispatcher → entrypoint genérico → postflight`
 
-## Responsabilidades
+El commit de una operación académica debe contener exactamente un JSON bajo `.academic-requests/` y ningún otro archivo. El workflow ejecuta `scripts/assert-academic-request-data-only.mjs` antes de cualquier acción.
 
-- **IA/cliente:** intención y parámetros mínimos.
-- **Manifiesto:** curso, operación, ruta, documentos y configuración estable.
-- **Web App:** validación de contexto y despacho.
-- **Entrypoints:** algoritmos de creación/reconciliación.
-- **Postflight:** comprobación de IDs, enlaces, estados e invariantes en los sistemas reales.
-- **Deploy Apps Script:** despliegue del mismo Web App; no ejecuta operaciones académicas.
+Una operación académica jamás puede modificar fuente, workflows, manifest o deployment. Un examen nuevo se expresa como parámetros de `crearExamen`; una práctica como parámetros de `crearPractica`; una clase como recursos declarativos de `clase`.
 
-## Recuperación
+## Fallos operacionales
 
-Un timeout, error HTTP o pérdida de respuesta después de enviar una mutación produce un **resultado incierto**. Antes de reintentar:
+Un error, timeout, 404/429/5xx, bloqueo de guardrail o resultado incierto **no cambia de carril** y no concede autorización de desarrollo.
 
-1. consultar el sistema destino real;
-2. incluir DRAFT y PUBLISHED cuando corresponda;
-3. localizar por evidencia fuerte (courseId, título, topicId y documentId/formId);
-4. reutilizar una coincidencia canónica;
-5. bloquear ante conflicto o múltiples coincidencias;
-6. reintentar únicamente la misma operación por el Web App.
+La única recuperación válida es:
 
-Nunca se crea un segundo transporte para recuperar una operación.
+1. leer estado real;
+2. localizar evidencia fuerte;
+3. reutilizar el recurso canónico si existe;
+4. bloquear conflicto/ambigüedad;
+5. reintentar la misma operación por la misma Web App.
 
-## Rutas explícitamente prohibidas
+Si la causa exige modificar el motor, STOP. Informar el defecto y esperar autorización explícita del usuario.
 
-No son mecanismos operativos ni de contingencia:
+## Carril B — PLATFORM_CHANGE
 
-- Apps Script Execution API;
-- `clasp run`;
-- REST directo a Classroom/Forms desde workflows;
-- canje OAuth manual en workflows académicos;
-- deployment Web App alternativo/replacement;
-- workflow específico por curso, examen o incidente;
-- generador Apps Script específico por materia/unidad.
+Solo se abre por autorización explícita del usuario en la conversación actual. El commit debe incluir exactamente una evidencia `.platform-changes/*.json` con:
 
-La regresión `scripts/test-architecture-boundaries.mjs` bloquea estas desviaciones.
+- `mode: PLATFORM_CHANGE`;
+- `authorized: true`;
+- `requestedByUser: true`;
+- texto literal de la autorización;
+- motivo;
+- lista exacta de archivos permitidos.
 
-## Cambios de arquitectura
+`scripts/assert-platform-change-authorized.mjs` compara el commit real contra ese alcance. No puede coexistir con `.academic-requests/**`.
 
-Una ruta nueva solo puede existir mediante un cambio intencional que:
+**Deploy Apps Script se dispara únicamente por `.platform-changes/**`**, vuelve a ejecutar regresiones, hace `clasp push`, actualiza el mismo deployment canónico y ejecuta postflight. Crear deployments alternativos está prohibido.
 
-1. modifique el manifiesto;
-2. modifique el contrato/política ejecutable;
-3. añada o ajuste regresiones;
-4. pase validación de sintaxis y pruebas;
-5. despliegue el Web App;
-6. verifique el deployment.
+## Work mode
 
-La documentación por sí sola no cambia el comportamiento.
+Work mode no forma parte de esta arquitectura. GitHub, GitHub Actions, Apps Script y la Web App canónica son el plano de control y ejecución. Si alguna intervención manual fuera imprescindible, debe ser mínima y explícita.
+
+## Garantía buscada
+
+Una operación académica rutinaria debe producir cero cambios de código y cero deployments. Muchos recursos académicos con cero deployments es el comportamiento correcto, no una omisión.

@@ -14,10 +14,38 @@ export function readContext() {
       manifest.rules.courseWorkState !== 'DRAFT' || manifest.rules.calendarSelectsClass !== false || manifest.rules.currentDateSelectsClass !== false ||
       manifest.rules.resourcesBeforeGamma !== true || manifest.rules.gammaReferencesVerifiedResources !== true ||
       manifest.rules.routeResolution !== 'MANIFEST_OPERATION_ONLY' ||
+      manifest.operatingModel !== 'STATIC_WEB_APP_SERVICE' ||
+      manifest.rules.staticWebAppDuringAcademicOperations !== true ||
+      manifest.rules.academicOperationsAreDataOnly !== true ||
+      manifest.rules.academicRequestRepositoryMutationScope !== 'ACADEMIC_REQUEST_FILE_ONLY' ||
+      manifest.rules.academicOperationMayModifySource !== false ||
+      manifest.rules.academicOperationMayModifyWorkflow !== false ||
+      manifest.rules.academicOperationMayModifyManifest !== false ||
+      manifest.rules.academicOperationMayDeploy !== false ||
+      manifest.rules.academicFailureMayTriggerDevelopment !== false ||
+      manifest.rules.recoveryRoute !== 'SAME_CANONICAL_WEB_APP_ONLY' ||
+      manifest.rules.contentIsDataNotCode !== true ||
+      manifest.rules.platformChangeRequiresExplicitUserAuthorization !== true ||
+      manifest.rules.platformChangeEvidenceRequired !== true ||
+      manifest.rules.platformChangeMayMixWithAcademicRequest !== false ||
+      manifest.rules.workModeAllowed !== false ||
       manifest.rules.workModeRole !== 'FORBIDDEN_FOR_CANONICAL_ACADEMIC_OPERATIONS' ||
       manifest.rules.gammaFolderRequired !== true || manifest.rules.gammaCreationMustPassFolderIds !== true ||
       manifest.rules.gammaThemeRequired !== true || manifest.rules.gammaCreationMustPassThemeId !== true ||
       JSON.stringify(manifest.fastPaths) !== '["quizAsistencia"]') throw Error('ACADEMIC_CONTEXT_INVALID');
+  if (!manifest.platformChange || manifest.platformChange.authorizationRequired !== true ||
+      manifest.platformChange.authorizationSource !== 'EXPLICIT_CURRENT_USER_REQUEST' ||
+      manifest.platformChange.evidenceDirectory !== '.platform-changes' ||
+      manifest.platformChange.evidenceFileMustQuoteUserAuthorization !== true ||
+      manifest.platformChange.academicRequestMayNotShareCommit !== true ||
+      manifest.platformChange.deployTrigger !== 'PLATFORM_CHANGE_EVIDENCE_ONLY' ||
+      manifest.platformChange.updateExistingDeploymentOnly !== true ||
+      manifest.platformChange.newDeploymentAllowed !== false ||
+      manifest.platformChange.workModeAllowed !== false) throw Error('PLATFORM_CHANGE_CONTRACT_INVALID');
+  for (const [name,op] of Object.entries(manifest.operations || {})) {
+    if (op.contentIsData !== true || op.sourceMutationAllowed !== false || op.deploymentAllowed !== false)
+      throw Error('ACADEMIC_OPERATION_NOT_DATA_ONLY: '+name);
+  }
   for (const key of ['bootstrap','master','classGuide','runbook']) {
     const doc = manifest.documents[key];
     if (!doc?.id || doc.url !== `https://docs.google.com/document/d/${doc.id}/edit`) throw Error('ACADEMIC_DOCUMENT_INVALID: '+key);

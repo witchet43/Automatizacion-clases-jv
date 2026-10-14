@@ -33,7 +33,21 @@ const ARCHITECTURE_CONTRACT = Object.freeze({
   RECOVERY_POLICY: 'CANONICAL_ROUTE_ONLY',
   INCIDENT_REGRESSION_REQUIRED: true,
   PERIODIC_ACADEMIC_POLLING_ALLOWED: false,
-  GENERATED_MANIFEST_REGISTRY_REQUIRED: true
+  GENERATED_MANIFEST_REGISTRY_REQUIRED: true,
+  OPERATING_MODEL: 'STATIC_WEB_APP_SERVICE',
+  ACADEMIC_OPERATIONS_ARE_DATA_ONLY: true,
+  ACADEMIC_OPERATION_SOURCE_MUTATION_ALLOWED: false,
+  ACADEMIC_OPERATION_WORKFLOW_MUTATION_ALLOWED: false,
+  ACADEMIC_OPERATION_MANIFEST_MUTATION_ALLOWED: false,
+  ACADEMIC_OPERATION_DEPLOYMENT_ALLOWED: false,
+  ACADEMIC_FAILURE_GRANTS_DEVELOPMENT_AUTHORIZATION: false,
+  SAME_WEBAPP_RECOVERY_REQUIRED: true,
+  PLATFORM_CHANGE_REQUIRES_EXPLICIT_USER_AUTHORIZATION: true,
+  PLATFORM_CHANGE_EVIDENCE_REQUIRED: true,
+  PLATFORM_CHANGE_MAY_SHARE_COMMIT_WITH_ACADEMIC_REQUEST: false,
+  DEPLOY_TRIGGER: 'PLATFORM_CHANGE_EVIDENCE_ONLY',
+  NEW_DEPLOYMENT_ALLOWED: false,
+  WORK_MODE_ALLOWED: false
 });
 
 function validarContratoArquitectura_() {
@@ -56,5 +70,22 @@ function validarContratoArquitectura_() {
   if (c.INCIDENT_REGRESSION_REQUIRED !== true) throw new Error('Toda causa raíz corregida debe quedar protegida por regresión.');
   if (c.PERIODIC_ACADEMIC_POLLING_ALLOWED !== false) throw new Error('No se permite polling académico periódico como sustituto de operaciones bajo demanda.');
   if (c.GENERATED_MANIFEST_REGISTRY_REQUIRED !== true) throw new Error('Cursos y planeaciones deben provenir del manifiesto generado.');
+  if (c.OPERATING_MODEL !== 'STATIC_WEB_APP_SERVICE') throw new Error('La Web App debe operar como servicio estático durante operaciones académicas.');
+  if (c.ACADEMIC_OPERATIONS_ARE_DATA_ONLY !== true) throw new Error('Las operaciones académicas deben ser data-only.');
+  if (c.ACADEMIC_OPERATION_SOURCE_MUTATION_ALLOWED !== false ||
+      c.ACADEMIC_OPERATION_WORKFLOW_MUTATION_ALLOWED !== false ||
+      c.ACADEMIC_OPERATION_MANIFEST_MUTATION_ALLOWED !== false ||
+      c.ACADEMIC_OPERATION_DEPLOYMENT_ALLOWED !== false)
+    throw new Error('Una operación académica no puede modificar ni desplegar plataforma.');
+  if (c.ACADEMIC_FAILURE_GRANTS_DEVELOPMENT_AUTHORIZATION !== false) throw new Error('Un fallo operacional nunca autoriza desarrollo.');
+  if (c.SAME_WEBAPP_RECOVERY_REQUIRED !== true) throw new Error('La recuperación debe usar la misma Web App.');
+  if (c.PLATFORM_CHANGE_REQUIRES_EXPLICIT_USER_AUTHORIZATION !== true ||
+      c.PLATFORM_CHANGE_EVIDENCE_REQUIRED !== true)
+    throw new Error('Todo cambio de plataforma requiere autorización explícita y evidencia.');
+  if (c.PLATFORM_CHANGE_MAY_SHARE_COMMIT_WITH_ACADEMIC_REQUEST !== false)
+    throw new Error('Operación académica y cambio de plataforma no pueden compartir commit.');
+  if (c.DEPLOY_TRIGGER !== 'PLATFORM_CHANGE_EVIDENCE_ONLY') throw new Error('Deploy solo puede dispararse por evidencia de cambio de plataforma.');
+  if (c.NEW_DEPLOYMENT_ALLOWED !== false) throw new Error('Solo se actualiza el deployment canónico existente.');
+  if (c.WORK_MODE_ALLOWED !== false) throw new Error('Work mode no forma parte de esta arquitectura.');
   return Object.assign({}, c);
 }

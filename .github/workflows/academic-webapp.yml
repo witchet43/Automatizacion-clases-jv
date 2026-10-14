@@ -25,6 +25,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Enforce data-only academic request
+        run: node scripts/assert-academic-request-data-only.mjs
       - name: Build and validate canonical configuration
         run: |
           node scripts/academic-context.mjs build

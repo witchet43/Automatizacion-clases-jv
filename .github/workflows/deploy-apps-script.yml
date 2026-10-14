@@ -5,14 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'src/**'
-      - 'scripts/academic-context.mjs'
-      - 'scripts/verify-academic-webapp.mjs'
-      - 'config/academic-context.json'
-      - '.clasp.json'
-      - 'package.json'
-      - '.github/workflows/deploy-apps-script.yml'
-  workflow_dispatch:
+      - '.platform-changes/**'
 
 concurrency:
   group: apps-script-production
@@ -27,6 +20,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -36,6 +31,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Enforce explicit platform-change authorization
+        run: node scripts/assert-platform-change-authorized.mjs
+
       - name: Verify canonical context and startup regressions
         run: |
           node scripts/academic-context.mjs build
@@ -44,6 +42,7 @@ jobs:
           node scripts/test-operation-contracts.mjs
           node scripts/test-architecture-boundaries.mjs
           node scripts/test-incident-regressions.mjs
+          node scripts/test-static-webapp-contract.mjs
 
       - name: Validate Apps Script source
         shell: bash

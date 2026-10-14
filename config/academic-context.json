@@ -361,7 +361,21 @@
     "academicDocumentFlatStructuredParagraphsForbidden": true,
     "academicDocumentDuplicateStructuralHeadersForbidden": true,
     "gammaThemeFallbackAllowed": false,
-    "gammaThemeUnsupportedBehavior": "BLOCK_BEFORE_GENERATION_NO_CREDITS"
+    "gammaThemeUnsupportedBehavior": "BLOCK_BEFORE_GENERATION_NO_CREDITS",
+    "staticWebAppDuringAcademicOperations": true,
+    "academicOperationsAreDataOnly": true,
+    "academicRequestRepositoryMutationScope": "ACADEMIC_REQUEST_FILE_ONLY",
+    "academicOperationMayModifySource": false,
+    "academicOperationMayModifyWorkflow": false,
+    "academicOperationMayModifyManifest": false,
+    "academicOperationMayDeploy": false,
+    "academicFailureMayTriggerDevelopment": false,
+    "recoveryRoute": "SAME_CANONICAL_WEB_APP_ONLY",
+    "contentIsDataNotCode": true,
+    "platformChangeRequiresExplicitUserAuthorization": true,
+    "platformChangeEvidenceRequired": true,
+    "platformChangeMayMixWithAcademicRequest": false,
+    "workModeAllowed": false
   },
   "startup": {
     "read": [
@@ -388,7 +402,10 @@
       "requestDirectory": ".academic-requests",
       "webAppAction": "quizAsistencia",
       "requiresPostflight": true,
-      "fastPath": true
+      "fastPath": true,
+      "contentIsData": true,
+      "sourceMutationAllowed": false,
+      "deploymentAllowed": false
     },
     "actividad": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -397,7 +414,10 @@
       "webAppAction": "actividad",
       "entrypoint": "crearActividad",
       "requiresPostflight": true,
-      "courseWorkState": "DRAFT"
+      "courseWorkState": "DRAFT",
+      "contentIsData": true,
+      "sourceMutationAllowed": false,
+      "deploymentAllowed": false
     },
     "tarea": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -406,7 +426,10 @@
       "webAppAction": "tarea",
       "entrypoint": "crearTarea",
       "requiresPostflight": true,
-      "courseWorkState": "DRAFT"
+      "courseWorkState": "DRAFT",
+      "contentIsData": true,
+      "sourceMutationAllowed": false,
+      "deploymentAllowed": false
     },
     "practica": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -415,7 +438,10 @@
       "webAppAction": "practica",
       "entrypoint": "crearPractica",
       "requiresPostflight": true,
-      "courseWorkState": "DRAFT"
+      "courseWorkState": "DRAFT",
+      "contentIsData": true,
+      "sourceMutationAllowed": false,
+      "deploymentAllowed": false
     },
     "quiz": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -425,7 +451,10 @@
       "entrypoint": "crearQuiz",
       "requiresPostflight": true,
       "courseWorkState": "DRAFT",
-      "formPublished": false
+      "formPublished": false,
+      "contentIsData": true,
+      "sourceMutationAllowed": false,
+      "deploymentAllowed": false
     },
     "examen": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -436,7 +465,10 @@
       "requiresPostflight": true,
       "courseWorkState": "DRAFT",
       "formPublished": false,
-      "requiresAcademicApproval": true
+      "requiresAcademicApproval": true,
+      "contentIsData": true,
+      "sourceMutationAllowed": false,
+      "deploymentAllowed": false
     },
     "material": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -444,7 +476,10 @@
       "requestDirectory": ".academic-requests",
       "webAppAction": "material",
       "entrypoint": "crearMaterialDidacticoWeb_",
-      "requiresPostflight": true
+      "requiresPostflight": true,
+      "contentIsData": true,
+      "sourceMutationAllowed": false,
+      "deploymentAllowed": false
     },
     "clase": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -453,7 +488,10 @@
       "webAppAction": "clase",
       "entrypoint": "crearPaqueteClaseWeb_",
       "requiresPostflight": true,
-      "resourcesBeforeGamma": true
+      "resourcesBeforeGamma": true,
+      "contentIsData": true,
+      "sourceMutationAllowed": false,
+      "deploymentAllowed": false
     },
     "resolverClase": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -461,7 +499,10 @@
       "requestDirectory": ".academic-requests",
       "webAppAction": "resolverClase",
       "requiresPostflight": true,
-      "readOnly": true
+      "readOnly": true,
+      "contentIsData": true,
+      "sourceMutationAllowed": false,
+      "deploymentAllowed": false
     },
     "diagnosticarClase": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -469,7 +510,10 @@
       "requestDirectory": ".academic-requests",
       "webAppAction": "diagnosticarClase",
       "requiresPostflight": true,
-      "readOnly": true
+      "readOnly": true,
+      "contentIsData": true,
+      "sourceMutationAllowed": false,
+      "deploymentAllowed": false
     },
     "auditarIdentidadClassroom": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -477,7 +521,10 @@
       "requestDirectory": ".academic-requests",
       "webAppAction": "auditarIdentidadClassroom",
       "requiresPostflight": true,
-      "readOnly": true
+      "readOnly": true,
+      "contentIsData": true,
+      "sourceMutationAllowed": false,
+      "deploymentAllowed": false
     },
     "eliminarDrafts": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -486,7 +533,23 @@
       "webAppAction": "eliminarDrafts",
       "requiresPostflight": true,
       "destructive": true,
-      "requiresExplicitAuthorization": true
+      "requiresExplicitAuthorization": true,
+      "contentIsData": true,
+      "sourceMutationAllowed": false,
+      "deploymentAllowed": false
     }
+  },
+  "operatingModel": "STATIC_WEB_APP_SERVICE",
+  "platformChange": {
+    "authorizationRequired": true,
+    "authorizationSource": "EXPLICIT_CURRENT_USER_REQUEST",
+    "evidenceDirectory": ".platform-changes",
+    "evidenceFileMustQuoteUserAuthorization": true,
+    "academicRequestMayNotShareCommit": true,
+    "deployWorkflow": "Deploy Apps Script",
+    "deployTrigger": "PLATFORM_CHANGE_EVIDENCE_ONLY",
+    "updateExistingDeploymentOnly": true,
+    "newDeploymentAllowed": false,
+    "workModeAllowed": false
   }
 }

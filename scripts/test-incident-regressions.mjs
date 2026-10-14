@@ -54,3 +54,9 @@ assert.doesNotMatch(pushBlock,/'src\/\*\*'/);
 assert.doesNotMatch(prune,/method\s*:\s*['"]DELETE['"]/);
 
 console.log('PASS: incident root causes from the 10-day audit are protected by deterministic controls.');
+
+const staticContract=fs.readFileSync('scripts/test-static-webapp-contract.mjs','utf8');
+assert.match(staticContract,/STATIC_WEB_APP_SERVICE/);
+assert.match(staticContract,/assert-academic-request-data-only/);
+assert.match(staticContract,/assert-platform-change-authorized/);
+console.log('PASS: static Web App operating model is permanently covered.');

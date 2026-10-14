@@ -2,8 +2,10 @@ name: Validate Minimal Academic Operations
 on:
   push:
     paths:
-      - 'scripts/test-*.mjs'
-      - '.github/workflows/validate-minimal-academic-operations.yml'
+      - 'src/**'
+      - 'config/**'
+      - 'scripts/**'
+      - '.github/workflows/**'
   pull_request:
     paths:
       - 'src/**'
@@ -19,6 +21,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Enforce explicit platform-change authorization on main
+        if: github.event_name == 'push'
+        run: node scripts/assert-platform-change-authorized.mjs
       - name: Build canonical generated context
         run: node scripts/academic-context.mjs build
       - name: Check all Apps Script source syntax
@@ -32,6 +37,7 @@ jobs:
         run: |
           node scripts/test-architecture-boundaries.mjs
           node scripts/test-incident-regressions.mjs
+          node scripts/test-static-webapp-contract.mjs
           node scripts/test-minimal-academic-operations.mjs
           node scripts/test-operation-contracts.mjs
           node scripts/test-next-class-real-state.mjs
