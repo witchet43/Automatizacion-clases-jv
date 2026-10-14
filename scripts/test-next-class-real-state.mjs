@@ -33,6 +33,8 @@ assert.match(source, /gammaNoAplica/);
 assert.match(source, /planningGammaClaimedVerified/);
 assert.match(source, /GAMMA_LIVE_CONNECTOR/);
 assert.match(source, /gammaDecision/);
+assert.match(source, /NOTION_LIVE_CONNECTOR/);
+assert.match(source, /notionDecision/);
 
 // El estado de las fuentes se simula. Ningún reloj o propiedad de progreso
 // existe en el entorno; consultar cualquiera de ellos falla la prueba.
@@ -75,6 +77,9 @@ vm.runInContext(resolver,ctx,{filename:'41_SiguienteClase.gs'});
 const live=(status,id)=>({source:'GAMMA_LIVE_CONNECTOR',status,gammaId:id,gammaUrl:'https://gamma.app/docs/live-'+id,title:'Tema',
   archived:status==='LIVE_ARCHIVED',contentVerified:status==='LIVE_ACTIVE_CANONICAL',
   canonicalTopicVerified:status==='LIVE_ACTIVE_CANONICAL',searchPerformed:true,activeEquivalentFound:false});
+const notion=(status,id)=>({source:'NOTION_LIVE_CONNECTOR',status,pageId:id,pageUrl:'https://app.notion.com/p/'+id,parentPageId:'parent',title:'Tema',
+  contentVerified:status==='LIVE_CANONICAL',canonicalTopicVerified:status==='LIVE_CANONICAL',
+  gammaReferenceVerified:status==='LIVE_CANONICAL',searchPerformed:true,duplicateCount:status==='LIVE_NOT_FOUND'?0:1});
 
 let state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
 assert.equal(state.target.session,'13');
@@ -85,6 +90,14 @@ assert.equal(state.evidence.gammaVerificada,false);
 assert.equal(state.evidence.planningGammaClaimedVerified,true);
 
 state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{gammaLiveEvidence:{'13':live('LIVE_ACTIVE_CANONICAL','g13')}});
+assert.equal(state.target.session,'13');
+assert.equal(state.sequenceSource,'NOTION_LIVE_BOUNDARY_REQUIRED');
+assert.equal(state.notionVerificationOnly,true);
+
+state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{
+  gammaLiveEvidence:{'13':live('LIVE_ACTIVE_CANONICAL','g13')},
+  notionLiveEvidence:{'13':notion('LIVE_CANONICAL','n13')}
+});
 assert.equal(state.target.session,'14');
 assert.equal(state.sequenceSource,'PLANNING_REAL_PREPARATION_STATE');
 
@@ -92,6 +105,7 @@ const explicit=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informát
 assert.equal(explicit.target.session,'15');
 assert.equal(explicit.sequenceSource,'EXPLICIT_CANONICAL_SESSION');
 assert.equal(explicit.gammaDecision,'VERIFY_LIVE');
+assert.equal(explicit.notionDecision,'VERIFY_LIVE');
 
 // Aunque el ordenador esté en cualquier fecha, solo cambian los recursos reales y Gamma LIVE.
 data[3][5]='https://gamma.app/docs/demo-14';
@@ -102,17 +116,32 @@ state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática');
 assert.equal(state.target.session,'14');
 assert.equal(state.gammaVerificationOnly,true);
 state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{gammaLiveEvidence:{'14':live('LIVE_ACTIVE_CANONICAL','g14')}});
+assert.equal(state.target.session,'14');
+assert.equal(state.notionVerificationOnly,true);
+state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{
+  gammaLiveEvidence:{'14':live('LIVE_ACTIVE_CANONICAL','g14')},
+  notionLiveEvidence:{'14':notion('LIVE_CANONICAL','n14')}
+});
 assert.equal(state.target.session,'15');
 assert.equal(state.progress.lastPublished,0);
-state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{gammaLiveEvidence:{'14':live('LIVE_ARCHIVED','g14')}});
+state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{
+  gammaLiveEvidence:{'14':live('LIVE_ARCHIVED','g14')},
+  notionLiveEvidence:{'14':notion('LIVE_CANONICAL','n14')}
+});
 assert.equal(state.target.session,'14');
 assert.equal(state.gammaDecision,'CREATE');
 works[1].state='PUBLISHED';
-state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{gammaLiveEvidence:{'14':live('LIVE_ACTIVE_CANONICAL','g14')}});
+state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{
+  gammaLiveEvidence:{'14':live('LIVE_ACTIVE_CANONICAL','g14')},
+  notionLiveEvidence:{'14':notion('LIVE_CANONICAL','n14')}
+});
 assert.equal(state.target.session,'15');
 works[2].state='PUBLISHED';
-state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{gammaLiveEvidence:{'14':live('LIVE_ACTIVE_CANONICAL','g14')}});
+state=ctx.resolverSiguienteClase('UAQ - Ética y Legislación Informática',null,{
+  gammaLiveEvidence:{'14':live('LIVE_ACTIVE_CANONICAL','g14')},
+  notionLiveEvidence:{'14':notion('LIVE_CANONICAL','n14')}
+});
 assert.equal(state.target.session,'15');
 vm.runInContext(generator,ctx,{filename:'44_NomenclaturaRecursos.gs'});
 assert.throws(()=>ctx.generarSiguienteClase({materia:'UAQ - Ética y Legislación Informática'}),/BLOCKED_UNSUPPORTED_CLASS_GENERATOR/);
-console.log('OK: selección usa Classroom real + verificación Gamma LIVE; planeación es referencia, Gamma archivada no acredita preparación, sin fecha/Calendar/contadores.');
+console.log('OK: selección usa Classroom real + Gamma LIVE + notas Notion LIVE; sin notas canónicas no avanza el paquete, sin fecha/Calendar/contadores.');

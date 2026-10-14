@@ -14,16 +14,24 @@ for(const key of [
   'staticWebAppDuringAcademicOperations','academicOperationsAreDataOnly','contentIsDataNotCode',
   'platformChangeRequiresExplicitUserAuthorization','platformChangeEvidenceRequired',
   'gammaLiveVerificationRequiredBeforeReuse','gammaLiveSearchBeforeCreate',
-  'gammaPostGenerationReadRequired','gammaActiveCanonicalOnlyCountsAsVerified'
+  'gammaPostGenerationReadRequired','gammaActiveCanonicalOnlyCountsAsVerified',
+  'notionNotesRequiredForClassPackage','notionLiveVerificationRequired',
+  'notionSearchBeforeCreate','notionPostCreateFetchRequired',
+  'notionExactCanonicalTitleRequired','notionGammaReferenceRequiredWhenApplicable',
+  'classPackageCompleteRequiresNotionNotes'
 ]) assert.equal(manifest.rules[key],true,key);
 for(const key of [
   'academicOperationMayModifySource','academicOperationMayModifyWorkflow','academicOperationMayModifyManifest',
   'academicOperationMayDeploy','academicFailureMayTriggerDevelopment','platformChangeMayMixWithAcademicRequest',
-  'workModeAllowed','planningGammaStateIsAuthority','gammaArchivedCountsAsPrepared'
+  'workModeAllowed','planningGammaStateIsAuthority','gammaArchivedCountsAsPrepared',
+  'notionDuplicateNotesAllowed','notionPlanningStateIsAuthority'
 ]) assert.equal(manifest.rules[key],false,key);
 assert.equal(manifest.rules.recoveryRoute,'SAME_CANONICAL_WEB_APP_ONLY');
 assert.equal(manifest.rules.gammaLiveEvidenceSource,'GAMMA_LIVE_CONNECTOR');
 assert.equal(manifest.rules.gammaPlanningStatusRole,'REFERENCE_ONLY');
+assert.equal(manifest.rules.notionNotesRoute,'NOTION_CONNECTOR');
+assert.equal(manifest.rules.notionLiveEvidenceSource,'NOTION_LIVE_CONNECTOR');
+assert.equal(manifest.rules.classGenerationOrder,'GOOGLE_RESOURCES_THEN_GAMMA_THEN_NOTION_NOTES_THEN_POSTFLIGHT');
 assert.equal(manifest.platformChange.deployTrigger,'PLATFORM_CHANGE_EVIDENCE_ONLY');
 assert.equal(manifest.platformChange.updateExistingDeploymentOnly,true);
 assert.equal(manifest.platformChange.newDeploymentAllowed,false);

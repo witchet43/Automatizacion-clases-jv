@@ -63,3 +63,14 @@ Para una clase o Gamma:
 7. Después de generar, esperar `completed`, leer la nueva Gamma, comprobar título/contenido/estado activo y volver a aportar evidencia `LIVE_ACTIVE_CANONICAL` antes de declarar el paquete preparado.
 
 Una Gamma archivada, eliminada, inaccesible o solo “verificada” en Sheets **nunca** acredita una clase preparada.
+
+
+## Notas docentes de clase en Notion — componente obligatorio
+
+Toda **CREACIÓN DE CLASE COMPLETA** termina en este orden: recursos Google → Gamma canónica verificada → **notas docentes Notion** → postflight final.
+
+La raíz y la página padre por materia viven en `config/academic-context.json`. El título de la nota debe ser exactamente el tema/subtema canónico. Buscar antes de crear; si existe exactamente una nota canónica, reutilizar o actualizar. Nunca crear una segunda nota para la misma materia/tema. Múltiples candidatas bloquean la operación.
+
+La nota debe ser un guion útil para impartir la clase, no una copia de Gamma. Debe incluir como mínimo: Objetivo de la clase, Guion para exponer, Preguntas útiles, Errores conceptuales a corregir, Transición a la actividad, Cierre, Preparación siguiente y Conceptos clave. Cuando Gamma aplica, incluir la Gamma canónica de referencia.
+
+Después de crear/actualizar, hacer fetch real de Notion y pasar a `resolverClase` `options.notionLiveEvidence[sesion]` con `source: "NOTION_LIVE_CONNECTOR"`. Solo `LIVE_CANONICAL` permite declarar `paquetePreparado=true`. Una clase sin notas Notion verificadas está incompleta.

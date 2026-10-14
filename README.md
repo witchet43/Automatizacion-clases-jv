@@ -65,3 +65,14 @@ CourseWork ordinario: DRAFT. Forms: no publicados. Google Docs entregables: STUD
 La planeación ya no es autoridad sobre la existencia o vigencia de una Gamma. `GENERADA Y VERIFICADA` se trata como referencia histórica.
 
 `resolverClase` acepta `options.gammaLiveEvidence` por sesión. Solo `LIVE_ACTIVE_CANONICAL`, obtenido del conector Gamma tras búsqueda real y lectura de contenido, puede establecer `gammaVerificada=true`. Una Gamma archivada o no encontrada devuelve decisión `CREATE` únicamente cuando la búsqueda LIVE confirmó que no existe un equivalente activo. Esto evita tanto falsos “completado” como regeneraciones que consumen créditos.
+
+
+## Notas de clase en Notion
+
+Las notas docentes son componente obligatorio del paquete de clase. El orden canónico es:
+
+`Google resources → Gamma LIVE canónica → Notion notes LIVE → resolverClase postflight`
+
+La raíz Notion y cada página padre por materia están registradas en el manifest. Cada nota usa como título exacto el tema/subtema canónico. Se busca antes de crear, se bloquean duplicados y se hace fetch posterior para validar contenido, parent, título y referencia a Gamma cuando aplica.
+
+`resolverClase` acepta `options.notionLiveEvidence[sesion]`. Sin evidencia `LIVE_CANONICAL`, la clase no puede marcarse preparada.

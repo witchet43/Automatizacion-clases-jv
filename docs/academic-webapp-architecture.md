@@ -63,3 +63,18 @@ Estados permitidos: `LIVE_ACTIVE_CANONICAL`, `LIVE_ACTIVE_NON_CANONICAL`, `LIVE_
 Solo `LIVE_ACTIVE_CANONICAL` con búsqueda realizada, contenido leído/verificado y tema canónico confirmado acredita Gamma preparada. `LIVE_ARCHIVED` y `LIVE_NOT_FOUND` permiten `CREATE` únicamente si la búsqueda LIVE no encontró un equivalente activo. La respuesta `REUSE_ACTIVE_EQUIVALENT` prohíbe regenerar.
 
 Después de cualquier generación Gamma, el estado `completed` de la herramienta no basta: debe ejecutarse lectura/verificación real antes de registrar o declarar preparado el paquete.
+
+
+## Componente Notion del paquete de clase
+
+Notion no sustituye la Web App para materialización Google. Es el repositorio canónico de notas docentes y se usa mediante el conector Notion declarado en el manifest.
+
+Una creación de clase completa sigue:
+1. Web App materializa/verifica recursos Google.
+2. Gamma se busca, genera/reutiliza y verifica LIVE.
+3. El orquestador usa el conector Notion para buscar/reutilizar/crear la nota bajo la página de la materia.
+4. Se hace fetch de la nota.
+5. La evidencia `NOTION_LIVE_CONNECTOR` se entrega a `resolverClase`.
+6. Solo Gamma LIVE + Notion LIVE + recurso Classroom real permiten `paquetePreparado=true`.
+
+Las notas son idempotentes por `materia + tema/subtema canónico + parentPageId`. Un duplicado bloquea el cierre del paquete.

@@ -16,6 +16,18 @@ function validarConfiguracionContextoAcademico_() {
      c.rules.gammaPostGenerationReadRequired!==true||
      c.rules.gammaActiveCanonicalOnlyCountsAsVerified!==true||
      c.rules.gammaPlanningStatusRole!=='REFERENCE_ONLY'||
+     c.rules.notionNotesRequiredForClassPackage!==true||
+     c.rules.notionNotesRoute!=='NOTION_CONNECTOR'||
+     c.rules.notionLiveEvidenceSource!=='NOTION_LIVE_CONNECTOR'||
+     c.rules.notionLiveVerificationRequired!==true||
+     c.rules.notionSearchBeforeCreate!==true||
+     c.rules.notionPostCreateFetchRequired!==true||
+     c.rules.notionExactCanonicalTitleRequired!==true||
+     c.rules.notionDuplicateNotesAllowed!==false||
+     c.rules.notionPlanningStateIsAuthority!==false||
+     c.rules.notionGammaReferenceRequiredWhenApplicable!==true||
+     c.rules.classPackageCompleteRequiresNotionNotes!==true||
+     c.rules.classGenerationOrder!=='GOOGLE_RESOURCES_THEN_GAMMA_THEN_NOTION_NOTES_THEN_POSTFLIGHT'||
      c.rules.staticWebAppDuringAcademicOperations!==true||
      c.rules.academicOperationsAreDataOnly!==true||
      c.rules.academicOperationMayModifySource!==false||
@@ -44,6 +56,16 @@ function validarConfiguracionContextoAcademico_() {
     const op=c.operations[name];
     if(op.contentIsData!==true||op.sourceMutationAllowed!==false||op.deploymentAllowed!==false)
       throw new Error('ACADEMIC_OPERATION_NOT_DATA_ONLY: '+name);
+  });
+  if(!c.notion||c.notion.classNotesRootPageId!=='3f2cd691-30bc-8179-b64f-d36487424bfc'||
+     c.notion.route!=='NOTION_CONNECTOR'||c.notion.liveEvidenceSource!=='NOTION_LIVE_CONNECTOR'||
+     c.notion.requiredForClassPackage!==true||c.notion.searchBeforeCreate!==true||
+     c.notion.fetchAfterCreateOrUpdate!==true||c.notion.duplicatePolicy!=='BLOCK')
+    throw new Error('ACADEMIC_NOTION_CONFIG_INVALID');
+  Object.keys(c.courses||{}).forEach(function(key){
+    const course=c.courses[key];
+    if(!course.notionNotesPageId||!course.notionNotesPageUrl)
+      throw new Error('ACADEMIC_NOTION_COURSE_CONFIG_MISSING: '+key);
   });
   const iti=c.courses['introduccion-tecnologias-informacion'];
   if(!iti||iti.gammaFolderId!=='fo_w669f3b2oumuiuf'||iti.gammaThemeId!=='bfm8ztqy1whsib8')

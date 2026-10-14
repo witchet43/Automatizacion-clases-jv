@@ -25,11 +25,18 @@ function resolverSiguienteClase(materia,requestedSession,options){
   evidence:evidence,sequenceSource:state.source,inferredSession:state.inferredSession,
   reconciliation:state.reconciliation,progress:{lastPrepared:state.lastPrepared,lastPublished:state.lastPublished},
   gammaVerificationOnly:state.gammaVerificationOnly===true,
+  notionVerificationOnly:state.notionVerificationOnly===true,
   provisionalNextSession:state.provisionalNextSession||null,
   gammaDecision:evidence.gammaDecision,
   gammaLiveStatus:evidence.gammaLiveStatus,
   gammaLiveVerificationRequired:evidence.gammaLiveVerificationRequired===true,
-  missing:{tareaPrevia:!prev,gamma:!evidence.gammaNoAplica&&!evidence.gammaVerificada,practica:!practice},resourceState:'DRAFT'};
+  notionDecision:evidence.notionDecision,
+  notionLiveStatus:evidence.notionLiveStatus,
+  notionLiveVerificationRequired:evidence.notionLiveVerificationRequired===true,
+  notionPageId:evidence.notionPageId||'',
+  notionPageUrl:evidence.notionPageUrl||'',
+  missing:{tareaPrevia:!prev,gamma:!evidence.gammaNoAplica&&!evidence.gammaVerificada,
+    notion:!evidence.notionVerificada,practica:!practice},resourceState:'DRAFT'};
 }
 function crearTareaPaquete_(courseId,materia,row,title,description,dueDate,dueTime){const existing=buscarWorkTitulo_(listarCourseWorkClase_(courseId),title);if(existing)return{workId:String(existing.id),estado:existing.state,reutilizado:true,classroomUrl:existing.alternateLink||''};const req={operation:'RESOURCE_CREATE',materia:materia,temaSubtema:row.topic,resourceType:'TAREA',resourceState:'DRAFT'};preflightDocumentoMaestro(req);const body={title:title,description:description,workType:'ASSIGNMENT',state:'DRAFT',maxPoints:100},topicId=resolveTopicId_(courseId,'',row.unit);if(topicId)body.topicId=topicId;if(dueDate){const m=dueDate.match(/^(\d{4})-(\d{2})-(\d{2})$/),t=String(dueTime||'11:00').match(/^(\d{1,2}):(\d{2})$/);if(m&&t){body.dueDate={year:+m[1],month:+m[2],day:+m[3]};body.dueTime={hours:+t[1],minutes:+t[2]};}}const w=Classroom.Courses.CourseWork.create(body,String(courseId)),verified=verificarCourseWorkDraftDirecto_(courseId,w.id);postflightDocumentoMaestro({ok:true,state:verified.state,workId:verified.id},req);return{workId:String(verified.id),estado:verified.state,reutilizado:false,classroomUrl:verified.alternateLink||''};}
 function contenidoPracticaDesdePlaneacion_(row){return ['Objetivo y aplicación',String(row.practiceDescription||row.practice||''),'','Herramientas',String(row.tools||''),'','Procedimiento','1. Revisa el objetivo, las herramientas y la evidencia esperada antes de comenzar.','2. Ejecuta la actividad de forma incremental y conserva evidencia verificable de cada etapa.','3. Relaciona cada resultado con '+String(row.topic||'el tema de la sesión')+'.','4. Documenta errores, ajustes y resultado final sin incluir credenciales ni datos sensibles.','','Evidencia verificable',String(row.evidence||''),'','Preparación previa relacionada',String(row.previous||''),'','Cierre','Explica brevemente qué observaste, qué evidencia respalda tu conclusión y qué cambiarías en una segunda ejecución.'].join('\n');}

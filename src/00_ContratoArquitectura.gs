@@ -53,7 +53,17 @@ const ARCHITECTURE_CONTRACT = Object.freeze({
   GAMMA_LIVE_SEARCH_REQUIRED_BEFORE_CREATE: true,
   GAMMA_ARCHIVED_COUNTS_AS_PREPARED: false,
   GAMMA_ACTIVE_CANONICAL_ONLY_COUNTS_AS_VERIFIED: true,
-  GAMMA_POST_GENERATION_READ_REQUIRED: true
+  GAMMA_POST_GENERATION_READ_REQUIRED: true,
+  NOTION_CLASS_NOTES_REQUIRED: true,
+  NOTION_CLASS_NOTES_ROUTE: 'NOTION_CONNECTOR',
+  NOTION_LIVE_VERIFICATION_REQUIRED: true,
+  NOTION_SEARCH_BEFORE_CREATE_REQUIRED: true,
+  NOTION_POST_CREATE_FETCH_REQUIRED: true,
+  NOTION_EXACT_CANONICAL_TITLE_REQUIRED: true,
+  NOTION_DUPLICATES_ALLOWED: false,
+  NOTION_PLANNING_STATE_IS_AUTHORITY: false,
+  CLASS_PACKAGE_COMPLETE_REQUIRES_NOTION_NOTES: true,
+  CLASS_GENERATION_ORDER: 'GOOGLE_RESOURCES_THEN_GAMMA_THEN_NOTION_NOTES_THEN_POSTFLIGHT'
 });
 
 function validarContratoArquitectura_() {
@@ -99,5 +109,18 @@ function validarContratoArquitectura_() {
   if (c.GAMMA_ARCHIVED_COUNTS_AS_PREPARED !== false) throw new Error('Una Gamma archivada nunca acredita paquete preparado.');
   if (c.GAMMA_ACTIVE_CANONICAL_ONLY_COUNTS_AS_VERIFIED !== true) throw new Error('Solo Gamma activa y canónica puede contarse como verificada.');
   if (c.GAMMA_POST_GENERATION_READ_REQUIRED !== true) throw new Error('Toda Gamma generada debe leerse y verificarse antes de registrarla.');
+  if (c.NOTION_CLASS_NOTES_REQUIRED !== true || c.NOTION_CLASS_NOTES_ROUTE !== 'NOTION_CONNECTOR')
+    throw new Error('Toda clase requiere notas canónicas en Notion por su conector.');
+  if (c.NOTION_LIVE_VERIFICATION_REQUIRED !== true || c.NOTION_SEARCH_BEFORE_CREATE_REQUIRED !== true ||
+      c.NOTION_POST_CREATE_FETCH_REQUIRED !== true)
+    throw new Error('Notion exige búsqueda y verificación LIVE antes/después de crear.');
+  if (c.NOTION_EXACT_CANONICAL_TITLE_REQUIRED !== true || c.NOTION_DUPLICATES_ALLOWED !== false)
+    throw new Error('Las notas Notion deben usar título canónico exacto y no admitir duplicados.');
+  if (c.NOTION_PLANNING_STATE_IS_AUTHORITY !== false)
+    throw new Error('La planeación no puede certificar notas Notion.');
+  if (c.CLASS_PACKAGE_COMPLETE_REQUIRES_NOTION_NOTES !== true)
+    throw new Error('Una clase sin notas Notion no puede declararse paquete completo.');
+  if (c.CLASS_GENERATION_ORDER !== 'GOOGLE_RESOURCES_THEN_GAMMA_THEN_NOTION_NOTES_THEN_POSTFLIGHT')
+    throw new Error('El orden de generación debe terminar en Notion y postflight.');
   return Object.assign({}, c);
 }

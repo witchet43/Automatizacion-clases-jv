@@ -69,7 +69,9 @@
       "gammaFolderId": "fo_2538kazbe3ajvec",
       "gammaFolderName": "UAQ - Sistemas Distribuidos",
       "gammaThemeId": "bfm8ztqy1whsib8",
-      "gammaThemeName": "UAQ"
+      "gammaThemeName": "UAQ",
+      "notionNotesPageId": "3f3cd691-30bc-8137-b93b-f2190f7954ca",
+      "notionNotesPageUrl": "https://app.notion.com/p/3f3cd69130bc8137b93bf2190f7954ca?pvs=204"
     },
     "analisis-diseno-sistemas-computacionales": {
       "id": "871158479566",
@@ -77,7 +79,9 @@
       "gammaFolderId": "fo_1hj2ia8k72bkc44",
       "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales",
       "gammaThemeId": "bfm8ztqy1whsib8",
-      "gammaThemeName": "UAQ"
+      "gammaThemeName": "UAQ",
+      "notionNotesPageId": "3f9cd691-30bc-8116-af14-d4f7016c652f",
+      "notionNotesPageUrl": "https://app.notion.com/p/3f9cd69130bc8116af14d4f7016c652f?pvs=204"
     },
     "analisis-y-diseno-de-sistemas-computacionales": {
       "id": "871158479566",
@@ -85,7 +89,9 @@
       "gammaFolderId": "fo_1hj2ia8k72bkc44",
       "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales",
       "gammaThemeId": "bfm8ztqy1whsib8",
-      "gammaThemeName": "UAQ"
+      "gammaThemeName": "UAQ",
+      "notionNotesPageId": "3f9cd691-30bc-8116-af14-d4f7016c652f",
+      "notionNotesPageUrl": "https://app.notion.com/p/3f9cd69130bc8116af14d4f7016c652f?pvs=204"
     },
     "analisis-diseno-sistemas-informacion": {
       "id": "871158479566",
@@ -93,7 +99,9 @@
       "gammaFolderId": "fo_1hj2ia8k72bkc44",
       "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales",
       "gammaThemeId": "bfm8ztqy1whsib8",
-      "gammaThemeName": "UAQ"
+      "gammaThemeName": "UAQ",
+      "notionNotesPageId": "3f9cd691-30bc-8116-af14-d4f7016c652f",
+      "notionNotesPageUrl": "https://app.notion.com/p/3f9cd69130bc8116af14d4f7016c652f?pvs=204"
     },
     "analisis-y-diseno-de-sistemas-de-informacion": {
       "id": "871158479566",
@@ -101,7 +109,9 @@
       "gammaFolderId": "fo_1hj2ia8k72bkc44",
       "gammaFolderName": "UAQ - Análisis y Diseño de Sistemas Computacionales",
       "gammaThemeId": "bfm8ztqy1whsib8",
-      "gammaThemeName": "UAQ"
+      "gammaThemeName": "UAQ",
+      "notionNotesPageId": "3f9cd691-30bc-8116-af14-d4f7016c652f",
+      "notionNotesPageUrl": "https://app.notion.com/p/3f9cd69130bc8116af14d4f7016c652f?pvs=204"
     },
     "introduccion-tecnologias-informacion": {
       "id": "871156721160",
@@ -109,7 +119,9 @@
       "gammaFolderId": "fo_w669f3b2oumuiuf",
       "gammaFolderName": "UAQ - Introducción a las Tecnologías de Información",
       "gammaThemeId": "bfm8ztqy1whsib8",
-      "gammaThemeName": "UAQ"
+      "gammaThemeName": "UAQ",
+      "notionNotesPageId": "3f9cd691-30bc-81f1-895a-f2e8c5a11430",
+      "notionNotesPageUrl": "https://app.notion.com/p/3f9cd69130bc81f1895af2e8c5a11430?pvs=204"
     },
     "administracion": {
       "id": "871158187513",
@@ -117,7 +129,9 @@
       "gammaFolderId": "fo_wjv2a486s6v5zmq",
       "gammaFolderName": "UAQ - Administración",
       "gammaThemeId": "bfm8ztqy1whsib8",
-      "gammaThemeName": "UAQ"
+      "gammaThemeName": "UAQ",
+      "notionNotesPageId": "3f2cd691-30bc-8188-b142-da41846fe325",
+      "notionNotesPageUrl": "https://app.notion.com/p/3f2cd69130bc8188b142da41846fe325?pvs=204"
     },
     "etica-legislacion-informatica": {
       "id": "871149624583",
@@ -125,7 +139,9 @@
       "gammaFolderId": "fo_mkvfyu7wjyluhjq",
       "gammaFolderName": "UAQ - Ética y Legislación Informática",
       "gammaThemeId": "bfm8ztqy1whsib8",
-      "gammaThemeName": "UAQ"
+      "gammaThemeName": "UAQ",
+      "notionNotesPageId": "3f9cd691-30bc-8158-ac28-ef14e43e6ae8",
+      "notionNotesPageUrl": "https://app.notion.com/p/3f9cd69130bc8158ac28ef14e43e6ae8?pvs=204"
     },
     "algoritmos-estructuras-datos": {
       "id": "871156334717",
@@ -133,7 +149,9 @@
       "gammaFolderId": "fo_wwpxeb1f3dghq31",
       "gammaFolderName": "UAQ - Algoritmos y Estructuras de Datos",
       "gammaThemeId": "bfm8ztqy1whsib8",
-      "gammaThemeName": "UAQ"
+      "gammaThemeName": "UAQ",
+      "notionNotesPageId": "3f9cd691-30bc-811f-9758-fe2595291e7a",
+      "notionNotesPageUrl": "https://app.notion.com/p/3f9cd69130bc811f9758fe2595291e7a?pvs=204"
     },
     "sistemas-operativos": {
       "id": "875776451793",
@@ -142,7 +160,9 @@
       "gammaFolderName": "ITQ - Sistemas Operativos",
       "gammaThemeId": "bfm8ztqy1whsib8",
       "gammaThemeName": "UAQ",
-      "gammaThemePolicy": "REQUIRED_EXACT_NO_FALLBACK"
+      "gammaThemePolicy": "REQUIRED_EXACT_NO_FALLBACK",
+      "notionNotesPageId": "3f9cd691-30bc-81e2-bdce-c15e81f03f98",
+      "notionNotesPageUrl": "https://app.notion.com/p/3f9cd69130bc81e2bdcec15e81f03f98?pvs=204"
     },
     "so": {
       "id": "875776451793",
@@ -151,7 +171,9 @@
       "gammaFolderName": "ITQ - Sistemas Operativos",
       "gammaThemeId": "bfm8ztqy1whsib8",
       "gammaThemeName": "UAQ",
-      "gammaThemePolicy": "REQUIRED_EXACT_NO_FALLBACK"
+      "gammaThemePolicy": "REQUIRED_EXACT_NO_FALLBACK",
+      "notionNotesPageId": "3f9cd691-30bc-81e2-bdce-c15e81f03f98",
+      "notionNotesPageUrl": "https://app.notion.com/p/3f9cd69130bc81e2bdcec15e81f03f98?pvs=204"
     }
   },
   "planningSources": {
@@ -383,7 +405,19 @@
     "gammaLiveEvidenceSource": "GAMMA_LIVE_CONNECTOR",
     "gammaPostGenerationReadRequired": true,
     "gammaActiveCanonicalOnlyCountsAsVerified": true,
-    "gammaPlanningStatusRole": "REFERENCE_ONLY"
+    "gammaPlanningStatusRole": "REFERENCE_ONLY",
+    "notionNotesRequiredForClassPackage": true,
+    "notionNotesRoute": "NOTION_CONNECTOR",
+    "notionLiveEvidenceSource": "NOTION_LIVE_CONNECTOR",
+    "notionLiveVerificationRequired": true,
+    "notionSearchBeforeCreate": true,
+    "notionPostCreateFetchRequired": true,
+    "notionExactCanonicalTitleRequired": true,
+    "notionDuplicateNotesAllowed": false,
+    "notionPlanningStateIsAuthority": false,
+    "notionGammaReferenceRequiredWhenApplicable": true,
+    "classPackageCompleteRequiresNotionNotes": true,
+    "classGenerationOrder": "GOOGLE_RESOURCES_THEN_GAMMA_THEN_NOTION_NOTES_THEN_POSTFLIGHT"
   },
   "startup": {
     "read": [
@@ -500,7 +534,10 @@
       "contentIsData": true,
       "sourceMutationAllowed": false,
       "deploymentAllowed": false,
-      "gammaCreationDecisionRequiresLiveVerification": true
+      "gammaCreationDecisionRequiresLiveVerification": true,
+      "notionNotesRequired": true,
+      "notionNotesRoute": "NOTION_CONNECTOR",
+      "notionEvidenceInput": "options.notionLiveEvidence"
     },
     "resolverClase": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -522,6 +559,15 @@
         "BLOCK",
         "NOT_APPLICABLE",
         "REUSE_ACTIVE_EQUIVALENT"
+      ],
+      "requiresNotionLiveVerification": true,
+      "notionLiveEvidenceInput": "options.notionLiveEvidence",
+      "notionDecisionValues": [
+        "VERIFY_LIVE",
+        "REUSE",
+        "CREATE",
+        "REPAIR_OR_REVIEW",
+        "BLOCK"
       ]
     },
     "diagnosticarClase": {
@@ -571,5 +617,27 @@
     "updateExistingDeploymentOnly": true,
     "newDeploymentAllowed": false,
     "workModeAllowed": false
+  },
+  "notion": {
+    "classNotesRootPageId": "3f2cd691-30bc-8179-b64f-d36487424bfc",
+    "classNotesRootUrl": "https://app.notion.com/p/3f2cd69130bc8179b64fd36487424bfc?pvs=204",
+    "route": "NOTION_CONNECTOR",
+    "liveEvidenceSource": "NOTION_LIVE_CONNECTOR",
+    "requiredForClassPackage": true,
+    "titlePolicy": "EXACT_CANONICAL_TOPIC",
+    "searchBeforeCreate": true,
+    "fetchAfterCreateOrUpdate": true,
+    "duplicatePolicy": "BLOCK",
+    "requiredSections": [
+      "Objetivo de la clase",
+      "Guion para exponer",
+      "Preguntas útiles",
+      "Errores conceptuales a corregir",
+      "Transición a la actividad",
+      "Cierre",
+      "Preparación siguiente",
+      "Conceptos clave"
+    ],
+    "gammaReferenceRequiredWhenApplicable": true
   }
 }

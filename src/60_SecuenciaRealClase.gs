@@ -16,6 +16,12 @@ const GAMMA_LIVE_STATUSES = Object.freeze([
   'LIVE_NOT_FOUND',
   'LIVE_INACCESSIBLE'
 ]);
+const NOTION_LIVE_STATUSES = Object.freeze([
+  'LIVE_CANONICAL',
+  'LIVE_NON_CANONICAL',
+  'LIVE_NOT_FOUND',
+  'LIVE_INACCESSIBLE'
+]);
 
 function normalizarGammaLiveEvidence_(row, gammaLiveEvidence) {
   const session=String(row&&row.session||'').trim();
@@ -97,7 +103,51 @@ function normalizarGammaLiveEvidence_(row, gammaLiveEvidence) {
   };
 }
 
-function evidenciaSesionReal_(row, works, gammaLiveEvidence) {
+function normalizarNotionLiveEvidence_(row, notionLiveEvidence) {
+  const session=String(row&&row.session||'').trim();
+  const map=notionLiveEvidence&&typeof notionLiveEvidence==='object'&&!Array.isArray(notionLiveEvidence)
+    ? notionLiveEvidence : {};
+  const raw=map[session]&&typeof map[session]==='object'?map[session]:null;
+  if(!raw){
+    return {provided:false,status:'NOT_CHECKED',verified:false,reusable:false,createAllowed:false,
+      decision:'VERIFY_LIVE',source:'',pageId:'',pageUrl:'',parentPageId:'',title:'',
+      contentVerified:false,canonicalTopicVerified:false,gammaReferenceVerified:false,
+      searchPerformed:false,duplicateCount:0};
+  }
+  const source=String(raw.source||'').trim();
+  if(source!=='NOTION_LIVE_CONNECTOR')throw new Error('NOTION_LIVE_EVIDENCE_SOURCE_INVALID: '+session);
+  const status=String(raw.status||'').trim().toUpperCase();
+  if(NOTION_LIVE_STATUSES.indexOf(status)<0)throw new Error('NOTION_LIVE_STATUS_INVALID: '+session+' '+status);
+  const searchPerformed=raw.searchPerformed===true;
+  const duplicateCount=Math.max(0,Number(raw.duplicateCount||0));
+  const contentVerified=raw.contentVerified===true;
+  const canonicalTopicVerified=raw.canonicalTopicVerified===true;
+  const gammaReferenceVerified=raw.gammaReferenceVerified===true;
+  const pageId=String(raw.pageId||'').trim();
+  const pageUrl=String(raw.pageUrl||'').trim();
+  const parentPageId=String(raw.parentPageId||'').trim();
+  const title=String(raw.title||'').trim();
+
+  if(duplicateCount>1)throw new Error('NOTION_DUPLICATE_CLASS_NOTES_BLOCKED: '+session);
+  if(status==='LIVE_CANONICAL'&&(!searchPerformed||duplicateCount!==1||!contentVerified||!canonicalTopicVerified||(!pageId&&!pageUrl)))
+    throw new Error('NOTION_LIVE_CANONICAL_INCOMPLETE: '+session);
+  if(status==='LIVE_NOT_FOUND'&&!searchPerformed)
+    throw new Error('NOTION_LIVE_SEARCH_REQUIRED_BEFORE_CREATE: '+session);
+
+  const verified=status==='LIVE_CANONICAL'&&searchPerformed&&duplicateCount===1&&contentVerified&&canonicalTopicVerified;
+  const createAllowed=status==='LIVE_NOT_FOUND'&&searchPerformed&&duplicateCount===0;
+  let decision='BLOCK';
+  if(verified)decision='REUSE';
+  else if(createAllowed)decision='CREATE';
+  else if(status==='LIVE_NON_CANONICAL')decision='REPAIR_OR_REVIEW';
+
+  return {provided:true,status:status,verified:verified,reusable:verified,createAllowed:createAllowed,
+    decision:decision,source:source,pageId:pageId,pageUrl:pageUrl,parentPageId:parentPageId,title:title,
+    contentVerified:contentVerified,canonicalTopicVerified:canonicalTopicVerified,
+    gammaReferenceVerified:gammaReferenceVerified,searchPerformed:searchPerformed,duplicateCount:duplicateCount};
+}
+
+function evidenciaSesionReal_(row, works, gammaLiveEvidence, notionLiveEvidence) {
   const titulo=String(row.practice||'').trim();
   const normal=function(s){return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');};
   const tituloNorm=normal(titulo);
@@ -127,6 +177,7 @@ function evidenciaSesionReal_(row, works, gammaLiveEvidence) {
 
   const livePrepared=gammaNoAplica||live.verified;
   const planningPrepared=gammaNoAplica||planningGammaClaimedVerified;
+  const notion=normalizarNotionLiveEvidence_(row,notionLiveEvidence);
   return {
     session:String(row.session||''),
     unit:String(row.unit||''),
@@ -153,10 +204,27 @@ function evidenciaSesionReal_(row, works, gammaLiveEvidence) {
     gammaCanReuse:live.reusable,
     gammaCanCreate:live.createAllowed,
     gammaLiveVerificationRequired:!gammaNoAplica&&!live.provided,
+    notionLiveEvidenceProvided:notion.provided,
+    notionLiveStatus:notion.status,
+    notionLiveSource:notion.source,
+    notionPageId:notion.pageId,
+    notionPageUrl:notion.pageUrl,
+    notionParentPageId:notion.parentPageId,
+    notionTitle:notion.title,
+    notionContentVerified:notion.contentVerified,
+    notionCanonicalTopicVerified:notion.canonicalTopicVerified,
+    notionGammaReferenceVerified:notion.gammaReferenceVerified,
+    notionLiveSearchPerformed:notion.searchPerformed,
+    notionDuplicateCount:notion.duplicateCount,
+    notionDecision:notion.decision,
+    notionVerificada:notion.verified,
+    notionCanReuse:notion.reusable,
+    notionCanCreate:notion.createAllowed,
+    notionLiveVerificationRequired:!notion.provided,
     recursoPreparado:matches.length>0,
     planningPaquetePreparado:planningPrepared&&matches.length>0,
-    paquetePreparado:livePrepared&&matches.length>0,
-    materialPreparado:livePrepared&&matches.length>0,
+    paquetePreparado:livePrepared&&notion.verified&&matches.length>0,
+    materialPreparado:livePrepared&&notion.verified&&matches.length>0,
     publicado:matches.some(function(w){return String(w.state||'').toUpperCase()==='PUBLISHED';})
   };
 }
@@ -166,7 +234,9 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
   if(!plan.length)throw new Error('BLOCKED_NO_CANONICAL_SESSIONS: la planeación está vacía.');
   const liveMap=opts.gammaLiveEvidence&&typeof opts.gammaLiveEvidence==='object'
     ? opts.gammaLiveEvidence : {};
-  const seen=plan.map(function(row){return evidenciaSesionReal_(row,works,liveMap);});
+  const notionMap=opts.notionLiveEvidence&&typeof opts.notionLiveEvidence==='object'
+    ? opts.notionLiveEvidence : {};
+  const seen=plan.map(function(row){return evidenciaSesionReal_(row,works,liveMap,notionMap);});
 
   const requested=String(requestedSession||'').trim();
   if(requested&&opts.explicitTarget===true){
@@ -176,7 +246,7 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
       complete:false,target:plan[index],evidence:seen[index],
       source:'EXPLICIT_CANONICAL_SESSION',inferredSession:null,
       lastPrepared:null,lastPublished:null,reconciliation:false,observed:seen,
-      gammaVerificationOnly:false,provisionalNextSession:null
+      gammaVerificationOnly:false,notionVerificationOnly:false,provisionalNextSession:null
     };
   }
 
@@ -194,7 +264,17 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
         source:'GAMMA_LIVE_BOUNDARY_REQUIRED',
         lastPrepared:lastPlanningPrepared-1,lastPublished:lastPublished,
         inferredSession:String(plan[lastPlanningPrepared].session),
-        reconciliation:false,observed:seen,gammaVerificationOnly:true,
+        reconciliation:false,observed:seen,gammaVerificationOnly:true,notionVerificationOnly:false,
+        provisionalNextSession:lastPlanningPrepared+1<plan.length?String(plan[lastPlanningPrepared+1].session):null
+      };
+    }
+    if((boundary.gammaNoAplica||boundary.gammaVerificada)&&!boundary.notionLiveEvidenceProvided){
+      return {
+        complete:false,target:plan[lastPlanningPrepared],evidence:boundary,
+        source:'NOTION_LIVE_BOUNDARY_REQUIRED',
+        lastPrepared:lastPlanningPrepared-1,lastPublished:lastPublished,
+        inferredSession:String(plan[lastPlanningPrepared].session),
+        reconciliation:false,observed:seen,gammaVerificationOnly:false,notionVerificationOnly:true,
         provisionalNextSession:lastPlanningPrepared+1<plan.length?String(plan[lastPlanningPrepared+1].session):null
       };
     }
@@ -207,7 +287,7 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
   if(inferred>=plan.length)return {
     complete:true,target:null,source:'PLANNING_REAL_PREPARATION_STATE',
     lastPrepared:lastPlanningPrepared,lastPublished:lastPublished,observed:seen,
-    gammaVerificationOnly:false,provisionalNextSession:null
+    gammaVerificationOnly:false,notionVerificationOnly:false,provisionalNextSession:null
   };
 
   let index=inferred,reconciliation=false;
@@ -225,75 +305,74 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
     source:'PLANNING_REAL_PREPARATION_STATE',
     lastPrepared:lastPlanningPrepared,lastPublished:lastPublished,
     inferredSession:String(plan[inferred].session),reconciliation:reconciliation,
-    observed:seen,gammaVerificationOnly:false,provisionalNextSession:null
+    observed:seen,gammaVerificationOnly:false,notionVerificationOnly:false,provisionalNextSession:null
   };
 }
 
-/** Pruebas puras: la planeación nunca puede certificar una Gamma viva. */
+/** Pruebas puras: planeación no certifica servicios externos vivos. */
 function validarSecuenciaRealRegresion(){
-  const mk=function(n,unit,activity,gamma){
-    return {session:String(n),unit:unit,topic:'2.'+n+' Tema',practice:activity,
-      gammaUrl:gamma?'https://gamma.app/docs/test-'+n:'',
-      gammaState:gamma?'Gamma generado y verificado':''};
-  };
-  const live=function(status,id){
-    return {source:'GAMMA_LIVE_CONNECTOR',status:status,gammaId:id||'g_test',
-      gammaUrl:'https://gamma.app/docs/live-'+(id||'g_test'),title:'Tema',
-      archived:status==='LIVE_ARCHIVED',contentVerified:status==='LIVE_ACTIVE_CANONICAL',
-      canonicalTopicVerified:status==='LIVE_ACTIVE_CANONICAL',searchPerformed:true,
-      activeEquivalentFound:false};
-  };
+  const mk=function(n,unit,activity,gamma){return {session:String(n),unit:unit,topic:'2.'+n+' Tema',practice:activity,
+    gammaUrl:gamma?'https://gamma.app/docs/test-'+n:'',gammaState:gamma?'Gamma generado y verificado':''};};
+  const gammaLive=function(status,id){return {source:'GAMMA_LIVE_CONNECTOR',status:status,gammaId:id||'g_test',
+    gammaUrl:'https://gamma.app/docs/live-'+(id||'g_test'),title:'Tema',
+    archived:status==='LIVE_ARCHIVED',contentVerified:status==='LIVE_ACTIVE_CANONICAL',
+    canonicalTopicVerified:status==='LIVE_ACTIVE_CANONICAL',searchPerformed:true,activeEquivalentFound:false};};
+  const notionLive=function(status,id){return {source:'NOTION_LIVE_CONNECTOR',status:status,pageId:id||'n_test',
+    pageUrl:'https://app.notion.com/p/'+(id||'n_test'),parentPageId:'parent',title:'Tema',
+    contentVerified:status==='LIVE_CANONICAL',canonicalTopicVerified:status==='LIVE_CANONICAL',
+    gammaReferenceVerified:status==='LIVE_CANONICAL',searchPerformed:true,
+    duplicateCount:status==='LIVE_NOT_FOUND'?0:1};};
   const rows=[mk(12,'Unidad 2','Actividad 5',true),mk(13,'Unidad 2','Actividad 6',true),mk(14,'Unidad 2','Actividad 7',false),mk(15,'Unidad 2','Actividad 8',false)];
-  const prepared=[
-    {id:'100000000001',title:'Actividad 5',state:'PUBLISHED'},
-    {id:'100000000002',title:'Actividad 6',state:'DRAFT'}
-  ];
+  const prepared=[{id:'100000000001',title:'Actividad 5',state:'PUBLISHED'},{id:'100000000002',title:'Actividad 6',state:'DRAFT'}];
 
-  const planningOnly=evidenciaSesionReal_(rows[1],prepared,{});
-  if(planningOnly.gammaVerificada||planningOnly.paquetePreparado||!planningOnly.planningGammaClaimedVerified)
-    throw new Error('REGRESSION_GAMMA_LIVE: la planeación no puede certificar Gamma viva.');
+  const planningOnly=evidenciaSesionReal_(rows[1],prepared,{},{});
+  if(planningOnly.gammaVerificada||planningOnly.notionVerificada||planningOnly.paquetePreparado||!planningOnly.planningGammaClaimedVerified)
+    throw new Error('REGRESSION_LIVE: planeación no puede certificar servicios vivos.');
 
   let state=seleccionarSiguienteClasePorEstadoReal_(rows,prepared);
   if(state.target.session!=='13'||state.source!=='GAMMA_LIVE_BOUNDARY_REQUIRED'||!state.gammaVerificationOnly)
-    throw new Error('REGRESSION_GAMMA_LIVE: la frontera planeada debe requerir verificación LIVE antes de avanzar.');
+    throw new Error('REGRESSION_GAMMA: frontera debe requerir Gamma LIVE.');
 
-  state=seleccionarSiguienteClasePorEstadoReal_(rows,prepared,null,{gammaLiveEvidence:{'13':live('LIVE_ACTIVE_CANONICAL','g13')}});
-  if(state.target.session!=='14')
-    throw new Error('REGRESSION_GAMMA_LIVE: Gamma activa y canónica permite avanzar.');
+  state=seleccionarSiguienteClasePorEstadoReal_(rows,prepared,null,{gammaLiveEvidence:{'13':gammaLive('LIVE_ACTIVE_CANONICAL','g13')}});
+  if(state.target.session!=='13'||state.source!=='NOTION_LIVE_BOUNDARY_REQUIRED'||!state.notionVerificationOnly)
+    throw new Error('REGRESSION_NOTION: Gamma válida no permite avanzar sin Notion LIVE.');
+
+  state=seleccionarSiguienteClasePorEstadoReal_(rows,prepared,null,{
+    gammaLiveEvidence:{'13':gammaLive('LIVE_ACTIVE_CANONICAL','g13')},
+    notionLiveEvidence:{'13':notionLive('LIVE_CANONICAL','n13')}
+  });
+  if(state.target.session!=='14')throw new Error('REGRESSION_NOTION: Gamma + Notion LIVE permiten avanzar.');
 
   const partial=prepared.concat([{id:'100000000003',title:'Actividad 7',state:'DRAFT'}]);
   const withGamma=rows.map(function(r){return Object.assign({},r);});
-  withGamma[2].gammaUrl='https://gamma.app/docs/test-14';
-  withGamma[2].gammaState='Gamma generado y verificado';
+  withGamma[2].gammaUrl='https://gamma.app/docs/test-14';withGamma[2].gammaState='Gamma generado y verificado';
 
-  state=seleccionarSiguienteClasePorEstadoReal_(withGamma,partial,null,{gammaLiveEvidence:{
-    '14':live('LIVE_ARCHIVED','g14')
-  }});
-  if(state.target.session!=='14'||state.evidence.gammaDecision!=='CREATE'||state.evidence.paquetePreparado)
-    throw new Error('REGRESSION_GAMMA_LIVE: Gamma archivada debe forzar CREATE, nunca paquete preparado.');
+  state=seleccionarSiguienteClasePorEstadoReal_(withGamma,partial,null,{
+    gammaLiveEvidence:{'14':gammaLive('LIVE_ACTIVE_CANONICAL','g14')},
+    notionLiveEvidence:{'14':notionLive('LIVE_NOT_FOUND','')}
+  });
+  if(state.target.session!=='14'||state.evidence.notionDecision!=='CREATE'||state.evidence.paquetePreparado)
+    throw new Error('REGRESSION_NOTION: notas ausentes deben forzar CREATE y mantener paquete incompleto.');
 
-  state=seleccionarSiguienteClasePorEstadoReal_(withGamma,partial,null,{gammaLiveEvidence:{
-    '14':live('LIVE_ACTIVE_CANONICAL','g14')
-  }});
-  if(state.target.session!=='15')
-    throw new Error('REGRESSION_GAMMA_LIVE: Gamma LIVE activa y canónica permite continuar.');
+  state=seleccionarSiguienteClasePorEstadoReal_(withGamma,partial,null,{
+    gammaLiveEvidence:{'14':gammaLive('LIVE_ACTIVE_CANONICAL','g14')},
+    notionLiveEvidence:{'14':notionLive('LIVE_CANONICAL','n14')}
+  });
+  if(state.target.session!=='15')throw new Error('REGRESSION_NOTION: notas LIVE canónicas permiten continuar.');
 
   const explicit=seleccionarSiguienteClasePorEstadoReal_(rows,prepared,'15',{explicitTarget:true});
-  if(explicit.target.session!=='15'||explicit.evidence.gammaDecision!=='VERIFY_LIVE')
-    throw new Error('REGRESSION_EXPLICIT_SESSION: sesión explícita debe conservar identidad y exigir Gamma LIVE.');
+  if(explicit.target.session!=='15'||explicit.evidence.gammaDecision!=='VERIFY_LIVE'||explicit.evidence.notionDecision!=='VERIFY_LIVE')
+    throw new Error('REGRESSION_EXPLICIT: sesión explícita exige verificación LIVE de Gamma y Notion.');
 
-  const noGamma=rows.map(function(r){return Object.assign({},r);});
-  noGamma[2].gammaUrl='PENDIENTE / No aplica';
-  noGamma[2].gammaState='NO APLICA — sesión integradora';
-  const noGammaEvidence=evidenciaSesionReal_(noGamma[2],partial,{});
-  if(!noGammaEvidence.gammaNoAplica||!noGammaEvidence.paquetePreparado)
-    throw new Error('REGRESSION_SEQUENCE: Gamma NO APLICA puede acreditar paquete con recurso real.');
+  let duplicateBlocked=false;
+  try{
+    evidenciaSesionReal_(rows[1],prepared,{'13':gammaLive('LIVE_ACTIVE_CANONICAL','g13')},{
+      '13':Object.assign({},notionLive('LIVE_CANONICAL','n13'),{duplicateCount:2})
+    });
+  }catch(err){duplicateBlocked=/NOTION_DUPLICATE_CLASS_NOTES_BLOCKED/.test(String(err));}
+  if(!duplicateBlocked)throw new Error('REGRESSION_NOTION: duplicados deben bloquearse.');
 
-  let invalidSource=false;
-  try{evidenciaSesionReal_(rows[1],prepared,{'13':{source:'PLANNING',status:'LIVE_ACTIVE_CANONICAL'}});}
-  catch(err){invalidSource=/GAMMA_LIVE_EVIDENCE_SOURCE_INVALID/.test(String(err));}
-  if(!invalidSource)throw new Error('REGRESSION_GAMMA_LIVE: evidencia no LIVE debe rechazarse.');
-
-  return {ok:true,source:'PLANNING_REAL_PREPARATION_STATE',regressions:8,readOnly:true,
-    currentDateUsed:false,calendarUsed:false,gammaPlanningIsAuthority:false,gammaLiveRequired:true};
+  return {ok:true,source:'PLANNING_REAL_PREPARATION_STATE',regressions:7,readOnly:true,
+    currentDateUsed:false,calendarUsed:false,gammaPlanningIsAuthority:false,
+    gammaLiveRequired:true,notionLiveRequired:true};
 }

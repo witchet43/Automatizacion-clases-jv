@@ -32,6 +32,13 @@ if (manifest.rules?.gammaArchivedCountsAsPrepared !== false) fail.push('archived
 if (manifest.rules?.gammaLiveEvidenceSource !== 'GAMMA_LIVE_CONNECTOR') fail.push('Gamma LIVE evidence source must be connector');
 if (manifest.rules?.gammaPostGenerationReadRequired !== true) fail.push('generated Gamma must be read/verified');
 if (manifest.rules?.gammaActiveCanonicalOnlyCountsAsVerified !== true) fail.push('only active canonical Gamma may count as verified');
+if (manifest.rules?.notionNotesRequiredForClassPackage !== true) fail.push('class packages must require Notion notes');
+if (manifest.rules?.notionNotesRoute !== 'NOTION_CONNECTOR') fail.push('Notion notes must use NOTION_CONNECTOR');
+if (manifest.rules?.notionLiveEvidenceSource !== 'NOTION_LIVE_CONNECTOR') fail.push('Notion LIVE evidence must come from connector');
+if (manifest.rules?.notionSearchBeforeCreate !== true || manifest.rules?.notionPostCreateFetchRequired !== true)
+  fail.push('Notion notes must search before create and fetch after write');
+if (manifest.rules?.notionDuplicateNotesAllowed !== false) fail.push('duplicate Notion class notes must remain blocked');
+if (manifest.rules?.classPackageCompleteRequiresNotionNotes !== true) fail.push('class completion must require Notion notes');
 for (const [name, op] of Object.entries(manifest.operations || {})) {
   const expected = name === 'quizAsistencia' ? 'FAST_PATH_WEB_APP' : 'ACADEMIC_WEB_APP';
   if (op.executionRoute !== expected) fail.push(`operation ${name} has non-canonical route ${op.executionRoute}`);
@@ -60,7 +67,14 @@ const requiredContract = [
   /GAMMA_LIVE_SEARCH_REQUIRED_BEFORE_CREATE:\s*true/,
   /GAMMA_ARCHIVED_COUNTS_AS_PREPARED:\s*false/,
   /GAMMA_ACTIVE_CANONICAL_ONLY_COUNTS_AS_VERIFIED:\s*true/,
-  /GAMMA_POST_GENERATION_READ_REQUIRED:\s*true/
+  /GAMMA_POST_GENERATION_READ_REQUIRED:\s*true/,
+  /NOTION_CLASS_NOTES_REQUIRED:\s*true/,
+  /NOTION_CLASS_NOTES_ROUTE:\s*'NOTION_CONNECTOR'/,
+  /NOTION_LIVE_VERIFICATION_REQUIRED:\s*true/,
+  /NOTION_SEARCH_BEFORE_CREATE_REQUIRED:\s*true/,
+  /NOTION_POST_CREATE_FETCH_REQUIRED:\s*true/,
+  /NOTION_DUPLICATES_ALLOWED:\s*false/,
+  /CLASS_PACKAGE_COMPLETE_REQUIRES_NOTION_NOTES:\s*true/
 ];
 if (requiredContract.some(re => !re.test(contract))) fail.push('architecture contract is missing anti-divergence invariants');
 

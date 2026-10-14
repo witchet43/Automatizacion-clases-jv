@@ -40,6 +40,18 @@ export function readContext() {
       manifest.rules.gammaPostGenerationReadRequired !== true ||
       manifest.rules.gammaActiveCanonicalOnlyCountsAsVerified !== true ||
       manifest.rules.gammaPlanningStatusRole !== 'REFERENCE_ONLY' ||
+      manifest.rules.notionNotesRequiredForClassPackage !== true ||
+      manifest.rules.notionNotesRoute !== 'NOTION_CONNECTOR' ||
+      manifest.rules.notionLiveEvidenceSource !== 'NOTION_LIVE_CONNECTOR' ||
+      manifest.rules.notionLiveVerificationRequired !== true ||
+      manifest.rules.notionSearchBeforeCreate !== true ||
+      manifest.rules.notionPostCreateFetchRequired !== true ||
+      manifest.rules.notionExactCanonicalTitleRequired !== true ||
+      manifest.rules.notionDuplicateNotesAllowed !== false ||
+      manifest.rules.notionPlanningStateIsAuthority !== false ||
+      manifest.rules.notionGammaReferenceRequiredWhenApplicable !== true ||
+      manifest.rules.classPackageCompleteRequiresNotionNotes !== true ||
+      manifest.rules.classGenerationOrder !== 'GOOGLE_RESOURCES_THEN_GAMMA_THEN_NOTION_NOTES_THEN_POSTFLIGHT' ||
       JSON.stringify(manifest.fastPaths) !== '["quizAsistencia"]') throw Error('ACADEMIC_CONTEXT_INVALID');
   if (!manifest.platformChange || manifest.platformChange.authorizationRequired !== true ||
       manifest.platformChange.authorizationSource !== 'EXPLICIT_CURRENT_USER_REQUEST' ||
@@ -58,9 +70,16 @@ export function readContext() {
     const doc = manifest.documents[key];
     if (!doc?.id || doc.url !== `https://docs.google.com/document/d/${doc.id}/edit`) throw Error('ACADEMIC_DOCUMENT_INVALID: '+key);
   }
+  if (!manifest.notion || manifest.notion.classNotesRootPageId!=='3f2cd691-30bc-8179-b64f-d36487424bfc' ||
+      manifest.notion.route!=='NOTION_CONNECTOR' || manifest.notion.liveEvidenceSource!=='NOTION_LIVE_CONNECTOR' ||
+      manifest.notion.requiredForClassPackage!==true || manifest.notion.searchBeforeCreate!==true ||
+      manifest.notion.fetchAfterCreateOrUpdate!==true || manifest.notion.duplicatePolicy!=='BLOCK')
+    throw Error('ACADEMIC_NOTION_CONFIG_INVALID');
   // Runtime course/planning registries are consumed directly from the generated
   // manifest bundle. There is no handwritten second registry to drift.
   for (const [key,course] of Object.entries(manifest.courses)) {
+    if (!course.notionNotesPageId || !course.notionNotesPageUrl)
+      throw Error('ACADEMIC_NOTION_COURSE_CONFIG_MISSING: '+key);
     if (course.materia?.startsWith('Introducción a las Tecnologías de Información') || key==='introduccion-tecnologias-informacion') {
       if (course.gammaFolderId!=='fo_w669f3b2oumuiuf' || course.gammaThemeId!=='bfm8ztqy1whsib8') throw Error('ACADEMIC_GAMMA_CONFIG_INVALID: '+key);
     }
