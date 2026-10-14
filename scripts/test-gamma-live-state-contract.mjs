@@ -32,7 +32,17 @@ const activeEvidence=ctx.evidenciaSesionReal_(row,works,{'16':active});
 assert.equal(activeEvidence.gammaVerificada,true);
 assert.equal(activeEvidence.gammaCanReuse,true);
 assert.equal(activeEvidence.gammaDecision,'REUSE');
-assert.equal(activeEvidence.paquetePreparado,true);
+assert.equal(activeEvidence.paquetePreparado,false);
+assert.equal(activeEvidence.notionDecision,'VERIFY_LIVE');
+
+const notionActive={source:'NOTION_LIVE_CONNECTOR',status:'LIVE_CANONICAL',pageId:'n16',
+  pageUrl:'https://app.notion.com/p/n16',parentPageId:'parent',title:row.topic,
+  contentVerified:true,canonicalTopicVerified:true,gammaReferenceVerified:true,
+  searchPerformed:true,duplicateCount:1};
+const fullyPrepared=ctx.evidenciaSesionReal_(row,works,{'16':active},{'16':notionActive});
+assert.equal(fullyPrepared.gammaVerificada,true);
+assert.equal(fullyPrepared.notionVerificada,true);
+assert.equal(fullyPrepared.paquetePreparado,true);
 
 const archived={source:'GAMMA_LIVE_CONNECTOR',status:'LIVE_ARCHIVED',gammaId:'oualr71m0ys6x0v',
   gammaUrl:row.gammaUrl,title:'Software del Sistema Operativo',archived:true,
