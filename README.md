@@ -1,3 +1,9 @@
+**Protección de acceso a la Web App:** el despliegue ejecuta como propietario; las operaciones de escritura directa requieren una credencial en `credential` que coincida con la propiedad privada de Apps Script `ACADEMIC_DIRECT_WEBAPP_SECRET`. La credencial no se almacena en GitHub, documentos ni conversación. Falta configurar esta propiedad y conectar el cliente ChatGPT antes de desplegar. Esto no añade comprobaciones académicas por pregunta.
+
+## RUTA DIRECTA PROPUESTA (2026-10-19)
+
+`ChatGPT con POST conectado → Web App doPost → action + courseId + params → generador canónico → Forms y Classroom DRAFT`. GitHub se usa solamente para modificar y desplegar código. Las referencias inferiores a `.academic-requests` son legado; no sustituir la falta de conexión POST por GitHub. Este cambio no instala automáticamente el conector ni demuestra ejecución real.
+
 # Automatización académica JV
 
 ## Modelo operativo definitivo: STATIC_WEB_APP_SERVICE

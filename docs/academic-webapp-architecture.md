@@ -1,3 +1,9 @@
+**Protección de acceso a la Web App:** el despliegue ejecuta como propietario; las operaciones de escritura directa requieren una credencial en `credential` que coincida con la propiedad privada de Apps Script `ACADEMIC_DIRECT_WEBAPP_SECRET`. La credencial no se almacena en GitHub, documentos ni conversación. Falta configurar esta propiedad y conectar el cliente ChatGPT antes de desplegar. Esto no añade comprobaciones académicas por pregunta.
+
+## RUTA DIRECTA AUTORIZADA (EN PREPARACIÓN)
+
+Una sola petición: `ChatGPT (POST habilitado) → Web App doPost → action / courseId / params → Apps Script existente → Forms/Classroom DRAFT`. GitHub solo versionado, pruebas y despliegue de cambios a la Web App. `.academic-requests` y el gateway `uaqExecutor` son históricos. El generador usa `item.setTitle(clean_(x.Pregunta))` sin agregar enumeración. No añadir supervisiones adicionales por pregunta. La ausencia de un conector HTTP POST en ChatGPT bloquea el cierre de la migración. Lo descrito abajo es arquitectura legada.
+
 # Arquitectura canónica — STATIC_WEB_APP_SERVICE
 
 ## Contrato

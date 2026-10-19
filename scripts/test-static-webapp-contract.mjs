@@ -28,9 +28,9 @@ for(const key of [
   'notionDuplicateNotesAllowed','notionPlanningStateIsAuthority','introTiPracticalMultiOsAllowed'
 ]) assert.equal(manifest.rules[key],false,key);
 assert.equal(manifest.rules.recoveryRoute,'SAME_CANONICAL_WEB_APP_ONLY');
-assert.equal(manifest.rules.routineMutationGateway,'UAQ_EXECUTOR');
-assert.equal(manifest.rules.routineMutationExternalAction,'uaqExecutor');
-assert.equal(manifest.rules.directRoutineMutationRequestAllowed,false);
+assert.equal(manifest.rules.routineMutationGateway,'DIRECT_WEB_APP');
+assert.equal(manifest.rules.routineMutationExternalAction,'DIRECT_WEB_APP_ACTION');
+assert.equal(manifest.rules.directRoutineMutationRequestAllowed,true);
 assert.equal(manifest.rules.routineOperationSourceInspectionAllowed,false);
 assert.equal(manifest.rules.routineOperationWorkflowInspectionAllowed,false);
 assert.equal(manifest.rules.routineOperationMaxAcademicRequests,1);
@@ -39,8 +39,8 @@ assert.equal(manifest.rules.routineOperationAlternativeRouteAllowed,false);
 assert.equal(manifest.rules.routineOperationGatewayFailureBehavior,'BLOCK_NO_ALTERNATE_ROUTE');
 assert.equal(manifest.operations.uaqExecutor.gateway,true);
 for(const op of manifest.operations.uaqExecutor.allowedOperations){
-  assert.equal(manifest.operations[op].externalRequestAllowed,false,op+' externalRequestAllowed');
-  assert.equal(manifest.operations[op].internalGateway,'UAQ_EXECUTOR',op+' internalGateway');
+  assert.equal(manifest.operations[op].externalRequestAllowed,true,op+' externalRequestAllowed');
+  assert.equal(manifest.operations[op].internalGateway,'DIRECT_WEB_APP',op+' internalGateway');
 }
 assert.equal(manifest.rules.gammaLiveEvidenceSource,'GAMMA_LIVE_CONNECTOR');
 assert.equal(manifest.rules.gammaPlanningStatusRole,'REFERENCE_ONLY');
@@ -79,7 +79,7 @@ const requestGuard=fs.readFileSync('scripts/assert-academic-request-data-only.mj
 assert.match(requestGuard,/DIRECT_ROUTINE_ACTION_FORBIDDEN_USE_UAQ_EXECUTOR/);
 assert.match(requestGuard,/UAQ_EXECUTOR_OPERATION_INVALID/);
 const webSource=fs.readFileSync('src/65_QuizAsistenciaWebApp.gs','utf8');
-assert.match(webSource,/ACTIONS:Object\.freeze\(\['uaqExecutor','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts'\]\)/,'uaqExecutor public gateway source');
+assert.match(webSource,/ACTIONS:Object\.freeze\(\['resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts','quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase'\]\)/,'direct Web App actions only');
 assert.match(webSource,/ROUTINE_OPERATIONS:Object\.freeze/);
 assert.match(deploy,/assert-platform-change-authorized\.mjs/);
 const onBlock=(deploy.match(/on:[\s\S]*?concurrency:/)||[''])[0];

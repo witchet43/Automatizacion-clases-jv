@@ -1,10 +1,9 @@
 name: Academic Web App
 
+# Transporte anterior retirado del disparo automatico.
+# Las operaciones academicas de rutina viajan directamente a Web App.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.academic-requests/**'
+  workflow_dispatch:
 
 permissions:
   contents: read

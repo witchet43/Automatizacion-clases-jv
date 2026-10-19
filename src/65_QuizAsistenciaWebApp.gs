@@ -21,7 +21,7 @@
 // UAQ_EXECUTOR_SINGLE_ROUTINE_GATEWAY: routine academic mutations enter only through uaqExecutor.
 const ACADEMIC_WEB = Object.freeze({
   COURSE_REGISTRY_SOURCE:'ACADEMIC_CONTEXT_CONFIG',
-  ACTIONS:Object.freeze(['uaqExecutor','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts']),
+  ACTIONS:Object.freeze(['resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts','quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase']),
   ROUTINE_OPERATIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase']),
   FAST_PATHS:Object.freeze({
     quizAsistencia:Object.freeze({singleExternalInput:'materia',firstExternalAction:'WEB_APP',preflightReadsAllowed:false,documentationRead:false,auxiliaryReads:false,diagnosticOnlyAfterError:true})
@@ -40,7 +40,11 @@ function cursosAcademicosWeb_(){
 
 
 function doGet(e){
-  return ejecutarServicioAcademicoWeb_(e&&e.parameter?e.parameter:{});
+  const p=e&&e.parameter?e.parameter:{};
+  const action=String(p.action||'').trim();
+  if(action==='uaqExecutor'||ACADEMIC_WEB.ROUTINE_OPERATIONS.indexOf(action)>=0)
+    return respuestaAcademicaWeb_({ok:false,error:'POST_REQUIRED_FOR_MUTATION'});
+  return ejecutarServicioAcademicoWeb_(p);
 }
 
 function doPost(e){
@@ -61,6 +65,11 @@ function ejecutarServicioAcademicoWeb_(params){
     const action=String(p.action||'').trim();
     if(!action)throw new Error('ACCION_REQUERIDA');
     if(ACADEMIC_WEB.ACTIONS.indexOf(action)<0)throw new Error('ACCION_NO_PERMITIDA');
+    if(ACADEMIC_WEB.ROUTINE_OPERATIONS.indexOf(action)>=0){
+      const secret=String(PropertiesService.getScriptProperties().getProperty('ACADEMIC_DIRECT_WEBAPP_SECRET')||'');
+      if(!secret)throw new Error('DIRECT_WEBAPP_NOT_CONFIGURED');
+      if(String(p.credential||'')!==secret)throw new Error('DIRECT_WEBAPP_UNAUTHORIZED');
+    }
     validarContratoOperacionWeb_(action);
     const operationalContext=validarArranqueAcademicoWeb_(action,p);
 
@@ -354,7 +363,7 @@ function inspeccionarFormularioDiagnosticoWeb_(url){
 }
 
 function validarEntradaQuizAsistenciaWeb_(p){
-  const allowed={action:true,materia:true,requestId:true};
+  const allowed={action:true,materia:true,requestId:true,credential:true};
   Object.keys(p||{}).forEach(function(key){
     if(!allowed[key])throw new Error('QUIZ_ASISTENCIA_PARAMETRO_NO_PERMITIDO: '+key);
   });
@@ -407,6 +416,7 @@ function normalizarPayloadAcademicoWeb_(course,p){
   delete out.courseId;
   delete out.params;
   delete out.operationalContext;
+  delete out.credential;
   out.courseId=course.id;
   if(!String(out.materia||'').trim())out.materia=course.materia;
   return out;

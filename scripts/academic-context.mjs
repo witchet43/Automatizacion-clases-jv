@@ -29,9 +29,9 @@ export function readContext() {
       manifest.rules.platformChangeEvidenceRequired !== true ||
       manifest.rules.platformChangeMayMixWithAcademicRequest !== false ||
       manifest.rules.workModeAllowed !== false ||
-      manifest.rules.routineMutationGateway !== 'UAQ_EXECUTOR' ||
-      manifest.rules.routineMutationExternalAction !== 'uaqExecutor' ||
-      manifest.rules.directRoutineMutationRequestAllowed !== false ||
+      manifest.rules.routineMutationGateway !== 'DIRECT_WEB_APP' ||
+      manifest.rules.routineMutationExternalAction !== 'DIRECT_WEB_APP_ACTION' ||
+      manifest.rules.directRoutineMutationRequestAllowed !== true ||
       manifest.rules.routineOperationSourceInspectionAllowed !== false ||
       manifest.rules.routineOperationWorkflowInspectionAllowed !== false ||
       manifest.rules.routineOperationMaxAcademicRequests !== 1 ||
