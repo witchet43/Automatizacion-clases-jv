@@ -1,5 +1,6 @@
 {
-  "action": "examen",
+  "action": "uaqExecutor",
+  "operation": "examen",
   "materia": "Administración",
   "courseId": "871158187513",
   "params": {
