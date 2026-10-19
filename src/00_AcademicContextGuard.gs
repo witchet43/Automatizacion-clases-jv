@@ -105,6 +105,12 @@ function validarArranqueAcademicoWeb_(action,p) {
   // Preserve EXECUTE_FIRST exactly: no manifest, Docs, planning or auxiliary reads.
   if(action==='quizAsistencia')return null;
   const c=validarConfiguracionContextoAcademico_();
+  // POST academico directo: no se necesita contexto de GitHub.
+  if(c.operations&&c.operations.uaqExecutor&&
+     c.operations.uaqExecutor.allowedOperations.indexOf(action)>=0){
+    validarSolicitudContextoAcademico_(p);
+    return null;
+  }
   const expected={source:'config/academic-context.json',contractVersion:c.contractVersion,
     manifestSha256:c.manifestSha256,repository:c.repository,workflow:c.workflow.name,endpoint:c.webApp.url};
   const supplied=p.operationalContext;

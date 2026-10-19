@@ -1,0 +1,19 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Entonces tienes muchos cambios que hacer, autorizo que los hagas todos, sin usar workmode ni nada de eso",
+  "reason": "Restablecer el modelo de llamadas directas a la Web App para operaciones académicas; reservar GitHub para código y despliegue, y proteger la escritura con credencial fuera del repositorio. El despliegue requiere conector ChatGPT y credencial configurados.",
+  "allowedChangedPaths": [
+    ".github/workflows/academic-webapp.yml",
+    "AGENTS.md",
+    "README.md",
+    "config/academic-context.json",
+    "docs/academic-webapp-architecture.md",
+    "scripts/academic-context.mjs",
+    "scripts/test-academic-context.mjs",
+    "scripts/test-static-webapp-contract.mjs",
+    "src/00_AcademicContextGuard.gs",
+    "src/65_QuizAsistenciaWebApp.gs"
+  ]
+}

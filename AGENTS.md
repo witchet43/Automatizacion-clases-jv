@@ -1,3 +1,9 @@
+**Protección de acceso a la Web App:** el despliegue ejecuta como propietario; las operaciones de escritura directa requieren una credencial en `credential` que coincida con la propiedad privada de Apps Script `ACADEMIC_DIRECT_WEBAPP_SECRET`. La credencial no se almacena en GitHub, documentos ni conversación. Falta configurar esta propiedad y conectar el cliente ChatGPT antes de desplegar. Esto no añade comprobaciones académicas por pregunta.
+
+## TRANSPORTE DIRECTO AUTORIZADO — 2026-10-19 (CAMBIO EN PREPARACIÓN)
+
+Las operaciones académicas se envían directamente por HTTP POST a la Web App con `{action,courseId,materia,params}` desde una conexión de ChatGPT. GitHub queda para código y despliegues, no para enviar exámenes o clases. El gateway `uaqExecutor` y `.academic-requests` son mecanismos heredados, no la ruta deseada. Si no hay conector POST en el chat, informar `BLOCKED_DIRECT_WEBAPP_CONNECTOR_MISSING`; no improvisar GitHub, navegador ni Work Mode. El generador de Forms no agrega numeración a las preguntas. Esta rama no acredita todavía un despliegue o conexión habilitada.
+
 # UAQ — contrato de arranque obligatorio
 
 ## REGLA DE MÁXIMA PRIORIDAD

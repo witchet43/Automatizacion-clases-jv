@@ -462,9 +462,9 @@
     "introTiOtherOsInstructionMode": "CONCEPTUAL_ONLY",
     "introTiHistoricalPublishedResourcesPolicy": "LEAVE_AS_IS",
     "introTiFutureMaterialsPolicy": "WINDOWS_BASELINE_REQUIRED",
-    "routineMutationGateway": "UAQ_EXECUTOR",
-    "routineMutationExternalAction": "uaqExecutor",
-    "directRoutineMutationRequestAllowed": false,
+    "routineMutationGateway": "DIRECT_WEB_APP",
+    "routineMutationExternalAction": "DIRECT_WEB_APP_ACTION",
+    "directRoutineMutationRequestAllowed": true,
     "routineOperationSourceInspectionAllowed": false,
     "routineOperationWorkflowInspectionAllowed": false,
     "routineOperationMaxAcademicRequests": 1,
@@ -502,8 +502,8 @@
       "contentIsData": true,
       "sourceMutationAllowed": false,
       "deploymentAllowed": false,
-      "externalRequestAllowed": false,
-      "internalGateway": "UAQ_EXECUTOR"
+      "externalRequestAllowed": true,
+      "internalGateway": "DIRECT_WEB_APP"
     },
     "actividad": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -516,8 +516,8 @@
       "contentIsData": true,
       "sourceMutationAllowed": false,
       "deploymentAllowed": false,
-      "externalRequestAllowed": false,
-      "internalGateway": "UAQ_EXECUTOR"
+      "externalRequestAllowed": true,
+      "internalGateway": "DIRECT_WEB_APP"
     },
     "tarea": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -530,8 +530,8 @@
       "contentIsData": true,
       "sourceMutationAllowed": false,
       "deploymentAllowed": false,
-      "externalRequestAllowed": false,
-      "internalGateway": "UAQ_EXECUTOR"
+      "externalRequestAllowed": true,
+      "internalGateway": "DIRECT_WEB_APP"
     },
     "practica": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -544,8 +544,8 @@
       "contentIsData": true,
       "sourceMutationAllowed": false,
       "deploymentAllowed": false,
-      "externalRequestAllowed": false,
-      "internalGateway": "UAQ_EXECUTOR"
+      "externalRequestAllowed": true,
+      "internalGateway": "DIRECT_WEB_APP"
     },
     "quiz": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -559,8 +559,8 @@
       "contentIsData": true,
       "sourceMutationAllowed": false,
       "deploymentAllowed": false,
-      "externalRequestAllowed": false,
-      "internalGateway": "UAQ_EXECUTOR"
+      "externalRequestAllowed": true,
+      "internalGateway": "DIRECT_WEB_APP"
     },
     "examen": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -575,8 +575,8 @@
       "contentIsData": true,
       "sourceMutationAllowed": false,
       "deploymentAllowed": false,
-      "externalRequestAllowed": false,
-      "internalGateway": "UAQ_EXECUTOR"
+      "externalRequestAllowed": true,
+      "internalGateway": "DIRECT_WEB_APP"
     },
     "material": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -588,8 +588,8 @@
       "contentIsData": true,
       "sourceMutationAllowed": false,
       "deploymentAllowed": false,
-      "externalRequestAllowed": false,
-      "internalGateway": "UAQ_EXECUTOR"
+      "externalRequestAllowed": true,
+      "internalGateway": "DIRECT_WEB_APP"
     },
     "clase": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -606,8 +606,8 @@
       "notionNotesRequired": true,
       "notionNotesRoute": "NOTION_CONNECTOR",
       "notionEvidenceInput": "options.notionLiveEvidence",
-      "externalRequestAllowed": false,
-      "internalGateway": "UAQ_EXECUTOR"
+      "externalRequestAllowed": true,
+      "internalGateway": "DIRECT_WEB_APP"
     },
     "resolverClase": {
       "executionRoute": "ACADEMIC_WEB_APP",
@@ -698,7 +698,8 @@
       "failureBehavior": "BLOCK_NO_ALTERNATE_ROUTE",
       "contentIsData": true,
       "sourceMutationAllowed": false,
-      "deploymentAllowed": false
+      "deploymentAllowed": false,
+      "legacyCompatibilityOnly": true
     }
   },
   "operatingModel": "STATIC_WEB_APP_SERVICE",
@@ -735,5 +736,13 @@
       "Conceptos clave"
     ],
     "gammaReferenceRequiredWhenApplicable": true
+  },
+  "directWebApp": {
+    "method": "POST",
+    "entrypoint": "doPost",
+    "payload": "{action,courseId,materia,params}",
+    "source": "CONNECTED_CHATGPT_APP_REQUIRED",
+    "githubUsedForRoutineOperations": false,
+    "authorization": "SCRIPT_PROPERTY:ACADEMIC_DIRECT_WEBAPP_SECRET"
   }
 }
