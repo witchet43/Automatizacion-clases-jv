@@ -38,3 +38,11 @@ ChatGPT → Portal académico privado → WebApp canónica Apps Script (`uaqExec
 ## Confirmación de integridad
 
 Tras desplegar limpieza: verificar `gateway_status` (writesEnabled, ownerIdentityVerified, transport=direct-canonical-webapp), diagnóstico de Classroom y ausencia de workflow académico de GitHub. No crear actividades para comprobar limpieza. Para cualquier fallo, detenerse antes de cambiar endpoint o credenciales.
+
+## Incidente pendiente: Portal Académico y sesión 13 ADSC (20/10/2026)
+Autorización docente: «Completala, autorizo todo lo necesario».
+El curso UAQ tiene courseId 871158479566 y temaSubtema canónico «Selección y adaptación de un enfoque metodológico» (sin prefijo 3.3). La nota docente está en https://app.notion.com/p/3ffcd69130bc81ee84a0c96143801f62. Gamma existente: https://gamma.app/docs/2pjc99vj7owgou9, pendiente del theme UAQ exacto bfm8ztqy1whsib8. No regenerar Gamma a ciegas.
+
+Los intentos de crear el borrador desde el Site Classroom Portal académico terminaron en WEBAPP_WRITE_REJECTED_OR_UNKNOWN_RECONCILE. Un diagnóstico seguro temporal ya desplegado permitió leer el código real ACCION_NO_PERMITIDA, lo que significa que el Site publicado envía un valor de action que el WebApp rechaza antes de ingresar al creador de recursos. WebApp solo admite uaqExecutor para escrituras; el helper correcto site-bridge/direct-write-client.mjs ya construye action:'uaqExecutor'. Corregir el SITE publicado (https://classroom-academico-jv.witchet43.chatgpt.site) para usar uaqExecutor con operation, courseId, requestId, params, operationalContext y HMAC firmados. No habilitar acciones directas alternativas, no deshabilitar HMAC, no usar GitHub Actions como transporte de alumnos.
+
+Classroom fue reconciliado con 24 CourseWork y ningún borrador nuevo de práctica 3.3; búsqueda Drive por título no identificó el documento nuevo. No reintentar requests usados (pueden tener recibos PENDING). Tras la corrección del Site, diagnosticar recibos, obtener nueva autorización e identidad idempotente y crear una sola práctica DRAFT sin vencimiento, Google Doc STUDENT_COPY. Paquete de la sesión 13 sigue PARCIAL hasta ese postflight y el tema Gamma canónico. La instrumentación temporal de código se retira con este registro.
