@@ -7,6 +7,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  issues: write
 concurrency:
   group: classroom-mcp-production
   cancel-in-progress: false
@@ -40,3 +41,18 @@ jobs:
       - name: Verify deployed revision
         run: |
           gcloud run services describe academic-classroom-mcp --region us-central1 --format='yaml(status.url,status.traffic)'
+      - name: Publish deploy result for automated inspection
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "# Classroom MCP deployment result"
+            echo "Status: ${{ job.status }}"
+            echo "Run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo "Commit: ${GITHUB_SHA}"
+            echo "Writes remain disabled by deployment configuration."
+          } > /tmp/deploy-result.md
+          gh issue create --repo "${GITHUB_REPOSITORY}" \
+            --title "Classroom MCP deploy ${GITHUB_RUN_ID}: ${{ job.status }}" \
+            --body-file /tmp/deploy-result.md
