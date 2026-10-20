@@ -112,6 +112,7 @@ function buildQuizForm_(quiz, items) {
   // Un Form nuevo se crea SIN publicar desde el primer instante: un Classroom
   // DRAFT por sí solo no impide que se abra directamente el enlace del Form.
   const form = FormApp.create(clean_(quiz[H.TITLE]), false);
+  try {
   assertQuizFormNotPublished_(form);
   form.setDescription(quizDescriptionForOutput_(quiz.Instrucciones));
   form.setIsQuiz(true);
@@ -188,6 +189,14 @@ function buildQuizForm_(quiz, items) {
 
   assertQuizFormNotPublished_(form);
   return form;
+  } catch(err) {
+    // buildQuizForm_ may throw BEFORE returning 'form' to its caller.
+    // The outer caller cannot trash a partially constructed Form it never
+    // received, so the builder itself must clean up that partial resource.
+    try { DriveApp.getFileById(form.getId()).setTrashed(true); }
+    catch(cleanupErr) { console.warn('FORM_INCOMPLETO_LIMPIEZA_FALLIDA'); }
+    throw err;
+  }
 }
 
 /** Bloquea un quiz creado/publicado por omisión antes de adjuntarlo a Classroom. */

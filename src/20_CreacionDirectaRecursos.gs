@@ -301,6 +301,34 @@ function resultadoCreacionCourseWorkDirecto_(p,work,topicName,reutilizado){
   return {operacion:'CREACION_DIRECTA',tipo:p.tipo,reutilizado:reutilizado,courseId:p.courseId,workId:String(work.id),classroomUrl:work.alternateLink||'',estado:work.state,tema:topicName,puntos:Number(work.maxPoints||0),documentId:String(p.documentId||''),shareMode:p.documentId?'STUDENT_COPY':''};
 }
 
+/**
+ * The Forms builder accepts option LETTERS (A-H), whereas callers may supply
+ * the exact option text. Normalize this once at the academic input boundary.
+ * Never guess when labels are duplicated or the answer is not an exact match.
+ * Short-answer questions keep their literal answer text.
+ */
+function normalizarClaveRespuestaEvaluacionDirecta_(answer, options, type) {
+  const raw=Array.isArray(answer)?answer.join(','):String(answer===undefined?'':answer);
+  if(normalizeQuizQuestionType_(type)==='RESPUESTA_CORTA')return raw;
+  const available=(Array.isArray(options)?options:[]).map(function(value,index){
+    return {letter:'ABCDEFGH'.charAt(index),text:String(value===undefined?'':value).trim()};
+  }).filter(function(x){return x.letter&&x.text;});
+  const keys=parseChoiceAnswerKeys_(raw);
+  if(keys.length&&keys.every(function(key){
+    return available.some(function(x){return x.letter===key;});
+  }))return keys.join(',');
+  const incoming=Array.isArray(answer)?answer:[answer];
+  if(incoming.length && incoming.every(function(value){
+    const exact=available.filter(function(x){return x.text===String(value===undefined?'':value).trim();});
+    return exact.length===1;
+  })){
+    return Array.from(new Set(incoming.map(function(value){
+      return available.find(function(x){return x.text===String(value).trim();}).letter;
+    }))).join(',');
+  }
+  return raw;
+}
+
 function normalizarPreguntasDirectas_(questions){
   if(!Array.isArray(questions)) throw new Error('preguntas debe ser un arreglo.');
   const optionHeaders=['Opción A','Opción B','Opción C','Opción D','Opción E','Opción F','Opción G','Opción H'];
@@ -314,7 +342,7 @@ function normalizarPreguntasDirectas_(questions){
       Pregunta:String(x.pregunta||x.question||'').trim(),
       Puntos:Number(x.puntos!==undefined?x.puntos:x.points),
       Obligatoria:(x.obligatoria===false||x.required===false)?'NO':'SÍ',
-      'Respuesta correcta':Array.isArray(correct)?correct.join(','):String(correct===undefined?'':correct),
+      'Respuesta correcta':normalizarClaveRespuestaEvaluacionDirecta_(correct,options,x.tipo||x.type||'OPCION_MULTIPLE'),
       'Respuestas aceptadas':Array.isArray(x.respuestasAceptadas||x.acceptedAnswers)?(x.respuestasAceptadas||x.acceptedAnswers).join('|'):String(x.respuestasAceptadas||x.acceptedAnswers||''),
       'Instrucción de formato':String(x.instruccionFormato||x.formatInstruction||''),
       'Retroalimentación correcta':String(x.retroalimentacionCorrecta||x.feedbackCorrect||''),
