@@ -44,7 +44,7 @@ const ctx={
      assert.equal(q.required,true);
    });
    if(!failBatch) items=data.requests.map(x=>x.createItem.item);
-   return {getResponseCode:()=>failBatch?400:200,getContentText:()=>'ERR_TEST_BATCH'};
+   return {getResponseCode:()=>failBatch?400:200,getContentText:()=>failBatch?'ERR_TEST_BATCH':JSON.stringify({replies:[]})};
  }},
  DriveApp:{getFileById:()=>({setTrashed:v=>{if(v)trashed++}})}
 };
