@@ -75,7 +75,14 @@ export async function submitSignedAcademicDraft(payload,{
   if(!response.ok)throw new Error('WEBAPP_WRITE_HTTP_FAILED_RECONCILE');
   let result;
   try {result=await response.json();}catch(_){throw new Error('WEBAPP_WRITE_INVALID_REPLY_RECONCILE');}
-  if(!result || result.ok!==true)throw new Error('WEBAPP_WRITE_REJECTED_OR_UNKNOWN_RECONCILE');
+  if(!result || result.ok!==true){
+    const code=typeof result?.errorCode==='string' &&
+      /^[A-Z][A-Z0-9_]{2,79}$/.test(result.errorCode)
+      ? result.errorCode : 'UNKNOWN';
+    // Never forward potentially sensitive raw Apps Script exception messages
+    // through the Site, but retain the authenticated WebApp's error code.
+    throw new Error('WEBAPP_WRITE_REJECTED_'+code+'_RECONCILE');
+  }
   if(result.gateway!=='UAQ_EXECUTOR' || result.alternativeRouteUsed!==false)
     throw new Error('WEBAPP_WRITE_GATEWAY_PROOF_MISSING');
   if(result.action!=='uaqExecutor' || result.operation!==payload.operation)

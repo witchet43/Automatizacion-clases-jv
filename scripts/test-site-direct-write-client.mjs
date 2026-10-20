@@ -53,4 +53,17 @@ await assert.rejects(submitSignedAcademicDraft(signed,{
  fetchImpl:async()=>{count++;return {ok:true,json:async()=>({ok:true})};}
 }),/WEBAPP_WRITE_GATEWAY_PROOF_MISSING/);
 assert.equal(count,3);
+await assert.rejects(submitSignedAcademicDraft(signed,{
+ webAppUrl:manifest.webApp.url,
+ fetchImpl:async()=>({ok:true,json:async()=>({
+   ok:false,errorCode:'EXAMEN_BATCH_POSTFLIGHT_ITEMS_MISMATCH',
+   error:'Do not expose original exception with private data'
+ })})
+}),/WEBAPP_WRITE_REJECTED_EXAMEN_BATCH_POSTFLIGHT_ITEMS_MISMATCH_RECONCILE/);
+await assert.rejects(submitSignedAcademicDraft(signed,{
+ webAppUrl:manifest.webApp.url,
+ fetchImpl:async()=>({ok:true,json:async()=>({
+   ok:false,errorCode:'INJECT PRIVATE STUDENT DATA'
+ })})
+}),/WEBAPP_WRITE_REJECTED_UNKNOWN_RECONCILE/);
 console.log('PASS: Site signs canonical draft WebApp request, rejects invalid courses/operations, never retries writes.');

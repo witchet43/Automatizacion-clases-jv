@@ -106,8 +106,51 @@ function validateQuizFeedbackRequirements_(quiz, items) {
   return isQuizInstrument || feedbackPolicy !== 'SIN_RETROALIMENTACION';
 }
 
+/**
+ * Build ALL exam multiple-choice items before creating the Form, so invalid
+ * answers do not cause partial resources. One Forms API batchUpdate avoids
+ * 25 serial FormApp round trips that can exceed the Site's request timeout.
+ * Only EXAMEN uses this optimized path; QUIZ feedback remains unchanged.
+ */
+function prepararReactivosExamenBatch_(items) {
+  const letters=['A','B','C','D','E','F','G','H'];
+  return items.map(function(rec,index){
+    const x=rec.data;
+    if(normalizeQuizQuestionType_(x.Tipo)!=='OPCION_MULTIPLE')
+      throw new Error('EXAMEN_BATCH_UNSUPPORTED_TYPE: '+String(x.Tipo||''));
+    const pairs=letters.map(function(letter,i){
+      return {letter:letter,text:clean_(x['Opción '+letter])};
+    }).filter(function(o){return Boolean(o.text);});
+    const keys=parseChoiceAnswerKeys_(x['Respuesta correcta']);
+    if(pairs.length<2 || keys.length!==1 ||
+       !pairs.some(function(o){return o.letter===keys[0];}))
+      throw new Error('EXAMEN_RESPUESTA_INVALIDA_PREGUNTA_'+String(index+1));
+    if(new Set(pairs.map(function(o){return o.text;})).size!==pairs.length)
+      throw new Error('EXAMEN_OPCIONES_DUPLICADAS_PREGUNTA_'+String(index+1));
+    const points=Number(x.Puntos);
+    if(!Number.isInteger(points)||points<0)
+      throw new Error('EXAMEN_PUNTOS_INVALIDOS_PREGUNTA_'+String(index+1));
+    const correct=pairs.find(function(o){return o.letter===keys[0];}).text;
+    return {createItem:{
+      item:{
+        title:clean_(x.Pregunta),
+        questionItem:{question:{
+          required:yes_(x.Obligatoria),
+          grading:{pointValue:points,correctAnswers:{answers:[{value:correct}]}},
+          choiceQuestion:{type:'RADIO',options:pairs.map(function(o){return {value:o.text};})}
+        }}
+      },
+      location:{index:index}
+    }};
+  });
+}
+
 function buildQuizForm_(quiz, items) {
   const showFeedback = validateQuizFeedbackRequirements_(quiz, items);
+  const isExam=clean_(quiz['Tipo instrumento']).toUpperCase()==='EXAMEN';
+  const examRequests=isExam && items.length>=10 &&
+    items.every(function(rec){return normalizeQuizQuestionType_(rec.data.Tipo)==='OPCION_MULTIPLE';})
+    ? prepararReactivosExamenBatch_(items) : null;
 
   // Un Form nuevo se crea SIN publicar desde el primer instante: un Classroom
   // DRAFT por sí solo no impide que se abra directamente el enlace del Form.
@@ -122,6 +165,16 @@ function buildQuizForm_(quiz, items) {
   form.setLimitOneResponsePerUser(true);
   form.setShowLinkToRespondAgain(false);
   form.setPublishingSummary(false);
+
+  if(examRequests){
+    formsBatchUpdate_(form.getId(),examRequests);
+    const actual=form.getItems();
+    if(actual.length!==items.length ||
+       actual.some(function(item,i){return clean_(item.getTitle())!==clean_(items[i].data.Pregunta);}))
+      throw new Error('EXAMEN_BATCH_POSTFLIGHT_ITEMS_MISMATCH');
+    assertQuizFormNotPublished_(form);
+    return form;
+  }
 
   items.forEach(rec => {
     const x = rec.data;
