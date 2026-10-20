@@ -25,6 +25,7 @@ jobs:
           set -uo pipefail
           gcloud config set project classroom-mcp-512122
           gcloud run services describe academic-classroom-mcp --region us-central1 --format='yaml(status.url,status.conditions,status.traffic)' || echo "Service describe failed"
+          : > /tmp/route-results.txt
           # A public endpoint returns Google 404 before reaching Express if Cloud Run
           # identity authentication or routing fails. Capture the HTTP response safely.
           for url in "https://academic-classroom-mcp-148028894895.us-central1.run.app" "https://academic-classroom-mcp-egncivfxav-uc.a.run.app"; do
@@ -50,5 +51,9 @@ jobs:
           - Deployment operations: none
           - Secret values: never included
           EOF
+          echo '### HTTP responses' >> /tmp/diagnosis.md
+          echo '~~~text' >> /tmp/diagnosis.md
+          cat /tmp/route-results.txt >> /tmp/diagnosis.md 2>/dev/null || echo "HTTP probing failed to start" >> /tmp/diagnosis.md
+          echo '~~~' >> /tmp/diagnosis.md
           gh issue create --repo "${GITHUB_REPOSITORY}" --title "MCP diagnostic run ${GITHUB_RUN_ID}: ${{ job.status }}" --body-file /tmp/diagnosis.md
 
