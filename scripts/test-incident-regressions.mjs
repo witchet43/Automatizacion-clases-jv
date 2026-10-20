@@ -38,8 +38,11 @@ assert.match(legacy,/function evaluarEntregas\(\)/);
 assert.match(legacy,/eliminarTriggersLegacyPorHandler_/);
 
 assert.match(editable,/idsGoogleDocumentosAccesiblesSolicitados_/);
-assert.match(editable,/obsoleto o inaccesible/);
-assert.match(practice,/documentId obsoleto o inaccesible/);
+assert.match(editable,/function obtenerMetadataDocumentoClassroom_/);
+assert.match(editable,/DocumentApp\.openById/);
+assert.match(editable,/BLOCKED_GOOGLE_DOC_NOT_ACCESSIBLE/);
+assert.match(practice,/BLOCKED_GOOGLE_DOC_NOT_ACCESSIBLE/);
+assert.doesNotMatch(practice,/documentId obsoleto o inaccesible/);
 assert.match(doc,/function renderizarLineasDocumentoAcademico_/);
 assert.match(doc,/renderizarTablaPipeDocumento_/);
 assert.match(didactic,/'New-Object':/);
