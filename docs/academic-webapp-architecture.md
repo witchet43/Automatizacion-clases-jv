@@ -1,5 +1,8 @@
 # Arquitectura académica canónica (operación y mantenimiento separados)
 
+Contrato **STATIC_WEB_APP_SERVICE**: operaciones **data-only**. Ante fallo, bloquear y reconciliar sin ruta alternativa; **Work mode** no se utiliza.
+
+
 ## Flujo único
 
 `ChatGPT → Portal Académico privado → POST autorizado y firmado → Google Apps Script WebApp canónica → Classroom / Forms / Drive`
