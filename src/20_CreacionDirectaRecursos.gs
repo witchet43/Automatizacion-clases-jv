@@ -254,7 +254,7 @@ function buscarCourseWorkDirectoPorEvidencia_(p,topicId){
     ?idsGoogleDocumentosAccesiblesSolicitados_(p):idsGoogleDocumentosSolicitados_(p);
   let token, matches=[];
   do{
-    const page=listarCourseWorkPaginaConReintento_(courseId,{pageSize:100,pageToken:token});
+    const page=listarCourseWorkPaginaConReintento_(courseId,{pageSize:100,pageToken:token,courseWorkStates:['DRAFT','PUBLISHED']});
     (page.courseWork||[]).forEach(function(w){
       if(String(w.title||'').trim()!==titulo)return;
       if(String(w.topicId||'')!==String(topicId||''))return;
@@ -283,7 +283,7 @@ function buscarCourseWorkDirectoPorEvidencia_(p,topicId){
 function buscarCourseWorkDirectoExacto_(courseId,titulo,topicId){
   let token;
   do{
-    const page=listarCourseWorkPaginaConReintento_(String(courseId),{pageSize:100,pageToken:token});
+    const page=listarCourseWorkPaginaConReintento_(String(courseId),{pageSize:100,pageToken:token,courseWorkStates:['DRAFT','PUBLISHED']});
     const hit=(page.courseWork||[]).find(w=>String(w.title||'').trim()===titulo&&String(w.topicId||'')===String(topicId||'')&&String(w.state||'').toUpperCase()!=='DELETED');
     if(hit) return hit;
     token=page.nextPageToken;
