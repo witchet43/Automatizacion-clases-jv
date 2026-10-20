@@ -28,7 +28,7 @@ assert.throws(()=>buildSignedAcademicDraft(source,{...config,hmacSecret:null}),/
 
 const namedTitle='Clase 19 - Sincronización: mutex y semáforos';
 const authorized={
-  confirmed:true,courseId:'871158466533',operation:'clase',
+  confirmed:true,courseId:'875776451793',operation:'clase',
   requestId:'classroom-title-contract-01',title:namedTitle,state:'DRAFT'
 };
 const namedSource={
@@ -36,7 +36,7 @@ const namedSource={
   requestId:authorized.requestId,title:namedTitle,authorization:authorized,
   params:{
     resources:[{type:'actividad',params:{
-      titulo:'Actividad 14 - Ejemplo de mutex',state:'DRAFT',materia:'Sistemas Distribuidos',
+      titulo:'Actividad - Ejemplo de mutex',state:'DRAFT',materia:'Sistemas Operativos',
       temaSubtema:'Sincronización: mutex y semáforos'}}],
     state:'DRAFT'
   }
@@ -47,6 +47,9 @@ assert.equal(prepared.params.titulo,namedTitle);
 assert.equal(prepared.params.resources[0].params.titulo,'Actividad 14 - Ejemplo de mutex',
  'Child resource titles must remain independent of class package identity');
 const signedNamed=buildAuthorizedSignedAcademicDraft(namedSource,config);
+const signedViaDefault=buildSignedAcademicDraft(namedSource,config);
+assert.equal(signedViaDefault.params.titulo,namedTitle);
+assert.equal(signedViaDefault.params.title,namedTitle);
 assert.equal(signedNamed.params.title,namedTitle);
 assert.equal(signedNamed.params.titulo,namedTitle);
 assert.equal(signedNamed.auth.signature,
