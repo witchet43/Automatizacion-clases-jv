@@ -101,6 +101,7 @@ jobs:
           node scripts/test-exam-form-batch.mjs
           node scripts/test-webapp-error-diagnostics.mjs
           node scripts/test-site-direct-write-client.mjs
+          node scripts/test-grading-bridge.mjs
 
       - name: Regression - Google Forms grades import without TURNED_IN
         run: node scripts/test-forms-import-without-turnedin.mjs
