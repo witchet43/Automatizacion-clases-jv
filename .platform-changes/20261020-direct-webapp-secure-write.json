@@ -1,0 +1,14 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Continua con la escritura",
+  "reason": "Preparar autenticacion criptografica, antirrepeticion y contratos de borrador para la ruta directa ChatGPT Site -> WebApp canonica. No habilitar escrituras del Site antes de provision de secretos y prueba E2E.",
+  "allowedChangedPaths": [
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    "docs/site-direct-write-security.md",
+    "scripts/test-academic-write-auth.mjs",
+    "src/00_AcademicWriteAuthorization.gs",
+    "src/65_QuizAsistenciaWebApp.gs"
+  ]
+}
