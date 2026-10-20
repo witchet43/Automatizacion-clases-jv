@@ -19,11 +19,34 @@ function diagnosticarPropiedadesAcademicas(){
     try {return JSON.parse(all[k]).status==='PENDING';}catch(ignore){return true;}
   });
   const configured=typeof all.ACADEMIC_WRITE_HMAC_KEY==='string' && all.ACADEMIC_WRITE_HMAC_KEY.length>=32;
+  const pendingByOperation={};
+  receiptPending.forEach(function(k){
+    let operation='UNKNOWN';
+    try{
+      const value=JSON.parse(String(all[k]||''));
+      const raw=String(value.operation||'').trim();
+      if(/^[A-Za-z]{3,32}$/.test(raw))operation=raw;
+    }catch(ignore){}
+    pendingByOperation[operation]=(pendingByOperation[operation]||0)+1;
+  });
+  let lastFailure={};
+  try{
+    const parsed=JSON.parse(String(all.ACADEMIC_LAST_WEBAPP_WRITE_FAILURE||''));
+    if(parsed&&typeof parsed==='object'){
+      lastFailure={
+        code:String(parsed.code||'UNKNOWN').slice(0,80),
+        operation:String(parsed.operation||'').slice(0,30),
+        at:String(parsed.at||'').slice(0,30)
+      };
+    }
+  }catch(ignore){}
   const summary={
     totalPropiedades:keys.length,
     clavesQuizSencillo:simple.length,
     recibosEscritura:receipts.length,
     recibosPendientes:receiptPending.length,
+    recibosPendientesPorOperacion:pendingByOperation,
+    ultimoErrorWebApp:lastFailure,
     claveHmacConfigurada:configured
   };
   console.log('DIAGNOSTICO_PROPIEDADES_ACADEMICAS: '+JSON.stringify(summary));
