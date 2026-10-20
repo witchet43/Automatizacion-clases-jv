@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Hazlo. Autorizar conexión OAuth. Continua.",
+  "reason": "Provisionar ACADEMIC_WRITE_HMAC_KEY con PropertiesService por la API existente usando OAuth del mismo proyecto; sin claves en fuente, sin cambiar la WebApp desplegada y sin operaciones academicas.",
+  "allowedChangedPaths": [
+    "src/00_AcademicWriteProvisioning.gs"
+  ]
+}
