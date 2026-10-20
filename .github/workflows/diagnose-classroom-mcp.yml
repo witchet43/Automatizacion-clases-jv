@@ -1,0 +1,38 @@
+name: Diagnose Classroom MCP HTTPS
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/diagnose-classroom-mcp.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/148028894895/locations/global/workloadIdentityPools/github-classroom-pool/providers/github
+          service_account: classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Inspect Cloud Run URLs and statuses without leaking credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud config set project classroom-mcp-512122
+          gcloud run services describe academic-classroom-mcp --region us-central1 --format='yaml(status.url,status.conditions,status.traffic)'
+          URLS=("https://academic-classroom-mcp-148028894895.us-central1.run.app" "https://academic-classroom-mcp-egncivfxav-uc.a.run.app")
+          TOKEN="$(gcloud auth print-identity-token)"
+          for URL in "${URLS[@]}"; do
+            echo "::group::Inspect ${URL}"
+            for ROUTE in /healthz /mcp; do
+              echo "Route ${ROUTE}"
+              curl --silent --show-error --max-time 15 -o /tmp/mcp-response -w 'HTTP %{http_code} content_type %{content_type}\n' -H "Authorization: Bearer ${TOKEN}" "${URL}${ROUTE}" || true
+              head -c 300 /tmp/mcp-response || true
+              echo
+            done
+            echo "::endgroup::"
+          done
