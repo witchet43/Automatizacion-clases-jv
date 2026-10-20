@@ -28,7 +28,8 @@ jobs:
           : > /tmp/route-results.txt
           # A public endpoint returns Google 404 before reaching Express if Cloud Run
           # identity authentication or routing fails. Capture the HTTP response safely.
-          for url in "https://academic-classroom-mcp-148028894895.us-central1.run.app" "https://academic-classroom-mcp-egncivfxav-uc.a.run.app"; do
+          SERVICE_URL="$(gcloud run services describe academic-classroom-mcp --region us-central1 --format='value(status.url)')"
+          for url in "$SERVICE_URL" "https://academic-classroom-mcp-148028894895.us-central1.run.app"; do
             for path in /healthz /mcp; do
               echo "Checking $url$path"
               curl --silent --show-error --max-time 20 -o /tmp/classroom-mcp-response -w 'HTTP %{http_code}; content-type %{content_type}\n' "$url$path" || echo "Network failure"
