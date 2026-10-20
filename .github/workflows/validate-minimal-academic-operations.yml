@@ -38,6 +38,7 @@ jobs:
       - name: Exercise minimal-operation and academic regressions
         run: |
           node scripts/test-academic-write-auth.mjs
+          node scripts/test-site-direct-write-client.mjs
           node scripts/test-architecture-boundaries.mjs
           node scripts/test-incident-regressions.mjs
           node scripts/test-static-webapp-contract.mjs
