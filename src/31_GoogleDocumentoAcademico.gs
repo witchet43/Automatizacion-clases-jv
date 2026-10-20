@@ -26,11 +26,11 @@ function crearGoogleDocumentoAcademico_(params){
   const p=params&&typeof params==='object'?params:{};
   const titulo=String(p.titulo||p.title||'Documento académico').trim()||'Documento académico';
   const targetMime='application/vnd.google-apps.document';
-  const html=String(p.html||construirHtmlDocumentoAcademico_(
+  const html=prepararHtmlTablasCanonicas_(String(p.html||construirHtmlDocumentoAcademico_(
     titulo,
     String(p.descripcion||p.description||'').trim(),
     p.contenidoDocumento!==undefined?p.contenidoDocumento:p.googleDocContent
-  ));
+  )));
   validarFormatoHtmlDocumentoAcademico_(html,titulo);
   const media=Utilities.newBlob(html,'text/html',titulo+'.html');
   const folderId=resolverCarpetaDocumentoAcademico_(p.courseId,p.tipo);
@@ -56,7 +56,11 @@ function crearGoogleDocumentoAcademico_(params){
     try{Drive.Files.update({trashed:true},String(created.id),{fields:'id,trashed'});}catch(ignore){}
     throw new Error('El archivo académico creado no quedó como Google Documento nativo dentro de su carpeta canónica.');
   }
-  return {id:String(file.id||created.id),name:String(file.name||titulo),mimeType:String(file.mimeType||'')};
+  const tableCount=(html.match(/<table\\b/gi)||[]).length;
+  const tableLayout=tableCount?
+    normalizarTablasDocumentoAcademico_(String(file.id||created.id),tableCount):null;
+  return {id:String(file.id||created.id),name:String(file.name||titulo),
+    mimeType:String(file.mimeType||''),tableLayout:tableLayout};
 }
 
 function crearGoogleDocumentoAcademicoViaRest_(titulo,html,targetMime,folderId){
@@ -98,7 +102,7 @@ function construirHtmlDocumentoAcademico_(titulo,descripcion,contenido){
     'p{margin:0 0 7pt 0;}'+
     'ul,ol{margin-top:4pt;margin-bottom:9pt;}'+
     'li{margin-bottom:3pt;}'+
-    'table{margin-top:8pt;margin-bottom:10pt;border-collapse:collapse;}'+
+    'table{margin:8pt auto 10pt auto;border-collapse:collapse;}'+
     'th,td{padding:5pt;}'+
     '</style></head><body>',
     '<h1>'+escaparHtmlDocumentoAcademico_(titulo)+'</h1>'];
@@ -148,7 +152,7 @@ function renderizarTablaPipeDocumento_(rows){
   if(parsed.length<2)return '';
   const cols=parsed[0].length;
   if(cols<2||parsed.some(function(r){return r.length!==cols;}))return '';
-  const out=['<table border="1"><thead><tr>'];
+  const out=['<table border="1" align="center" style="margin:8pt auto 10pt auto;border-collapse:collapse;"><thead><tr>'];
   parsed[0].forEach(function(cell){out.push('<th>'+escaparHtmlDocumentoAcademico_(cell)+'</th>');});
   out.push('</tr></thead><tbody>');
   parsed.slice(1).forEach(function(row){

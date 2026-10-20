@@ -158,6 +158,19 @@ const ACADEMIC_POLICY = Object.freeze({
     MIN_APPLICATION_ANALYSIS_RATIO: 0.70
   }),
   DOCUMENTS: Object.freeze({
+    TABLE_LAYOUT: Object.freeze({
+      VERSION: 'ACADEMIC_TABLE_LAYOUT_V1',
+      SCOPE: Object.freeze(['PRACTICA','TAREA','ACTIVIDAD','MATERIAL']),
+      ON_NEW_DOCUMENTS_ONLY: true,
+      REQUIRES_NATIVE_TABLES: true,
+      HEADER_BOLD_CENTERED: true,
+      DATA_NUMERIC_RIGHT: true,
+      DATA_TEXT_LEFT: true,
+      PADDING_PT: 5,
+      MAX_WIDTH_PT: 468,
+      CENTERING: 'HTML_CENTER_REQUEST_UNVERIFIABLE_IN_DOCS_API',
+      POSTFLIGHT_COLUMN_WIDTHS: true
+    }),
     PRACTICE_STUDENT_COPY: true,
     PRACTICE_DOCUMENT_FORMAT: 'GOOGLE_DOC',
     ACADEMIC_DOCUMENT_FORMAT: 'GOOGLE_DOC_NATIVE_ONLY',
@@ -252,6 +265,11 @@ function validarPoliticasCanonicas_(){
     p.GAMMA.RESOURCES_BEFORE_GAMMA!==true||p.GAMMA.REQUIRE_VERIFIED_RESOURCE_REFERENCES!==true)
     throw new Error('Gamma debe generarse después de materializar/verificar los recursos académicos y debe referenciarlos; la portada conserva Unidad + Tema/Subtema oficial sin número de sesión.');
     if(!p.DOCUMENTS||p.DOCUMENTS.STUDENT_IDENTITY_FIELDS_ALLOWED!==false||p.DOCUMENTS.CLASSROOM_IS_IDENTITY_SOURCE!==true) throw new Error('Los Google Docs de Classroom no deben pedir Nombre del alumno, Grupo ni Fecha: Classroom identifica la entrega.');
+  const tl=p.DOCUMENTS.TABLE_LAYOUT;
+  if(!tl||tl.VERSION!=='ACADEMIC_TABLE_LAYOUT_V1'||tl.HEADER_BOLD_CENTERED!==true||
+     tl.POSTFLIGHT_COLUMN_WIDTHS!==true||tl.ON_NEW_DOCUMENTS_ONLY!==true||
+     tl.MAX_WIDTH_PT!==468||tl.PADDING_PT!==5)
+    throw new Error('BLOCKED_TABLE_LAYOUT_POLICY: estándar transversal de tablas debe permanecer habilitado.');
   if(p.DOCUMENTS.WORD_FILES_ALLOWED!==false||p.DOCUMENTS.ACADEMIC_DOCUMENT_FORMAT!=='GOOGLE_DOC_NATIVE_ONLY') throw new Error('Los archivos Word están prohibidos en las carpetas académicas canónicas; usar Google Docs nativos.');
   if(!p.DOCUMENTS.CANONICAL_RESOURCE_FOLDERS||
       p.DOCUMENTS.CANONICAL_RESOURCE_FOLDERS.PRACTICA!=='Prácticas'||

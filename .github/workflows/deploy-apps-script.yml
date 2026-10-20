@@ -78,6 +78,9 @@ jobs:
       - name: Regression - Notion teacher notes are mandatory and idempotent
         run: node scripts/test-notion-class-notes-contract.mjs
 
+      - name: Regression - academic tables are sized and aligned in newly created Docs
+        run: node scripts/test-academic-table-layout.mjs
+
       - name: Regression - every Google Doc gives each student an editable copy
         run: node scripts/test-google-doc-student-copy.mjs
 
