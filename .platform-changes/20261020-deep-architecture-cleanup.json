@@ -234,6 +234,7 @@
     "scripts/test-architecture-boundaries.mjs",
     "scripts/test-decommissioned-routes.mjs",
     "scripts/test-incident-regressions.mjs",
+    "scripts/test-minimal-academic-operations.mjs",
     "scripts/test-static-webapp-contract.mjs"
   ]
 }
