@@ -84,6 +84,9 @@ jobs:
       - name: Regression - existing Practice 16 passes canonical postflight without raw Drive read
         run: node scripts/test-practice-postflight-existing-doc.mjs
 
+      - name: Regression - DRAFT CourseWork idempotency prevents duplicate Practice 16
+        run: node scripts/test-direct-coursework-draft-idempotency.mjs
+
       - name: Regression - Google Forms must remain unpublished drafts
         run: node scripts/test-forms-draft.mjs
 
