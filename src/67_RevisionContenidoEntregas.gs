@@ -76,7 +76,9 @@ function guardarEvaluacionContenidoDraft_(request) {
   if(!Number.isFinite(score)||!Number.isFinite(max)||max<=0||score<0||score>max)
     throw new Error('GRADE_OUT_OF_RANGE');
   if(r.confirmed!==true||r.evidenceReviewed!==true||
-     !String(r.justification||'').trim())
+     !String(r.justification||'').trim()||
+     !Array.isArray(r.criteria)||!r.criteria.length||
+     !r.criteria.every(function(c){return c&&String(c.name||'').trim()&&String(c.evidence||'').trim()&&Number.isFinite(Number(c.points));}))
     throw new Error('EVALUATION_AUTHORIZATION_OR_EVIDENCE_MISSING');
   const work=Classroom.Courses.CourseWork.get(courseId,workId);
   if(!Number.isFinite(Number(work.maxPoints))||
@@ -90,6 +92,17 @@ function guardarEvaluacionContenidoDraft_(request) {
     throw new Error('ASSIGNED_GRADE_EXISTS');
   if(sub.draftGrade!==undefined&&sub.draftGrade!==null)
     throw new Error('DRAFT_GRADE_EXISTS');
+  const currentAttachments=(sub.assignmentSubmission&&sub.assignmentSubmission.attachments)||[];
+  const declaredIds=Array.isArray(r.reviewedFileIds)?r.reviewedFileIds.map(String):[];
+  if(!declaredIds.length)throw new Error('REVIEWED_FILES_REQUIRED');
+  const realIds=currentAttachments.map(function(x){return String(x.driveFile&&x.driveFile.id||'');});
+  if(!declaredIds.every(function(id){return realIds.indexOf(id)>=0;}))
+    throw new Error('REVIEWED_FILES_NOT_IN_SUBMISSION');
+  if(Math.abs(r.criteria.reduce(function(n,c){return n+Number(c.points);},0)-score)>0.001)
+    throw new Error('CRITERIA_SUM_MISMATCH');
+  const maxCriteria=r.criteria.reduce(function(n,c){return n+Number(c.maxPoints);},0);
+  if(!r.criteria.every(function(c){return Number.isFinite(Number(c.maxPoints))&&Number(c.maxPoints)>=0&&Number(c.points)>=0&&Number(c.points)<=Number(c.maxPoints);})||
+     Math.abs(maxCriteria-max)>0.001)throw new Error('CRITERIA_MAX_MISMATCH');
   escribirCalificacionDraft_(courseId,workId,submissionId,score);
   const verified=Classroom.Courses.CourseWork.StudentSubmissions.get(
     courseId,workId,submissionId);
