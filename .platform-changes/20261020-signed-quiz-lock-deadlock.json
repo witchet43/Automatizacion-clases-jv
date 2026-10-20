@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Quiero resolverlo pero ya sin codex porque consume créditos; anterior: Hazlo autorizo todo / Continua con la escritura",
+  "reason": "Corregir bloqueo recursivo LockService en WebApp autenticada para quizAsistencia (estado DRAFT), sin tocar permisos ni secretos, sin repetir solicitud anterior, mantener URL canónica.",
+  "allowedChangedPaths": [
+    "src/00_AcademicWriteAuthorization.gs",
+    "scripts/test-academic-write-auth.mjs"
+  ]
+}

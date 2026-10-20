@@ -16,6 +16,7 @@ const sandbox={
   })},
   LockService:{getScriptLock:()=>({
     tryLock:()=>{if(acquired)return false;acquired=true;return true;},
+    waitLock:()=>{if(acquired)throw new Error('LOCK_REENTRY_BLOCKED');acquired=true;},
     releaseLock:()=>{acquired=false;}
   })},
   Utilities:{
@@ -46,6 +47,19 @@ assert.equal(acquired,false);
 assert.throws(()=>sandbox.executeAuthenticatedAcademicWrite_(valid,()=>{effects++;}),/ACADEMIC_WRITE_DUPLICATE_BLOCKED/);
 assert.equal(effects,1,'Replays must not create another resource');
 
+// Regression for the real quizAsistencia entrypoint: its own ScriptLock
+// MUST be obtainable while the outer request receipt is PENDING.
+const quiz=mk('quiz-asistencia-nested-lock-007');
+assert.equal(sandbox.executeAuthenticatedAcademicWrite_(quiz,()=>{
+  const inner=sandbox.LockService.getScriptLock();
+  inner.waitLock(10000);
+  try {effects++;return 'QUIZ_CREATED_DRAFT';}
+  finally{inner.releaseLock();}
+}), 'QUIZ_CREATED_DRAFT');
+assert.equal(acquired,false,'The inner quiz lock must release independently');
+assert.throws(()=>sandbox.executeAuthenticatedAcademicWrite_(quiz,()=>{effects++;}),/ACADEMIC_WRITE_DUPLICATE_BLOCKED/);
+assert.equal(effects,2,'Quiz cannot be created twice');
+
 const tests=[
   [()=>({...mk('tamper-request-000002'),params:{state:'PUBLISHED'}}),/ACADEMIC_WRITE_AUTH_INVALID/],
   [()=>({...mk('missing-auth-00000003'),auth:undefined}),/ACADEMIC_WRITE_AUTH_REQUIRED/],
@@ -53,18 +67,18 @@ const tests=[
   [()=>({...mk('short'),auth:mk().auth}),/ACADEMIC_WRITE_REQUEST_ID_REQUIRED/],
 ];
 for(const [maker,error] of tests)assert.throws(()=>sandbox.executeAuthenticatedAcademicWrite_(maker(),()=>{effects++;}),error);
-assert.equal(effects,1,'Invalid calls must not have side effects');
+assert.equal(effects,2,'Invalid calls must not have side effects');
 
 const unknown=mk('write-failed-midstream-005');
 assert.throws(()=>sandbox.executeAuthenticatedAcademicWrite_(unknown,()=>{effects++;throw Error('UPSTREAM_TIMED_OUT');}),/UPSTREAM_TIMED_OUT/);
 assert.equal(acquired,false,'Locks release even after failure');
 assert.throws(()=>sandbox.executeAuthenticatedAcademicWrite_(unknown,()=>{effects++;}),/ACADEMIC_WRITE_DUPLICATE_BLOCKED/);
-assert.equal(effects,2,'Unknown commit states must not be retried automatically');
+assert.equal(effects,3,'Unknown commit states must not be retried automatically');
 
 props.delete('ACADEMIC_WRITE_HMAC_KEY');
 assert.throws(()=>sandbox.executeAuthenticatedAcademicWrite_(mk('key-unconfigured-006'),()=>{effects++;}),/ACADEMIC_WRITE_KEY_NOT_CONFIGURED/);
-assert.equal(effects,2);
+assert.equal(effects,3);
 assert.match(web,/executeAuthenticatedAcademicWrite_\(p,function\(\)\{\s*return ejecutarUaqExecutorWeb_\(p\)/);
 assert.match(web,/executeAuthenticatedAcademicWrite_\(p,function\(\)\{\s*return eliminarCourseWorkDraftsWeb_\(course,p\)/);
 assert.match(web,/ACADEMIC_READ_ONLY_GET_REQUIRED/);
-console.log('PASS: HMAC authorization, timestamp, no GET writes, duplicate blocking and failure isolation.');
+console.log('PASS: HMAC authorization, reentrant quiz lock avoidance, duplicate blocking, and failure isolation.');
