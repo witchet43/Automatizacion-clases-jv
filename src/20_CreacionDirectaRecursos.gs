@@ -221,7 +221,7 @@ function construirMaterialesDirectos_(p){
   const out=[];
   const ids=idsGoogleDocumentosSolicitados_(p);
   ids.forEach(function(docId){
-    const file=Drive.Files.get(docId,{fields:'id,mimeType,trashed'});
+    const file=obtenerMetadataDocumentoClassroom_(docId);
     if(file.trashed||String(file.mimeType)!=='application/vnd.google-apps.document')
       throw new Error('BLOCKED_GOOGLE_DOC: el documento solicitado no es un Google Documento nativo vigente: '+docId);
     out.push({driveFile:{driveFile:{id:docId},shareMode:'STUDENT_COPY'}});
