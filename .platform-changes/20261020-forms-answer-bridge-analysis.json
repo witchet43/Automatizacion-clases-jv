@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Analiza el caso del quiz con preguntas y examen; previamente autorizó pruebas de cada tipo de recurso y cambios necesarios sin Codex.",
+  "reason": "Análisis sin nuevas creaciones. Reparación en rama aislada de formato de respuestas textuales frente a letras A-H exigidas por Forms; limpieza segura de Forms parciales. No modifica WebApp desplegada ni Classroom hasta revisión.",
+  "allowedChangedPaths": [
+    "src/20_CreacionDirectaRecursos.gs",
+    "src/01_PipelineQuizzes.gs",
+    "scripts/test-quiz-exam-answer-bridge.mjs",
+    ".github/workflows/validate-minimal-academic-operations.yml"
+  ]
+}
