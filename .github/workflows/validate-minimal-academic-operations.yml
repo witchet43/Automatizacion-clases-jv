@@ -55,6 +55,7 @@ jobs:
           node scripts/test-auditar-y-completar.mjs
           node scripts/test-google-doc-student-copy.mjs
           node scripts/test-practice-existing-doc-drive-file-fallback.mjs
+          node scripts/test-practice-postflight-existing-doc.mjs
           node scripts/test-forms-draft.mjs
           node scripts/test-quiz-exam-answer-bridge.mjs
           node scripts/test-forms-import-without-turnedin.mjs
