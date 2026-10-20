@@ -53,6 +53,7 @@ jobs:
           node scripts/test-auditar-y-completar.mjs
           node scripts/test-google-doc-student-copy.mjs
           node scripts/test-forms-draft.mjs
+          node scripts/test-quiz-exam-answer-bridge.mjs
           node scripts/test-forms-import-without-turnedin.mjs
           node scripts/test-academic-error-notifications.mjs
           node scripts/test-grade-closure-resilience.mjs
