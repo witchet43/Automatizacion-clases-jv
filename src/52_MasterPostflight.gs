@@ -15,7 +15,7 @@ function postflightDocumentoMaestro(result, request) {
   if(String(work.state||'').toUpperCase()!==expected) throw new Error('POSTFLIGHT_MASTER: CourseWork no quedó '+expected+': '+workId+'.');
   const documentId=String(r.documentId||'').trim();
   if(documentId){
-    const file=Drive.Files.get(documentId,{fields:'id,name,mimeType,trashed'});
+    const file=obtenerMetadataDocumentoClassroom_(documentId);
     if(file.trashed===true) throw new Error('POSTFLIGHT_MASTER: documento adjunto está en papelera.');
     const material=(work.materials||[]).find(function(m){return m.driveFile&&m.driveFile.driveFile&&String(m.driveFile.driveFile.id||'')===documentId;});
     if(!material) throw new Error('POSTFLIGHT_MASTER: Classroom no conserva el documento esperado.');

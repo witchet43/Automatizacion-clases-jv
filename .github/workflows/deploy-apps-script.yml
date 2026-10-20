@@ -81,6 +81,9 @@ jobs:
       - name: Regression - reuse pre-existing Practice 16 via Docs scope without extra permissions
         run: node scripts/test-practice-existing-doc-drive-file-fallback.mjs
 
+      - name: Regression - existing Practice 16 passes canonical postflight without raw Drive read
+        run: node scripts/test-practice-postflight-existing-doc.mjs
+
       - name: Regression - Google Forms must remain unpublished drafts
         run: node scripts/test-forms-draft.mjs
 
