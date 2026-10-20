@@ -13,6 +13,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: google-github-actions/auth@v2
@@ -20,6 +21,11 @@ jobs:
           workload_identity_provider: projects/148028894895/locations/global/workloadIdentityPools/github-classroom-pool/providers/github
           service_account: classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com
       - uses: google-github-actions/setup-gcloud@v2
+      - name: Verify source syntax and dependency resolution
+        working-directory: mcp-cloud-run
+        run: |
+          npm install --no-audit --no-fund
+          npm run check
       - name: Deploy private service
         run: |
           gcloud config set project classroom-mcp-512122
