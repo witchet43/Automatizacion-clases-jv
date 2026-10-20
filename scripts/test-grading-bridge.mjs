@@ -33,3 +33,7 @@ test('rejects a purported final-grade response',async()=>{
       result:{draftGrade:80,assignedGrade:80,returnedByAutomation:false}})})
   }),/GRADING_POSTFLIGHT_INVALID/);
 });
+
+test('rejects unknown grading actions before network access',()=>{
+  assert.throws(()=>buildSignedGradingRequest({...base,action:'returnSubmission'},options),/GRADING_ACTION_INVALID/);
+});
