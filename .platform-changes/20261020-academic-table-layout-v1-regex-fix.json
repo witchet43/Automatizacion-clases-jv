@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "si autorizo",
+  "authorizationContext": "Implementación autorizada de ACADEMIC_TABLE_LAYOUT_V1 para el creador canónico de documentos nuevos.",
+  "reason": "Corregir detector exacto de <table> antes de postflight, sin cambiar arquitectura, ninguna solicitud académica ni archivos históricos.",
+  "allowedChangedPaths": [
+    "src/31_GoogleDocumentoAcademico.gs"
+  ]
+}

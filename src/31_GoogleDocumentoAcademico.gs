@@ -56,7 +56,7 @@ function crearGoogleDocumentoAcademico_(params){
     try{Drive.Files.update({trashed:true},String(created.id),{fields:'id,trashed'});}catch(ignore){}
     throw new Error('El archivo académico creado no quedó como Google Documento nativo dentro de su carpeta canónica.');
   }
-  const tableCount=(html.match(/<table\\b/gi)||[]).length;
+  const tableCount=(html.match(/<table\b/gi)||[]).length;
   const tableLayout=tableCount?
     normalizarTablasDocumentoAcademico_(String(file.id||created.id),tableCount):null;
   return {id:String(file.id||created.id),name:String(file.name||titulo),
