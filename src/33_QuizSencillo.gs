@@ -2,7 +2,7 @@
  * QUIZ SENCILLO CANÓNICO
  *
  * Es una tarea vacía de Classroom:
- * - título automático Quiz N, donde N es consecutivo al mayor Quiz N activo del curso;
+ * - título automático Quiz N, donde N es consecutivo al mayor Quiz N DRAFT o PUBLISHED del curso;
  * - sin descripción, materiales ni puntos;
  * - asignada obligatoriamente a la Unidad N actualmente abierta en Classroom;
  * - siempre DRAFT;
@@ -16,7 +16,7 @@ function crearQuizSencilloCanonico_(params) {
 
 function validarPoliticaQuizSencillo_(policy) {
   if(!policy||policy.TITLE_PREFIX!=='Quiz '||
-     policy.SEQUENCE_SOURCE!=='LATEST_PUBLISHED_QUIZ'||
+     policy.SEQUENCE_SOURCE!=='LATEST_EXISTING_QUIZ_DRAFT_OR_PUBLISHED'||
      policy.EMPTY_ASSIGNMENT!==true||policy.STATE!=='DRAFT'||
      policy.DUE_MODE!=='NEXT_NATURAL_HOUR'||
      policy.TIMEZONE!=='America/Mexico_City'||
