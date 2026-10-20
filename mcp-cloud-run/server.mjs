@@ -83,6 +83,41 @@ function buildServer(){
   return server;
 }
 app.get('/healthz',(_req,res)=>res.json({status:'ok',service:'academic-classroom-mcp'}));
+
+/*
+ * Public onboarding endpoint for native ChatGPT custom MCP registration.
+ * This endpoint exposes ONLY a harmless status tool. No API credentials,
+ * Classroom identifiers, WebApp URLs or academic data are returned.
+ * All actual academic tools remain on /mcp behind the bearer token.
+ */
+function buildPublicStatusServer() {
+  const server=new McpServer({name:'academic-classroom-public-status',version:'0.1.0'});
+  server.registerTool('gateway_status',{
+    description:'Confirm that Classroom Academic Gateway is online and that academic writes are disabled. No Classroom data is returned.',
+    inputSchema:{}
+  },async()=>resultText({
+    service:'academic-classroom-gateway',
+    online:true,
+    classroomAccess:'NOT_EXPOSED_ON_THIS_ENDPOINT',
+    writesEnabled:false
+  }));
+  return server;
+}
+app.all('/mcp-status',async(req,res)=>{
+  if (req.method!=='POST') return res.status(405).set('Allow','POST').end();
+  const server=buildPublicStatusServer();
+  const transport=new StreamableHTTPServerTransport({sessionIdGenerator:undefined});
+  try {
+    await server.connect(transport);
+    await transport.handleRequest(req,res,req.body);
+  } catch(e) {
+    if(!res.headersSent) res.status(500).json({error:'mcp_status_transport_error'});
+  } finally {
+    await transport.close().catch(()=>{});
+    await server.close().catch(()=>{});
+  }
+});
+
 app.all('/mcp',async(req,res)=>{
   if (!authenticate(req)) return res.status(401).json({error:'unauthorized'});
   if(req.method !== 'POST') return res.status(405).set('Allow','POST').end();
