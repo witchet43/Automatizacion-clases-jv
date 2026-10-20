@@ -32,6 +32,7 @@ jobs:
           gcloud config set project classroom-mcp-512122
           gcloud run deploy academic-classroom-mcp \
             --source ./mcp-cloud-run \
+            --clear-base-image \
             --region us-central1 \
             --service-account classroom-mcp-sa@classroom-mcp-512122.iam.gserviceaccount.com \
             --set-env-vars ENABLE_ACADEMIC_WRITES=false \
