@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
-import {buildSignedAcademicDraft,submitSignedAcademicDraft} from '../site-bridge/direct-write-client.mjs';
+import {buildSignedAcademicDraft,submitSignedAcademicDraft,prepareAuthorizedAcademicDraft,buildAuthorizedSignedAcademicDraft} from '../site-bridge/direct-write-client.mjs';
 
 const raw=fs.readFileSync('config/academic-context.json','utf8');
 const manifest=JSON.parse(raw);
@@ -24,6 +24,59 @@ assert.throws(()=>buildSignedAcademicDraft({...source,operation:'eliminarDrafts'
 assert.throws(()=>buildSignedAcademicDraft({...source,requestId:'x'},config),/REQUEST_ID_REQUIRED/);
 assert.throws(()=>buildSignedAcademicDraft({...source,params:{state:'PUBLISHED'}},config),/ACADEMIC_DRAFT_REQUIRED/);
 assert.throws(()=>buildSignedAcademicDraft(source,{...config,hmacSecret:null}),/WRITE_SECRET_NOT_CONFIGURED/);
+
+
+const namedTitle='Clase 19 - Sincronización: mutex y semáforos';
+const authorized={
+  confirmed:true,courseId:'875776451793',operation:'clase',
+  requestId:'classroom-title-contract-01',title:namedTitle,state:'DRAFT'
+};
+const namedSource={
+  operation:'clase',courseId:authorized.courseId,
+  requestId:authorized.requestId,title:namedTitle,authorization:authorized,
+  params:{
+    resources:[{type:'actividad',params:{
+      titulo:'Actividad - Ejemplo de mutex',state:'DRAFT',materia:'Sistemas Operativos',
+      temaSubtema:'Sincronización: mutex y semáforos'}}],
+    state:'DRAFT'
+  }
+};
+const prepared=prepareAuthorizedAcademicDraft(namedSource);
+assert.equal(prepared.params.title,namedTitle);
+assert.equal(prepared.params.titulo,namedTitle);
+assert.equal(prepared.params.resources[0].params.titulo,'Actividad - Ejemplo de mutex',
+ 'Child resource titles must remain independent of class package identity');
+const signedNamed=buildAuthorizedSignedAcademicDraft(namedSource,config);
+const signedViaDefault=buildSignedAcademicDraft(namedSource,config);
+assert.equal(signedViaDefault.params.titulo,namedTitle);
+assert.equal(signedViaDefault.params.title,namedTitle);
+assert.equal(signedNamed.params.title,namedTitle);
+assert.equal(signedNamed.params.titulo,namedTitle);
+assert.equal(signedNamed.auth.signature,
+ crypto.createHmac('sha256',secret).update(JSON.stringify(
+  Object.fromEntries(Object.entries(signedNamed).filter(([key])=>key!=='auth'))
+ )).digest('hex'));
+for(const alias of ['title','titulo']) {
+  assert.throws(()=>prepareAuthorizedAcademicDraft({
+    ...namedSource,params:{...namedSource.params,[alias]:'Different unauthorized title'}
+  }),/AUTHORIZED_TITLE_MISMATCH/);
+}
+assert.throws(()=>prepareAuthorizedAcademicDraft({
+  ...namedSource,authorization:{...authorized,title:'Different title'}
+}),/AUTHORIZED_TITLE_MISMATCH/);
+assert.throws(()=>prepareAuthorizedAcademicDraft({
+  ...namedSource,authorization:{...authorized,courseId:'123'}
+}),/ACADEMIC_WRITE_OWNER_AUTHORIZATION_MISMATCH/);
+assert.throws(()=>prepareAuthorizedAcademicDraft({
+  ...namedSource,params:{resources:[]}
+}),/CLASE_REQUIERE_RECURSOS/);
+const attendance='AUTO_CONSECUTIVO';
+assert.deepEqual(prepareAuthorizedAcademicDraft({
+ operation:'quizAsistencia',courseId:authorized.courseId,requestId:'attendance-approval-012',
+ title:attendance,authorization:{confirmed:true,courseId:authorized.courseId,
+ operation:'quizAsistencia',title:attendance,state:'DRAFT',requestId:'attendance-approval-012'},
+ params:{state:'DRAFT'}
+}).params,{state:'DRAFT'});
 
 let count=0;
 const expected={
