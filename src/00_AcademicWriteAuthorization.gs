@@ -81,8 +81,13 @@ function executeAuthenticatedAcademicWrite_(request,execute) {
     Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,requestId,Utilities.Charset.UTF_8)
   );
   const receiptKey=ACADEMIC_WRITE_GATE.RECEIPT_PREFIX+hash;
-  const lock=LockService.getScriptLock();
-  if(!lock.tryLock(30000))throw new Error('ACADEMIC_WRITE_BUSY_NO_SIDE_EFFECTS');
+  // Reserve the unique request receipt under a short lock, then RELEASE the
+  // lock before running the canonical academic operation. In particular,
+  // quizAsistencia obtains the SAME script lock for its own idempotency and
+  // consecutive-number allocation. Holding our lock while calling it causes
+  // a self-deadlock and leaves the request PENDING forever.
+  const reserveLock=LockService.getScriptLock();
+  if(!reserveLock.tryLock(30000))throw new Error('ACADEMIC_WRITE_BUSY_NO_SIDE_EFFECTS');
   try{
     if(props.getProperty(receiptKey))
       throw new Error('ACADEMIC_WRITE_DUPLICATE_BLOCKED_RECONCILE_FIRST');
@@ -90,14 +95,29 @@ function executeAuthenticatedAcademicWrite_(request,execute) {
       status:'PENDING',action:String(request.action),
       operation:String(request.operation||''),at:Date.now()
     }));
-    // PENDING is intentionally retained on exceptions/partial failures.
-    const result=execute();
+  }finally{
+    reserveLock.releaseLock();
+  }
+
+  // There is deliberately NO retry or re-entrance after reserving PENDING.
+  // A failure or timeout must be reconciled via a read-only Classroom query.
+  const result=execute();
+
+  // Mark as completed using a separate lock AFTER the inner entrypoint
+  // releases its script lock. Failure to record COMPLETED leaves PENDING,
+  // which is safer than executing the same academic mutation twice.
+  const finishLock=LockService.getScriptLock();
+  if(!finishLock.tryLock(30000))
+    throw new Error('ACADEMIC_WRITE_COMPLETED_RECEIPT_PENDING_RECONCILE');
+  try{
+    const current=props.getProperty(receiptKey);
+    if(!current)throw new Error('ACADEMIC_WRITE_RECEIPT_MISSING_RECONCILE');
     props.setProperty(receiptKey,JSON.stringify({
       status:'COMPLETED',action:String(request.action),
       operation:String(request.operation||''),at:Date.now()
     }));
     return result;
   }finally{
-    lock.releaseLock();
+    finishLock.releaseLock();
   }
 }
