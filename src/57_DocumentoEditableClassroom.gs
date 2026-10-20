@@ -31,6 +31,29 @@ function idsGoogleDocumentosSolicitados_(p) {
   return ids;
 }
 
+/**
+ * Pre-existing Google Docs can be accessible through the already-approved
+ * documents scope even when Drive v3 drive.file does not recognize them.
+ * Preserve the original file ID; never create a duplicate on an access error.
+ */
+function obtenerMetadataDocumentoClassroom_(documentId) {
+  const id=String(documentId||'').trim();
+  if(!id)throw new Error('BLOCKED_GOOGLE_DOC_NOT_ACCESSIBLE: ID vacío.');
+  try{
+    return Drive.Files.get(id,{fields:'id,name,mimeType,trashed'});
+  }catch(err){
+    const message=String(err&&err.message?err.message:err);
+    if(!/file not found|not found|does not exist|insufficient|permission denied|no access|403|404/i.test(message))throw err;
+    try{
+      const doc=DocumentApp.openById(id);
+      if(String(doc.getId())!==id)throw new Error('DOC_ID_MISMATCH');
+      return {id:id,name:String(doc.getName()||''),mimeType:DOCUMENTO_EDITABLE_CLASSROOM.MIME,trashed:false};
+    }catch(docsErr){
+      throw new Error('BLOCKED_GOOGLE_DOC_NOT_ACCESSIBLE: documento original no accesible con Drive ni Docs: '+id);
+    }
+  }
+}
+
 /** Obtiene únicamente Google Docs nativos YA adjuntos al CourseWork real. */
 function idsGoogleDocumentosAdjuntos_(materials) {
   const ids=[];
@@ -39,7 +62,7 @@ function idsGoogleDocumentosAdjuntos_(materials) {
       String(m.driveFile.driveFile.id||'').trim():m&&m.link?
       extraerIdGoogleDocumentoDeUrl_(m.link.url):'';
     if(!id||ids.indexOf(id)>=0)return;
-    const f=Drive.Files.get(id,{fields:'id,mimeType,trashed'});
+    const f=obtenerMetadataDocumentoClassroom_(id);
     if(f.trashed)throw new Error('BLOCKED_GOOGLE_DOC: documento adjunto en la papelera: '+id);
     if(String(f.mimeType)===DOCUMENTO_EDITABLE_CLASSROOM.MIME)ids.push(id);
   });
@@ -66,7 +89,7 @@ function verificarAdjuntoDocumentoEditable_(work,docId) {
       String(m.driveFile.shareMode||'').toUpperCase()==='STUDENT_COPY';
   });
   if(!material)throw new Error('BLOCKED_STUDENT_COPY: Classroom no confirmó el Google Doc con copia individual: '+id);
-  const f=Drive.Files.get(id,{fields:'id,mimeType,trashed,name'});
+  const f=obtenerMetadataDocumentoClassroom_(id);
   if(f.trashed||String(f.mimeType)!==DOCUMENTO_EDITABLE_CLASSROOM.MIME)
     throw new Error('BLOCKED_GOOGLE_DOC: adjunto no es un Google Documento nativo vigente: '+id);
   return true;
@@ -82,7 +105,7 @@ function verificarTodosLosGoogleDocsEnClassroom_(work,idsEsperados) {
     if(!m||!m.driveFile||!m.driveFile.driveFile)return;
     const id=String(m.driveFile.driveFile.id||'').trim();
     if(!id)return;
-    const f=Drive.Files.get(id,{fields:'id,mimeType,trashed'});
+    const f=obtenerMetadataDocumentoClassroom_(id);
     if(f.trashed)throw new Error('BLOCKED_GOOGLE_DOC: el archivo adjunto está en la papelera: '+id);
     if(String(f.mimeType)===DOCUMENTO_EDITABLE_CLASSROOM.MIME){
       if(String(m.driveFile.shareMode||'').toUpperCase()!=='STUDENT_COPY')
@@ -110,7 +133,7 @@ function asegurarCopiasDocumentosBorrador_(courseId,work,idsEsperados) {
   const rewritten=materiales.map(function(m){
     const docLinkId=m&&m.link?extraerIdGoogleDocumentoDeUrl_(m.link.url):'';
     if(docLinkId){
-      const f=Drive.Files.get(docLinkId,{fields:'id,mimeType,trashed'});
+      const f=obtenerMetadataDocumentoClassroom_(docLinkId);
       if(f.trashed||String(f.mimeType)!==DOCUMENTO_EDITABLE_CLASSROOM.MIME)
         throw new Error('BLOCKED_GOOGLE_DOC: enlace de documento no accesible: '+docLinkId);
       changed=true;
@@ -118,7 +141,7 @@ function asegurarCopiasDocumentosBorrador_(courseId,work,idsEsperados) {
     }
     if(!m||!m.driveFile||!m.driveFile.driveFile)return m;
     const id=String(m.driveFile.driveFile.id||'').trim();
-    const f=Drive.Files.get(id,{fields:'id,mimeType,trashed'});
+    const f=obtenerMetadataDocumentoClassroom_(id);
     if(f.trashed)throw new Error('BLOCKED_GOOGLE_DOC: archivo en la papelera: '+id);
     if(String(f.mimeType)!==DOCUMENTO_EDITABLE_CLASSROOM.MIME)return m;
     if(String(m.driveFile.shareMode||'').toUpperCase()==='STUDENT_COPY')return m;
@@ -127,7 +150,7 @@ function asegurarCopiasDocumentosBorrador_(courseId,work,idsEsperados) {
   });
   ids.forEach(function(id){
     if(rewritten.some(function(m){return m&&m.driveFile&&m.driveFile.driveFile&&String(m.driveFile.driveFile.id)===String(id);}))return;
-    Drive.Files.get(String(id),{fields:'id,mimeType,trashed'});
+    obtenerMetadataDocumentoClassroom_(String(id));
     rewritten.push({driveFile:{driveFile:{id:String(id)},shareMode:'STUDENT_COPY'}});
     changed=true;
   });
@@ -143,7 +166,7 @@ function idsGoogleDocumentosAccesiblesSolicitados_(p) {
   const valid=[];
   idsGoogleDocumentosSolicitados_(p).forEach(function(id){
     try{
-      const file=Drive.Files.get(String(id),{fields:'id,mimeType,trashed'});
+      const file=obtenerMetadataDocumentoClassroom_(String(id));
       if(file.trashed===true){
         console.warn('Documento solicitado en papelera; se recuperará por identidad canónica: '+id);
         return;
@@ -155,8 +178,7 @@ function idsGoogleDocumentosAccesiblesSolicitados_(p) {
       const msg=String(err&&err.message?err.message:err);
       if(/^BLOCKED_GOOGLE_DOC:/.test(msg))throw err;
       if(/file not found|not found|does not exist|insufficient|permission denied|no access/i.test(msg)){
-        console.warn('Documento solicitado obsoleto o inaccesible; se resolverá/recreará de forma idempotente: '+id);
-        return;
+        throw new Error('BLOCKED_GOOGLE_DOC_NOT_ACCESSIBLE: no se sustituirá un documento solicitado: '+id);
       }
       throw err;
     }
