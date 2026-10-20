@@ -60,6 +60,22 @@ jobs:
           set -euo pipefail
           details="$(cat /tmp/mcp-diagnostic-summary 2>/dev/null | tail -c 125 || true)"
           if [[ "${JOB_STATUS}" == "success" ]]; then result=success; else result=failure; fi
+          # Publish compact route-specific statuses so the GitHub connector can read HTTP codes.
+          for item in $(cat /tmp/mcp-diagnostic-summary 2>/dev/null | tr ' ' '\\n' | grep -E '=([0-9]{3}|000) \
+            -f state="${result}" \
+            -f context="classroom-mcp/remote-http" \
+            -f description="${details:-Diagnose workflow failed before HTTP probe}" \
+            -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions"
+ || true); do
+            route="${item%%=*}"
+            http="${item##*=}"
+            case "${http}" in
+              200|401|405) result_route=success ;;
+              *) result_route=failure ;;
+            esac
+            route_key="$(echo "${route}" | sed -E 's@https://@@; s@[^a-zA-Z0-9]+@-@g' | cut -c1-85)"
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" -f state="${result_route}" -f context="mcp/${route_key}" -f description="HTTP ${http}" -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions"
+          done
           gh api -X POST "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -f state="${result}" \
             -f context="classroom-mcp/remote-http" \
