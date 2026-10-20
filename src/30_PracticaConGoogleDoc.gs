@@ -29,18 +29,14 @@ function prepararPracticaConGoogleDoc_(params) {
     try {
       suppliedFile = obtenerArchivoPracticaConReintento_(documentId);
       if (suppliedFile.trashed === true) {
-        console.warn('PRÁCTICA recibió un documentId en papelera; se resolverá/recreará por identidad canónica: ' + documentId);
-        documentId = '';
-        suppliedFile = null;
+        throw new Error('BLOCKED_GOOGLE_DOC_TRASHED: no se reemplazará un documento original en papelera: '+documentId);
       } else if (String(suppliedFile.mimeType || '') !== policy.GOOGLE_DOCUMENT_MIME) {
         throw new Error('PRÁCTICA requiere un Google Documento nativo. Archivo recibido: ' + String(suppliedFile.name || documentId) + ' (' + String(suppliedFile.mimeType || '') + ').');
       }
     } catch (err) {
       const msg = String(err && err.message ? err.message : err);
       if (/file not found|not found|does not exist|insufficient|permission denied|no access/i.test(msg)) {
-        console.warn('PRÁCTICA recibió un documentId obsoleto o inaccesible; se resolverá/recreará de forma idempotente: ' + documentId);
-        documentId = '';
-        suppliedFile = null;
+        throw new Error('BLOCKED_GOOGLE_DOC_NOT_ACCESSIBLE: no se reemplazará un documento original: '+documentId);
       } else throw err;
     }
   }
@@ -194,7 +190,7 @@ function obtenerArchivoPracticaConReintento_(documentId) {
   let lastErr = null;
   for (let i = 0; i < 4; i++) {
     try {
-      return Drive.Files.get(String(documentId), {fields:'id,name,mimeType,trashed'});
+      return obtenerMetadataDocumentoClassroom_(String(documentId));
     } catch (err) {
       lastErr = err;
       const msg=String(err&&err.message?err.message:err);
