@@ -36,3 +36,19 @@ jobs:
             done
           done
           echo "Diagnostic completed (read-only, no deployment)."
+      - name: Publish diagnosis to issue (sanitized, no credentials)
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > /tmp/diagnosis.md <<'EOF'
+          # Classroom MCP: unattended connection diagnostic
+          This run tests the remote Cloud Run service without modifying Google Classroom.
+          - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          - Workflow result: ${{ job.status }}
+          - Deployment operations: none
+          - Secret values: never included
+          EOF
+          gh issue create --repo "${GITHUB_REPOSITORY}" --title "MCP diagnostic run ${GITHUB_RUN_ID}: ${{ job.status }}" --body-file /tmp/diagnosis.md
+
