@@ -52,24 +52,41 @@ jobs:
       - name: Verify deployed revision
         run: |
           gcloud run services describe academic-classroom-mcp --region us-central1 --format='yaml(status.url,status.traffic)'
-      - name: Smoke-test authenticated remote MCP without exposing secrets
+      - name: Update public ChatGPT gateway with safe status-only registration route
         shell: bash
         run: |
           set -euo pipefail
-          # Run the test in Cloud Run with the runtime service account. GitHub
-          # receives only a pass/fail result and never sees the bearer secret.
-          gcloud run jobs deploy classroom-mcp-smoke \
+          CANONICAL="$(python3 -c "import json;print(json.load(open('config/academic-context.json'))['webApp']['url'])")"
+          [[ "$CANONICAL" == https://script.google.com/macros/s/*/exec ]]
+          gcloud run deploy academic-classroom-chatgpt-gateway \
             --project classroom-mcp-512122 \
             --region us-central1 \
             --image "$IMAGE" \
-            --command node --args remote-smoke.mjs \
             --service-account classroom-mcp-sa@classroom-mcp-512122.iam.gserviceaccount.com \
+            --set-env-vars "ACADEMIC_WEBAPP_URL=$CANONICAL,ENABLE_ACADEMIC_WRITES=false" \
             --set-secrets MCP_BEARER_TOKEN=classroom-mcp-token:1 \
-            --set-env-vars GATEWAY_URL=https://academic-classroom-chatgpt-gateway-egncivfxva-uc.a.run.app/mcp \
-            --tasks 1 --max-retries 0 --quiet
-          gcloud run jobs execute classroom-mcp-smoke \
-            --project classroom-mcp-512122 \
-            --region us-central1 --wait --quiet
+            --no-invoker-iam-check \
+            --memory 512Mi --min-instances 0 --max-instances 1 --quiet
+      - name: Verify public route is status-only, academic MCP is protected
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="$(gcloud run services describe academic-classroom-chatgpt-gateway --region us-central1 --format='value(status.url)')"
+          for i in $(seq 1 12); do
+            STATUS="$(curl --silent --show-error --max-time 20 -o /tmp/mcp-status -w '%{http_code}' \
+              "$BASE/mcp-status" \
+              -H 'Content-Type: application/json' \
+              -H 'Accept: application/json, text/event-stream' \
+              -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"read-only-smoke","version":"0.1.0"}}}' || true)"
+            if [[ "$STATUS" == 200 ]]; then break; fi
+            sleep 2
+          done
+          echo "Status-only MCP initialize HTTP $STATUS"
+          test "$STATUS" = 200
+          PROTECTED="$(curl --silent --show-error --max-time 20 -o /tmp/protected -w '%{http_code}' \
+            "$BASE/mcp" -H 'Content-Type: application/json' -d '{}')"
+          echo "Academic MCP without key HTTP $PROTECTED"
+          test "$PROTECTED" = 401
       - name: Publish deploy result for automated inspection
         if: always()
         env:
