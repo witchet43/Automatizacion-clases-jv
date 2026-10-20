@@ -58,9 +58,11 @@ function assertDraftOnly(value) {
   }
 }
 
-export function buildSignedAcademicDraft({operation,courseId,params,requestId},{
+export function buildSignedAcademicDraft(input,{
   manifest,manifestSha256,hmacSecret,now=Date.now(),nonce=randomBytes(24).toString('base64url')
 }) {
+  const {operation,courseId,params,requestId}=input?.authorization
+    ? prepareAuthorizedAcademicDraft(input) : input;
   if(!hmacSecret || hmacSecret.length<32)throw new Error('WRITE_SECRET_NOT_CONFIGURED');
   if(!OPERATIONS.has(operation) ||
      !manifest.operations?.uaqExecutor?.allowedOperations?.includes(operation))
