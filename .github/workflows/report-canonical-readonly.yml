@@ -1,46 +1,35 @@
-name: Report canonical Classroom read-only check
+name: Report canonical Classroom execution
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/report-canonical-readonly.yml'
-  workflow_dispatch:
+  workflow_run:
+    workflows: ['Academic Web App']
+    types: [completed]
 permissions:
   contents: read
-  actions: read
   issues: write
 jobs:
   report:
+    if: ${{ github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Find latest canonical Academic Web App run
+      - name: Publish sanitized canonical workflow outcome
         env:
           GH_TOKEN: ${{ github.token }}
+          ACADEMIC_RUN_URL: ${{ github.event.workflow_run.html_url }}
+          ACADEMIC_RUN_ID: ${{ github.event.workflow_run.id }}
+          ACADEMIC_RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          ACADEMIC_RUN_RESULT: ${{ github.event.workflow_run.conclusion }}
         shell: bash
         run: |
           set -euo pipefail
-          gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/academic-webapp.yml/runs?per_page=20" > /tmp/runs.json
-          python3 - <<'PY'
-          import json
-          data=json.load(open('/tmp/runs.json'))
-          target=[r for r in data.get('workflow_runs',[]) if r.get('event')=='push']
-          if not target: raise SystemExit('No canonical workflow runs found')
-          run=target[0]
-          with open('/tmp/readonly-report.md','w') as f:
-            f.write('# Canonical academic read-only verification\n')
-            f.write('Workflow: Academic Web App\n')
-            f.write('Result: '+str(run.get('conclusion') or run.get('status'))+'\n')
-            f.write('Execution: '+run.get('html_url','')+'\n')
-            f.write('Commit: '+run.get('head_sha','')+'\n')
-            f.write('This is execution metadata only: no Classroom content, identifiers or secrets.\n')
-          print('latest canonical run:',run.get('id'),run.get('conclusion'))
-          PY
-      - name: Record outcome for ChatGPT GitHub connector
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          gh issue create --repo "${GITHUB_REPOSITORY}" \
-            --title "Canonical Classroom read-only execution result ${GITHUB_RUN_ID}" \
-            --body-file /tmp/readonly-report.md
+          {
+            echo "# Canonical Classroom WebApp execution metadata"
+            echo "Workflow: Academic Web App"
+            echo "Result: $ACADEMIC_RUN_RESULT"
+            echo "Execution: $ACADEMIC_RUN_URL"
+            echo "Commit: $ACADEMIC_RUN_SHA"
+            echo "No Classroom content, student data or secrets included."
+          } > /tmp/academic-report.md
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "Canonical Classroom execution $ACADEMIC_RUN_ID: $ACADEMIC_RUN_RESULT" \
+            --body-file /tmp/academic-report.md
