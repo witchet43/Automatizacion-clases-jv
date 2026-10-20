@@ -13,6 +13,7 @@ const props=new Map([
 const log=[];
 const ctx={
  Date,console:{log:x=>log.push(String(x)),error:x=>log.push(String(x))},
+ ContentService:{MimeType:{JSON:'JSON'},createTextOutput:raw=>({setMimeType:()=>JSON.parse(raw)})},
  PropertiesService:{getScriptProperties:()=>({
   getProperties:()=>Object.fromEntries(props),
   setProperty:(k,v)=>props.set(k,v)
