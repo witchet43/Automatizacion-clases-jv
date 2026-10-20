@@ -1,5 +1,8 @@
 # Contrato canónico para cualquier chat nuevo — plataforma académica JV
 
+Contrato **STATIC_WEB_APP_SERVICE**: operaciones **data-only**. Ante fallo, bloquear y reconciliar sin ruta alternativa; **Work mode** no se utiliza.
+
+
 **El único camino de operación académica es ChatGPT → Classroom · Portal académico → WebApp canónica de Apps Script → Classroom/Forms/Drive.** Gamma y Notion se usan solo a través de sus conectores; no son canales alternativos para crear CourseWork.
 
 ## Operaciones rutinarias: DATA_ONLY
