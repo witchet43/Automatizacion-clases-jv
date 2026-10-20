@@ -1,3 +1,46 @@
+/**
+ * Site MCP authorization/title contract.
+ *
+ * Keep the owner's explicit title separate from each classroom child title.
+ * Canonicalize only MISSING outer aliases; reject conflicting values.
+ * This function must run at the Site tool boundary before signing or calling
+ * the canonical WebApp. It never creates academic resources.
+ */
+export function prepareAuthorizedAcademicDraft(input) {
+  const {operation,courseId,requestId,title,authorization,params}=input||{};
+  if(!params || typeof params!=='object' || Array.isArray(params))
+    throw new Error('DRAFT_PARAMS_INVALID');
+  if(!authorization || authorization.confirmed!==true ||
+     authorization.state!=='DRAFT' || authorization.operation!==operation ||
+     String(authorization.courseId)!==String(courseId) ||
+     authorization.requestId!==requestId)
+    throw new Error('ACADEMIC_WRITE_OWNER_AUTHORIZATION_MISMATCH');
+  if(typeof title!=='string' || !title.trim() || title!==authorization.title)
+    throw new Error('AUTHORIZED_TITLE_MISMATCH');
+  if(operation==='quizAsistencia') {
+    if(title!=='AUTO_CONSECUTIVO')throw new Error('AUTHORIZED_TITLE_MISMATCH');
+    return {operation,courseId,requestId,params:{...params}};
+  }
+  // A class package has its own approved identity; its resources each have
+  // distinct authorized classroom titles. Do not compare child titles to title.
+  for(const field of ['titulo','title']) {
+    if(Object.prototype.hasOwnProperty.call(params,field) && params[field]!==title)
+      throw new Error('AUTHORIZED_TITLE_MISMATCH');
+  }
+  if(operation==='clase' && (!Array.isArray(params.resources)||!params.resources.length))
+    throw new Error('CLASE_REQUIERE_RECURSOS');
+  return {operation,courseId,requestId,
+    params:{...params,title,titulo:title}};
+}
+
+/**
+ * The Site tool handler should call this function rather than assembling
+ * HMAC payloads directly. Exact owner approval is checked before signing.
+ */
+export function buildAuthorizedSignedAcademicDraft(input,config) {
+  return buildSignedAcademicDraft(prepareAuthorizedAcademicDraft(input),config);
+}
+
 // Site server-side helper ONLY. This is not an alternate academic executor.
 // All academic changes are delegated to the canonical Apps Script WebApp.
 import {createHmac,randomBytes} from 'node:crypto';
