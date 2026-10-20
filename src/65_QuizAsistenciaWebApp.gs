@@ -124,9 +124,23 @@ function ejecutarServicioAcademicoWeb_(params){
       materia:course.materia
     },result&&typeof result==='object'?result:{result:result}));
   }catch(err){
+    const original=String(err&&err.message?err.message:err);
+    const request=params&&typeof params==='object'?params:{};
+    const match=original.match(/^([A-Z][A-Z0-9_]{2,79})(?::|$)/);
+    const errorCode=match?match[1]:'ACADEMIC_WEBAPP_EXECUTION_FAILED';
+    // Preserve the original exception in the returned payload and record only
+    // a non-sensitive failure CODE for owner diagnostics. No signed request
+    // body, secret, question, answer or private data is stored in this log.
+    try{
+      const event={code:errorCode,
+        operation:String(request.operation||request.action||'').slice(0,30),
+        at:new Date().toISOString()};
+      PropertiesService.getScriptProperties().setProperty(
+        'ACADEMIC_LAST_WEBAPP_WRITE_FAILURE',JSON.stringify(event));
+      console.error('ACADEMIC_WEBAPP_FAILURE '+JSON.stringify(event));
+    }catch(ignore){}
     return respuestaAcademicaWeb_({
-      ok:false,
-      error:String(err&&err.message?err.message:err)
+      ok:false,errorCode:errorCode,error:original
     });
   }
 }
