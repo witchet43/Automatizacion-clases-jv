@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Después despliega la actualización de la WebApp canónica mediante el procedimiento autorizado, conservando su URL. No uses GitHub Actions para ejecutar operaciones académicas. Continua.",
+  "reason": "Alinear el postflight con la autenticacion HMAC ya desplegada: probar solamente rechazos sin efectos y eliminar diagnosticos de Classroom desde Actions. URL canonica preservada; sin operaciones academicas.",
+  "allowedChangedPaths": [
+    "scripts/verify-academic-webapp.mjs"
+  ]
+}

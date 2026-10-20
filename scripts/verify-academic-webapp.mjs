@@ -20,14 +20,12 @@ async function post(request){
 }
 const missing=await post({action:'uaqExecutor',operation:'clase',materia:'Administración',params:{resources:[]}});
 assert.equal(missing.ok,false);assert.equal(missing.error,'ACADEMIC_CONTEXT_REQUIRED');
-const empty=prepareRequest({action:'uaqExecutor',operation:'clase',materia:'Administración',params:{resources:[]}});
+// Health verification may only exercise rejected requests. Live Classroom
+// diagnostics are performed directly by the private Site, never by Actions.
+const empty=prepareRequest({action:'uaqExecutor',operation:'clase',requestId:'deployment-negative-auth-check',materia:'Administración',params:{resources:[]}});
 const dispatch=await post(empty.request);
-assert.equal(dispatch.ok,false);assert.equal(dispatch.error,'CLASE_REQUIERE_RECURSOS');
+assert.equal(dispatch.ok,false);assert.equal(dispatch.error,'ACADEMIC_WRITE_AUTH_REQUIRED');
 const direct=await post({...empty.request,action:'clase'});
 assert.equal(direct.ok,false);assert.equal(direct.error,'ACCION_NO_PERMITIDA');
-const diagnostic=prepareRequest({action:'diagnosticarClase',materia:'Administración',soloClassroom:true});
-const result=await post(diagnostic.request);
-assert.equal(result.ok,true);assert.equal(result.readOnly,true);
-assert.equal(result.courseId,manifest.courses.administracion.id);
-assert.deepEqual(result.operationalContext,diagnostic.request.operationalContext);
-console.log(JSON.stringify({ok:true,readOnly:true,endpoint:manifest.webApp.url,manifestSha256:result.operationalContext.manifestSha256,uaqExecutorDispatchVerified:true,directRoutineRouteBlocked:true,missingContextBlocked:true,courseId:result.courseId,courseWorkRead:result.courseWork.length,resourcesCreated:0}));
+console.log(JSON.stringify({ok:true,endpoint:manifest.webApp.url,authenticatedWriteGateVerified:true,directRoutineRouteBlocked:true,missingContextBlocked:true,classroomContacted:false,validAcademicWritesSent:0,resourcesCreated:0}));
+
