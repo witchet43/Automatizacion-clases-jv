@@ -1,5 +1,8 @@
 # Automatización académica JV — arquitectura vigente
 
+Contrato **STATIC_WEB_APP_SERVICE**: operaciones **data-only**. Ante fallo, bloquear y reconciliar sin ruta alternativa; **Work mode** no se utiliza.
+
+
 ## Operación académica (sin GitHub Actions)
 
 **ChatGPT → Portal Académico privado → WebApp canónica de Google Apps Script → Classroom / Drive / Forms.**
