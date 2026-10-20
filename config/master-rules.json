@@ -99,5 +99,33 @@
         "finalGradeIntegerRounded": true
       }
     }
+  },
+  "pedagogy": {
+    "version": "ACADEMIC_RESOURCE_PEDAGOGY_V1",
+    "model": "FLIPPED_CLASSROOM",
+    "institutions": [
+      "UAQ",
+      "ITQ",
+      "UMx"
+    ],
+    "tarea": {
+      "phase": "BEFORE_NEXT_SESSION",
+      "objective": "RESEARCH_AND_PRIOR_KNOWLEDGE",
+      "sourcesRequired": true,
+      "ownWords": true,
+      "questionsToBring": true,
+      "expertiseBeforeClass": false,
+      "priorClassReview": false
+    },
+    "actividad": {
+      "phase": "DURING_SESSION",
+      "objective": "FOCUSED_APPLICATION_AND_FEEDBACK"
+    },
+    "practica": {
+      "phase": "AFTER_CURRENT_SESSION",
+      "objective": "INTEGRATED_REINFORCEMENT",
+      "outsideClassroom": true,
+      "evidenceAndInterpretation": true
+    }
   }
 }

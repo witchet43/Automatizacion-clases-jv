@@ -157,6 +157,31 @@ const ACADEMIC_POLICY = Object.freeze({
     MIN_TRACEABLE_ITEMS: 13,
     MIN_APPLICATION_ANALYSIS_RATIO: 0.70
   }),
+  PEDAGOGY: Object.freeze({
+    VERSION:'ACADEMIC_RESOURCE_PEDAGOGY_V1',
+    MODEL:'FLIPPED_CLASSROOM',
+    INSTITUTIONS:Object.freeze(['UAQ','ITQ','UMx']),
+    TASK:Object.freeze({
+      PHASE:'BEFORE_NEXT_SESSION',
+      PURPOSE:'RESEARCH_AND_PRIOR_KNOWLEDGE',
+      NEXT_SESSION_OFFSET:1,
+      TRUSTWORTHY_SOURCES_REQUIRED:true,
+      OWN_WORDS_REQUIRED:true,
+      QUESTIONS_TO_BRING_REQUIRED:true,
+      PRIOR_TECHNICAL_MASTERY_REQUIRED:false,
+      REINFORCE_PREVIOUS_SESSION:false
+    }),
+    ACTIVITY:Object.freeze({
+      PHASE:'DURING_SESSION',
+      PURPOSE:'FOCUSED_APPLICATION_AND_FEEDBACK'
+    }),
+    PRACTICE:Object.freeze({
+      PHASE:'AFTER_CURRENT_SESSION',
+      PURPOSE:'INTEGRATED_REINFORCEMENT',
+      OUTSIDE_CLASSROOM:true,
+      RESULTS_EVIDENCE_AND_INTERPRETATION:true
+    })
+  }),
   DOCUMENTS: Object.freeze({
     TABLE_LAYOUT: Object.freeze({
       VERSION: 'ACADEMIC_TABLE_LAYOUT_V1',
@@ -270,6 +295,17 @@ function validarPoliticasCanonicas_(){
      tl.POSTFLIGHT_COLUMN_WIDTHS!==true||tl.ON_NEW_DOCUMENTS_ONLY!==true||
      tl.MAX_WIDTH_PT!==468||tl.PADDING_PT!==5)
     throw new Error('BLOCKED_TABLE_LAYOUT_POLICY: estándar transversal de tablas debe permanecer habilitado.');
+  const pedagogia=p.PEDAGOGY;
+  if(!pedagogia||pedagogia.VERSION!=='ACADEMIC_RESOURCE_PEDAGOGY_V1'||
+     pedagogia.MODEL!=='FLIPPED_CLASSROOM'||
+     pedagogia.TASK.PHASE!=='BEFORE_NEXT_SESSION'||pedagogia.TASK.NEXT_SESSION_OFFSET!==1||
+     pedagogia.TASK.PURPOSE!=='RESEARCH_AND_PRIOR_KNOWLEDGE'||
+     pedagogia.TASK.PRIOR_TECHNICAL_MASTERY_REQUIRED!==false||
+     pedagogia.TASK.REINFORCE_PREVIOUS_SESSION!==false||
+     pedagogia.ACTIVITY.PHASE!=='DURING_SESSION'||
+     pedagogia.PRACTICE.PHASE!=='AFTER_CURRENT_SESSION'||
+     pedagogia.PRACTICE.OUTSIDE_CLASSROOM!==true)
+    throw new Error('BLOCKED_PEDAGOGY_POLICY: contrato de aula invertida ha sido alterado.');
   if(p.DOCUMENTS.WORD_FILES_ALLOWED!==false||p.DOCUMENTS.ACADEMIC_DOCUMENT_FORMAT!=='GOOGLE_DOC_NATIVE_ONLY') throw new Error('Los archivos Word están prohibidos en las carpetas académicas canónicas; usar Google Docs nativos.');
   if(!p.DOCUMENTS.CANONICAL_RESOURCE_FOLDERS||
       p.DOCUMENTS.CANONICAL_RESOURCE_FOLDERS.PRACTICA!=='Prácticas'||
