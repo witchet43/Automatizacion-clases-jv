@@ -7,6 +7,7 @@ on:
 permissions:
   contents: read
   id-token: write
+  statuses: write
 jobs:
   diagnose:
     runs-on: ubuntu-latest
@@ -30,11 +31,13 @@ jobs:
             "https://academic-classroom-mcp-egncivfxav-uc.a.run.app"
           )
           healthy=0
+          : > /tmp/mcp-diagnostic-summary
           for url in "${urls[@]}"; do
             echo "::group::Probing ${url}"
             for route in /healthz /mcp; do
               code="$(curl --silent --show-error --max-time 20 -o /tmp/mcp-response -w '%{http_code}' -H "Authorization: Bearer ${TOKEN}" "${url}${route}" || true)"
               echo "Route ${route} => HTTP ${code}"
+              printf "%s%s=%s " "${url##https://}" "${route}" "${code}" >> /tmp/mcp-diagnostic-summary
               head -c 250 /tmp/mcp-response || true
               echo
               if [[ "${route}" == "/healthz" && "${code}" == "200" ]] && grep -q '"status":"ok"' /tmp/mcp-response; then healthy=1; fi
@@ -42,7 +45,23 @@ jobs:
             done
             echo "::endgroup::"
           done
+          echo "health=$healthy" >> /tmp/mcp-diagnostic-summary
           if [[ "${healthy}" != 1 ]]; then
             echo "::error::Neither Cloud Run hostname returned an expected application response. Do not deploy blindly."
             exit 1
           fi
+      - name: Publish result as GitHub commit status
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          details="$(cat /tmp/mcp-diagnostic-summary 2>/dev/null | tail -c 125 || true)"
+          if [[ "${JOB_STATUS}" == "success" ]]; then result=success; else result=failure; fi
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state="${result}" \
+            -f context="classroom-mcp/remote-http" \
+            -f description="${details:-Diagnose workflow failed before HTTP probe}" \
+            -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions"
