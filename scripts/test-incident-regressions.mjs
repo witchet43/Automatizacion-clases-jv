@@ -21,6 +21,9 @@ const academicWorkflow=fs.readFileSync('.github/workflows/academic-webapp.yml','
 const prune=fs.readFileSync('scripts/prune-apps-script-versions.mjs','utf8');
 
 assert(app.oauthScopes.includes('https://www.googleapis.com/auth/documents'),'DocumentApp scope must be present.');
+assert(app.oauthScopes.includes('https://www.googleapis.com/auth/drive.metadata.readonly'),'Existing teacher-owned Docs need readonly Drive metadata.');
+assert(app.oauthScopes.includes('https://www.googleapis.com/auth/drive.file'),'Existing creation scope must remain.');
+assert(!app.oauthScopes.includes('https://www.googleapis.com/auth/drive'),'Do not expand to unrestricted Drive write access.');
 assert.match(arch,/allowedExamFunctions = new Set\(\['crearExamen','crearExamenDirecto'\]\)/);
 assert.doesNotMatch(ctx,/ACADEMIC_REGISTRY_DRIFT|vm\.createContext/);
 assert.doesNotMatch(guard,/ACADEMIC_CONTEXT_REGISTRY_DRIFT/);
