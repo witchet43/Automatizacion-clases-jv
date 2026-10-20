@@ -18,21 +18,31 @@ jobs:
           workload_identity_provider: projects/148028894895/locations/global/workloadIdentityPools/github-classroom-pool/providers/github
           service_account: classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com
       - uses: google-github-actions/setup-gcloud@v2
-      - name: Inspect Cloud Run URLs and statuses without leaking credentials
+      - name: Inspect service and probe both hostnames
         shell: bash
         run: |
           set -euo pipefail
           gcloud config set project classroom-mcp-512122
           gcloud run services describe academic-classroom-mcp --region us-central1 --format='yaml(status.url,status.conditions,status.traffic)'
-          URLS=("https://academic-classroom-mcp-148028894895.us-central1.run.app" "https://academic-classroom-mcp-egncivfxav-uc.a.run.app")
           TOKEN="$(gcloud auth print-identity-token)"
-          for URL in "${URLS[@]}"; do
-            echo "::group::Inspect ${URL}"
-            for ROUTE in /healthz /mcp; do
-              echo "Route ${ROUTE}"
-              curl --silent --show-error --max-time 15 -o /tmp/mcp-response -w 'HTTP %{http_code} content_type %{content_type}\n' -H "Authorization: Bearer ${TOKEN}" "${URL}${ROUTE}" || true
-              head -c 300 /tmp/mcp-response || true
+          declare -a urls=(
+            "https://academic-classroom-mcp-148028894895.us-central1.run.app"
+            "https://academic-classroom-mcp-egncivfxav-uc.a.run.app"
+          )
+          healthy=0
+          for url in "${urls[@]}"; do
+            echo "::group::Probing ${url}"
+            for route in /healthz /mcp; do
+              code="$(curl --silent --show-error --max-time 20 -o /tmp/mcp-response -w '%{http_code}' -H "Authorization: Bearer ${TOKEN}" "${url}${route}" || true)"
+              echo "Route ${route} => HTTP ${code}"
+              head -c 250 /tmp/mcp-response || true
               echo
+              if [[ "${route}" == "/healthz" && "${code}" == "200" ]] && grep -q '"status":"ok"' /tmp/mcp-response; then healthy=1; fi
+              if [[ "${route}" == "/mcp" && "${code}" == "401" ]] && grep -q 'unauthorized' /tmp/mcp-response; then healthy=1; fi
             done
             echo "::endgroup::"
           done
+          if [[ "${healthy}" != 1 ]]; then
+            echo "::error::Neither Cloud Run hostname returned an expected application response. Do not deploy blindly."
+            exit 1
+          fi
