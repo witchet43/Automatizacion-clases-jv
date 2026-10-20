@@ -33,8 +33,9 @@ assert.match(web,/preflightReadsAllowed:false/);
 assert.match(web,/diagnosticOnlyAfterError:true/);
 const fastPathBlock=web.slice(web.indexOf("quizAsistencia:Object.freeze"),web.indexOf("})",web.indexOf("quizAsistencia:Object.freeze"))+2);
 assert.doesNotMatch(fastPathBlock,/courseId|courseKey|sesion|unidad|tema|fecha/);
-const executor=fs.readFileSync('scripts/execute-academic-request.mjs','utf8');
-assert.doesNotMatch(executor,/request\.requestId='GITHUB_REQUEST\|'/);
+const site=fs.readFileSync('site-bridge/direct-write-client.mjs','utf8');
+assert.match(site,/submitSignedAcademicDraft/);
+assert.equal(fs.existsSync('scripts/execute-academic-request.mjs'),false);
 assert.match(guards,/validarPlaneacionCanonicaReadOnly_\(subject\)/);
 
 function scenario(initial){

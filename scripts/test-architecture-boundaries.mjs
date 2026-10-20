@@ -80,13 +80,13 @@ if (requiredContract.some(re => !re.test(contract))) fail.push('architecture con
 
 const workflowsDir = path.join(root,'.github','workflows');
 const allowedWorkflows = new Set([
-  'academic-webapp.yml',
   'deploy-apps-script.yml',
   'validate-minimal-academic-operations.yml'
 ]);
-const academicWorkflowText = fs.readFileSync(path.join(workflowsDir,'academic-webapp.yml'),'utf8');
 const deployWorkflowText = fs.readFileSync(path.join(workflowsDir,'deploy-apps-script.yml'),'utf8');
-if (!academicWorkflowText.includes('assert-academic-request-data-only.mjs')) fail.push('Academic Web App must enforce data-only request commits');
+if (fs.existsSync(path.join(workflowsDir,'academic-webapp.yml'))) fail.push('legacy GitHub academic workflow must not exist');
+if (fs.existsSync(path.join(root,'.academic-requests'))) fail.push('legacy academic request files must not be active');
+if (fs.existsSync(path.join(root,'mcp-cloud-run'))) fail.push('alternate MCP Cloud Run adapter must not exist');
 if (!deployWorkflowText.includes('assert-platform-change-authorized.mjs')) fail.push('Deploy must enforce explicit platform-change authorization');
 const deployTriggerBlock=(deployWorkflowText.match(/on:[\s\S]*?concurrency:/)||[''])[0];
 if (!/\.platform-changes\/\*\*/.test(deployTriggerBlock) || /src\/\*\*|workflow_dispatch/.test(deployTriggerBlock))

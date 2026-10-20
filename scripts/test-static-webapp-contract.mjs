@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const manifest=JSON.parse(fs.readFileSync('config/academic-context.json','utf8'));
-const academic=fs.readFileSync('.github/workflows/academic-webapp.yml','utf8');
 const deploy=fs.readFileSync('.github/workflows/deploy-apps-script.yml','utf8');
 const agents=fs.readFileSync('AGENTS.md','utf8');
 const readme=fs.readFileSync('README.md','utf8');
@@ -74,10 +73,9 @@ for(const [name,op] of Object.entries(manifest.operations)){
   assert.equal(op.sourceMutationAllowed,false,name+' sourceMutationAllowed');
   assert.equal(op.deploymentAllowed,false,name+' deploymentAllowed');
 }
-assert.match(academic,/assert-academic-request-data-only\.mjs/);
-const requestGuard=fs.readFileSync('scripts/assert-academic-request-data-only.mjs','utf8');
-assert.match(requestGuard,/DIRECT_ROUTINE_ACTION_FORBIDDEN_USE_UAQ_EXECUTOR/);
-assert.match(requestGuard,/UAQ_EXECUTOR_OPERATION_INVALID/);
+assert.equal(fs.existsSync('.github/workflows/academic-webapp.yml'),false,'Old GitHub academic executor must be retired');
+assert.equal(fs.existsSync('scripts/execute-academic-request.mjs'),false);
+assert.equal(fs.existsSync('.academic-requests'),false);
 const webSource=fs.readFileSync('src/65_QuizAsistenciaWebApp.gs','utf8');
 assert.match(webSource,/ACTIONS:Object\.freeze\(\['uaqExecutor','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts'\]\)/,'uaqExecutor public gateway source');
 assert.match(webSource,/ROUTINE_OPERATIONS:Object\.freeze/);

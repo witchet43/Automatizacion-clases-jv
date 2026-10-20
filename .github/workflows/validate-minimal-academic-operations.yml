@@ -43,6 +43,7 @@ jobs:
           node scripts/test-exam-form-batch.mjs
           node scripts/test-webapp-error-diagnostics.mjs
           node scripts/test-architecture-boundaries.mjs
+          node scripts/test-decommissioned-routes.mjs
           node scripts/test-incident-regressions.mjs
           node scripts/test-static-webapp-contract.mjs
           node scripts/test-gamma-live-state-contract.mjs

@@ -15,7 +15,7 @@ Build an **owner-private ChatGPT Site with MCP tools** that calls the user's **e
 ```
 ChatGPT (owner) -> Site-hosted private MCP tool -> HTTPS POST to canonical Apps Script WebApp -> Google Classroom
 ```
-Do not invoke GitHub Actions or query GitHub at runtime, and do not route a request through Cloud Run unless direct WebApp HTTPS proves impossible. Store the canonical WebApp endpoint and the built request envelope as **server-side Site configuration**, never user-editable parameters.
+Do not invoke GitHub Actions or query GitHub at runtime. Do not use Cloud Run or any alternative academic executor. If canonical WebApp fails, reconcile read-only and block, never fall back to another route. Store the canonical WebApp endpoint and the built request envelope as **server-side Site configuration**, never user-editable parameters.
 
 ## MCP tools to implement
 - `gateway_status`: report backend configuration, tool versions and `writesEnabled: false`. Do not expose secrets or claim Classroom was contacted unless it was.
@@ -56,4 +56,4 @@ Read the manifest and calculate `manifestSha256` during Site BUILD/PUBLISH, not 
 6. If tools are not available in ChatGPT, do not claim completion. The Site MUST be published and its generated App/plugin installed/connected before retesting.
 
 ## Deployment route
-ChatGPT Plus supports Site-hosted MCP plugins on eligible accounts. Create/publish the Site from ChatGPT Desktop **Codex** (or from ChatGPT web Work, if explicitly permitted). The current chat's available tools cannot create/publish Sites. Reuse the prior GitHub connection for one-time reading of this design and the canonical manifest, but do not use it as runtime transport.
+El Portal académico privado está operativo. Para mantenerlo, conservar su identidad App y sus bindings. El Site enlaza el SHA-256 del manifest; al cambiar el manifest se requiere republicarlo y verificar HMAC antes del siguiente uso. No usar Codex ni Work Mode para operaciones académicas ni inventar un mecanismo de despliegue paralelo.

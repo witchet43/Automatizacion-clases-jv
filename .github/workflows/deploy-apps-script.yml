@@ -34,6 +34,9 @@ jobs:
       - name: Enforce explicit platform-change authorization
         run: node scripts/assert-platform-change-authorized.mjs
 
+      - name: Block retired academic execution routes
+        run: node scripts/test-decommissioned-routes.mjs
+
       - name: Verify canonical context and startup regressions
         run: |
           node scripts/academic-context.mjs build
