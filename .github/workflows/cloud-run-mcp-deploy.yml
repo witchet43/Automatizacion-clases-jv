@@ -52,6 +52,24 @@ jobs:
       - name: Verify deployed revision
         run: |
           gcloud run services describe academic-classroom-mcp --region us-central1 --format='yaml(status.url,status.traffic)'
+      - name: Smoke-test authenticated remote MCP without exposing secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Run the test in Cloud Run with the runtime service account. GitHub
+          # receives only a pass/fail result and never sees the bearer secret.
+          gcloud run jobs deploy classroom-mcp-smoke \
+            --project classroom-mcp-512122 \
+            --region us-central1 \
+            --image "$IMAGE" \
+            --command node --args remote-smoke.mjs \
+            --service-account classroom-mcp-sa@classroom-mcp-512122.iam.gserviceaccount.com \
+            --set-secrets MCP_BEARER_TOKEN=classroom-mcp-token:1 \
+            --set-env-vars GATEWAY_URL=https://academic-classroom-chatgpt-gateway-egncivfxva-uc.a.run.app/mcp \
+            --tasks 1 --max-retries 0 --quiet
+          gcloud run jobs execute classroom-mcp-smoke \
+            --project classroom-mcp-512122 \
+            --region us-central1 --wait --quiet
       - name: Publish deploy result for automated inspection
         if: always()
         env:
