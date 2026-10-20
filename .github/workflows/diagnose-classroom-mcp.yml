@@ -14,48 +14,51 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - uses: google-github-actions/auth@v2
+      - id: cloud_auth
+        uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: projects/148028894895/locations/global/workloadIdentityPools/github-classroom-pool/providers/github
           service_account: classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com
+          token_format: id_token
+          id_token_audience: https://academic-classroom-mcp-egncivfxva-uc.a.run.app
       - uses: google-github-actions/setup-gcloud@v2
-      - name: Diagnose auth and service reachability
+      - name: Test private MCP as authorized deployer
+        env:
+          CLOUD_RUN_ID_TOKEN: ${{ steps.cloud_auth.outputs.id_token }}
         shell: bash
         run: |
-          set -uo pipefail
-          gcloud config set project classroom-mcp-512122
-          gcloud run services describe academic-classroom-mcp --region us-central1 --format='yaml(status.url,status.conditions,status.traffic)' || echo "Service describe failed"
+          set -euo pipefail
+          gcloud run services describe academic-classroom-mcp --project classroom-mcp-512122 --region us-central1 --format='yaml(status.url,status.traffic)'
+          test -n "$CLOUD_RUN_ID_TOKEN"
           : > /tmp/route-results.txt
-          # A public endpoint returns Google 404 before reaching Express if Cloud Run
-          # identity authentication or routing fails. Capture the HTTP response safely.
-          SERVICE_URL="$(gcloud run services describe academic-classroom-mcp --region us-central1 --format='value(status.url)')"
-          TOKEN="$(gcloud auth print-identity-token --audiences="$SERVICE_URL" 2>/dev/null || true)"
-          for url in "$SERVICE_URL" "https://academic-classroom-mcp-148028894895.us-central1.run.app"; do
-            for path in /healthz /mcp; do
-              echo "Checking $url$path"
-              curl --silent --show-error --max-time 20 -o /tmp/classroom-mcp-response -w 'HTTP %{http_code}; content-type %{content_type}\n' "$url$path" || echo "Network failure"
-              head -c 180 /tmp/classroom-mcp-response 2>/dev/null || true
-              echo
+          for url in "https://academic-classroom-mcp-egncivfxva-uc.a.run.app" "https://academic-classroom-mcp-148028894895.us-central1.run.app"; do
+            for path in /mcp /healthz; do
+              status="$(curl -sS -o /tmp/response -w '%{http_code}' --max-time 20 -H "Authorization: Bearer $CLOUD_RUN_ID_TOKEN" "$url$path")"
+              echo "$url$path => HTTP $status" | tee -a /tmp/route-results.txt
+              if [[ "$path" == "/mcp" && "$status" == 401 ]]; then
+                echo "Reached Express app authentication middleware" | tee -a /tmp/route-results.txt
+                exit 0
+              fi
+              if [[ "$path" == "/healthz" && "$status" == 200 ]] && grep -q '"status":"ok"' /tmp/response; then
+                echo "Reached Express health endpoint" | tee -a /tmp/route-results.txt
+                exit 0
+              fi
             done
           done
-          echo "Diagnostic completed (read-only, no deployment)."
-      - name: Publish diagnosis to issue (sanitized, no credentials)
+          echo "No app response received; see HTTP codes above" | tee -a /tmp/route-results.txt
+          exit 1
+      - name: Publish status to issue without secrets
         if: always()
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cat > /tmp/diagnosis.md <<'EOF'
-          # Classroom MCP: unattended connection diagnostic
-          This run tests the remote Cloud Run service without modifying Google Classroom.
-          - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          - Workflow result: ${{ job.status }}
-          - Deployment operations: none
-          - Secret values: never included
-          EOF
-          echo '### HTTP responses' >> /tmp/diagnosis.md
-          echo '~~~text' >> /tmp/diagnosis.md
-          cat /tmp/route-results.txt >> /tmp/diagnosis.md 2>/dev/null || echo "HTTP probing failed to start" >> /tmp/diagnosis.md
-          echo '~~~' >> /tmp/diagnosis.md
-          gh issue create --repo "${GITHUB_REPOSITORY}" --title "MCP diagnostic run ${GITHUB_RUN_ID}: ${{ job.status }}" --body-file /tmp/diagnosis.md
-
+          {
+            echo "# MCP private HTTPS authentication diagnostic"
+            echo "Run: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo "Result: ${{ job.status }}"
+            echo '~~~text'
+            cat /tmp/route-results.txt 2>/dev/null || echo 'Failed before HTTP probe (inspect auth action logs)'
+            echo '~~~'
+          } > /tmp/diagnosis.md
+          gh issue create --repo "${GITHUB_REPOSITORY}" --title "MCP private auth ${GITHUB_RUN_ID}: ${{ job.status }}" --body-file /tmp/diagnosis.md
