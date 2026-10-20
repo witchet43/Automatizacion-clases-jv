@@ -68,6 +68,9 @@ function ejecutarServicioAcademicoWeb_(params){
     if(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft'].indexOf(action)<0)validarContratoOperacionWeb_(action);
     if(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft'].indexOf(action)>=0){
       // Academic grading operations are POST-only; mutating calls use HMAC + replay protection.
+      // Student submissions and evidence are private: authenticate READS too.
+      // Unlike mutations, reads require no one-time receipt.
+      validateAcademicWriteAuthorization_(p,PropertiesService.getScriptProperties());
       const course=resolverCursoAcademicoWeb_(p);
       const payload=p.params&&typeof p.params==='object'?p.params:p;
       const workId=String(payload.courseWorkId||'');
