@@ -10,6 +10,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Authenticate with Google Cloud (OIDC)
@@ -21,4 +22,5 @@ jobs:
       - name: Read-only verification of current service
         run: |
           gcloud config set project classroom-mcp-512122
+          gcloud auth list --filter='status:ACTIVE' --format='value(account)'
           gcloud run services describe academic-classroom-mcp --region us-central1 --format='yaml(status.url,status.traffic)'
