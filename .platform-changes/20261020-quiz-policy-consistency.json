@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Resolver el quiz rápido de Sistemas Operativos sin Codex; usuario autorizó todas las correcciones de escritura académica y mostró el diagnóstico de propiedades.",
+  "reason": "Reparar contradicción en los validadores de política canónica QUIZ SENCILLO que bloqueaba toda creación después de reservar un recibo PENDING. Debe usar consecutivo por Quiz DRAFT y PUBLISHED. No limpiar recibos ni keys de idempotencia.",
+  "allowedChangedPaths": [
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    "scripts/test-quiz-policy-sequence-consistency.mjs",
+    "src/00_PoliticasCanonicas.gs",
+    "src/33_QuizSencillo.gs"
+  ]
+}
