@@ -314,6 +314,17 @@ function diagnosticarProgresoClaseWeb_(course,p){
   const plan=soloClassroom?null:leerPlaneacionSiguienteClase_(course.materia);
   let works=listarCourseWorkClase_(course.id);
   if(options.soloDrafts===true)works=works.filter(function(w){return String(w.state||'').toUpperCase()==='DRAFT';});
+  // Public read-only diagnostic exposes only the whitelisted failure code.
+  // No HMAC keys, receipt IDs, exception text, timestamps or student details.
+  let lastSafeWriteErrorCode='';
+  try{
+    const rawFailure=PropertiesService.getScriptProperties().getProperty('ACADEMIC_LAST_WEBAPP_WRITE_FAILURE');
+    if(rawFailure){
+      const failure=JSON.parse(String(rawFailure));
+      const code=String(failure&&failure.code||'');
+      if(/^[A-Z][A-Z0-9_]{2,79}$/.test(code))lastSafeWriteErrorCode=code;
+    }
+  }catch(ignore){}
   const detalle=options.detalle===true;
   const active=works.map(function(w){
     const item={
@@ -353,6 +364,7 @@ function diagnosticarProgresoClaseWeb_(course,p){
       return {session:String(r.session||''),unit:String(r.unit||''),topic:String(r.topic||''),practice:String(r.practice||''),gammaUrl:String(r.gammaUrl||''),gammaState:String(r.gammaState||'')};
     }),
     planningSkipped:soloClassroom,
+    lastSafeWriteErrorCode:lastSafeWriteErrorCode,
     courseWork:active
   };
 }

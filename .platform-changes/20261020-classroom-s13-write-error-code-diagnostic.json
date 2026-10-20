@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Completala, autorizo todo lo necesario",
+  "reason": "Diagnóstico mínimo del error de escritura en la WebApp canónica del Portal Académico durante la sesión 13. Solo publica el código de error ya sanitizado a través del diagnóstico existente; no cambia autorización, credenciales, rutas, publicación de Classroom, ni lógica académica.",
+  "allowedChangedPaths": [
+    "src/65_QuizAsistenciaWebApp.gs"
+  ]
+}
