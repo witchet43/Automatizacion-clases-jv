@@ -9,6 +9,9 @@ assert.equal(masterRules.gamma.titleMustUseCanonicalTopicNumberAndName,true);
 const {manifest}=readContext();
 let calls=[];
 const ctx=vm.createContext({
+  // This fixture isolates canonical routing; real auth/replay rejection is
+  // exercised without this stub in test-academic-write-auth.mjs.
+  executeAuthenticatedAcademicWrite_:(_request,execute)=>execute(),
   ContentService:{MimeType:{JSON:'json'},createTextOutput(text){return {setMimeType(){return JSON.parse(text);}};}},
   normalizarNombreCursoRapido_:s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(),
   crearQuizAsistenciaRapido:m=>{calls.push('quizAsistencia');return {workId:'attendance',state:'DRAFT'};},
@@ -57,3 +60,4 @@ blocked(good({action:'uaqExecutor',operation:'actividad',courseId:'not-a-course'
 assert.equal(vm.runInContext("resolverCursoAcademicoWeb_({materia:'Administración'}).id",ctx),manifest.courses.administracion.id);checks++;
 assert.equal(new Set(Object.values(manifest.courses).map(c=>c.id)).size,7);
 console.log(`OK: ${checks} UAQ Executor gateway, direct-route rejection and deterministic dispatch checks; no external services.`);
+

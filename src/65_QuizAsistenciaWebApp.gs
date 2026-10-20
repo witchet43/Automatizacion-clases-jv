@@ -40,7 +40,11 @@ function cursosAcademicosWeb_(){
 
 
 function doGet(e){
-  return ejecutarServicioAcademicoWeb_(e&&e.parameter?e.parameter:{});
+  // No academic mutation may be reached via a URL/query string.
+  const params=e&&e.parameter?e.parameter:{};
+  if(['diagnosticarClase','auditarIdentidadClassroom'].indexOf(String(params.action||''))<0)
+    return respuestaAcademicaWeb_({ok:false,error:'ACADEMIC_READ_ONLY_GET_REQUIRED'});
+  return ejecutarServicioAcademicoWeb_(params);
 }
 
 function doPost(e){
@@ -65,7 +69,9 @@ function ejecutarServicioAcademicoWeb_(params){
     const operationalContext=validarArranqueAcademicoWeb_(action,p);
 
     if(action==='uaqExecutor'){
-      const gatewayResult=ejecutarUaqExecutorWeb_(p);
+      const gatewayResult=executeAuthenticatedAcademicWrite_(p,function(){
+        return ejecutarUaqExecutorWeb_(p);
+      });
       return respuestaAcademicaWeb_(Object.assign({
         ok:true,
         transport:'WEB_APP',
@@ -87,7 +93,9 @@ function ejecutarServicioAcademicoWeb_(params){
     }else if(action==='diagnosticarClase'){
       result=diagnosticarProgresoClaseWeb_(course,p);
     }else if(action==='eliminarDrafts'){
-      result=eliminarCourseWorkDraftsWeb_(course,p);
+      result=executeAuthenticatedAcademicWrite_(p,function(){
+        return eliminarCourseWorkDraftsWeb_(course,p);
+      });
     }else if(action==='resolverClase'){
       result=resolverSiguienteClase(
         course.materia,
