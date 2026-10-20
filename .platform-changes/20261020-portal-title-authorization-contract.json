@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Haz la corrección",
+  "reason": "Corregir la preparación de solicitudes de escritura del Portal Académico: centralizar comparación exacta de título autorizado y los alias de título de params, evitar falsos AUTHORIZED_TITLE_MISMATCH y agregar regresiones. No relajar autorización, no crear recursos ni publicar Classroom. La publicación del Site requiere intervención en su fuente original y debe verificarse antes de considerar la reparación operativa.",
+  "allowedChangedPaths": [
+    "site-bridge/direct-write-client.mjs",
+    "scripts/test-site-direct-write-client.mjs"
+  ]
+}
