@@ -1,92 +1,39 @@
-# Automatización académica JV
+# Automatización académica JV — arquitectura vigente
 
-## Modelo operativo definitivo: STATIC_WEB_APP_SERVICE
+## Operación académica (sin GitHub Actions)
 
-La Web App académica es un **servicio estable ya desplegado**. Crear contenido académico nuevo no es desarrollo de software.
+**ChatGPT → Portal Académico privado → WebApp canónica de Google Apps Script → Classroom / Drive / Forms.**
+Gamma y Notion se acceden mediante sus conectores para presentaciones y notas docentes.
 
-### Operación académica
+Las operaciones de lectura usan el diagnóstico del Portal Académico. Las escrituras pasan por una solicitud autorizada y firmada (HMAC), el entrypoint genérico `uaqExecutor`, la lógica canónica de Apps Script y postflight. Solo **DRAFT** para recursos de Classroom y Forms sin publicar. Google Docs de actividades, tareas y prácticas se adjuntan como **STUDENT_COPY**.
 
-`.academic-requests/*.json → Academic Web App → Web App canónico → entrypoint genérico → postflight`
+No usar Codex, Work Mode, Cloud Run, GitHub Actions, Execution API, `clasp run`, workflows por archivo o scripts ad hoc como rutas académicas. Un fallo no autoriza reintentar con otro requestId: se consulta Classroom primero y se exige idempotencia.
 
-Clases, tareas, actividades, prácticas, quizzes, exámenes, materiales y Quiz de Asistencia son **datos de entrada**. Una operación académica:
+El servicio canónico es el mismo endpoint registrado en `config/academic-context.json`. **No cambiar su URL, deployment, firma ni identificadores de curso durante una limpieza**.
 
-- no modifica `src/**`;
-- no modifica `config/**`;
-- no modifica workflows;
-- no modifica el manifest;
-- no ejecuta `clasp push`;
-- no actualiza ni crea deployments;
-- no crea funciones específicas por materia/unidad;
-- no usa Execution API, APIs directas ni rutas alternativas;
-- no usa Work mode.
+### Generación de clase completa
 
-Un fallo operacional no autoriza cambiar código. La recuperación usa la misma Web App e idempotencia. Si el motor realmente necesita una modificación, la operación se detiene y se requiere autorización explícita del usuario para un cambio de plataforma.
+1. Resolver la próxima sesión desde planeación y estado real de Classroom, no desde el día actual ni Calendar.
+2. Reutilizar documentos canónicos; crear recursos Google en DRAFT y verificar IDs, adjuntos, STUDENT_COPY y duplicados.
+3. Buscar la Gamma LIVE, verificar y reutilizar antes de generar otra.
+4. Buscar la nota de Notion bajo la materia; actualizar sin duplicar; notas explicativas completas para impartir la clase.
+5. Reconciliar el paquete. Nunca declarar completada una clase con algún componente pendiente.
 
-### Cambio de plataforma
+## Mantenimiento de plataforma
 
-Un cambio de comportamiento/funcionalidad usa un carril separado. Requiere:
+GitHub se utiliza exclusivamente para versionar, validar y desplegar **cambios de código aprobados por el usuario**. El único workflow de despliegue es `deploy-apps-script.yml`, disparado por una evidencia `.platform-changes/*.json`. `validate-minimal-academic-operations.yml` ejecuta regresiones. No crea recursos de alumnos.
 
-1. autorización explícita del usuario en la conversación actual;
-2. exactamente una evidencia `.platform-changes/*.json` con el texto de autorización y el alcance exacto;
-3. CI/regresiones verdes;
-4. actualización automática del **mismo deployment canónico**;
-5. postflight read-only.
+Las antiguas solicitudes `.academic-requests/` y el workflow `academic-webapp.yml` quedaron retirados del árbol activo; su historial permanece en Git y en la rama de archivo `archive/academic-requests-before-direct-webapp-20261020`. El adaptador `mcp-cloud-run/` también fue retirado del código actual.
 
-**Deploy Apps Script solo se dispara por `.platform-changes/**`.** Un cambio en `src/**` sin evidencia puede fallar validación, pero no puede desplegarse por sí mismo.
+**Compatibilidad temporal que no debe tocarse sin actualizar el Site:** el manifest aún expone metadatos históricos `workflow.name/path`, `operations.*.requestDirectory` y otros campos de envoltura. El Site desplegado usa el SHA-256 de ese manifest para validar las solicitudes: modificarlo ahora sin republicar el Site cortaría el acceso académico. Son **metadatos inertes**, no una ruta ejecutable. Ver `docs/cleanup-register-20261020.md` para cerrar esa dependencia.
 
-No se permite mezclar una solicitud académica con un cambio de plataforma en el mismo commit.
+## Reglas protegidas
 
-## Endpoint canónico
+- Política DRAFT; Forms no publicados; copia individual editable.
+- Consecutivo de Quiz de asistencia considerando DRAFT y PUBLISHED.
+- Una única fuente de comportamiento: Apps Script canónico.
+- Calificaciones existentes, registros académicos, trazabilidad e idempotencia se conservan.
+- Integración de calificaciones GitHub es una función distinta de la creación de clases; auditar uso antes de desinstalar sus triggers.
+- Sin eliminaciones en Classroom mediante vías alternativas.
 
-`https://script.google.com/macros/s/AKfycbz2rCuB9jUsbnt0tj0RgHmr3lguOZjVL34a_2F_yhggiwLNTOEn8QdsdbFv4SK6aGxr/exec`
-
-## Componentes
-
-- `config/academic-context.json`: manifiesto ejecutable y contrato data-only.
-- `.academic-requests/`: mensajes de operación académica.
-- `.platform-changes/`: evidencia de autorización para cambios de plataforma.
-- `scripts/assert-academic-request-data-only.mjs`: impide mezclar contenido y código.
-- `scripts/assert-platform-change-authorized.mjs`: impide deployment sin autorización explícita.
-- `scripts/test-static-webapp-contract.mjs`: protege el modelo estático.
-- `src/00_ContratoArquitectura.gs`: contrato ejecutable.
-- `.github/workflows/academic-webapp.yml`: ejecución académica.
-- `.github/workflows/deploy-apps-script.yml`: deployment exclusivamente de cambios de plataforma autorizados.
-- `.github/workflows/validate-minimal-academic-operations.yml`: regresiones.
-
-## Invariantes académicos
-
-CourseWork ordinario: DRAFT. Forms: no publicados. Google Docs entregables: STUDENT_COPY. La secuencia de clase proviene de planeación + Classroom real + Gamma verificada, nunca de la fecha actual o Calendar.
-
-**La señal de salud esperada es poder crear decenas de recursos académicos con cero modificaciones de código y cero deployments.**
-
-
-## Verificación LIVE de Gamma
-
-La planeación ya no es autoridad sobre la existencia o vigencia de una Gamma. `GENERADA Y VERIFICADA` se trata como referencia histórica.
-
-`resolverClase` acepta `options.gammaLiveEvidence` por sesión. Solo `LIVE_ACTIVE_CANONICAL`, obtenido del conector Gamma tras búsqueda real y lectura de contenido, puede establecer `gammaVerificada=true`. Una Gamma archivada o no encontrada devuelve decisión `CREATE` únicamente cuando la búsqueda LIVE confirmó que no existe un equivalente activo. Esto evita tanto falsos “completado” como regeneraciones que consumen créditos.
-
-
-## Notas de clase en Notion
-
-Las notas docentes son componente obligatorio del paquete de clase. El orden canónico es:
-
-`Google resources → Gamma LIVE canónica → Notion notes LIVE → resolverClase postflight`
-
-La raíz Notion y cada página padre por materia están registradas en el manifest. Cada nota usa como título exacto el tema/subtema canónico. Se busca antes de crear, se bloquean duplicados y se hace fetch posterior para validar contenido, parent, título y referencia a Gamma cuando aplica.
-
-`resolverClase` acepta `options.notionLiveEvidence[sesion]`. Sin evidencia `LIVE_CANONICAL`, la clase no puede marcarse preparada.
-
-
-## Baseline de entorno — Introducción a TI
-
-El curso **Introducción a las Tecnologías de Información** usa el perfil `ITI_WINDOWS_BASELINE_V1`.
-
-Para materiales futuros, el único entorno práctico asumido es **una computadora con Windows**. No se diseña trabajo que requiera Linux/Ubuntu, WSL, máquinas virtuales, dual boot, un segundo sistema operativo o un laboratorio multi-OS. Otros sistemas operativos pueden utilizarse únicamente como ejemplos conceptuales.
-
-Toda evidencia exigida al alumno debe poder generarse en Windows y toda herramienta obligatoria debe funcionar en Windows. Los recursos históricos ya publicados permanecen sin cambios (`LEAVE_AS_IS`); esa excepción no se hereda a contenido nuevo.
-
-La definición ejecutable está en `config/academic-context.json → courses.introduccion-tecnologias-informacion.studentEnvironmentProfile`.
-
-
-La política de entorno de Introducción a TI se valida en CI como parte del contrato estático antes de cualquier deployment autorizado.
+Consulta `AGENTS.md`, `docs/academic-webapp-architecture.md` y `docs/cleanup-register-20261020.md`.

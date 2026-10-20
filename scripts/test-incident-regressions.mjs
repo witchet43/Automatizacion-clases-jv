@@ -17,7 +17,6 @@ const didactic=fs.readFileSync('src/54_DidacticaTransversal.gs','utf8');
 const classroom=fs.readFileSync('src/42_SiguienteClaseDraftVisibility.gs','utf8');
 const deploy=fs.readFileSync('.github/workflows/deploy-apps-script.yml','utf8');
 const validate=fs.readFileSync('.github/workflows/validate-minimal-academic-operations.yml','utf8');
-const academicWorkflow=fs.readFileSync('.github/workflows/academic-webapp.yml','utf8');
 const prune=fs.readFileSync('scripts/prune-apps-script-versions.mjs','utf8');
 
 assert(app.oauthScopes.includes('https://www.googleapis.com/auth/documents'),'DocumentApp scope must be present.');
@@ -52,7 +51,7 @@ assert.match(didactic,/'New-Object':/);
 assert.match(classroom,/listarCourseWorkPaginaConReintento_/);
 assert.match(classroom,/internal error\|server error/);
 
-assert.match(academicWorkflow,/academic-context\.mjs build[\s\S]*academic-context\.mjs check/);
+assert.equal(fs.existsSync('.github/workflows/academic-webapp.yml'),false);
 assert.match(deploy,/academic-context\.mjs build[\s\S]*academic-context\.mjs check/);
 assert.doesNotMatch(deploy,/^\s*-\s*'scripts\/test-\*\.mjs'/m);
 const pushBlock=(validate.match(/push:[\s\S]*?pull_request:/)||[''])[0];
@@ -65,6 +64,6 @@ console.log('PASS: incident root causes from the 10-day audit are protected by d
 
 const staticContract=fs.readFileSync('scripts/test-static-webapp-contract.mjs','utf8');
 assert.match(staticContract,/STATIC_WEB_APP_SERVICE/);
-assert.match(staticContract,/assert-academic-request-data-only/);
+assert.match(staticContract,/Old GitHub academic executor must be retired/);
 assert.match(staticContract,/assert-platform-change-authorized/);
 console.log('PASS: static Web App operating model is permanently covered.');
