@@ -44,7 +44,7 @@ const namedSource={
 const prepared=prepareAuthorizedAcademicDraft(namedSource);
 assert.equal(prepared.params.title,namedTitle);
 assert.equal(prepared.params.titulo,namedTitle);
-assert.equal(prepared.params.resources[0].params.titulo,'Actividad 14 - Ejemplo de mutex',
+assert.equal(prepared.params.resources[0].params.titulo,'Actividad - Ejemplo de mutex',
  'Child resource titles must remain independent of class package identity');
 const signedNamed=buildAuthorizedSignedAcademicDraft(namedSource,config);
 const signedViaDefault=buildSignedAcademicDraft(namedSource,config);
