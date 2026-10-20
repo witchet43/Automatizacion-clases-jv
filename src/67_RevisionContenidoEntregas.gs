@@ -106,7 +106,9 @@ function guardarEvaluacionContenidoDraft_(request) {
   escribirCalificacionDraft_(courseId,workId,submissionId,score);
   const verified=Classroom.Courses.CourseWork.StudentSubmissions.get(
     courseId,workId,submissionId);
-  if(Math.abs(Number(verified.draftGrade)-score)>0.001)
+  if(Math.abs(Number(verified.draftGrade)-score)>0.001 ||
+     (verified.assignedGrade!==undefined&&verified.assignedGrade!==null) ||
+     String(verified.state)!=='TURNED_IN')
     throw new Error('DRAFT_GRADE_POSTFLIGHT_FAILED');
   return {ok:true,courseId:courseId,courseWorkId:workId,
     submissionId:submissionId,draftGrade:Number(verified.draftGrade),
