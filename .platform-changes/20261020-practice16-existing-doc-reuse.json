@@ -7,6 +7,7 @@
   "allowedChangedPaths": [
     ".github/workflows/deploy-apps-script.yml",
     ".github/workflows/validate-minimal-academic-operations.yml",
+    "scripts/test-incident-regressions.mjs",
     "scripts/test-practice-existing-doc-drive-file-fallback.mjs",
     "src/20_CreacionDirectaRecursos.gs",
     "src/30_PracticaConGoogleDoc.gs",
