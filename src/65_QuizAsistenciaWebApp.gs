@@ -74,7 +74,7 @@ function ejecutarServicioAcademicoWeb_(params){
       const course=resolverCursoAcademicoWeb_(p);
       const payload=p.params&&typeof p.params==='object'?p.params:p;
       const workId=String(payload.courseWorkId||'');
-      if(!/^\\d+$/.test(workId))throw new Error('COURSEWORK_ID_INVALID');
+      if(!/^\d+$/.test(workId))throw new Error('COURSEWORK_ID_INVALID');
       if(action==='listarEntregasEvaluables')
         return respuestaAcademicaWeb_({ok:true,action:action,result:listarEntregasEvaluables_(course.id,workId)});
       if(action==='leerEvidenciaEntrega'){
