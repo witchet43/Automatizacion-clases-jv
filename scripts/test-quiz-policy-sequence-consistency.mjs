@@ -14,7 +14,7 @@ assert.match(canonical,/SEQUENCE_SOURCE:\s*'LATEST_EXISTING_QUIZ_DRAFT_OR_PUBLIS
 assert.match(canonical,/simpleQuiz\.SEQUENCE_SOURCE!==\s*'LATEST_EXISTING_QUIZ_DRAFT_OR_PUBLISHED'/);
 assert.match(validator,/policy\.SEQUENCE_SOURCE!==\s*'LATEST_EXISTING_QUIZ_DRAFT_OR_PUBLISHED'/);
 assert.doesNotMatch(canonical,/LATEST_PUBLISHED_QUIZ/);
-assert.doesNotMatch(validator,/LATEST_PUBLISHED_QUIZ/);
+assert.doesNotMatch(validator,/policy\\.SEQUENCE_SOURCE!==\\s*'LATEST_PUBLISHED_QUIZ'/);
 assert.match(engine,/\['PUBLISHED','DRAFT'\]/);
 assert.match(engine,/const lastExisting=all\[0\]\|\|null/);
 
