@@ -27,13 +27,23 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm run check
-      - name: Deploy private service
+      - name: Build and push Docker image without Cloud Build
+        shell: bash
         run: |
+          set -euo pipefail
           gcloud config set project classroom-mcp-512122
+          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+          IMAGE="us-central1-docker.pkg.dev/classroom-mcp-512122/cloud-run-source-deploy/academic-classroom-mcp:${GITHUB_SHA}"
+          docker build --platform linux/amd64 -t "$IMAGE" ./mcp-cloud-run
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+      - name: Deploy private service
+        shell: bash
+        run: |
           gcloud run deploy academic-classroom-mcp \
-            --source ./mcp-cloud-run \
-            --clear-base-image \
+            --project classroom-mcp-512122 \
             --region us-central1 \
+            --image "$IMAGE" \
             --service-account classroom-mcp-sa@classroom-mcp-512122.iam.gserviceaccount.com \
             --set-env-vars ENABLE_ACADEMIC_WRITES=false \
             --set-secrets MCP_BEARER_TOKEN=classroom-mcp-token:1 \
