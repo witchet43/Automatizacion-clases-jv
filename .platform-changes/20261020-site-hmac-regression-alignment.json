@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Integra la escritura directa usando el PR #29 del repositorio witchet43/Automatizacion-clases-jv, el módulo site-bridge/direct-write-client.mjs y el contrato docs/site-direct-write-security.md.",
+  "reason": "Alinear la prueba aislada de enrutamiento con el nuevo control HMAC. La autenticacion real y el bloqueo de duplicados se prueban por separado en test-academic-write-auth.mjs. No despliega ni crea recursos academicos.",
+  "allowedChangedPaths": [
+    "scripts/test-academic-context.mjs"
+  ]
+}
