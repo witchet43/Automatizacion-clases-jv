@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Autorizo — completar la clase UAQ Sistemas Distribuidos por WebApp canónica, sin duplicados y con DRAFT obligatorio.",
+  "reason": "Fix proven incident: CourseWork direct idempotency search omitted explicit courseWorkStates=['DRAFT','PUBLISHED'], so second signed reconciliation made a duplicate Practice 16. Both matching DRAFTs already exist (893237625248, 883005863308). Stop further duplication by enumerating all states, block on ambiguous matching documents. Does not delete or create resources during deployment. No further create attempts until duplicate is intentionally removed by user or separately authorized maintenance.",
+  "allowedChangedPaths": [
+    "src/20_CreacionDirectaRecursos.gs",
+    "scripts/test-direct-coursework-draft-idempotency.mjs",
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    ".github/workflows/deploy-apps-script.yml"
+  ]
+}
