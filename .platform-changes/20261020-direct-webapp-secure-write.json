@@ -8,6 +8,8 @@
     ".github/workflows/validate-minimal-academic-operations.yml",
     "docs/site-direct-write-security.md",
     "scripts/test-academic-write-auth.mjs",
+    "scripts/test-site-direct-write-client.mjs",
+    "site-bridge/direct-write-client.mjs",
     "src/00_AcademicWriteAuthorization.gs",
     "src/65_QuizAsistenciaWebApp.gs"
   ]
