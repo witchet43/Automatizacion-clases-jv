@@ -50,7 +50,7 @@ const mapped=ctx.detallarFalloAcademicoWeb_(new Error(
  {action:'uaqExecutor',operation:'clase',courseId:'875776451793',requestId:'SO_C19_MUTEX_SEM_20261021_V1'});
 assert.equal(mapped.code,'TASK_NEXT_SESSION_CONTEXT_MISSING');
 assert.equal(mapped.stage,'PREFLIGHT_OR_POLICY');
-assert.equal(mapped.requestIdHint,'20261021_V1');
+assert.equal(mapped.requestIdHint,'_20261021_V1');
 assert.equal(summary.claveHmacConfigurada,true);
 assert.ok(!log.join(' ').includes('DO_NOT_PRINT_THIS_TEST_SECRET_'));
 assert.ok(!log.join(' ').includes('ACADEMIC_WRITE_RECEIPT_111'));
