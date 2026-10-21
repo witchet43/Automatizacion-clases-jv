@@ -660,6 +660,18 @@ function crearMaterialDidacticoWeb_(course,p){
   const payload=normalizarPayloadAcademicoWeb_(course,p);
   const titulo=String(payload.titulo||payload.title||'').trim();
   if(!titulo)throw new Error('MATERIAL_REQUIERE_TITULO');
+  // Si un material ya existe, su ID verificado permite reutilizarlo,
+  // sin crear un documento duplicado ni alterar contenido previo.
+  const existingId=String(payload.documentId||'').trim();
+  if(existingId){
+    const previous=Drive.Files.get(existingId,{fields:'id,name,mimeType,trashed'});
+    if(previous.trashed===true ||
+       previous.mimeType!=='application/vnd.google-apps.document' ||
+       String(previous.name||'').trim()!==titulo)
+      throw new Error('MATERIAL_DOCUMENT_IDENTITY_CONFLICT');
+    return {material:true,courseId:course.id,documentId:existingId,
+      documentName:titulo,documentMime:previous.mimeType,reutilizado:true,creado:false};
+  }
   const contenido=payload.contenidoDocumento!==undefined?payload.contenidoDocumento:payload.googleDocContent;
   if(!String(Array.isArray(contenido)?contenido.join('\n'):contenido||'').trim())throw new Error('MATERIAL_REQUIERE_CONTENIDO');
   const doc=crearGoogleDocumentoAcademico_({
