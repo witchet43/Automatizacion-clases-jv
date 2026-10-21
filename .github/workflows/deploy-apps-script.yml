@@ -82,6 +82,8 @@ jobs:
 
       - name: Regression - academic tables are sized and aligned in newly created Docs
         run: node scripts/test-academic-table-layout.mjs
+      - name: Regressions for academic document paragraphs
+        run: node scripts/test-academic-document-prose-regression.mjs
 
       - name: Regression - every Google Doc gives each student an editable copy
         run: node scripts/test-google-doc-student-copy.mjs
