@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Vamos a hacerlo [implementar una arquitectura académica determinística en Google Apps Script y WebApp: una solicitud, plan canónico, creación faltantes, reglas reproducibles sin que ChatGPT reconstituya algoritmos].",
+  "reason": "Refactor mínimo del contrato 'clase' EXISTENTE dentro de la WebApp: PLAN sin creación basado en planeación/estado real, EXECUTE con una lectura inicial y preparación de todo contenido faltante ANTES de la primera escritura, no duplica recursos ya creados, error estructurado CONTENT_REQUIRED si falta contenido sin efectos, fechas retrospectivas de actividades automáticas sin fechas inventadas. Agregar regresión offline en CI, mantener source of truth, HMAC, draft-only y permisos actuales. No exponer rutas nuevas, no tocar Sites/manifest/Gamma/Notion ni crear recursos durante deploy.",
+  "allowedChangedPaths": [
+    "src/65_QuizAsistenciaWebApp.gs",
+    "scripts/test-class-package-reconciliation.mjs"
+  ]
+}
