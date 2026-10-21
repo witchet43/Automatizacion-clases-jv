@@ -42,6 +42,7 @@ jobs:
           node scripts/test-site-direct-write-client.mjs
           node scripts/test-exam-form-batch.mjs
           node scripts/test-webapp-error-diagnostics.mjs
+          node scripts/test-task-due-optional.mjs
           node scripts/test-architecture-boundaries.mjs
           node scripts/test-decommissioned-routes.mjs
           node scripts/test-incident-regressions.mjs

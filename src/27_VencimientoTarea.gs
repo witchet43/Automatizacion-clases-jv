@@ -10,61 +10,61 @@ function aplicarReglaVencimientoTarea_(params) {
   return aplicarReglaVencimientoTareaConAhora_(params, ahoraLocalTarea_());
 }
 
+function omitirVencimientoTarea_(params, motivo) {
+  // No inventar plazos: conservar el recurso como DRAFT sin dueDate/dueTime.
+  const p=Object.assign({},params);
+  ['fechaLimite','horaLimite','fechaLimiteLocal','horaLimiteLocal','dueDate','dueTime'].forEach(function(k){delete p[k];});
+  p.backfillSinVencimiento=true;
+  p.vencimientoOmitidoMotivo=motivo;
+  return p;
+}
+
 function aplicarReglaVencimientoTareaConAhora_(params, ahoraLocal) {
-  const p = params && typeof params === 'object' ? Object.assign({}, params) : {};
-  if (p.backfillDraft === true && p.explicitSequenceOverride === true) { p.fechaLimite=''; p.horaLimite=''; p.fechaLimiteLocal=''; p.horaLimiteLocal=''; p.backfillSinVencimiento=true; return p; }
-  const policy = ACADEMIC_POLICY.CLASSROOM.TASK_DUE;
+  const p=params&&typeof params==='object'?Object.assign({},params):{};
+  if(p.backfillDraft===true && p.explicitSequenceOverride===true)
+    return omitirVencimientoTarea_(p,'RECUPERACION_RETROSPECTIVA');
+
+  const policy=ACADEMIC_POLICY.CLASSROOM.TASK_DUE;
   validarPoliticaVencimientoTarea_(policy);
-
-  const fechaSiguienteSesion = primerValorTextoActividad_(
-    p.fechaSiguienteSesion,
-    p.fechaSiguienteClase,
-    p.nextSessionDate,
-    p.nextClassDate
+  const fechaSiguienteSesion=primerValorTextoActividad_(
+    p.fechaSiguienteSesion,p.fechaSiguienteClase,p.nextSessionDate,p.nextClassDate
   );
-  const horaInicioSiguienteSesion = primerValorTextoActividad_(
-    p.horaInicioSiguienteSesion,
-    p.horaInicioSiguienteClase,
-    p.nextSessionStartTime,
-    p.nextClassStartTime
+  const horaInicioSiguienteSesion=primerValorTextoActividad_(
+    p.horaInicioSiguienteSesion,p.horaInicioSiguienteClase,p.nextSessionStartTime,p.nextClassStartTime
   );
-  if (!fechaSiguienteSesion || !horaInicioSiguienteSesion) {
-    throw new Error('TAREA requiere fechaSiguienteSesion y horaInicioSiguienteSesion obtenidas de la siguiente clase canónica para fijar el vencimiento máximo al inicio de esa clase.');
-  }
+  // Fecha y hora son OPCIONALES. Si no existe el par completo, se crea sin vencimiento.
+  if(!fechaSiguienteSesion || !horaInicioSiguienteSesion)
+    return omitirVencimientoTarea_(p,'SIGUIENTE_SESION_NO_DETERMINADA');
 
-  const inicioSiguienteSesion = parseFechaHoraLocalActividad_(fechaSiguienteSesion, horaInicioSiguienteSesion, 'inicio de siguiente sesión');
-  const ahora = ahoraLocal && typeof ahoraLocal === 'object'
-    ? ahoraLocal
-    : parseFechaHoraLocalActividad_(String(ahoraLocal || '').slice(0,10), String(ahoraLocal || '').slice(11,16), 'hora actual');
+  const inicio=parseFechaHoraLocalActividad_(fechaSiguienteSesion,horaInicioSiguienteSesion,'inicio de siguiente sesión');
+  const ahora=ahoraLocal&&typeof ahoraLocal==='object' ? ahoraLocal :
+    parseFechaHoraLocalActividad_(String(ahoraLocal||'').slice(0,10),String(ahoraLocal||'').slice(11,16),'hora actual');
+  if(ahora.localComparableMs>=inicio.localComparableMs)
+    return omitirVencimientoTarea_(p,'SIGUIENTE_SESION_TRANSCURRIDA');
 
-  if (policy.PAST_NEXT_SESSION_CREATION === 'BLOCK' && ahora.localComparableMs >= inicioSiguienteSesion.localComparableMs) {
-    throw new Error('No se puede crear una TAREA después de que la siguiente clase ha iniciado (' + fechaSiguienteSesion + ' ' + horaInicioSiguienteSesion + '). Classroom exige un vencimiento futuro y la política impide moverlo después del inicio de esa clase.');
-  }
+  const fechaSolicitada=primerValorTextoActividad_(p.fechaLimite,p.dueDate);
+  const horaSolicitada=primerValorTextoActividad_(p.horaLimite,p.dueTime);
+  // Un vencimiento explícito parcial tampoco impide crear un recurso educativo.
+  if(Boolean(fechaSolicitada)!==Boolean(horaSolicitada))
+    return omitirVencimientoTarea_(p,'VENCIMIENTO_INCOMPLETO');
 
-  const fechaSolicitada = primerValorTextoActividad_(p.fechaLimite, p.dueDate);
-  const horaSolicitada = primerValorTextoActividad_(p.horaLimite, p.dueTime);
-  if ((fechaSolicitada && !horaSolicitada) || (!fechaSolicitada && horaSolicitada)) {
-    throw new Error('TAREA requiere fecha y hora completas cuando se especifica un vencimiento anterior al inicio de la siguiente clase.');
-  }
+  const limite=fechaSolicitada
+    ? parseFechaHoraLocalActividad_(fechaSolicitada,horaSolicitada,'vencimiento solicitado')
+    : inicio;
+  if(limite.localComparableMs>inicio.localComparableMs)
+    return omitirVencimientoTarea_(p,'VENCIMIENTO_POSTERIOR_A_CLASE');
+  if(policy.DUE_MUST_BE_FUTURE===true && limite.localComparableMs<=ahora.localComparableMs)
+    return omitirVencimientoTarea_(p,'VENCIMIENTO_TRANSCURRIDO');
 
-  const limiteLocal = fechaSolicitada
-    ? parseFechaHoraLocalActividad_(fechaSolicitada, horaSolicitada, 'vencimiento solicitado')
-    : inicioSiguienteSesion;
-
-  if (limiteLocal.localComparableMs > inicioSiguienteSesion.localComparableMs) {
-    throw new Error('El vencimiento de una TAREA no puede ser posterior al inicio de la siguiente clase (' + fechaSiguienteSesion + ' ' + horaInicioSiguienteSesion + ').');
-  }
-  if (policy.DUE_MUST_BE_FUTURE === true && limiteLocal.localComparableMs <= ahora.localComparableMs) {
-    throw new Error('El vencimiento de una TAREA debe seguir estando en el futuro al momento de crearla. Límite solicitado: ' + limiteLocal.fecha + ' ' + limiteLocal.hora + '.');
-  }
-
-  const utc = convertirFechaHoraLocalActividadAUtc_(limiteLocal, policy.UTC_OFFSET_MINUTES);
-  p.fechaSiguienteSesion = fechaSiguienteSesion;
-  p.horaInicioSiguienteSesion = horaInicioSiguienteSesion;
-  p.fechaLimiteLocal = limiteLocal.fecha;
-  p.horaLimiteLocal = limiteLocal.hora;
-  p.fechaLimite = utc.fecha;
-  p.horaLimite = utc.hora;
+  const utc=convertirFechaHoraLocalActividadAUtc_(limite,policy.UTC_OFFSET_MINUTES);
+  p.fechaSiguienteSesion=fechaSiguienteSesion;
+  p.horaInicioSiguienteSesion=horaInicioSiguienteSesion;
+  p.fechaLimiteLocal=limite.fecha;
+  p.horaLimiteLocal=limite.hora;
+  p.fechaLimite=utc.fecha;
+  p.horaLimite=utc.hora;
+  p.backfillSinVencimiento=false;
+  delete p.vencimientoOmitidoMotivo;
   return p;
 }
 
@@ -75,12 +75,13 @@ function ahoraLocalTarea_() {
 }
 
 function validarPoliticaVencimientoTarea_(policy) {
-  if (!policy || policy.REQUIRED !== true || policy.DEFAULT !== 'NEXT_SESSION_START' || policy.MAXIMUM !== 'NEXT_SESSION_START' || policy.REQUIRES_NEXT_SESSION_CONTEXT !== true || policy.PAST_NEXT_SESSION_CREATION !== 'BLOCK' || policy.DUE_MUST_BE_FUTURE !== true) {
-    throw new Error('La política canónica de TAREA no exige correctamente el inicio de la siguiente clase y un vencimiento futuro.');
-  }
-  if (policy.TIMEZONE !== 'America/Mexico_City' || Number(policy.UTC_OFFSET_MINUTES) !== -360) {
-    throw new Error('La política horaria de TAREA no coincide con America/Mexico_City 2026.');
-  }
+  if(!policy || policy.REQUIRED!==false || policy.DEFAULT!=='NEXT_SESSION_START' ||
+     policy.MAXIMUM!=='NEXT_SESSION_START' || policy.REQUIRES_NEXT_SESSION_CONTEXT!==false ||
+     policy.PAST_NEXT_SESSION_CREATION!=='OMIT_DUE' || policy.DUE_MUST_BE_FUTURE!==true ||
+     policy.MISSING_NEXT_SESSION_CONTEXT!=='OMIT_DUE' || policy.PAST_DUE!=='OMIT_DUE')
+    throw new Error('TASK_DUE_POLICY_INVALID: fecha opcional, vencimiento solo futuro y omisión retrospectiva son obligatorios.');
+  if(policy.TIMEZONE!=='America/Mexico_City' || Number(policy.UTC_OFFSET_MINUTES)!==-360)
+    throw new Error('TASK_DUE_TIMEZONE_INVALID: America/Mexico_City 2026.');
   return true;
 }
 
@@ -88,7 +89,13 @@ function verificarVencimientoTareaCreada_(courseId, workId, tarea) {
   const work = Classroom.Courses.CourseWork.get(String(courseId), String(workId));
   const dueDate = work && work.dueDate ? work.dueDate : null;
   const dueTime = work && work.dueTime ? work.dueTime : null;
-  if (!dueDate || !dueTime) throw new Error('La TAREA creada/reutilizada no contiene vencimiento obligatorio: ' + workId + '.');
+  if(tarea&&tarea.backfillSinVencimiento===true) {
+    // Los borradores ya existentes se reutilizan, nunca se alteran sus plazos manuales.
+    if(String(work.state||'').toUpperCase()!=='DRAFT')
+      throw new Error('TASK_NOT_DRAFT: '+workId);
+    return work;
+  }
+  if(!dueDate || !dueTime)throw new Error('TASK_DUE_MISSING_AFTER_CREATION: '+workId);
 
   const expectedDate = String(tarea.fechaLimite || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
   const expectedTime = String(tarea.horaLimite || '').match(/^(\d{1,2}):(\d{2})$/);
@@ -108,59 +115,33 @@ function verificarVencimientoTareaCreada_(courseId, workId, tarea) {
 
 function validarVencimientoTareaCanonico() {
   validarPoliticasCanonicas_();
-  const ahoraPrueba = parseFechaHoraLocalActividad_('2026-09-14', '14:00', 'ahora de prueba');
-
-  const inicio = aplicarReglaVencimientoTareaConAhora_({
-    fechaSiguienteSesion:'2026-09-15', horaInicioSiguienteSesion:'07:00'
-  }, ahoraPrueba);
-  if (inicio.fechaLimite !== '2026-09-15' || inicio.horaLimite !== '13:00') {
-    throw new Error('Regresión: el inicio de siguiente clase 07:00 local debe convertirse a 13:00 UTC.');
-  }
-
-  const antes = aplicarReglaVencimientoTareaConAhora_({
-    fechaSiguienteSesion:'2026-09-15', horaInicioSiguienteSesion:'07:00', fechaLimite:'2026-09-15', horaLimite:'06:30'
-  }, ahoraPrueba);
-  if (antes.fechaLimite !== '2026-09-15' || antes.horaLimite !== '12:30') {
-    throw new Error('Regresión: un vencimiento anterior explícito de TAREA debe conservarse y convertirse a UTC.');
-  }
-
-  let bloqueoPosterior = false;
-  try {
-    aplicarReglaVencimientoTareaConAhora_({
-      fechaSiguienteSesion:'2026-09-15', horaInicioSiguienteSesion:'07:00', fechaLimite:'2026-09-15', horaLimite:'07:01'
-    }, ahoraPrueba);
-  } catch (err) {
-    bloqueoPosterior = /no puede ser posterior/i.test(String(err && err.message || err));
-  }
-  if (!bloqueoPosterior) throw new Error('Regresión: debe bloquearse un vencimiento de TAREA posterior al inicio de la siguiente clase.');
-
-  let bloqueoClaseIniciada = false;
-  try {
-    aplicarReglaVencimientoTareaConAhora_({
-      fechaSiguienteSesion:'2026-09-15', horaInicioSiguienteSesion:'07:00'
-    }, parseFechaHoraLocalActividad_('2026-09-15','07:01','ahora posterior'));
-  } catch (err) {
-    bloqueoClaseIniciada = /siguiente clase ha iniciado/i.test(String(err && err.message || err));
-  }
-  if (!bloqueoClaseIniciada) throw new Error('Regresión: debe bloquearse la creación de TAREA cuando la siguiente clase ya inició.');
-
-  let bloqueoVencimientoPasado = false;
-  try {
-    aplicarReglaVencimientoTareaConAhora_({
-      fechaSiguienteSesion:'2026-09-15', horaInicioSiguienteSesion:'07:00', fechaLimite:'2026-09-14', horaLimite:'13:59'
-    }, ahoraPrueba);
-  } catch (err) {
-    bloqueoVencimientoPasado = /debe seguir estando en el futuro/i.test(String(err && err.message || err));
-  }
-  if (!bloqueoVencimientoPasado) throw new Error('Regresión: debe bloquearse un vencimiento de TAREA que ya pasó.');
-
-  let bloqueoSinContexto = false;
-  try {
-    aplicarReglaVencimientoTareaConAhora_({fechaLimite:'2026-09-15', horaLimite:'07:00'}, ahoraPrueba);
-  } catch (err) {
-    bloqueoSinContexto = /requiere fechaSiguienteSesion y horaInicioSiguienteSesion/i.test(String(err && err.message || err));
-  }
-  if (!bloqueoSinContexto) throw new Error('Regresión: una TAREA sin contexto de siguiente clase debe bloquearse.');
-
-  return {ok:true, tipo:'TAREA', vencimiento:'NEXT_SESSION_START_MAX_FUTURE', timezone:'America/Mexico_City'};
+  const ahora=parseFechaHoraLocalActividad_('2026-09-14','14:00','ahora de prueba');
+  const caso=aplicarReglaVencimientoTareaConAhora_({
+    fechaSiguienteSesion:'2026-09-15',horaInicioSiguienteSesion:'07:00'
+  },ahora);
+  if(caso.fechaLimite!=='2026-09-15'||caso.horaLimite!=='13:00'||caso.backfillSinVencimiento!==false)
+    throw new Error('TASK_DUE_REGRESSION_VALID_FUTURE');
+  const missing=aplicarReglaVencimientoTareaConAhora_({},ahora);
+  if(missing.backfillSinVencimiento!==true||missing.fechaLimite||missing.horaLimite)
+    throw new Error('TASK_DUE_REGRESSION_OPTIONAL_CONTEXT');
+  const past=aplicarReglaVencimientoTareaConAhora_({
+    fechaSiguienteSesion:'2026-09-13',horaInicioSiguienteSesion:'07:00'
+  },ahora);
+  if(past.backfillSinVencimiento!==true||past.vencimientoOmitidoMotivo!=='SIGUIENTE_SESION_TRANSCURRIDA')
+    throw new Error('TASK_DUE_REGRESSION_PAST_SESSION');
+  const late=aplicarReglaVencimientoTareaConAhora_({
+    fechaSiguienteSesion:'2026-09-15',horaInicioSiguienteSesion:'07:00',
+    fechaLimite:'2026-09-14',horaLimite:'13:59'
+  },ahora);
+  if(late.backfillSinVencimiento!==true||late.vencimientoOmitidoMotivo!=='VENCIMIENTO_TRANSCURRIDO')
+    throw new Error('TASK_DUE_REGRESSION_PAST_DUE');
+  const partial=aplicarReglaVencimientoTareaConAhora_({fechaSiguienteSesion:'2026-09-15'},ahora);
+  if(partial.backfillSinVencimiento!==true)throw new Error('TASK_DUE_REGRESSION_PARTIAL_CONTEXT');
+  const noFuture=aplicarReglaVencimientoTareaConAhora_({
+    fechaSiguienteSesion:'2026-09-15',horaInicioSiguienteSesion:'07:00',
+    fechaLimite:'2026-09-15',horaLimite:'07:10'
+  },ahora);
+  if(noFuture.vencimientoOmitidoMotivo!=='VENCIMIENTO_POSTERIOR_A_CLASE')
+    throw new Error('TASK_DUE_REGRESSION_PAST_CEILING');
+  return {ok:true,tipo:'TAREA',vencimiento:'NEXT_SESSION_START_IF_FUTURE_ELSE_NONE',timezone:'America/Mexico_City'};
 }

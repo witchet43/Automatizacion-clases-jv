@@ -17,7 +17,7 @@ const ACADEMIC_POLICY = Object.freeze({
     OPERATION_CONTRACTS: Object.freeze({
       quizAsistencia:Object.freeze({mode:'EXECUTE_FIRST',externalInput:Object.freeze(['materia']),preflight:Object.freeze([]),firstAction:'WEB_APP',state:'DRAFT',postflight:Object.freeze(['courseId','workId','title','state','duplicateCount','postflightVerified','emptyAssignmentVerified'])}),
       actividad:Object.freeze({mode:'CONTEXT_IF_MISSING_THEN_EXECUTE',externalInput:Object.freeze(['materia','temaSubtema','titulo','descripcion','fechaSesion','horaFinSesion']),preflight:Object.freeze(['TARGET_PLANNING']),firstAction:'VALIDATE_TARGET_CONTEXT',state:'DRAFT',postflight:Object.freeze(['courseId','workId','state','due'])}),
-      tarea:Object.freeze({mode:'NEXT_SESSION_CONTEXT_THEN_EXECUTE',externalInput:Object.freeze(['materia','temaSubtema','titulo','descripcion','contenidoDocumento','fechaSiguienteSesion','horaInicioSiguienteSesion','insertTaskNumber','backfillDraft','explicitSequenceOverride','sesionCanonica']),preflight:Object.freeze(['TARGET_PLANNING','NEXT_SESSION_WHEN_MISSING']),firstAction:'VALIDATE_TARGET_CONTEXT',state:'DRAFT',postflight:Object.freeze(['courseId','workId','state','due'])}),
+      tarea:Object.freeze({mode:'OPTIONAL_NEXT_SESSION_CONTEXT_THEN_EXECUTE',externalInput:Object.freeze(['materia','temaSubtema','titulo','descripcion','contenidoDocumento','fechaSiguienteSesion','horaInicioSiguienteSesion','insertTaskNumber','backfillDraft','explicitSequenceOverride','sesionCanonica']),preflight:Object.freeze(['TARGET_PLANNING']),firstAction:'VALIDATE_TARGET_CONTEXT',state:'DRAFT',postflight:Object.freeze(['courseId','workId','state','due'])}),
       practica:Object.freeze({mode:'ACADEMIC_CONTEXT_THEN_EXECUTE',externalInput:Object.freeze(['materia','temaSubtema','titulo','descripcion','contenidoDocumento','documentId']),preflight:Object.freeze(['TARGET_PLANNING']),firstAction:'VALIDATE_TARGET_CONTEXT',state:'DRAFT',postflight:Object.freeze(['courseId','workId','state','documentId','shareMode','noDue'])}),
       quiz:Object.freeze({mode:'SOURCE_CONTENT_THEN_EXECUTE',externalInput:Object.freeze(['materia','temaSubtema','titulo','preguntas']),preflight:Object.freeze(['TARGET_PLANNING','SOURCE_RESOURCE_WHEN_NEEDED']),firstAction:'VALIDATE_CONTENT',state:'DRAFT',postflight:Object.freeze(['courseId','quizId','formId','workId','state'])}),
       examen:Object.freeze({mode:'APPROVED_CONTENT_THEN_EXECUTE',externalInput:Object.freeze(['materia','temaSubtema','titulo','preguntas']),preflight:Object.freeze(['TARGET_PLANNING','TAUGHT_CONTENT_WHEN_DESIGNING']),firstAction:'VALIDATE_APPROVED_CONTENT',state:'DRAFT',postflight:Object.freeze(['courseId','quizId','formId','workId','state'])}),
@@ -92,12 +92,14 @@ const ACADEMIC_POLICY = Object.freeze({
       UTC_OFFSET_MINUTES: -360
     }),
     TASK_DUE: Object.freeze({
-      REQUIRED: true,
+      REQUIRED: false,
       DEFAULT: 'NEXT_SESSION_START',
       MAXIMUM: 'NEXT_SESSION_START',
-      REQUIRES_NEXT_SESSION_CONTEXT: true,
-      PAST_NEXT_SESSION_CREATION: 'BLOCK',
+      REQUIRES_NEXT_SESSION_CONTEXT: false,
+      PAST_NEXT_SESSION_CREATION: 'OMIT_DUE',
       DUE_MUST_BE_FUTURE: true,
+      MISSING_NEXT_SESSION_CONTEXT: 'OMIT_DUE',
+      PAST_DUE: 'OMIT_DUE',
       NEXT_SESSION_DATE_PARAM: 'fechaSiguienteSesion',
       NEXT_SESSION_START_PARAM: 'horaInicioSiguienteSesion',
       TIMEZONE: 'America/Mexico_City',
@@ -324,7 +326,7 @@ function validarPoliticasCanonicas_(){
   if(!activityDue||activityDue.REQUIRED!==true||activityDue.DEFAULT!=='SESSION_END'||activityDue.MAXIMUM!=='SESSION_END'||activityDue.REQUIRES_SESSION_CONTEXT!==true||activityDue.PAST_SESSION_CREATION!=='BLOCK'||activityDue.DUE_MUST_BE_FUTURE!==true) throw new Error('La política de vencimiento de ACTIVIDAD EN CLASE debe exigir fin de sesión, futuro válido y bloqueo posterior.');
   if(activityDue.TIMEZONE!=='America/Mexico_City'||activityDue.UTC_OFFSET_MINUTES!==-360) throw new Error('La conversión horaria canónica de ACTIVIDAD EN CLASE no coincide con America/Mexico_City 2026.');
   const taskDue=p.CLASSROOM.TASK_DUE;
-  if(!taskDue||taskDue.REQUIRED!==true||taskDue.DEFAULT!=='NEXT_SESSION_START'||taskDue.MAXIMUM!=='NEXT_SESSION_START'||taskDue.REQUIRES_NEXT_SESSION_CONTEXT!==true||taskDue.PAST_NEXT_SESSION_CREATION!=='BLOCK'||taskDue.DUE_MUST_BE_FUTURE!==true) throw new Error('La política de vencimiento de TAREA debe exigir inicio de siguiente sesión, futuro válido y bloqueo posterior.');
+  if(!taskDue||taskDue.REQUIRED!==false||taskDue.DEFAULT!=='NEXT_SESSION_START'||taskDue.MAXIMUM!=='NEXT_SESSION_START'||taskDue.REQUIRES_NEXT_SESSION_CONTEXT!==false||taskDue.PAST_NEXT_SESSION_CREATION!=='OMIT_DUE'||taskDue.DUE_MUST_BE_FUTURE!==true||taskDue.MISSING_NEXT_SESSION_CONTEXT!=='OMIT_DUE'||taskDue.PAST_DUE!=='OMIT_DUE') throw new Error('TASK_DUE_POLICY_INVALID: fecha opcional, vencimiento futuro u omisión cuando no proceda.');
   if(taskDue.TIMEZONE!=='America/Mexico_City'||taskDue.UTC_OFFSET_MINUTES!==-360) throw new Error('La conversión horaria canónica de TAREA no coincide con America/Mexico_City 2026.');
   const practice=p.CLASSROOM.PRACTICE;
   if(!practice||practice.DUE_MODE!=='NONE'||practice.DUE_ALLOWED!==false||practice.GOOGLE_DOCUMENT_REQUIRED!==true||practice.GOOGLE_DOCUMENT_MIME!=='application/vnd.google-apps.document'||practice.STUDENT_COPY_REQUIRED!==true||practice.SHARE_MODE!=='STUDENT_COPY'||practice.CREATE_GOOGLE_DOCUMENT_IF_MISSING!==true) throw new Error('La política canónica de PRÁCTICA debe exigir Google Documento, STUDENT_COPY y ausencia total de vencimiento.');

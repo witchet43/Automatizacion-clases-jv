@@ -4,6 +4,7 @@ import vm from 'node:vm';
 
 const web=fs.readFileSync('src/65_QuizAsistenciaWebApp.gs','utf8');
 const maintenance=fs.readFileSync('src/66_MantenimientoPropiedadesAcademicas.gs','utf8');
+const diagnostic=fs.readFileSync('src/68_AcademicErrorDiagnostic.gs','utf8');
 const props=new Map([
  ['ACADEMIC_WRITE_HMAC_KEY','DO_NOT_PRINT_THIS_TEST_SECRET_1234567890ABC'],
  ['ACADEMIC_WRITE_RECEIPT_111',JSON.stringify({status:'PENDING',operation:'examen',at:1})],
@@ -16,6 +17,7 @@ const ctx={
  ContentService:{MimeType:{JSON:'JSON'},createTextOutput:raw=>({setMimeType:()=>JSON.parse(raw)})},
  PropertiesService:{getScriptProperties:()=>({
   getProperties:()=>Object.fromEntries(props),
+  getProperty:k=>props.get(k),
   setProperty:(k,v)=>props.set(k,v)
  })},
  validarArranqueAcademicoWeb_:()=>({contractVersion:'1.1.0'}),
@@ -23,7 +25,7 @@ const ctx={
  respuestaAcademicaWeb_:value=>value
 };
 vm.createContext(ctx);
-vm.runInContext(web+'\n'+maintenance,ctx);
+vm.runInContext(diagnostic+'\n'+web+'\n'+maintenance,ctx);
 const result=ctx.ejecutarServicioAcademicoWeb_({
  action:'uaqExecutor',operation:'examen',courseId:'875776451793',requestId:'test-request'
 });
@@ -35,6 +37,20 @@ assert.equal(summary.recibosPendientes,2);
 assert.equal(summary.recibosPendientesPorOperacion.examen,2);
 assert.equal(summary.ultimoErrorWebApp.code,'EXAMEN_SYNTHETIC_FAILURE');
 assert.equal(summary.ultimoErrorWebApp.operation,'examen');
+const safe=ctx.leerUltimoFalloAcademicoWeb_('875776451793');
+assert.equal(safe.code,'EXAMEN_SYNTHETIC_FAILURE');
+assert.equal(safe.operation,'examen');
+assert.equal(safe.stage,'ACADEMIC_EXECUTION');
+assert.equal(ctx.leerUltimoFalloAcademicoWeb_('123456789'),null,
+  'Failure diagnostics must not leak across courses');
+assert.equal(result.errorDetails.code,'EXAMEN_SYNTHETIC_FAILURE');
+assert.ok(!JSON.stringify(safe).includes('simulated internal details'));
+const mapped=ctx.detallarFalloAcademicoWeb_(new Error(
+ 'TAREA requiere fechaSiguienteSesion y horaInicioSiguienteSesion'),
+ {action:'uaqExecutor',operation:'clase',courseId:'875776451793',requestId:'SO_C19_MUTEX_SEM_20261021_V1'});
+assert.equal(mapped.code,'TASK_NEXT_SESSION_CONTEXT_MISSING');
+assert.equal(mapped.stage,'PREFLIGHT_OR_POLICY');
+assert.equal(mapped.requestIdHint,'_20261021_V1');
 assert.equal(summary.claveHmacConfigurada,true);
 assert.ok(!log.join(' ').includes('DO_NOT_PRINT_THIS_TEST_SECRET_'));
 assert.ok(!log.join(' ').includes('ACADEMIC_WRITE_RECEIPT_111'));

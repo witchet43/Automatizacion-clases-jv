@@ -100,6 +100,7 @@ jobs:
         run: |
           node scripts/test-exam-form-batch.mjs
           node scripts/test-webapp-error-diagnostics.mjs
+          node scripts/test-task-due-optional.mjs
           node scripts/test-site-direct-write-client.mjs
           node scripts/test-grading-bridge.mjs
 
