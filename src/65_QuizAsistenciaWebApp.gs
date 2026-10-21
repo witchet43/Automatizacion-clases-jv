@@ -523,15 +523,79 @@ function normalizarPayloadAcademicoWeb_(course,p){
  */
 function crearPaqueteClaseWeb_(course,p){
   if(String(p.gammaUrl||'').trim())
-    throw new Error('CLASE_RECURSOS_PRIMERO: gammaUrl no se acepta en la fase de materialización. Genere/verifique Gamma después de obtener IDs/URLs reales de los recursos.');
+    throw new Error('CLASE_RECURSOS_PRIMERO: gammaUrl solo se verifica después de preparar los recursos.');
   const resources=Array.isArray(p.resources)?p.resources:[];
   if(!resources.length)throw new Error('CLASE_REQUIERE_RECURSOS');
-  const results=[];
-  resources.forEach(function(item,index){
+  const allowed=['actividad','tarea','practica','quiz','examen','material'];
+  // Preflight completo antes del primer efecto: nunca generar dos recursos
+  // de igual tipo y título en el mismo paquete.
+  const seen={};
+  const prepared=resources.map(function(item,index){
     const type=String(item&&item.type||'').trim().toLowerCase();
+    if(allowed.indexOf(type)<0)throw new Error('TIPO_RECURSO_NO_PERMITIDO_EN_CLASE_'+index);
     const payload=normalizarPayloadAcademicoWeb_(course,{
       params:item&&item.params&&typeof item.params==='object'?item.params:{}
     });
+    const title=String(payload.titulo||payload.title||'').trim();
+    if(!title)throw new Error('CLASE_RECURSO_TITULO_REQUERIDO_'+index);
+    const key=type+'|'+title;
+    if(seen[key])throw new Error('CLASE_RECURSO_DUPLICADO_EN_SOLICITUD_'+index);
+    seen[key]=true;
+    return {type:type,payload:payload,title:title};
+  });
+
+  // Una lectura del estado real permite reutilizar DRAFT/PUBLISHED y evitar
+  // duplicaciones sin editar ni eliminar recursos ya existentes.
+  const works=listarCourseWorkClase_(course.id);
+  const results=[];
+  prepared.forEach(function(item){
+    const type=item.type,payload=item.payload,title=item.title;
+    let existing=null;
+    if(type!=='material'){
+      const matches=works.filter(function(w){
+        const state=String(w.state||'').toUpperCase();
+        return (state==='DRAFT'||state==='PUBLISHED') &&
+          String(w.title||'').trim()===title &&
+          (!String(payload.topicId||'').trim() ||
+            String(w.topicId||'')===String(payload.topicId));
+      });
+      if(matches.length>1){
+        results.push({type:type,title:title,status:'BLOCKED',result:{
+          errorCode:'CLASE_RECURSO_IDENTIDAD_AMBIGUA',
+          matchCount:matches.length,creado:false,reutilizado:false
+        }});
+        return;
+      }
+      existing=matches[0]||null;
+    }
+    if(existing){
+      const state=String(existing.state||'').toUpperCase();
+      // Una práctica sin su Google Doc individual no constituye un
+      // componente completo; su reparación sigue el entrypoint canónico.
+      const hasDocument=(existing.materials||[]).some(function(m){
+        const d=m&&m.driveFile;
+        return d && (d.driveFile||d).id &&
+          String(d.shareMode||'').toUpperCase()==='STUDENT_COPY';
+      });
+      if((type==='practica'||type==='actividad'&&payload.contenidoDocumento) &&
+        !hasDocument){
+        if(state==='PUBLISHED'){
+          results.push({type:type,title:title,status:'BLOCKED',result:{
+            errorCode:'CLASE_RECURSO_PUBLICADO_SIN_DOCUMENTO',
+            workId:String(existing.id),creado:false,reutilizado:false
+          }});
+          return;
+        }
+        // La corrección de un borrador se delega al entrypoint, que
+        // reutiliza el ID y verifica STUDENT_COPY.
+      }else{
+        results.push({type:type,title:title,status:'REUSED',result:{
+          workId:String(existing.id),state:state,creado:false,
+          reutilizado:true,classroomUrl:String(existing.alternateLink||'')
+        }});
+        return;
+      }
+    }
     let r;
     if(type==='actividad')r=crearActividad(payload);
     else if(type==='tarea')r=crearTarea(payload);
@@ -539,26 +603,28 @@ function crearPaqueteClaseWeb_(course,p){
     else if(type==='quiz')r=crearQuiz(payload);
     else if(type==='examen')r=crearExamen(payload);
     else if(type==='material')r=crearMaterialDidacticoWeb_(course,{params:payload});
-    else if(type==='quizasistencia'||type==='quiz-asistencia')r=crearQuizAsistenciaRapido(course.materia);
-    else throw new Error('TIPO_RECURSO_NO_PERMITIDO_EN_CLASE_'+index+': '+type);
-    if(['actividad','tarea','practica'].indexOf(type)>=0 && r && r.workId){
-      r.duplicateDraftsRemoved=deduplicarDraftsExactosClaseWeb_(course.id,payload,r);
-    }
-    results.push({type:type,result:r});
+    results.push({type:type,title:title,status:r&&r.reutilizado?'REUSED':'CREATED',result:r});
   });
   const expected=(Array.isArray(p.expectedResourceTypes)?p.expectedResourceTypes:[])
     .map(function(x){return String(x||'').trim().toLowerCase();}).filter(Boolean);
-  const actual=results.map(function(x){return x.type;});
+  const actual=results.filter(function(x){return x.status!=='BLOCKED';})
+    .map(function(x){return x.type;});
   const missing=expected.filter(function(type){return actual.indexOf(type)<0;});
-  const resourcePhaseStatus=expected.length?(missing.length?'PARCIAL':'MATERIALES_LISTOS_PARA_GAMMA'):'MATERIALES_SIN_LISTA_ESPERADA';
+  const failures=results.filter(function(x){return x.status==='BLOCKED';});
+  const created=results.filter(function(x){return x.status==='CREATED';}).length;
+  const reused=results.filter(function(x){return x.status==='REUSED';}).length;
+  const resourcePhaseStatus=failures.length||missing.length?'PARCIAL':'MATERIALES_LISTOS_PARA_GAMMA';
   return {
-    package:false,
-    packageStatus:resourcePhaseStatus,
+    package:false,packageStatus:resourcePhaseStatus,
     resourcePhaseStatus:resourcePhaseStatus,
-    expectedResourceTypes:expected,
-    missingResourceTypes:missing,
+    expectedResourceTypes:expected,missingResourceTypes:missing,
+    resourceErrors:failures.map(function(x){return {type:x.type,title:x.title,
+      errorCode:x.result.errorCode};}),
+    createdCount:created,reusedCount:reused,
+    allResourcesAlreadyExisted:reused===results.length&&failures.length===0,
     gammaUrl:'',
-    nextPhase:missing.length?'COMPLETE_MISSING_RESOURCES':'GENERATE_AND_VERIFY_GAMMA_REFERENCING_RESOURCE_IDS_URLS',
+    nextPhase:resourcePhaseStatus==='PARCIAL'?'COMPLETE_MISSING_RESOURCES':
+      'GENERATE_OR_REUSE_GAMMA_AND_NOTION',
     resources:results
   };
 }
