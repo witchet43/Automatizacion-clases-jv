@@ -64,10 +64,11 @@ const gammaNullEvidence=ctx.evidenciaSesionReal_(row,works,{'16':gammaWithNullTh
 assert.equal(gammaNullEvidence.gammaVerificada,true,'NULL theme reply is not proof of a wrong theme');
 assert.equal(gammaNullEvidence.gammaThemeWarning,'GAMMA_THEME_ID_NULL_RESPONSE_NON_BLOCKING');
 assert.equal(gammaNullEvidence.paquetePreparado,true,'NULL theme reply cannot stop a complete package');
-assert.equal(manifest.rules.gammaNullThemeIdBlocksClass,false);
-assert.equal(manifest.rules.gammaThemeNullReturned,'WARN_CONTINUE_IF_THEME_ID_SENT');
-assert.equal(manifest.institutionGammaThemes.UAQ.themeId,'bfm8ztqy1whsib8');
-assert.equal(manifest.institutionGammaThemes.UMx.themeId,'rhuzrubac7etaw3');
+const policy=fs.readFileSync('src/00_PoliticasCanonicas.gs','utf8');
+assert.match(policy,/NULL_THEME_ID_REPLY: 'WARN_CONTINUE'/);
+assert.match(policy,/THEME_ID_MUST_BE_SENT: true/);
+assert.match(policy,/UAQ: 'bfm8ztqy1whsib8'/);
+assert.match(policy,/UMx: 'rhuzrubac7etaw3'/);
 
 assert.equal(manifest.rules.planningGammaStateIsAuthority,false);
 assert.equal(manifest.rules.gammaLiveVerificationRequiredBeforeReuse,true);
