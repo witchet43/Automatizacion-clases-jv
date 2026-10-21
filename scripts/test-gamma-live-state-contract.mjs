@@ -58,6 +58,17 @@ const duplicateEvidence=ctx.evidenciaSesionReal_(row,works,{'16':duplicateFound}
 assert.equal(duplicateEvidence.gammaCanCreate,false);
 assert.equal(duplicateEvidence.gammaDecision,'REUSE_ACTIVE_EQUIVALENT');
 
+const gammaWithNullTheme={...active,
+  themeIdSent:'bfm8ztqy1whsib8',themeIdReturned:null,themeRequestVerified:true};
+const gammaNullEvidence=ctx.evidenciaSesionReal_(row,works,{'16':gammaWithNullTheme},{'16':notionActive});
+assert.equal(gammaNullEvidence.gammaVerificada,true,'NULL theme reply is not proof of a wrong theme');
+assert.equal(gammaNullEvidence.gammaThemeWarning,'GAMMA_THEME_ID_NULL_RESPONSE_NON_BLOCKING');
+assert.equal(gammaNullEvidence.paquetePreparado,true,'NULL theme reply cannot stop a complete package');
+assert.equal(manifest.rules.gammaNullThemeIdBlocksClass,false);
+assert.equal(manifest.rules.gammaThemeNullReturned,'WARN_CONTINUE_IF_THEME_ID_SENT');
+assert.equal(manifest.institutionGammaThemes.UAQ.themeId,'bfm8ztqy1whsib8');
+assert.equal(manifest.institutionGammaThemes.UMx.themeId,'rhuzrubac7etaw3');
+
 assert.equal(manifest.rules.planningGammaStateIsAuthority,false);
 assert.equal(manifest.rules.gammaLiveVerificationRequiredBeforeReuse,true);
 assert.equal(manifest.rules.gammaLiveSearchBeforeCreate,true);
