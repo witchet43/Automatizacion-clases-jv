@@ -470,7 +470,15 @@
     "routineOperationMaxAcademicRequests": 1,
     "routineOperationPostflightMode": "BUILT_IN_RESULT",
     "routineOperationAlternativeRouteAllowed": false,
-    "routineOperationGatewayFailureBehavior": "BLOCK_NO_ALTERNATE_ROUTE"
+    "routineOperationGatewayFailureBehavior": "BLOCK_NO_ALTERNATE_ROUTE",
+    "explicitSessionReconciliation": "TARGET_ONLY_REUSE_AND_FILL_MISSING",
+    "explicitSessionBypassesPriorGapBlock": true,
+    "classResourcesReconcileExistingBeforeCreate": true,
+    "classResourceDuplicatePolicy": "REUSE_IDENTICAL_BLOCK_AMBIGUOUS_WITHOUT_DELETE",
+    "classAllExistingResourcesOutcome": "SUCCESS_NO_NEW_RESOURCES",
+    "gammaThemeNullReturned": "WARN_CONTINUE_IF_THEME_ID_SENT",
+    "gammaNullThemeIdBlocksClass": false,
+    "gammaGenerationErrorHandling": "CHECK_LIVE_FOR_OUTPUT_AND_CONTINUE_INDEPENDENT_WORK_REPORT_PARTIAL"
   },
   "startup": {
     "read": [
@@ -480,8 +488,8 @@
       "targetPlanningWhenRequired"
     ],
     "onMissingOrMismatch": "BLOCK_BEFORE_SIDE_EFFECTS",
-    "classSequence": "Use canonical planning order plus real prepared Classroom resources and verified Gamma only to identify the first incomplete package. DRAFT + verified Gamma counts as prepared, not taught. Current/system date and Calendar never participate. Explicit session/tema remains authoritative when supplied.",
-    "execution": "Identify operationKey → resolve manifest.operations[operationKey] → use only its executionRoute. For every new/next-class request, perform the mandatory sequence-gap audit first: canonical planning order + real Classroom/Gamma preparation state → first incomplete canonical package. Reconcile any safe unambiguous earlier gap before advancing; block later-class generation if an earlier gap remains unresolved. Then design required academic resources → materialize/reuse Google resources through the declared Academic Web App route → postflight real resource IDs/URLs → resolve canonical Gamma folder AND theme from manifest BEFORE generation → generate Gamma with folderIds and themeId → verify title, content, resource references, canonical folder AND canonical theme → record all real IDs/URLs/states in target planning.",
+    "classSequence": "For 'next class', select the first incomplete session from canonical planning and real Classroom/Gamma/Notion evidence (never current date or Calendar); unresolved preceding gaps can block inferred progression. When the user explicitly requests a numbered canonical session, honor that target regardless of earlier gaps: inspect the target's real resources and live Gamma/Notion, reuse existing valid components, create only missing components, never delete or duplicate them, and report completion even when no new resources were needed.",
+    "execution": "Use only the canonical direct WebApp for academic resource creation; GitHub Actions only for authorized code fixes/deploys. For an explicitly requested class number reconcile only that session, reusing DRAFT/PUBLISHED Classroom resources by verified identity and filling only missing parts. For 'next class', audit the first incomplete canonical package. Always send the course's configured gammaFolderId and gammaThemeId, or an institution theme ID for a registered course. A NULL theme ID returned by Gamma is only a warning if the request included the correct themeId, not a reason to stop or regenerate. If Gamma generation fails, check live existence before any retry and continue independent preparation; never claim the package complete while Gamma or required Notion notes are missing. Report created, reused, warnings, and true blockers. Do not use Calendar/current date to identify a class, and never publish Classroom/Forms.",
     "courseEnvironment": "Before designing any class/task/activity/practice/Gamma/Notion note, resolve the target course in manifest.courses and obey studentEnvironmentProfile when present. For Introducción a las Tecnologías de Información, all future student-facing practical work must be completable on one Windows computer; other operating systems may appear only as conceptual examples and never as required execution environments. Previously published historical resources remain unchanged."
   },
   "code": {
@@ -735,5 +743,15 @@
       "Conceptos clave"
     ],
     "gammaReferenceRequiredWhenApplicable": true
+  },
+  "institutionGammaThemes": {
+    "UAQ": {
+      "themeId": "bfm8ztqy1whsib8",
+      "themeName": "UAQ"
+    },
+    "UMx": {
+      "themeId": "rhuzrubac7etaw3",
+      "themeName": "Theme Mondragón"
+    }
   }
 }
