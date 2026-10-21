@@ -521,18 +521,82 @@ function normalizarPayloadAcademicoWeb_(course,p){
  * resources[] debe contener objetos {type, params}.
  * No inventa contenido ni secuencia y no publica nada.
  */
+/**
+ * Two deterministic phases through the EXISTING class operation:
+ * PLAN: read canonical planning + Classroom once, never create a resource.
+ * EXECUTE: reuse live resources; normalize/prepare ALL missing documents in
+ * memory before the first external write. No extra postflight reads are added.
+ */
+function planificarClaseCanonicaWeb_(course,p,works){
+  const planning=leerPlaneacionSiguienteClase_(course.materia);
+  const target=p&&p.target&&typeof p.target==='object'?p.target:{};
+  const requested=String(p.requestedSession||p.sesion||target.session||'').trim();
+  const options={explicitTarget:requested!==''};
+  const selection=seleccionarSiguienteClasePorEstadoReal_(planning.rows,works,requested,options);
+  if(selection.complete)return {
+    package:false,packageStatus:'SEQUENCE_COMPLETE',readOnly:true,
+    planningComplete:true,courseId:String(course.id),createdCount:0,reusedCount:0,
+    nextPhase:'NONE',resources:[]
+  };
+  const row=selection.target;
+  const evidence=selection.evidence;
+  const existingIds={};
+  (evidence.classroomIds||[]).forEach(function(id){existingIds[String(id)]=true;});
+  return {
+    package:false,packageStatus:'PLAN_READY',readOnly:true,
+    courseId:String(course.id),materia:String(course.materia),
+    target:{session:String(row.session||''),unit:String(row.unit||''),
+      topic:String(row.topic||''),kind:String(row.kind||''),
+      practice:String(row.practice||''),previous:String(row.previous||''),
+      next:String(row.next||''),gammaState:String(row.gammaState||'')},
+    sequenceSource:String(selection.source||''),
+    requiresExternalEvidence:selection.gammaVerificationOnly===true||
+      selection.notionVerificationOnly===true,
+    gammaDecision:String(evidence.gammaDecision||''),
+    notionDecision:String(evidence.notionDecision||''),
+    existingResources:works.filter(function(w){
+      return existingIds[String(w.id||'')]===true;
+    }).map(function(w){return {workId:String(w.id),title:String(w.title||''),
+      state:String(w.state||'')};}),
+    createdCount:0,reusedCount:0,resources:[],
+    nextPhase:'PROVIDE_ONLY_MISSING_CONTENT'
+  };
+}
+
+function prepararDocumentoRecursoClaseWeb_(item){
+  const kind=String(item.type||'').toUpperCase();
+  const original=item.payload;
+  if(['ACTIVIDAD','TAREA','PRACTICA'].indexOf(kind)<0)return original;
+  const p=normalizarCreacionDirecta_(original,kind);
+  const raw=p.contenidoDocumento!==undefined?p.contenidoDocumento:p.googleDocContent;
+  if(raw!==undefined&&String(raw||'').trim()!==''){
+    const html=kind==='PRACTICA'
+      ? construirHtmlPractica_(item.title,p.descripcion,
+          normalizarContenidoPractica_(raw))
+      : construirHtmlDocumentoAcademico_(item.title,p.descripcion,raw);
+    // Use the same canonical document formatter already invoked during
+    // creation, now before any external mutation can take place.
+    validarFormatoHtmlDocumentoAcademico_(html,item.title);
+  }
+  return p;
+}
+
 function crearPaqueteClaseWeb_(course,p){
   if(String(p.gammaUrl||'').trim())
     throw new Error('CLASE_RECURSOS_PRIMERO: gammaUrl solo se verifica después de preparar los recursos.');
+  const mode=String(p.mode||p.executionMode||'EXECUTE').trim().toUpperCase();
+  if(['PLAN','EXECUTE'].indexOf(mode)<0)
+    throw new Error('CLASE_MODO_INVALIDO: PLAN o EXECUTE');
   const resources=Array.isArray(p.resources)?p.resources:[];
-  if(!resources.length)throw new Error('CLASE_REQUIERE_RECURSOS');
-  const allowed=['actividad','tarea','practica','quiz','examen','material'];
-  // Preflight completo antes del primer efecto: nunca generar dos recursos
-  // de igual tipo y título en el mismo paquete.
+  const works=listarCourseWorkClase_(course.id);
+  if(mode==='PLAN'||!resources.length)
+    return planificarClaseCanonicaWeb_(course,p,works);
+  const allowed=['actividad','tarea','practica','quiz','material'];
   const seen={};
   const prepared=resources.map(function(item,index){
     const type=String(item&&item.type||'').trim().toLowerCase();
-    if(allowed.indexOf(type)<0)throw new Error('TIPO_RECURSO_NO_PERMITIDO_EN_CLASE_'+index);
+    if(allowed.indexOf(type)<0)
+      throw new Error('TIPO_RECURSO_NO_PERMITIDO_EN_CLASE_'+index);
     const payload=normalizarPayloadAcademicoWeb_(course,{
       params:item&&item.params&&typeof item.params==='object'?item.params:{}
     });
@@ -544,10 +608,9 @@ function crearPaqueteClaseWeb_(course,p){
     return {type:type,payload:payload,title:title};
   });
 
-  // Una lectura del estado real permite reutilizar DRAFT/PUBLISHED y evitar
-  // duplicaciones sin editar ni eliminar recursos ya existentes.
-  const works=listarCourseWorkClase_(course.id);
   const results=[];
+  const pending=[];
+  const requiresContent=[];
   prepared.forEach(function(item){
     const type=item.type,payload=item.payload,title=item.title;
     let existing=null;
@@ -570,15 +633,12 @@ function crearPaqueteClaseWeb_(course,p){
     }
     if(existing){
       const state=String(existing.state||'').toUpperCase();
-      // Una práctica sin su Google Doc individual no constituye un
-      // componente completo; su reparación sigue el entrypoint canónico.
       const hasDocument=(existing.materials||[]).some(function(m){
         const d=m&&m.driveFile;
-        return d && (d.driveFile||d).id &&
+        return d&&(d.driveFile||d).id&&
           String(d.shareMode||'').toUpperCase()==='STUDENT_COPY';
       });
-      if((type==='practica'||type==='actividad'&&payload.contenidoDocumento) &&
-        !hasDocument){
+      if((type==='practica'||type==='actividad'||type==='tarea')&&!hasDocument){
         if(state==='PUBLISHED'){
           results.push({type:type,title:title,status:'BLOCKED',result:{
             errorCode:'CLASE_RECURSO_PUBLICADO_SIN_DOCUMENTO',
@@ -586,8 +646,8 @@ function crearPaqueteClaseWeb_(course,p){
           }});
           return;
         }
-        // La corrección de un borrador se delega al entrypoint, que
-        // reutiliza el ID y verifica STUDENT_COPY.
+        // An existing incomplete DRAFT is repaired only by its established
+        // idempotent entrypoint, with no new CourseWork identity.
       }else{
         results.push({type:type,title:title,status:'REUSED',result:{
           workId:String(existing.id),state:state,creado:false,
@@ -596,12 +656,40 @@ function crearPaqueteClaseWeb_(course,p){
         return;
       }
     }
+    const source=payload.contenidoDocumento!==undefined
+      ?payload.contenidoDocumento:payload.googleDocContent;
+    if(['actividad','tarea','practica'].indexOf(type)>=0 &&
+       !String(source||'').trim() &&
+       !String(payload.documentId||payload.googleDocId||'').trim()){
+      requiresContent.push({type:type,title:title,
+        errorCode:'CLASE_RECURSO_CONTENIDO_REQUERIDO'});
+      return;
+    }
+    pending.push(item);
+  });
+  // No mutation until every missing component has content AND the canonical
+  // HTML/description can be prepared. This is one batch preparation, not
+  // another round of readback or manual validation.
+  if(requiresContent.length)return {
+    package:false,packageStatus:'CONTENT_REQUIRED',
+    resourcePhaseStatus:'CONTENT_REQUIRED',createdCount:0,
+    reusedCount:results.filter(function(r){return r.status==='REUSED';}).length,
+    missingResourceContent:requiresContent,
+    resourceErrors:results.filter(function(r){return r.status==='BLOCKED';})
+      .map(function(r){return {type:r.type,title:r.title,errorCode:r.result.errorCode};}),
+    resources:results,nextPhase:'PROVIDE_ONLY_MISSING_CONTENT'
+  };
+  const ready=pending.map(function(item){
+    const payload=prepararDocumentoRecursoClaseWeb_(item);
+    return {type:item.type,title:item.title,payload:payload};
+  });
+  ready.forEach(function(item){
+    const type=item.type,payload=item.payload,title=item.title;
     let r;
     if(type==='actividad')r=crearActividad(payload);
     else if(type==='tarea')r=crearTarea(payload);
     else if(type==='practica')r=crearPractica(payload);
     else if(type==='quiz')r=crearQuiz(payload);
-    else if(type==='examen')r=crearExamen(payload);
     else if(type==='material')r=crearMaterialDidacticoWeb_(course,{params:payload});
     results.push({type:type,title:title,status:r&&r.reutilizado?'REUSED':'CREATED',result:r});
   });
