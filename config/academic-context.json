@@ -478,7 +478,25 @@
     "classAllExistingResourcesOutcome": "SUCCESS_NO_NEW_RESOURCES",
     "gammaThemeNullReturned": "WARN_CONTINUE_IF_THEME_ID_SENT",
     "gammaNullThemeIdBlocksClass": false,
-    "gammaGenerationErrorHandling": "CHECK_LIVE_FOR_OUTPUT_AND_CONTINUE_INDEPENDENT_WORK_REPORT_PARTIAL"
+    "gammaGenerationErrorHandling": "CHECK_LIVE_FOR_OUTPUT_AND_CONTINUE_INDEPENDENT_WORK_REPORT_PARTIAL",
+    "classExecutionSeverity": {
+      "advisory": [
+        "GAMMA_THEME_ID_NULL_RESPONSE_IF_CORRECT_ID_SENT",
+        "EXISTING_CANONICAL_RESOURCE_REUSED",
+        "TASK_DUE_DATE_OMITTED",
+        "PLANNING_DATE_SHIFT"
+      ],
+      "incompleteButContinueIndependentWork": [
+        "GAMMA_GENERATION_FAILED_WITHOUT_ACTIVE_PRESENTATION",
+        "NOTION_NOTE_MISSING"
+      ],
+      "blockingBeforeMutation": [
+        "UNAUTHORIZED_WRITE",
+        "WRONG_COURSE_OR_SESSION",
+        "DUPLICATE_IDENTITY_AMBIGUOUS",
+        "RESOURCE_PUBLICATION_UNAUTHORIZED"
+      ]
+    }
   },
   "startup": {
     "read": [
