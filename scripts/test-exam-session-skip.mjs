@@ -29,8 +29,14 @@ const notion={source:'NOTION_LIVE_CONNECTOR',status:'LIVE_CANONICAL',pageId:'n23
  pageUrl:'https://app.notion.com/p/n23',parentPageId:'course',title:'3.1 Propiedad intelectual',
  contentVerified:true,canonicalTopicVerified:true,gammaReferenceVerified:true,
  searchPerformed:true,duplicateCount:1};
+const incomplete=ctx.seleccionarSiguienteClasePorEstadoReal_(rows,existing,null,{notionLiveEvidence:{'23':notion}});
+assert.equal(incomplete.target.session,'23','Ordinary class without LIVE Gamma is incomplete even if planning says NO APLICA');
+const gamma={source:'GAMMA_LIVE_CONNECTOR',status:'LIVE_ACTIVE_CANONICAL',
+ gammaId:'g23',gammaUrl:'https://gamma.app/docs/g23',title:rows[1].topic,
+ archived:false,contentVerified:true,canonicalTopicVerified:true,
+ searchPerformed:true,activeEquivalentFound:false};
 result=ctx.seleccionarSiguienteClasePorEstadoReal_(rows,existing,null,{
- notionLiveEvidence:{'23':notion}});
+ notionLiveEvidence:{'23':notion},gammaLiveEvidence:{'23':gamma}});
 assert.equal(result.target.session,'25','The next ordinary session after a completed class and exam is selected');
 assert.equal(result.observed.length,2);
 
