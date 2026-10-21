@@ -26,7 +26,7 @@ const ACADEMIC_POLICY = Object.freeze({
       diagnosticarClase:Object.freeze({mode:'DIAGNOSTIC_READ_ONLY',externalInput:Object.freeze(['materia']),preflight:Object.freeze(['TARGET_PLANNING','CLASSROOM_REAL']),firstAction:'READ_AFTER_REAL_ERROR',state:'READ_ONLY',postflight:Object.freeze(['planningRows','courseWork'])}),
       eliminarDrafts:Object.freeze({mode:'ADMIN_CLEANUP_DRAFT_ONLY',externalInput:Object.freeze(['materia','workIds']),preflight:Object.freeze(['CLASSROOM_REAL']),firstAction:'VERIFY_DRAFT_THEN_DELETE',state:'DELETE_DRAFT_ONLY',postflight:Object.freeze(['deleted','deletedCount','postflightVerified'])}),
       auditarIdentidadClassroom:Object.freeze({mode:'DIAGNOSTIC_READ_ONLY',externalInput:Object.freeze(['materia']),preflight:Object.freeze(['CLASSROOM_REAL','ATTACHED_GOOGLE_DOCS']),firstAction:'READ_ONE_OR_ALL_COURSES',state:'READ_ONLY',postflight:Object.freeze(['materias','totalRecursos','totalDocumentos','totalConEncabezado'])}),
-      clase:Object.freeze({mode:'IDENTIFY_THEN_RESOURCES_FIRST',externalInput:Object.freeze(['materia','sesion','resources','expectedResourceTypes']),preflight:Object.freeze(['TARGET_PLANNING','CLASSROOM_REAL']),firstAction:'VALIDATE_TARGET_THEN_MATERIALIZE_RESOURCES',state:'DRAFT',postflight:Object.freeze(['courseId','resourcePhaseStatus','resources','nextPhase'])}),
+      clase:Object.freeze({mode:'DETERMINISTIC_PLAN_EXECUTE_FINALIZE',externalInput:Object.freeze(['materia','sesion','mode','resources','expectedResourceTypes','options']),preflight:Object.freeze(['TARGET_PLANNING','CLASSROOM_REAL']),firstAction:'PLAN_OR_EXECUTE_CANONICAL_MISSING_RESOURCES',state:'DRAFT',postflight:Object.freeze(['courseId','packageStatus','complete','missingComponents','resources','nextPhase'])}),
       importarCalificaciones:Object.freeze({mode:'ADMIN_PROTECTED',externalInput:Object.freeze(['quizId','courseId']),preflight:Object.freeze(['QUIZ_REGISTRY','FORMS','CLASSROOM']),firstAction:'RESOLVE_EXACT_INSTRUMENT',state:'DRAFT_GRADE_ONLY',postflight:Object.freeze(['quizId','courseId','workId','detalle'])}),
       revisarTrabajos:Object.freeze({mode:'ACADEMIC_REVIEW',externalInput:Object.freeze(['courseId','scope','rubrica']),preflight:Object.freeze(['CLASSROOM_PUBLISHED','EVIDENCE','RUBRIC_WHEN_REQUIRED']),firstAction:'RESOLVE_EVIDENCE_AND_CRITERIA',state:'DRAFT_GRADE_ONLY',postflight:Object.freeze(['courseId','trabajosRevisados','estadoCalificacion'])}),
       calificarEstadoEntrega:Object.freeze({mode:'ADMIN_PROTECTED',externalInput:Object.freeze(['courseId']),preflight:Object.freeze(['CLASSROOM_PUBLISHED']),firstAction:'SELECT_EXACT_SCOPE',state:'DRAFT_GRADE_ONLY',postflight:Object.freeze(['courseId','trabajosCandidatos','estadoCalificacion'])}),
@@ -47,6 +47,10 @@ const ACADEMIC_POLICY = Object.freeze({
     VERIFIED_GAMMA_COUNTS_AS_PREPARED_COMPONENT: true,
     ORDINARY_CLASS_REQUIRES_GAMMA: true,
     LEGACY_PLANNING_NO_APLICA_CANNOT_EXEMPT_ORDINARY_CLASS: true,
+    UNKNOWN_SESSION_KIND_REQUIRES_GAMMA: true,
+    ONLY_EXPLICIT_INTEGRATIVE_NO_GAMMA_EXCEPTION: true,
+    CLASS_FINALIZE_REQUIRES_LIVE_GAMMA_AND_NOTION: true,
+    NOTION_MUST_REFERENCE_GAMMA: true,
     REQUIRE_REAL_CLASSROOM_RESOURCE_FOR_PREPARED_PACKAGE: true,
     RESOURCES_BEFORE_GAMMA: true,
     GAMMA_REFERENCES_VERIFIED_RESOURCES: true,
@@ -287,6 +291,7 @@ function validarPoliticasCanonicas_(){
     if(!contracts||!contracts[name])throw new Error('Falta contrato académico ejecutable: '+name);
   });
   if(contracts.quizAsistencia.firstAction!=='WEB_APP'||contracts.quizAsistencia.preflight.length!==0)throw new Error('Quiz de Asistencia debe conservar EXECUTE_FIRST sin preflight.');
+   if(contracts.clase.mode!=='DETERMINISTIC_PLAN_EXECUTE_FINALIZE')throw new Error('CLASE_REQUIERE_CONTRATO_DETERMINISTICO');
   const seq=p.CLASS_SEQUENCE;
   if(!seq||seq.SOURCE!=='FIRST_INCOMPLETE_CANONICAL_PACKAGE_BY_REAL_PREPARATION'||seq.SYSTEM_DATE_AS_PROGRESS!==false||
     seq.CURRENT_DATE_ALLOWED_FOR_IDENTITY_OR_SEQUENCE!==false||seq.CALENDAR_ALLOWED_FOR_IDENTITY_OR_SEQUENCE!==false||
@@ -296,6 +301,10 @@ function validarPoliticasCanonicas_(){
     seq.VERIFIED_GAMMA_COUNTS_AS_PREPARED_COMPONENT!==true||
     seq.ORDINARY_CLASS_REQUIRES_GAMMA!==true||
     seq.LEGACY_PLANNING_NO_APLICA_CANNOT_EXEMPT_ORDINARY_CLASS!==true||
+    seq.UNKNOWN_SESSION_KIND_REQUIRES_GAMMA!==true||
+    seq.ONLY_EXPLICIT_INTEGRATIVE_NO_GAMMA_EXCEPTION!==true||
+    seq.CLASS_FINALIZE_REQUIRES_LIVE_GAMMA_AND_NOTION!==true||
+    seq.NOTION_MUST_REFERENCE_GAMMA!==true||
     seq.REQUIRE_REAL_CLASSROOM_RESOURCE_FOR_PREPARED_PACKAGE!==true||
     seq.RESOURCES_BEFORE_GAMMA!==true||seq.GAMMA_REFERENCES_VERIFIED_RESOURCES!==true||
     seq.RECONCILIATION_REQUIRES_EXPLICIT_REASON!==true||
