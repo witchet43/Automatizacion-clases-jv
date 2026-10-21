@@ -172,7 +172,7 @@ jobs:
             /TASK_DUE:\s*Object\.freeze/,
             /DEFAULT:\s*'NEXT_SESSION_START'/,
             /MAXIMUM:\s*'NEXT_SESSION_START'/,
-            /PAST_NEXT_SESSION_CREATION:\s*'BLOCK'/,
+            /PAST_NEXT_SESSION_CREATION:\s*'OMIT_DUE'/,
             /DUE_MUST_BE_FUTURE:\s*true/,
             /PRACTICE:\s*Object\.freeze/,
             /DUE_MODE:\s*'NONE'/,
