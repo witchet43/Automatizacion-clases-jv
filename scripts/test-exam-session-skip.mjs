@@ -38,7 +38,7 @@ const start=planning.indexOf('function leerPlaneacionSiguienteClase_(');
 const end=planning.indexOf('function tituloTareaPreviaClase_',start);
 assert.ok(start>=0&&end>start);
 ctx.normalizeGuard_=v=>String(v??'').trim().toLowerCase().normalize('NFD')
- .replace(/[\\u0300-\\u036f]/g,'').replace(/\\s+/g,' ');
+ .replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
 ctx.findHeaderGuard_=(headers,candidates)=>{for(const c of candidates){
  const i=headers.indexOf(ctx.normalizeGuard_(c));if(i>=0)return i;
 }return-1};
