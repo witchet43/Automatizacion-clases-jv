@@ -224,8 +224,14 @@ function renderizarLineasDocumentoAcademico_(titulo,lines){
 function validarFormatoHtmlDocumentoAcademico_(html,titulo){
   const body=String(html||'');
   if(!/<h1>[^<]+<\/h1>/i.test(body))throw new Error('BLOCKED_DOCUMENT_FORMAT: falta título H1 en '+String(titulo||'documento')+'.');
+  // Solo un encabezado ESTRUCTURAL incrustado al INICIO de un párrafo
+  // extenso constituye un bloque plano. Una mención normal a "desarrollo
+  // de software" o "evidencia de entrega" nunca es un error de formato.
+  // El renderizador canónico ya convierte los encabezados en líneas
+  // independientes a h2 y conserva el resto como párrafos válidos.
   const flat=(body.match(/<p>([^<]{450,})<\/p>/gi)||[]).filter(function(p){
-    return /(DESARROLLO|EVIDENCIA DE ENTREGA|GUIA DE LOS COMANDOS|GUÍA DE LOS COMANDOS)/i.test(p);
+    const value=p.replace(/^<p>/i,'').replace(/<\/p>$/i,'').trim();
+    return /^(?:DESARROLLO|EVIDENCIA DE ENTREGA|GUIA DE LOS COMANDOS|GUÍA DE LOS COMANDOS)\s*[:—-]\s*\S/i.test(value);
   });
   if(flat.length)throw new Error('BLOCKED_DOCUMENT_FORMAT_FLAT_BLOCK: se detectó contenido académico estructurado dentro de un párrafo gigante.');
   if(/<p>\s*(DESARROLLO|INDICACIONES PARA EL ALUMNO)\s*<\/p>/i.test(body)){
