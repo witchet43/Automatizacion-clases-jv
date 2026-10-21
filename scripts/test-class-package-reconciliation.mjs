@@ -71,8 +71,8 @@ assert.throws(()=>s.run(dup),/CLASE_RECURSO_DUPLICADO_EN_SOLICITUD/);
 assert.equal(s.calls.tarea+s.calls.practica,0,'Reject duplicates before side effects');
 assert.doesNotMatch(code,/deduplicarDraftsExactosClaseWeb_\(/,
  'The class execution must never delete preexisting drafts as a side effect');
-const manifest=JSON.parse(fs.readFileSync('config/academic-context.json','utf8'));
-assert.equal(manifest.rules.explicitSessionBypassesPriorGapBlock,true);
-assert.equal(manifest.rules.classResourcesReconcileExistingBeforeCreate,true);
-assert.equal(manifest.rules.classAllExistingResourcesOutcome,'SUCCESS_NO_NEW_RESOURCES');
+const policy=fs.readFileSync('src/00_PoliticasCanonicas.gs','utf8');
+assert.match(policy,/EXPLICIT_SESSION_RECONCILES_ONLY_TARGET: true/);
+assert.match(policy,/EXISTING_CLASS_RESOURCES_MUST_BE_REUSED: true/);
+assert.match(policy,/ALL_EXISTING_CLASS_COMPONENTS_IS_SUCCESS: true/);
 console.log('PASS: explicit class packages reuse existing DRAFT/PUBLISHED, complete only missing, preserve student work, no deletion or duplicate creation.');
