@@ -568,6 +568,14 @@ function prepararDocumentoRecursoClaseWeb_(item){
   const original=item.payload;
   if(['ACTIVIDAD','TAREA','PRACTICA'].indexOf(kind)<0)return original;
   const p=normalizarCreacionDirecta_(original,kind);
+  // An activity requested without a scheduled end is a DRAFT backfill, not
+  // a reason to invent an end time or require the caller to know two flags.
+  // An explicitly scheduled activity still follows the original due policy.
+  if(kind==='ACTIVIDAD'&&!String(p.fechaSesion||p.fechaClase||p.sessionDate||p.classDate||'').trim()&&
+      !String(p.horaFinSesion||p.horaFinClase||p.sessionEndTime||p.classEndTime||'').trim()){
+    p.backfillDraft=true;
+    p.explicitSequenceOverride=true;
+  }
   const raw=p.contenidoDocumento!==undefined?p.contenidoDocumento:p.googleDocContent;
   if(raw!==undefined&&String(raw||'').trim()!==''){
     const html=kind==='PRACTICA'
