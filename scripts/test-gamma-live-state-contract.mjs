@@ -64,8 +64,23 @@ const gammaNullEvidence=ctx.evidenciaSesionReal_(row,works,{'16':gammaWithNullTh
 assert.equal(gammaNullEvidence.gammaVerificada,true,'NULL theme reply is not proof of a wrong theme');
 assert.equal(gammaNullEvidence.gammaThemeWarning,'GAMMA_THEME_ID_NULL_RESPONSE_NON_BLOCKING');
 assert.equal(gammaNullEvidence.paquetePreparado,true,'NULL theme reply cannot stop a complete package');
+// Regression: a legacy NO APLICA claim cannot exempt an ordinary lesson.
+const ordinary={...row,kind:'Clase ordinaria',gamma:'No aplica',gammaUrl:'No aplica',gammaState:'NO APLICA - pendiente'};
+const missingOrdinary=ctx.evidenciaSesionReal_(ordinary,works,{}, {'16':notionActive});
+assert.equal(missingOrdinary.gammaNoAplica,false);
+assert.equal(missingOrdinary.paquetePreparado,false);
+assert.equal(missingOrdinary.gammaDecision,'VERIFY_LIVE');
+const restoredOrdinary=ctx.evidenciaSesionReal_(ordinary,works, {'16':active}, {'16':notionActive});
+assert.equal(restoredOrdinary.paquetePreparado,true);
+const integrator={...ordinary,kind:'Actividad integradora'};
+const exempt=ctx.evidenciaSesionReal_(integrator,works,{}, {'16':notionActive});
+assert.equal(exempt.gammaNoAplica,true);
+assert.equal(exempt.paquetePreparado,true);
+
 const policy=fs.readFileSync('src/00_PoliticasCanonicas.gs','utf8');
 assert.match(policy,/NULL_THEME_ID_REPLY: 'WARN_CONTINUE'/);
+assert.match(policy,/ORDINARY_CLASS_REQUIRES_GAMMA: true/);
+assert.match(policy,/LEGACY_PLANNING_NO_APLICA_CANNOT_EXEMPT_ORDINARY_CLASS: true/);
 assert.match(policy,/THEME_ID_MUST_BE_SENT: true/);
 assert.match(policy,/UAQ: 'bfm8ztqy1whsib8'/);
 assert.match(policy,/UMx: 'rhuzrubac7etaw3'/);

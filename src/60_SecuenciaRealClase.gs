@@ -174,7 +174,13 @@ function evidenciaSesionReal_(row, works, gammaLiveEvidence, notionLiveEvidence)
   const gammaUrl=String(row.gammaUrl||'').trim();
   const gammaState=String(row.gammaState||'').trim();
   const gammaDescriptor=[String(row.gamma||''),gammaUrl,gammaState].join(' ');
-  const gammaNoAplica=/\bno\s+aplica\b/i.test(gammaDescriptor);
+  // Un valor histórico "NO APLICA" nunca exime una clase ordinaria de
+  // su presentación. Solo evaluaciones/integradoras sin presentación
+  // son excepciones; los exámenes se descartan antes del selector.
+  const sessionKind=String(row.kind||row.sessionType||row.tipoSesion||'').trim();
+  const ordinaryClass=/\bclase\b/i.test(sessionKind)&&
+    !/\bexamen\b|\bevaluaci[oó]n\b/i.test(sessionKind);
+  const gammaNoAplica=!ordinaryClass&&/\bno\s+aplica\b/i.test(gammaDescriptor);
   const planningGammaClaimedVerified=/^https:\/\/gamma\.app\/docs\//i.test(gammaUrl)&&
     /\bverificad[ao]\b/i.test(gammaState);
   const live=gammaNoAplica?{
@@ -276,7 +282,7 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
     };
   }
 
-  const lastPlanningPrepared=seen.reduce(function(last,e,i){return e.planningPaquetePreparado?i:last;},-1);
+  const lastPlanningPrepared=seen.reduce(function(last,e,i){return (e.planningPaquetePreparado||e.paquetePreparado)?i:last;},-1);
   const lastPublished=seen.reduce(function(last,e,i){return e.publicado?i:last;},-1);
 
   // Para conservar velocidad no se vuelve a auditar todo el semestre. La frontera
