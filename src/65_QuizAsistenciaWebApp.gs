@@ -613,6 +613,8 @@ function crearPaqueteClaseWeb_(course,p){
   const mode=String(p.mode||p.executionMode||'EXECUTE').trim().toUpperCase();
   if(['PLAN','EXECUTE','FINALIZE'].indexOf(mode)<0)
     throw new Error('CLASE_MODO_INVALIDO: PLAN, EXECUTE o FINALIZE');
+  if(mode==='FINALIZE'&&!String(p.requestedSession||p.sesion||p.target&&p.target.session||'').trim())
+    throw new Error('CLASE_FINALIZE_REQUIERE_SESION_EXPLICITA');
   const resources=Array.isArray(p.resources)?p.resources:[];
   const works=listarCourseWorkClase_(course.id);
   if(mode==='PLAN'||mode==='FINALIZE'||!resources.length){
