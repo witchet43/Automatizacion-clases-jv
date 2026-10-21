@@ -4,7 +4,6 @@ import vm from 'node:vm';
 
 const web=fs.readFileSync('src/65_QuizAsistenciaWebApp.gs','utf8');
 const maintenance=fs.readFileSync('src/66_MantenimientoPropiedadesAcademicas.gs','utf8');
-const diagnostic=fs.readFileSync('src/68_AcademicErrorDiagnostic.gs','utf8');
 const props=new Map([
  ['ACADEMIC_WRITE_HMAC_KEY','DO_NOT_PRINT_THIS_TEST_SECRET_1234567890ABC'],
  ['ACADEMIC_WRITE_RECEIPT_111',JSON.stringify({status:'PENDING',operation:'examen',at:1})],
@@ -25,7 +24,7 @@ const ctx={
  respuestaAcademicaWeb_:value=>value
 };
 vm.createContext(ctx);
-vm.runInContext(diagnostic+'\n'+web+'\n'+maintenance,ctx);
+vm.runInContext(web+'\n'+maintenance,ctx);
 const result=ctx.ejecutarServicioAcademicoWeb_({
  action:'uaqExecutor',operation:'examen',courseId:'875776451793',requestId:'test-request'
 });
