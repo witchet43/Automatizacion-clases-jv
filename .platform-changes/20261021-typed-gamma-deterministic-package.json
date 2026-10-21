@@ -3,7 +3,7 @@
   "authorized": true,
   "requestedByUser": true,
   "authorizationText": "Necesito que la corrección quede determinista. El flujo de generación de clases en Google Apps Script/WebApp no debe permitir declarar una clase completa sin su Gamma, incluso por reglas NO APLICA ambiguas, y debe poder ejecutarse igual al cambiar de chat.",
-  "reason": "Centralize fail-closed institutional Gamma requirement with precisely typed integrative exception, require linked verified Notion notes, and expose canonical PLAN/EXECUTE/FINALIZE status with explicit missing components. Prevent incorrect completion based only on planning links. Add offline regression cases for unspecified session kinds, invalid Notion linkage, no external data, session targeting and no repeated writes. No additional runtime postflights, no Sites, manifest or Classroom content changes, GitHub Actions only for deployment.",
+  "reason": "Centralize fail-closed institutional Gamma requirement with precisely typed integrative exception, require linked verified Notion notes, and expose canonical PLAN/EXECUTE/FINALIZE status with explicit missing components. Prevent incorrect completion based only on planning links. Add offline regression cases for unspecified session kinds, invalid Notion linkage, no external data, session targeting and no repeated writes. No additional runtime postflights, no Sites, manifest or Classroom content changes, GitHub Actions only for deployment. The canonical PLAN returns the pre-existing Gamma URL candidate for reuse instead of requiring rediscovery or re-creation; a regression asserts this behavior.",
   "allowedChangedPaths": [
     "src/60_SecuenciaRealClase.gs",
     "src/65_QuizAsistenciaWebApp.gs",
