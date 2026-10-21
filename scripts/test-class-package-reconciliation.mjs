@@ -146,7 +146,7 @@ assert.equal(result.packageStatus,'COMPLETE');
 assert.equal(result.nextPhase,'NONE');
 assert.equal(s.calls.tarea+s.calls.practica+s.calls.delete+s.calls.format,0,
   'FINALIZE never creates, deletes, rewrites or validates individual docs');
-assert.equal(s.calls.read,5,'One Classroom inventory read per request, never repeated postflight');
+assert.equal(s.calls.read,4,'One Classroom inventory read per accepted request, never repeated postflight');
 
 const policy=fs.readFileSync('src/00_PoliticasCanonicas.gs','utf8');
 assert.match(policy,/EXPLICIT_SESSION_RECONCILES_ONLY_TARGET: true/);
