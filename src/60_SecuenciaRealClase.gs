@@ -156,6 +156,24 @@ function normalizarNotionLiveEvidence_(row, notionLiveEvidence) {
     gammaReferenceVerified:gammaReferenceVerified,searchPerformed:searchPerformed,duplicateCount:duplicateCount};
 }
 
+/**
+ * Deterministic, single-source exemption. Unknown, blank or alternative
+ * names are treated as ordinary teaching sessions (Gamma required).
+ */
+function resolverObligatoriedadGammaClase_(row){
+  const r=row&&typeof row==='object'?row:{};
+  const normalize=function(x){return String(x||'').trim().normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').toLowerCase();};
+  const kind=normalize(r.kind||r.sessionType||r.tipoSesion||'');
+  const descriptor=normalize([r.gamma,r.gammaState].join(' '));
+  const integrative=/^(?:actividad|sesion|clase) integradora(?: sin (?:gamma|presentacion))?$/.test(kind);
+  const explicitException=integrative&&/(?:^|\s)no aplica(?:\s|$)/.test(descriptor);
+  const exam=esSesionExamenPlaneacion_(r);
+  return {required:!(exam||explicitException),
+    exemption:exam?'EXAM_NOT_A_CLASS':explicitException?'EXPLICIT_INTEGRATIVE_NO_GAMMA':'',
+    type:kind||'unspecified'};
+}
+
 function evidenciaSesionReal_(row, works, gammaLiveEvidence, notionLiveEvidence) {
   const titulo=String(row.practice||'').trim();
   const normal=function(s){return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');};
@@ -173,14 +191,12 @@ function evidenciaSesionReal_(row, works, gammaLiveEvidence, notionLiveEvidence)
 
   const gammaUrl=String(row.gammaUrl||'').trim();
   const gammaState=String(row.gammaState||'').trim();
-  const gammaDescriptor=[String(row.gamma||''),gammaUrl,gammaState].join(' ');
-  // Un valor histórico "NO APLICA" nunca exime una clase ordinaria de
-  // su presentación. Solo evaluaciones/integradoras sin presentación
-  // son excepciones; los exámenes se descartan antes del selector.
-  const sessionKind=String(row.kind||row.sessionType||row.tipoSesion||'').trim();
-  const ordinaryClass=/\bclase\b/i.test(sessionKind)&&
-    !/\bexamen\b|\bevaluaci[oó]n\b/i.test(sessionKind);
-  const gammaNoAplica=!ordinaryClass&&/\bno\s+aplica\b/i.test(gammaDescriptor);
+  // Contrato tipificado y fail-closed: "NO APLICA" escrito en una celda
+  // libre NO autoriza omitir Gamma. Solo una sesión integradora identificada
+  // inequívocamente + una exención explícita puede prescindir de ella.
+  // Las sesiones de examen no forman parte del selector de clases.
+  const gammaPolicy=resolverObligatoriedadGammaClase_(row);
+  const gammaNoAplica=!gammaPolicy.required;
   const planningGammaClaimedVerified=/^https:\/\/gamma\.app\/docs\//i.test(gammaUrl)&&
     /\bverificad[ao]\b/i.test(gammaState);
   const live=gammaNoAplica?{
@@ -204,6 +220,8 @@ function evidenciaSesionReal_(row, works, gammaLiveEvidence, notionLiveEvidence)
     planningGammaClaimedVerified:planningGammaClaimedVerified,
     gammaVerificada:live.verified,
     gammaNoAplica:gammaNoAplica,
+    gammaRequired:gammaPolicy.required,
+    gammaExemption:gammaPolicy.exemption,
     gammaLiveEvidenceProvided:live.provided,
     gammaLiveStatus:live.status,
     gammaLiveSource:live.source,
@@ -239,8 +257,10 @@ function evidenciaSesionReal_(row, works, gammaLiveEvidence, notionLiveEvidence)
     notionLiveVerificationRequired:!notion.provided,
     recursoPreparado:matches.length>0,
     planningPaquetePreparado:planningPrepared&&matches.length>0,
-    paquetePreparado:livePrepared&&notion.verified&&matches.length>0,
-    materialPreparado:livePrepared&&notion.verified&&matches.length>0,
+    paquetePreparado:livePrepared&&notion.verified&&
+      (gammaNoAplica||notion.gammaReferenceVerified)&&matches.length>0,
+    materialPreparado:livePrepared&&notion.verified&&
+      (gammaNoAplica||notion.gammaReferenceVerified)&&matches.length>0,
     publicado:matches.some(function(w){return String(w.state||'').toUpperCase()==='PUBLISHED';})
   };
 }

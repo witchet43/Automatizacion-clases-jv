@@ -77,10 +77,32 @@ const exempt=ctx.evidenciaSesionReal_(integrator,works,{}, {'16':notionActive});
 assert.equal(exempt.gammaNoAplica,true);
 assert.equal(exempt.paquetePreparado,true);
 
+// Every ordinary/unknown session MUST generate or reuse Gamma; legacy text
+// is not an authorization to skip institutional presentations.
+for(const kind of ['','Clase','Clase ordinaria','Taller','Laboratorio','ACTIVIDAD','Sesión práctica','n/a']){
+  const candidate={...ordinary,kind};
+  const checked=ctx.evidenciaSesionReal_(candidate,works,{}, {'16':notionActive});
+  assert.equal(checked.gammaRequired,true,'Gamma must be required for kind: '+kind);
+  assert.equal(checked.paquetePreparado,false);
+}
+const integratorWithoutExemption=ctx.evidenciaSesionReal_(
+ {...integrator,gamma:'',gammaState:'Pendiente'},works,{}, {'16':notionActive});
+assert.equal(integratorWithoutExemption.gammaRequired,true);
+const noLinkedNotes={...notionActive,gammaReferenceVerified:false};
+const unlinked=ctx.evidenciaSesionReal_(ordinary,works,{'16':active},{'16':noLinkedNotes});
+assert.equal(unlinked.paquetePreparado,false,'Notion must link the actual Gamma');
+assert.equal(unlinked.notionVerificada,true,'Notes may exist but package is not complete');
+const examRow={...ordinary,kind:'Examen de Unidad 2',practice:'Examen de Unidad'};
+assert.equal(ctx.resolverObligatoriedadGammaClase_(examRow).exemption,'EXAM_NOT_A_CLASS');
+
 const policy=fs.readFileSync('src/00_PoliticasCanonicas.gs','utf8');
 assert.match(policy,/NULL_THEME_ID_REPLY: 'WARN_CONTINUE'/);
 assert.match(policy,/ORDINARY_CLASS_REQUIRES_GAMMA: true/);
 assert.match(policy,/LEGACY_PLANNING_NO_APLICA_CANNOT_EXEMPT_ORDINARY_CLASS: true/);
+assert.match(policy,/UNKNOWN_SESSION_KIND_REQUIRES_GAMMA: true/);
+assert.match(policy,/ONLY_EXPLICIT_INTEGRATIVE_NO_GAMMA_EXCEPTION: true/);
+assert.match(policy,/CLASS_FINALIZE_REQUIRES_LIVE_GAMMA_AND_NOTION: true/);
+assert.match(policy,/NOTION_MUST_REFERENCE_GAMMA: true/);
 assert.match(policy,/THEME_ID_MUST_BE_SENT: true/);
 assert.match(policy,/UAQ: 'bfm8ztqy1whsib8'/);
 assert.match(policy,/UMx: 'rhuzrubac7etaw3'/);
