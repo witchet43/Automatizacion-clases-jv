@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {prepareRequest,readContext} from './academic-context.mjs';
-const {manifest}=readContext();
+const {manifest,digest}=readContext();
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function post(request){
   let last=null;
@@ -24,8 +24,10 @@ assert.equal(missing.ok,false);assert.equal(missing.error,'ACADEMIC_CONTEXT_REQU
 // diagnostics are performed directly by the private Site, never by Actions.
 const empty=prepareRequest({action:'uaqExecutor',operation:'clase',requestId:'deployment-negative-auth-check',materia:'Administración',params:{resources:[]}});
 const dispatch=await post(empty.request);
-assert.equal(dispatch.ok,false);assert.equal(dispatch.error,'ACADEMIC_WRITE_AUTH_REQUIRED');
+assert.equal(dispatch.ok,false);
+if(dispatch.error==='ACADEMIC_CONTEXT_MISMATCH')throw Error('DEPLOYED_WEBAPP_MANIFEST_DRIFT');
+assert.equal(dispatch.error,'ACADEMIC_WRITE_AUTH_REQUIRED');
 const direct=await post({...empty.request,action:'clase'});
 assert.equal(direct.ok,false);assert.equal(direct.error,'ACCION_NO_PERMITIDA');
-console.log(JSON.stringify({ok:true,endpoint:manifest.webApp.url,authenticatedWriteGateVerified:true,directRoutineRouteBlocked:true,missingContextBlocked:true,classroomContacted:false,validAcademicWritesSent:0,resourcesCreated:0}));
+console.log(JSON.stringify({ok:true,endpoint:manifest.webApp.url,manifestSha256:digest,authenticatedWriteGateVerified:true,directRoutineRouteBlocked:true,missingContextBlocked:true,classroomContacted:false,validAcademicWritesSent:0,resourcesCreated:0}));
 
