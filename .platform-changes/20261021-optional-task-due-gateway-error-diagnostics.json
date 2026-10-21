@@ -1,0 +1,18 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "lo mejor es que seamos flexibles con los campos fechaSiguienteSesion y horaInicioSiguienteSesion y no necesariamente sean obligatorios, si no opcionales. Inclusive si la fecha de vencimiento ya pasó, es preferible no colocarle fecha pero que no se impida la creación del recurso. Es muy crítico que el gateway oculte el código específico de los rechazos ... deberás hacer todos los cambios necesarios para que el gateway provea todos los detalles del error e incluso podamos obtener más detalles en un log.",
+  "reason": "Autorización explícita para flexibilizar SOLO el vencimiento de TAREA, sin alterar modalidad DRAFT ni prácticas/actividades, y mejorar errorCode/resumen contextual seguro y trazable vía el diagnóstico existente de Classroom. Código, tests y despliegue solo por GitHub/GitHub Actions. Sin edición de ChatGPT Sites, plugins ni servicios adicionales.",
+  "allowedChangedPaths": [
+    "src/27_VencimientoTarea.gs",
+    "src/00_PoliticasCanonicas.gs",
+    "src/22_EntrypointsRecursosSeguros.gs",
+    "src/65_QuizAsistenciaWebApp.gs",
+    "src/68_AcademicErrorDiagnostic.gs",
+    "scripts/test-task-due-optional.mjs",
+    "scripts/test-webapp-error-diagnostics.mjs",
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    ".github/workflows/deploy-apps-script.yml"
+  ]
+}
