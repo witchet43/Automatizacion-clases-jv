@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Tenemos que enfocarnos en un proceso determinístico, que con Google Apps Script, y WebApp quede todo debidamente definido, inequívoco, inamovible, determinístico. Cada ejecución estás arreglando algo; cuando este chat llegue a su longitud máxima y tenga que ir a otro chat todo lo corregido aquí se va a repetir.",
+  "reason": "Reparar una causa raíz observada repetidamente: validarFormatoHtmlDocumentoAcademico_ confunde referencias normales a 'desarrollo de software' o 'evidencia de entrega' dentro de párrafos de 450+ caracteres con encabezados estructurales planos y bloquea prácticas y tareas válidas. Cambiar únicamente el criterio a un encabezado incrustado al inicio de un párrafo, conservando protecciones reales. Incluir prueba reproducible en ambos workflows. No agregar controles en tiempo de ejecución, no cambiar manifiesto/sitios/plugins, ni crear recursos académicos.",
+  "allowedChangedPaths": [
+    "src/31_GoogleDocumentoAcademico.gs",
+    "scripts/test-academic-document-prose-regression.mjs",
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    ".github/workflows/deploy-apps-script.yml"
+  ]
+}
