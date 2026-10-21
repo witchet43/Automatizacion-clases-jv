@@ -154,21 +154,19 @@ function ejecutarServicioAcademicoWeb_(params){
   }catch(err){
     const original=String(err&&err.message?err.message:err);
     const request=params&&typeof params==='object'?params:{};
-    const match=original.match(/^([A-Z][A-Z0-9_]{2,79})(?::|$)/);
-    const errorCode=match?match[1]:'ACADEMIC_WEBAPP_EXECUTION_FAILED';
-    // Preserve the original exception in the returned payload and record only
-    // a non-sensitive failure CODE for owner diagnostics. No signed request
-    // body, secret, question, answer or private data is stored in this log.
+    const details=detallarFalloAcademicoWeb_(err,request);
+    // Log only safe codes/locations. No payload, HMAC or student information.
     try{
-      const event={code:errorCode,
-        operation:String(request.operation||request.action||'').slice(0,30),
-        at:new Date().toISOString()};
       PropertiesService.getScriptProperties().setProperty(
-        'ACADEMIC_LAST_WEBAPP_WRITE_FAILURE',JSON.stringify(event));
-      console.error('ACADEMIC_WEBAPP_FAILURE '+JSON.stringify(event));
+        'ACADEMIC_LAST_WEBAPP_WRITE_FAILURE',JSON.stringify(details));
+      console.error('ACADEMIC_WEBAPP_FAILURE '+JSON.stringify(details));
     }catch(ignore){}
+    // Original explanation stays in the authenticated write response; the
+    // read-only diagnostic exposes only code, phase, location and correlation.
     return respuestaAcademicaWeb_({
-      ok:false,errorCode:errorCode,error:original
+      ok:false,errorCode:details.code,error:original,
+      errorDetails:{code:details.code,stage:details.stage,cause:details.cause,
+        requestIdHint:details.requestIdHint,sourceLocation:details.sourceLocation,loggedAt:details.at}
     });
   }
 }
@@ -381,6 +379,7 @@ function diagnosticarProgresoClaseWeb_(course,p){
       return {session:String(r.session||''),unit:String(r.unit||''),topic:String(r.topic||''),practice:String(r.practice||''),gammaUrl:String(r.gammaUrl||''),gammaState:String(r.gammaState||'')};
     }),
     planningSkipped:soloClassroom,
+    ultimoFalloGateway:leerUltimoFalloAcademicoWeb_(course.id),
     courseWork:active
   };
 }
