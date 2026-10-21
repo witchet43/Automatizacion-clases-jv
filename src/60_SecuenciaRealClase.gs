@@ -239,8 +239,24 @@ function evidenciaSesionReal_(row, works, gammaLiveEvidence, notionLiveEvidence)
   };
 }
 
+/**
+ * Un examen es una evaluación independiente: nunca se materializa como
+ * clase nueva. Se clasifica por la columna canónica Tipo de sesión y,
+ * como respaldo, por un tema cuyo título sea explícitamente de examen.
+ */
+function esSesionExamenPlaneacion_(row) {
+  const r=row&&typeof row==='object'?row:{};
+  const kind=String(r.kind||r.sessionType||r.tipoSesion||r.type||'').trim();
+  const topic=String(r.topic||'').trim();
+  const practice=String(r.practice||'').trim();
+  const isExamType=/(?:^|\s)(?:examen|evaluaci[oó]n\s+(?:de\s+)?(?:unidad|parcial|final))(?:\b|$)/i.test(kind);
+  const isExamTopic=/^(?:examen\b|evaluaci[oó]n\s+(?:de\s+)?(?:unidad|parcial|final)\b)/i.test(topic);
+  const isExamResource=/^examen\b/i.test(practice);
+  return isExamType||isExamTopic||isExamResource;
+}
+
 function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, options) {
-  const plan=Array.isArray(rows)?rows:[], opts=options||{};
+  const plan=(Array.isArray(rows)?rows:[]).filter(function(row){return !esSesionExamenPlaneacion_(row);}), opts=options||{};
   if(!plan.length)throw new Error('BLOCKED_NO_CANONICAL_SESSIONS: la planeación está vacía.');
   const liveMap=opts.gammaLiveEvidence&&typeof opts.gammaLiveEvidence==='object'
     ? opts.gammaLiveEvidence : {};
