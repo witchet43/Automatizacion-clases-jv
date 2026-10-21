@@ -563,7 +563,8 @@ function planificarClaseCanonicaWeb_(course,p,works){
     target:{session:String(row.session||''),unit:String(row.unit||''),
       topic:String(row.topic||''),kind:String(row.kind||''),
       practice:String(row.practice||''),previous:String(row.previous||''),
-      next:String(row.next||''),gammaState:String(row.gammaState||'')},
+      next:String(row.next||''),gammaState:String(row.gammaState||''),
+      gammaUrlCandidate:String(row.gammaUrl||'')},
     sequenceSource:String(selection.source||''),
     requiresExternalEvidence:selection.gammaVerificationOnly===true||
       selection.notionVerificationOnly===true,
