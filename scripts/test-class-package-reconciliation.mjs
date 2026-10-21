@@ -26,10 +26,17 @@ function scenario(initial){
   leerPlaneacionSiguienteClase_(){calls.plan++;return {rows:[{session:'19',unit:'2',
     topic:'Sincronización: mutex y semáforos',kind:'Clase',
     practice:tasks[1].params.titulo}],source:{}};},
-  seleccionarSiguienteClasePorEstadoReal_(rows,works,requested){
+  seleccionarSiguienteClasePorEstadoReal_(rows,works,requested,options){
+    const gamma=options?.gammaLiveEvidence?.['19'];
+    const notion=options?.notionLiveEvidence?.['19'];
     return {complete:false,target:rows[0],source:requested?'EXPLICIT_CANONICAL_SESSION':'PLAN',
-      evidence:{classroomIds:works.map(w=>String(w.id)),gammaDecision:'NOT_APPLICABLE',
-      notionDecision:'VERIFY_LIVE'}};
+      evidence:{classroomIds:works.map(w=>String(w.id)),
+      recursoPreparado:works.length>0,
+      gammaRequired:true,gammaVerificada:gamma?.status==='LIVE_ACTIVE_CANONICAL',
+      notionVerificada:notion?.status==='LIVE_CANONICAL',
+      notionGammaReferenceVerified:notion?.gammaReferenceVerified===true,
+      gammaDecision:gamma?'REUSE':'VERIFY_LIVE',
+      notionDecision:notion?'REUSE':'VERIFY_LIVE'}};
   },
   normalizarCreacionDirecta_(p,kind){
     if(p.contenidoDocumento==='BLOCKED_FORMAT')throw Error('BLOCKED_DOCUMENT_FORMAT');
@@ -112,6 +119,35 @@ assert.equal(s.calls.tarea+s.calls.practica,0,
 assert.equal(s.calls.format,1,'Earlier item can be prepared in memory without writing');
 assert.doesNotMatch(code,/deduplicarDraftsExactosClaseWeb_\(/,
  'Never delete existing drafts as a side effect');
+// The one canonical operation is a deterministic three-stage state machine.
+// Neither PLAN nor FINALIZE mutates existing Classroom resources.
+s=scenario([existingTask,existingPractice]);
+result=s.run([], {mode:'PLAN',requestedSession:'19'});
+assert.equal(result.complete,false);
+assert.equal(result.packageStatus,'PLAN_READY');
+assert.ok(result.missingComponents.includes('GAMMA'));
+assert.ok(result.missingComponents.includes('NOTION'));
+assert.equal(result.nextPhase,'GENERATE_OR_REUSE_GAMMA');
+assert.throws(()=>s.run([], {mode:'FINALIZE'}),/CLASE_FINALIZE_REQUIERE_SESION_EXPLICITA/);
+const gammaEvidence={status:'LIVE_ACTIVE_CANONICAL'};
+const notionEvidence={status:'LIVE_CANONICAL',gammaReferenceVerified:true};
+result=s.run([], {mode:'FINALIZE',requestedSession:'19',options:{
+ gammaLiveEvidence:{'19':gammaEvidence}}});
+assert.equal(result.complete,false);
+assert.equal(result.packageStatus,'INCOMPLETE');
+assert.deepEqual([...result.missingComponents],['NOTION']);
+result=s.run([], {mode:'FINALIZE',requestedSession:'19',options:{
+ gammaLiveEvidence:{'19':gammaEvidence},notionLiveEvidence:{'19':{...notionEvidence,gammaReferenceVerified:false}}}});
+assert.equal(result.complete,false,'Notion without Gamma reference cannot close the package');
+result=s.run([], {mode:'FINALIZE',requestedSession:'19',options:{
+ gammaLiveEvidence:{'19':gammaEvidence},notionLiveEvidence:{'19':notionEvidence}}});
+assert.equal(result.complete,true);
+assert.equal(result.packageStatus,'COMPLETE');
+assert.equal(result.nextPhase,'NONE');
+assert.equal(s.calls.tarea+s.calls.practica+s.calls.delete+s.calls.format,0,
+  'FINALIZE never creates, deletes, rewrites or validates individual docs');
+assert.equal(s.calls.read,5,'One Classroom inventory read per request, never repeated postflight');
+
 const policy=fs.readFileSync('src/00_PoliticasCanonicas.gs','utf8');
 assert.match(policy,/EXPLICIT_SESSION_RECONCILES_ONLY_TARGET: true/);
 assert.match(policy,/EXISTING_CLASS_RESOURCES_MUST_BE_REUSED: true/);
