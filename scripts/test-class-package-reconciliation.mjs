@@ -25,7 +25,7 @@ function scenario(initial){
   listarCourseWorkClase_(){calls.read++;return works},
   leerPlaneacionSiguienteClase_(){calls.plan++;return {rows:[{session:'19',unit:'2',
     topic:'Sincronización: mutex y semáforos',kind:'Clase',
-    practice:tasks[1].params.titulo}],source:{}};},
+    practice:tasks[1].params.titulo,gammaUrl:'https://gamma.app/docs/gamma19'}],source:{}};},
   seleccionarSiguienteClasePorEstadoReal_(rows,works,requested,options){
     const gamma=options?.gammaLiveEvidence?.['19'];
     const notion=options?.notionLiveEvidence?.['19'];
@@ -99,6 +99,7 @@ s=scenario([]);
 result=s.run([], {mode:'PLAN',requestedSession:'19'});
 assert.equal(result.packageStatus,'PLAN_READY');
 assert.equal(result.target.session,'19');
+assert.equal(result.target.gammaUrlCandidate,'https://gamma.app/docs/gamma19','The canonical plan exposes existing Gamma link for reuse');
 assert.equal(result.createdCount,0);
 assert.equal(s.calls.plan,1);
 assert.equal(s.calls.read,1);
