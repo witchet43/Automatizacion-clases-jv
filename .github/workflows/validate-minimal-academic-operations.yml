@@ -49,6 +49,7 @@ jobs:
           node scripts/test-static-webapp-contract.mjs
           node scripts/test-gamma-live-state-contract.mjs
           node scripts/test-class-package-reconciliation.mjs
+          node scripts/test-academic-document-prose-regression.mjs
           node scripts/test-notion-class-notes-contract.mjs
           node scripts/test-quiz-policy-sequence-consistency.mjs
           node scripts/test-minimal-academic-operations.mjs
