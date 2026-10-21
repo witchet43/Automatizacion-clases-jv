@@ -282,7 +282,7 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
     };
   }
 
-  const lastPlanningPrepared=seen.reduce(function(last,e,i){return e.planningPaquetePreparado?i:last;},-1);
+  const lastPlanningPrepared=seen.reduce(function(last,e,i){return (e.planningPaquetePreparado||e.paquetePreparado)?i:last;},-1);
   const lastPublished=seen.reduce(function(last,e,i){return e.publicado?i:last;},-1);
 
   // Para conservar velocidad no se vuelve a auditar todo el semestre. La frontera
