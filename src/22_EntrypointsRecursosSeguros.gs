@@ -30,10 +30,13 @@ function crearTarea(params) {
     }
     result.renumeracionDraft = renumeracion;
     if (tarea.backfillSinVencimiento === true) {
+      const verificado=verificarVencimientoTareaCreada_(tarea.courseId,result.workId,tarea);
       result.vencimientoReparado = false;
       result.fechaLimiteLocal = '';
       result.horaLimiteLocal = '';
       result.backfillSinVencimiento = true;
+      result.vencimientoOmitidoMotivo = tarea.vencimientoOmitidoMotivo;
+      result.fechaVencimientoExistenteConservada = !!(verificado.dueDate || verificado.dueTime);
     } else {
       const due = asegurarVencimientoTareaCreada_(tarea.courseId, result.workId, tarea);
       verificarVencimientoTareaCreada_(tarea.courseId, result.workId, tarea);
