@@ -48,7 +48,10 @@ const ACADEMIC_POLICY = Object.freeze({
     REQUIRE_REAL_CLASSROOM_RESOURCE_FOR_PREPARED_PACKAGE: true,
     RESOURCES_BEFORE_GAMMA: true,
     GAMMA_REFERENCES_VERIFIED_RESOURCES: true,
-    RECONCILIATION_REQUIRES_EXPLICIT_REASON: true
+    RECONCILIATION_REQUIRES_EXPLICIT_REASON: true,
+    EXPLICIT_SESSION_RECONCILES_ONLY_TARGET: true,
+    EXISTING_CLASS_RESOURCES_MUST_BE_REUSED: true,
+    ALL_EXISTING_CLASS_COMPONENTS_IS_SUCCESS: true
   }),
   ERROR_REPORTING: Object.freeze({
     NOTIFY_ON_ERROR: true,
@@ -241,7 +244,14 @@ const ACADEMIC_POLICY = Object.freeze({
     TITLE_SEARCH_ONLY_IF_URL_MISSING: true,
     RESOLVE_FOLDER_BEFORE_GENERATE: true,
     RESOURCES_BEFORE_GAMMA: true,
-    REQUIRE_VERIFIED_RESOURCE_REFERENCES: true
+    REQUIRE_VERIFIED_RESOURCE_REFERENCES: true,
+    THEME_ID_MUST_BE_SENT: true,
+    NULL_THEME_ID_REPLY: 'WARN_CONTINUE',
+    GENERATION_FAILURE: 'VERIFY_LIVE_THEN_CONTINUE_INDEPENDENT_REPORT_PARTIAL',
+    INSTITUTIONAL_THEME_IDS: Object.freeze({
+      UAQ: 'bfm8ztqy1whsib8',
+      UMx: 'rhuzrubac7etaw3'
+    })
   }),
   CALENDAR: Object.freeze({
     CANONICAL_SOURCE: 'CLASSROOM_COURSE_CALENDAR',
@@ -284,12 +294,20 @@ function validarPoliticasCanonicas_(){
     seq.VERIFIED_GAMMA_COUNTS_AS_PREPARED_COMPONENT!==true||
     seq.REQUIRE_REAL_CLASSROOM_RESOURCE_FOR_PREPARED_PACKAGE!==true||
     seq.RESOURCES_BEFORE_GAMMA!==true||seq.GAMMA_REFERENCES_VERIFIED_RESOURCES!==true||
-    seq.RECONCILIATION_REQUIRES_EXPLICIT_REASON!==true)
+    seq.RECONCILIATION_REQUIRES_EXPLICIT_REASON!==true||
+    seq.EXPLICIT_SESSION_RECONCILES_ONLY_TARGET!==true||
+    seq.EXISTING_CLASS_RESOURCES_MUST_BE_REUSED!==true||
+    seq.ALL_EXISTING_CLASS_COMPONENTS_IS_SUCCESS!==true)
       throw new Error('La siguiente clase debe resolverse por el primer paquete canónico incompleto según recursos reales preparados; fecha actual, Calendar, contador y memoria están prohibidos para identidad o secuencia.');
   if(!p.ERROR_REPORTING||p.ERROR_REPORTING.NOTIFY_ON_ERROR!==true||p.ERROR_REPORTING.SILENT_FAILURE_ALLOWED!==false||p.ERROR_REPORTING.PRIMARY_CHANNEL!=='EMAIL'||p.ERROR_REPORTING.PRESERVE_ORIGINAL_EXCEPTION!==true) throw new Error('La política de notificación de errores fue debilitada.');
   if(Math.abs((p.UNIT_GRADING.EXAM_WEIGHT+p.UNIT_GRADING.NON_EXAM_WEIGHT)-1)>0.000001) throw new Error('La ponderación canónica de unidad no suma 100%.');
   if(!p.GAMMA||p.GAMMA.COVER_SESSION_NUMBER_ALLOWED!==false||p.GAMMA.REQUIRE_TOPIC_NUMBER_ON_COVER!==true||
-    p.GAMMA.RESOURCES_BEFORE_GAMMA!==true||p.GAMMA.REQUIRE_VERIFIED_RESOURCE_REFERENCES!==true)
+    p.GAMMA.RESOURCES_BEFORE_GAMMA!==true||p.GAMMA.REQUIRE_VERIFIED_RESOURCE_REFERENCES!==true||
+    p.GAMMA.THEME_ID_MUST_BE_SENT!==true||
+    p.GAMMA.NULL_THEME_ID_REPLY!=='WARN_CONTINUE'||
+    p.GAMMA.GENERATION_FAILURE!=='VERIFY_LIVE_THEN_CONTINUE_INDEPENDENT_REPORT_PARTIAL'||
+    p.GAMMA.INSTITUTIONAL_THEME_IDS.UAQ!=='bfm8ztqy1whsib8'||
+    p.GAMMA.INSTITUTIONAL_THEME_IDS.UMx!=='rhuzrubac7etaw3')
     throw new Error('Gamma debe generarse después de materializar/verificar los recursos académicos y debe referenciarlos; la portada conserva Unidad + Tema/Subtema oficial sin número de sesión.');
     if(!p.DOCUMENTS||p.DOCUMENTS.STUDENT_IDENTITY_FIELDS_ALLOWED!==false||p.DOCUMENTS.CLASSROOM_IS_IDENTITY_SOURCE!==true) throw new Error('Los Google Docs de Classroom no deben pedir Nombre del alumno, Grupo ni Fecha: Classroom identifica la entrega.');
   const tl=p.DOCUMENTS.TABLE_LAYOUT;
