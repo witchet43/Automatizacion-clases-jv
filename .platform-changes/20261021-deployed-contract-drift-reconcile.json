@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "únicamente usamos GitHub/GitHub Actions para realizar modificaciones al código y hacer deploy y únicamente eso, todo lo demás es intocable, y tienes que evitar agregar cosas de manera innecesaria, a menos de que sea estrictamente necesario",
+  "reason": "Incidente de producción: después de un despliegue exitoso, la WebApp en modo de solo lectura reportó manifestSha256 6d0976d66d03c71265a4071e9bec3eecf5c80a907364db8520371eba83ccd826 mientras el bundle canónico versionado contiene becc5561753fb8a6badd0cfe99dc95f58f9770dc20265340529982e156d53994. Actualizar la observabilidad del postflight negativo EXISTENTE sin introducir llamadas, rutas, validaciones académicas o escritura adicionales, y redesplegar exactamente el mismo Apps Script por GitHub Actions para reconciliar el runtime. Prohibido crear recursos, cambiar manifiesto, políticas o Site.",
+  "allowedChangedPaths": [
+    "scripts/verify-academic-webapp.mjs"
+  ]
+}
