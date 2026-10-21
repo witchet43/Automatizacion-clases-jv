@@ -174,7 +174,13 @@ function evidenciaSesionReal_(row, works, gammaLiveEvidence, notionLiveEvidence)
   const gammaUrl=String(row.gammaUrl||'').trim();
   const gammaState=String(row.gammaState||'').trim();
   const gammaDescriptor=[String(row.gamma||''),gammaUrl,gammaState].join(' ');
-  const gammaNoAplica=/\bno\s+aplica\b/i.test(gammaDescriptor);
+  // Un valor histórico "NO APLICA" nunca exime una clase ordinaria de
+  // su presentación. Solo evaluaciones/integradoras sin presentación
+  // son excepciones; los exámenes se descartan antes del selector.
+  const sessionKind=String(row.kind||row.sessionType||row.tipoSesion||'').trim();
+  const ordinaryClass=/\bclase\b/i.test(sessionKind)&&
+    !/\bexamen\b|\bevaluaci[oó]n\b/i.test(sessionKind);
+  const gammaNoAplica=!ordinaryClass&&/\bno\s+aplica\b/i.test(gammaDescriptor);
   const planningGammaClaimedVerified=/^https:\/\/gamma\.app\/docs\//i.test(gammaUrl)&&
     /\bverificad[ao]\b/i.test(gammaState);
   const live=gammaNoAplica?{
