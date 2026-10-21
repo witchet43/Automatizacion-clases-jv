@@ -64,6 +64,14 @@ function normalizarGammaLiveEvidence_(row, gammaLiveEvidence) {
   const gammaId=String(raw.gammaId||'').trim();
   const gammaUrl=String(raw.gammaUrl||'').trim();
   const title=String(raw.title||'').trim();
+  // Gamma puede devolver themeId:null aunque la llamada haya enviado
+  // el identificador institucional. Eso es una advertencia del proveedor,
+  // no una razón para revocar la evidencia de contenido/identidad.
+  const themeIdSent=String(raw.themeIdSent||'').trim();
+  const themeNullReported=Object.prototype.hasOwnProperty.call(raw,'themeIdReturned') &&
+    raw.themeIdReturned===null;
+  const themeWarning=themeNullReported&&themeIdSent&&raw.themeRequestVerified===true
+    ? 'GAMMA_THEME_ID_NULL_RESPONSE_NON_BLOCKING' : '';
 
   if(status==='LIVE_ACTIVE_CANONICAL'){
     if(archived||!contentVerified||!canonicalTopicVerified||!searchPerformed||(!gammaId&&!gammaUrl))
@@ -95,6 +103,7 @@ function normalizarGammaLiveEvidence_(row, gammaLiveEvidence) {
     gammaId:gammaId,
     gammaUrl:gammaUrl,
     title:title,
+    themeIdSent:themeIdSent,themeWarning:themeWarning,
     archived:archived,
     contentVerified:contentVerified,
     canonicalTopicVerified:canonicalTopicVerified,
@@ -195,6 +204,7 @@ function evidenciaSesionReal_(row, works, gammaLiveEvidence, notionLiveEvidence)
     gammaLiveId:live.gammaId,
     gammaLiveUrl:live.gammaUrl,
     gammaLiveTitle:live.title,
+    gammaThemeWarning:live.themeWarning||'',
     gammaLiveArchived:live.archived,
     gammaLiveSearchPerformed:live.searchPerformed,
     gammaLiveContentVerified:live.contentVerified,

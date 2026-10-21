@@ -1,0 +1,16 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "si yo te vuelvo a pedir de manera explícita generar cierto número de clase, tú debes intentar realizarlo sin duplicidad, validar que materiales académicos faltan, cuáles ya existen ... tú solo completas el paquete y si ya existe todo no completas nada solo indicas que se completó la operación ... mientras tú asegures que sí envías el Theme ID será suficiente, me puedes reportar que regresó NULL pero no que te detuviste por ese tema.",
+  "reason": "En el código canónico existente, hacer idempotente la materialización de paquetes de clase utilizando CourseWork real, conservar los componentes existentes sin borrar o republicar, reportar createdCount/reusedCount, formalizar que Gamma themeId:null es advertencia si se envió el themeId institucional correcto, y respetar cualquier sesión explícita. No se edita ni publica el Site, no se cambia arquitectura ni seguridad, no se invoca GitHub para operaciones académicas.",
+  "allowedChangedPaths": [
+    "src/65_QuizAsistenciaWebApp.gs",
+    "src/60_SecuenciaRealClase.gs",
+    "config/academic-context.json",
+    "scripts/test-gamma-live-state-contract.mjs",
+    "scripts/test-class-package-reconciliation.mjs",
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    ".github/workflows/deploy-apps-script.yml"
+  ]
+}
