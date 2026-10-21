@@ -531,7 +531,12 @@ function planificarClaseCanonicaWeb_(course,p,works){
   const planning=leerPlaneacionSiguienteClase_(course.materia);
   const target=p&&p.target&&typeof p.target==='object'?p.target:{};
   const requested=String(p.requestedSession||p.sesion||target.session||'').trim();
-  const options={explicitTarget:requested!==''};
+  const supplied=p&&p.options&&typeof p.options==='object'?p.options:{};
+  const options={
+    explicitTarget:requested!=='',
+    gammaLiveEvidence:supplied.gammaLiveEvidence||{},
+    notionLiveEvidence:supplied.notionLiveEvidence||{}
+  };
   const selection=seleccionarSiguienteClasePorEstadoReal_(planning.rows,works,requested,options);
   if(selection.complete)return {
     package:false,packageStatus:'SEQUENCE_COMPLETE',readOnly:true,
@@ -540,10 +545,20 @@ function planificarClaseCanonicaWeb_(course,p,works){
   };
   const row=selection.target;
   const evidence=selection.evidence;
+  const missingComponents=[];
+  if(!evidence.recursoPreparado)missingComponents.push('CLASSROOM');
+  if(evidence.gammaRequired&&!evidence.gammaVerificada)missingComponents.push('GAMMA');
+  if(!evidence.notionVerificada||
+     (evidence.gammaRequired&&!evidence.notionGammaReferenceVerified))
+    missingComponents.push('NOTION');
+  const canonicalComplete=missingComponents.length===0;
   const existingIds={};
   (evidence.classroomIds||[]).forEach(function(id){existingIds[String(id)]=true;});
   return {
-    package:false,packageStatus:'PLAN_READY',readOnly:true,
+    package:canonicalComplete,packageStatus:canonicalComplete?'COMPLETE':'PLAN_READY',
+    complete:canonicalComplete,readOnly:true,
+    requiredComponents:['CLASSROOM'].concat(evidence.gammaRequired?['GAMMA']:[],['NOTION']),
+    missingComponents:missingComponents,
     courseId:String(course.id),materia:String(course.materia),
     target:{session:String(row.session||''),unit:String(row.unit||''),
       topic:String(row.topic||''),kind:String(row.kind||''),
@@ -559,7 +574,10 @@ function planificarClaseCanonicaWeb_(course,p,works){
     }).map(function(w){return {workId:String(w.id),title:String(w.title||''),
       state:String(w.state||'')};}),
     createdCount:0,reusedCount:0,resources:[],
-    nextPhase:'PROVIDE_ONLY_MISSING_CONTENT'
+    nextPhase:canonicalComplete?'NONE':
+      missingComponents[0]==='CLASSROOM'?'CLASSROOM_RESOURCES':
+      missingComponents[0]==='GAMMA'?'GENERATE_OR_REUSE_GAMMA':
+      'CREATE_OR_REUSE_NOTION_NOTES'
   };
 }
 
@@ -593,12 +611,22 @@ function crearPaqueteClaseWeb_(course,p){
   if(String(p.gammaUrl||'').trim())
     throw new Error('CLASE_RECURSOS_PRIMERO: gammaUrl solo se verifica después de preparar los recursos.');
   const mode=String(p.mode||p.executionMode||'EXECUTE').trim().toUpperCase();
-  if(['PLAN','EXECUTE'].indexOf(mode)<0)
-    throw new Error('CLASE_MODO_INVALIDO: PLAN o EXECUTE');
+  if(['PLAN','EXECUTE','FINALIZE'].indexOf(mode)<0)
+    throw new Error('CLASE_MODO_INVALIDO: PLAN, EXECUTE o FINALIZE');
   const resources=Array.isArray(p.resources)?p.resources:[];
   const works=listarCourseWorkClase_(course.id);
-  if(mode==='PLAN'||!resources.length)
-    return planificarClaseCanonicaWeb_(course,p,works);
+  if(mode==='PLAN'||mode==='FINALIZE'||!resources.length){
+    const result=planificarClaseCanonicaWeb_(course,p,works);
+    if(mode==='FINALIZE'){
+      result.finalizationAttempted=true;
+      // Never mark a package complete from a Gamma link in planning or a
+      // bare URL supplied by the caller. FINALIZE needs authenticated LIVE
+      // evidence for Classroom, Gamma (unless exempt) and Notion.
+      result.packageStatus=result.complete?'COMPLETE':'INCOMPLETE';
+      result.nextPhase=result.complete?'NONE':result.nextPhase;
+    }
+    return result;
+  }
   const allowed=['actividad','tarea','practica','quiz','material'];
   const seen={};
   const prepared=resources.map(function(item,index){
@@ -711,7 +739,10 @@ function crearPaqueteClaseWeb_(course,p){
   const reused=results.filter(function(x){return x.status==='REUSED';}).length;
   const resourcePhaseStatus=failures.length||missing.length?'PARCIAL':'MATERIALES_LISTOS_PARA_GAMMA';
   return {
-    package:false,packageStatus:resourcePhaseStatus,
+    package:false,complete:false,packageStatus:resourcePhaseStatus,
+    requiredComponents:['CLASSROOM','GAMMA','NOTION'],
+    missingComponents:resourcePhaseStatus==='PARCIAL'?
+      ['CLASSROOM','GAMMA','NOTION']:['GAMMA','NOTION'],
     resourcePhaseStatus:resourcePhaseStatus,
     expectedResourceTypes:expected,missingResourceTypes:missing,
     resourceErrors:failures.map(function(x){return {type:x.type,title:x.title,
