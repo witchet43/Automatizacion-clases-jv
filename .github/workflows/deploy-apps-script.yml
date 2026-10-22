@@ -306,13 +306,29 @@ jobs:
           console.log('Draft-only grading policy OK');
           NODE
 
+      - name: Determine whether canonical Apps Script source changed
+        id: source_gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          changed="$(git diff --name-only HEAD^ HEAD)"
+          if grep -Eq '^(src/|config/academic-context\\.json$)' <<< "$changed"; then
+            echo 'needs_deploy=true' >> "$GITHUB_OUTPUT"
+            echo 'Apps Script source/config changed; deployment required.'
+          else
+            echo 'needs_deploy=false' >> "$GITHUB_OUTPUT"
+            echo 'Only platform files changed; skipping Apps Script deployment.'
+          fi
+
       - name: Restore clasp credentials
+        if: steps.source_gate.outputs.needs_deploy == 'true'
         shell: bash
         run: |
           printf '%s' '${{ secrets.CLASPRC_JSON }}' > .clasprc.json
           chmod 600 .clasprc.json
 
       - name: Enable and list manifest advanced services
+        if: steps.source_gate.outputs.needs_deploy == 'true'
         env:
           clasp_config_auth: .clasprc.json
         shell: bash
@@ -324,16 +340,19 @@ jobs:
           npx clasp apis
 
       - name: Check Apps Script version capacity before mutation
+        if: steps.source_gate.outputs.needs_deploy == 'true'
         env:
           clasp_config_auth: .clasprc.json
         run: node scripts/prune-apps-script-versions.mjs
 
       - name: Deploy to Google Apps Script
+        if: steps.source_gate.outputs.needs_deploy == 'true'
         env:
           clasp_config_auth: .clasprc.json
         run: npx clasp push --force
 
       - name: Update canonical Web App deployment
+        if: steps.source_gate.outputs.needs_deploy == 'true'
         env:
           clasp_config_auth: .clasprc.json
         shell: bash
@@ -342,4 +361,5 @@ jobs:
           npm run apps-script:deploy
 
       - name: Verify deployed Web App without creating resources
+        if: steps.source_gate.outputs.needs_deploy == 'true'
         run: node scripts/verify-academic-webapp.mjs
