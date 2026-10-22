@@ -119,6 +119,8 @@ jobs:
 
       - name: Regression - closure drafts retry and preserve manual grades
         run: node scripts/test-grade-closure-resilience.mjs
+      - name: Unit grade draft and idempotence
+        run: node scripts/test-unit-grade-draft-idempotency.mjs
 
       - name: Enforce architecture contract
         shell: bash
