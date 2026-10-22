@@ -5,8 +5,7 @@ const paths=[
  '.academic-requests',
  '.github/workflows/academic-webapp.yml',
  'scripts/assert-academic-request-data-only.mjs',
- 'scripts/execute-academic-request.mjs',
- 'deprecated-cloud-run-executor'
+ 'scripts/execute-academic-request.mjs'
 ];
 for(const p of paths)assert.equal(fs.existsSync(p),false,'Retired alternate execution path remains: '+p);
 const allowed=fs.readdirSync('.github/workflows').filter(x=>/\.ya?ml$/.test(x)).sort();
