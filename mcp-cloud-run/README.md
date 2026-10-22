@@ -10,6 +10,21 @@ Servicio **MCP Streamable HTTP**, conectado exclusivamente a la WebApp canónica
 
 Este adaptador nunca calcula calificaciones ni reescribe la lógica académica: sólo valida identidad, autoriza y firma la petición con el mismo HMAC canónico. Cualquier fallo ambiguo requiere reconciliar la actividad real antes de repetir.
 
+## Infraestructura reutilizada, verificada el 22 de octubre de 2026
+
+El proyecto que ya cuenta con facturación y servicios Cloud Run es **`classroom-mcp-512122`** (región `us-central1`). En la consola se verificaron `academic-classroom-mcp` y `academic-classroom-chatgpt-gateway` como servicios existentes.
+
+Se han fijado en el workflow las identidades previas `classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com` y `classroom-mcp-sa@classroom-mcp-512122.iam.gserviceaccount.com`; su existencia/permisos deben auditarse antes de ejecutar el despliegue. **No** se sobrescribirá ninguno de esos dos servicios: el adaptador OAuth irá a `academic-classroom-mcp-oauth` dentro del mismo proyecto, sin afectar la WebApp de Apps Script.
+
+Auditoría **solo lectura** sin exponer valores de Secret Manager:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/witchet43/Automatizacion-clases-jv/main/scripts/auditar-classroom-mcp-gcp.sh -o /tmp/auditar-classroom-mcp-gcp.sh
+bash /tmp/auditar-classroom-mcp-gcp.sh
+```
+
+La auditoría comprueba APIs habilitadas, servicios existentes, cuentas de servicio, nombres WIF y nombres de secretos; jamás lee valores secretos ni modifica la infraestructura. Si no se tiene acceso autenticado a Cloud Shell, primero iniciarlo desde Google Cloud Console.
+
 ## Seguridad y configuración previa indispensable
 
 ChatGPT **no puede entregar un token API fijo** en una conexión MCP; requiere OAuth 2.1 (PKCE S256) para acceso privado. Utilizar un proveedor OAuth gestionado compatible con MCP, por ejemplo Auth0, que emita JWT RS256 con el parámetro `resource` y `aud` correspondiente a la URL del servidor. Habilitar descubrimiento OAuth, CIMD o DCR, permitir el redirect URI que ChatGPT muestre y el scope `academic.read` / `academic.close_unit`. No intentar montar un servidor OAuth propio ad hoc.
@@ -20,18 +35,14 @@ El adaptador devuelve el recurso protegido en `/.well-known/oauth-protected-reso
 
 | Variable | Valor necesario |
 |---|---|
-| `GCP_PROJECT_ID` | proyecto Cloud con Cloud Run, Cloud Build, Artifact Registry, Secret Manager habilitados |
-| `GCP_REGION` | región habilitada, p. ej. `us-central1` |
 | `GCP_WIF_PROVIDER` | nombre completo del proveedor Workload Identity Federation de GitHub |
-| `GCP_DEPLOY_SERVICE_ACCOUNT` | cuenta de servicio deployer con permisos mínimos |
-| `GCP_RUNTIME_SERVICE_ACCOUNT` | cuenta ejecutora Cloud Run con acceso sólo a los dos secretos |
 | `MCP_OAUTH_ISSUER` | issuer exacto del OAuth gestionado |
 | `MCP_OAUTH_JWKS_URL` | URL JWKS HTTPS del mismo origen del issuer |
 | `GCP_MCP_HMAC_SECRET_NAME` | nombre en Secret Manager del **mismo** `ACADEMIC_WRITE_HMAC_KEY` de Apps Script |
 | `GCP_MCP_SUBJECT_ALLOWLIST_SECRET_NAME` | nombre del secreto que contiene los `sub` OAuth autorizados, separados por coma |
 | `MCP_PUBLIC_URL` | opcional, URL HTTPS de dominio propio; sin ella usa la URL de Cloud Run |
 
-La clave HMAC debe provisionarse en Secret Manager por una persona autorizada, **sin copiarse al repositorio ni al chat**. No modificar/eliminar la propiedad Apps Script original. El valor de `MCP_ALLOWED_SUBJECTS` procede de Secret Manager y limita los usuarios incluso si el proveedor OAuth emite tokens válidos para otras cuentas.
+El proyecto `classroom-mcp-512122`, la región `us-central1` y las dos cuentas de servicio están preconfigurados en el workflow; **no** hay que dar de alta variables GitHub para ellos. Sigue siendo imprescindible que IAM y WIF permitan su uso. La clave HMAC debe provisionarse en Secret Manager por una persona autorizada, **sin copiarse al repositorio ni al chat**. No modificar/eliminar la propiedad Apps Script original. El valor de `MCP_ALLOWED_SUBJECTS` procede de Secret Manager y limita los usuarios incluso si el proveedor OAuth emite tokens válidos para otras cuentas.
 
 **GitHub Actions Secrets** no se necesitan para contraseñas: el despliegue usa OIDC y Workload Identity Federation. El servicio Cloud Run permite acceso HTTPS a su endpoint para que ChatGPT lo alcance, pero todas las rutas académicas bajo `/mcp` exigen validación OAuth del JWT; no confundir con acceso anónimo a datos.
 
@@ -56,4 +67,4 @@ El archivo `context.json` se genera a partir del **contexto de Apps Script despl
 
 ### Límites actuales
 
-El repositorio implementa y prueba el adaptador, pero **no puede autorizar Google Cloud ni registrar OAuth en nombre del propietario sin esas conexiones**. Sin variables, WIF y secretos el workflow se detiene antes del deploy; sin conexión OAuth en ChatGPT la operación no aparece en el chat. No afirmar una creación en Classroom hasta recibir el `courseWorkId` real.
+El repositorio implementa y prueba el adaptador y reutiliza el proyecto Cloud Run existente, pero **no puede autorizar Google Cloud ni registrar OAuth en nombre del propietario sin esas conexiones**. Sin variables, WIF y secretos el workflow se detiene antes del deploy; sin conexión OAuth en ChatGPT la operación no aparece en el chat. No afirmar una creación en Classroom hasta recibir el `courseWorkId` real.
