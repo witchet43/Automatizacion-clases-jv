@@ -151,7 +151,10 @@ function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
   toWrite.forEach(function(x){
     escribirCalificacionDraft_(courseId,work.id,x.submissionId,x.grade);
   });
-  const pendientes=verificarYReintentarCalificacionUnidad_(courseId,work.id,objetivos);
+  // Sin nuevas escrituras, la respuesta inicial basta: evitar relecturas.
+  // Cuando hubo cambios, verificar solo los drafts realmente modificados.
+  const pendientes=toWrite.length?
+    verificarYReintentarCalificacionUnidad_(courseId,work.id,toWrite):[];
   if(pendientes.length){
     // No se exponen identidades individuales en correos automáticos.
     throw new Error('CLOSE_VERIFY_PENDING: '+pendientes.length+
