@@ -1,0 +1,14 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "La idea es que configures tú lo más que puedas sin depender de mí; aquí están los resultados de auditoría de Cloud Shell y WIF de GitHub para Classroom MCP. Continuar comprobando permisos y preparación del nuevo adaptador OAuth.",
+  "reason": "Perform authenticated, read-only verification of existing GitHub OIDC Workload Identity Federation into project classroom-mcp-512122 from GitHub Actions (not from chat). The workflow checks Cloud Run names, runtime IAM service account binding, project IAM roles, Secret Manager secret names and direct accessor role (never values). Automatically executes on merge, no user Cloud Shell interaction, never creates or modifies any cloud resources or Classroom data. Explicit allowlist of this audit in canonical architecture tests and CI guards.",
+  "allowedChangedPaths": [
+    ".github/workflows/audit-classroom-mcp-wif.yml",
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    "scripts/test-decommissioned-routes.mjs",
+    "scripts/test-architecture-boundaries.mjs",
+    "scripts/test-mcp-wif-audit-workflow.mjs"
+  ]
+}
