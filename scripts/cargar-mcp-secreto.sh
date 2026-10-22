@@ -29,7 +29,26 @@ ACTIVE="$(gcloud auth list --filter=status:ACTIVE --format='value(account)' | he
 [[ -n "$ACTIVE" ]] || { echo "NO_GOOGLE_CLOUD_AUTH"; exit 1; }
 [[ "$(gcloud config get-value project 2>/dev/null)" == "$PROJECT" ]] ||
   { echo "PROYECTO_INCORRECTO: gcloud config set project $PROJECT"; exit 1; }
-gcloud secrets describe "$SECRET" --project="$PROJECT" --format='value(name)' >/dev/null
+# Give the GitHub deployer read-only METADATA access to just these two secrets.
+# Secret Manager Viewer cannot access payloads (unlike Secret Accessor).
+# Run this preflight before the hidden prompt so auditing works independently.
+command -v jq >/dev/null || { echo "FALTA_JQ: usar Cloud Shell"; exit 1; }
+DEPLOYER="serviceAccount:classroom-mcp-deployer@$PROJECT.iam.gserviceaccount.com"
+for item in academic-write-hmac academic-mcp-allowed-subjects; do
+  gcloud secrets describe "$item" --project="$PROJECT" --format='value(name)' >/dev/null
+done
+for item in academic-write-hmac academic-mcp-allowed-subjects; do
+  policy="$(gcloud secrets get-iam-policy "$item" --project="$PROJECT" --format=json)"
+  if jq -e --arg member "$DEPLOYER" \
+    '.bindings[]? | select(.role=="roles/secretmanager.viewer" and (.condition == null)) | .members[]? | select(.==$member)' \
+    <<<"$policy" >/dev/null; then
+    echo "METADATOS_YA_AUTORIZADOS: $item"
+  else
+    gcloud secrets add-iam-policy-binding "$item" --project="$PROJECT" \
+      --member="$DEPLOYER" --role=roles/secretmanager.viewer --quiet --format=none
+    echo "METADATOS_AUTORIZADOS: $item (sin acceso al valor)"
+  fi
+done
 # Do not rotate or overwrite existing enabled versions accidentally.
 existing="$(gcloud secrets versions list "$SECRET" --project="$PROJECT" --filter='state=ENABLED' --format='value(name)')"
 if [[ -n "$existing" ]]; then
