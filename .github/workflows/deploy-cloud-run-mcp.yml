@@ -24,11 +24,11 @@ jobs:
           node-version: '22'
       - name: Require Cloud Run, OAuth and Secret Manager configuration
         env:
-          PROJECT: ${{ vars.GCP_PROJECT_ID }}
-          REGION: ${{ vars.GCP_REGION }}
+          PROJECT: classroom-mcp-512122
+          REGION: us-central1
           WIF: ${{ vars.GCP_WIF_PROVIDER }}
-          DEPLOY_SA: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
-          RUNTIME_SA: ${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
+          DEPLOY_SA: classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com
+          RUNTIME_SA: classroom-mcp-sa@classroom-mcp-512122.iam.gserviceaccount.com
           OAUTH_ISSUER: ${{ vars.MCP_OAUTH_ISSUER }}
           OAUTH_JWKS: ${{ vars.MCP_OAUTH_JWKS_URL }}
           HMAC_SECRET: ${{ vars.GCP_MCP_HMAC_SECRET_NAME }}
@@ -48,13 +48,13 @@ jobs:
       - uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+          service_account: classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com
       - uses: google-github-actions/setup-gcloud@v2
       - name: Deploy only the MCP adapter (never execute academic operations)
         env:
-          PROJECT: ${{ vars.GCP_PROJECT_ID }}
-          REGION: ${{ vars.GCP_REGION }}
-          RUNTIME_SA: ${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
+          PROJECT: classroom-mcp-512122
+          REGION: us-central1
+          RUNTIME_SA: classroom-mcp-sa@classroom-mcp-512122.iam.gserviceaccount.com
           ISSUER: ${{ vars.MCP_OAUTH_ISSUER }}
           JWKS: ${{ vars.MCP_OAUTH_JWKS_URL }}
           PREFERRED_URL: ${{ vars.MCP_PUBLIC_URL }}
@@ -62,9 +62,17 @@ jobs:
           SUBJECT_SECRET: ${{ vars.GCP_MCP_SUBJECT_ALLOWLIST_SECRET_NAME }}
         run: |
           set -euo pipefail
-          SERVICE=academic-classroom-mcp
+          SERVICE=academic-classroom-mcp-oauth
+          # Never mutate either legacy service. Existing production endpoints
+          # may still serve integrations that we cannot inspect here.
+          if [[ "$SERVICE" == "academic-classroom-mcp" || "$SERVICE" == "academic-classroom-chatgpt-gateway" ]]; then
+            echo "::error::Existing production Cloud Run services are protected"; exit 1
+          fi
           OLD_URL="$(gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" --format='value(status.url)' 2>/dev/null || true)"
           URL="${PREFERRED_URL:-${OLD_URL:-https://bootstrap.invalid}}"
+          if [[ "$URL" == *academic-classroom-mcp-egncivfxav-uc.a.run.app* ]]; then
+            echo "::error::Existing legacy service URL must never be overwritten by this OAuth adapter"; exit 1
+          fi
           gcloud run deploy "$SERVICE" \
             --project "$PROJECT" --region "$REGION" \
             --source ./mcp-cloud-run --service-account "$RUNTIME_SA" \

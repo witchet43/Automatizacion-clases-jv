@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "La idea es que configures tú lo más que puedas sin depender de mí. Reutilizar el proyecto existente Classroom MCP sin Work Mode ni Codex.",
+  "reason": "Preconfigure and pin verified existing Google Cloud project classroom-mcp-512122, us-central1, previously used deployer and runtime service account identities; explicitly isolate a new OAuth MCP service from two existing Cloud Run production service names; add a single-command read-only Cloud Shell inventory that checks existing APIs, IAM identity names, WIF provider resource names, secret names and service URLs without retrieving secret values or mutating Google Cloud; update CI and onboarding documentation. No Classroom operations, no OAuth secrets creation, no Site modification, and no Cloud Run deployment until authenticated GCP access and verified secrets are available.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-cloud-run-mcp.yml",
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    "mcp-cloud-run/README.md",
+    "scripts/auditar-classroom-mcp-gcp.sh"
+  ]
+}

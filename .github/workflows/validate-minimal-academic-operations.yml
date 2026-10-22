@@ -40,6 +40,8 @@ jobs:
             cp "$f" "/tmp/$(basename "$f").js"
             node --check "/tmp/$(basename "$f").js"
           done
+      - name: Validate Cloud Shell read-only audit syntax
+        run: bash -n scripts/auditar-classroom-mcp-gcp.sh
       - name: Test independent OAuth MCP transport without connecting to Classroom
         run: |
           node mcp-cloud-run/sync-context.mjs
