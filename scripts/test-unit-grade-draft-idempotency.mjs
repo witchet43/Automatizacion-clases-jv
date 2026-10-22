@@ -10,7 +10,7 @@ const facade=fs.readFileSync('src/15_OperacionesAcademicas.gs','utf8');
 assert.match(policy,/FINAL_GRADE_COURSEWORK_STATE:\s*'DRAFT'/);
 assert.match(policy,/UNIT_GRADE_POSTING_MODE:\s*'DRAFT_COURSEWORK_DRAFT_GRADE_ONLY'/);
 assert.match(engine,/String\(w\.state\|\|''\)\.toUpperCase\(\)==='PUBLISHED'/);
-assert.match(engine,/^EXAMEN/);
+assert.match(engine,/\^EXAMEN/);
 assert.match(engine,/!\/\^Calificación/);
 assert.doesNotMatch(source,/state:\s*'PUBLISHED'/);
 assert.doesNotMatch(source,/updateMask:\s*'state'/);
