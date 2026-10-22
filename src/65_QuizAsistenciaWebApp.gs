@@ -226,6 +226,35 @@ function leerUltimoFalloAcademicoWeb_(courseId) {
   }catch(ignore){return null;}
 }
 
+/**
+ * One canonical grading intent carried through the installed Gateway's
+ * authorized actividad operation. Strict exact identity prevents an
+ * ordinary activity request from accidentally invoking a unit closure.
+ * HMAC, requestId and replay protection remain in uaqExecutor.
+ */
+function esCalificacionUnidadDraftWeb_(operation,source){
+  const p=source&&typeof source==='object'?source:{};
+  const title=String(p.titulo||p.title||'').trim();
+  const mode=String(p.modo||'').trim().toUpperCase();
+  const exact=/^Calificación Unidad [1-9]\d*$/.test(title);
+  const reserved=/^Calificación\s+Unidad\b/i.test(title);
+  if(mode!=='CALIFICACION_UNIDAD_DRAFT_V1'){
+    if(reserved)throw new Error('UNIT_GRADE_REQUIRES_CANONICAL_MODE');
+    return false;
+  }
+  if(operation!=='actividad'||!exact)
+    throw new Error('UNIT_GRADE_CANONICAL_TITLE_OR_OPERATION_INVALID');
+  const unit=normalizarUnidadOperacion_(p.unidad);
+  const expected=ACADEMIC_POLICY.CLASSROOM.FINAL_GRADE_PREFIX+extraerNumeroUnidad_(unit);
+  if(title!==expected)throw new Error('UNIT_GRADE_TITLE_UNIT_MISMATCH');
+  if(p.estado&&String(p.estado).toUpperCase()!=='DRAFT'||
+     p.state&&String(p.state).toUpperCase()!=='DRAFT')
+    throw new Error('UNIT_GRADE_DRAFT_ONLY');
+  if(p.notas||p.calificaciones||p.alumnos)
+    throw new Error('UNIT_GRADE_SCORES_MUST_COME_FROM_CLASSROOM');
+  return true;
+}
+
 function ejecutarUaqExecutorWeb_(p){
   const operation=String(p&&p.operation||'').trim();
   if(ACADEMIC_WEB.ROUTINE_OPERATIONS.indexOf(operation)<0)
@@ -244,9 +273,17 @@ function ejecutarUaqExecutorWeb_(p){
     result=crearPaqueteClaseWeb_(course,source);
   }else if(operation==='material'){
     result=crearMaterialDidacticoWeb_(course,{params:source});
+  }else if(operation==='actividad'&&esCalificacionUnidadDraftWeb_(operation,source)){
+    // The existing unit engine calculates 70/30 from source Classroom grades,
+    // writes the private audit report and fills only draftGrade in one DRAFT
+    // CourseWork named Calificación Unidad N. Nothing is published/returned.
+    result=cerrarUnidad({courseId:String(course.id),unidad:source.unidad});
   }else{
     const payload=normalizarPayloadAcademicoWeb_(course,{params:source});
-    if(operation==='actividad')result=crearActividad(payload);
+    if(operation==='actividad'){
+      esCalificacionUnidadDraftWeb_(operation,source);
+      result=crearActividad(payload);
+    }
     if(operation==='tarea')result=crearTarea(payload);
     if(operation==='practica')result=crearPractica(payload);
     if(operation==='quiz')result=crearQuiz(payload);
