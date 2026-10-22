@@ -18,7 +18,7 @@ const fields={
  workflow:c.workflow.name,endpoint:c.webApp.url
 };
 const target=path.resolve(dir,'context.json');
-const output=JSON.stringify(fields,null,2)+'\n';
+const output=JSON.stringify({operationalContext:fields,courseIds:[...new Set(Object.values(c.courses).map(v=>String(v.id)))].sort()},null,2)+'\n';
 if(process.argv.includes('--check')){
   if(!fs.existsSync(target)||fs.readFileSync(target,'utf8')!==output)
     throw Error('MCP_CONTEXT_OUTDATED: run node mcp-cloud-run/sync-context.mjs');
