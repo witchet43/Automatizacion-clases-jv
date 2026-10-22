@@ -39,9 +39,9 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
           for svc in academic-classroom-mcp academic-classroom-chatgpt-gateway academic-classroom-mcp-oauth; do
             if gcloud run services describe "$svc" --project "$PROJECT" --region "$REGION" --format='value(metadata.name)' >/dev/null 2>&1; then
-              echo "- Existing: `$svc`" >> "$GITHUB_STEP_SUMMARY"
+              echo "- Existing: $svc" >> "$GITHUB_STEP_SUMMARY"
             else
-              echo "- Absent or not accessible: `$svc`" >> "$GITHUB_STEP_SUMMARY"
+              echo "- Absent or not accessible: $svc" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
           echo '### Project IAM grants to deployer/runtime' >> "$GITHUB_STEP_SUMMARY"
@@ -65,7 +65,7 @@ jobs:
           echo '### Secret names and runtime access (no values)' >> "$GITHUB_STEP_SUMMARY"
           for secret in academic-write-hmac academic-mcp-allowed-subjects; do
             if gcloud secrets describe "$secret" --project "$PROJECT" --format='value(name)' >/dev/null 2>&1; then
-              echo "- Exists: `$secret`" >> "$GITHUB_STEP_SUMMARY"
+              echo "- Exists: $secret" >> "$GITHUB_STEP_SUMMARY"
               iam="$(gcloud secrets get-iam-policy "$secret" --project "$PROJECT" --format=json 2>/dev/null || true)"
               if jq -e --arg account "serviceAccount:$RUNTIME" \
                 '.bindings[]? | select(.role=="roles/secretmanager.secretAccessor") | .members[]? | select(.==$account)' \
@@ -75,8 +75,10 @@ jobs:
                 echo '  - No direct runtime accessor binding confirmed; inherited roles may differ.' >> "$GITHUB_STEP_SUMMARY"
               fi
             else
-              echo "- Missing: `$secret`" >> "$GITHUB_STEP_SUMMARY"
+              echo "- Missing: $secret" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
           echo '### Status' >> "$GITHUB_STEP_SUMMARY"
           echo 'No secret versions or values accessed. No Cloud Run, IAM, GitHub or Classroom resources modified.' >> "$GITHUB_STEP_SUMMARY"
+          # Non-secret IAM roles/service names only; expose audit without a user screenshot.
+          cat "$GITHUB_STEP_SUMMARY"
