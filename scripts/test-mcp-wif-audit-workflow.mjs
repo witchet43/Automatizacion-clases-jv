@@ -1,0 +1,19 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+
+const workflow=fs.readFileSync('.github/workflows/audit-classroom-mcp-wif.yml','utf8');
+assert.match(workflow,/projects\/148028894895\/locations\/global\/workloadIdentityPools\/github-classroom-pool\/providers\/github/);
+assert.match(workflow,/google-github-actions\/auth@v2/);
+assert.match(workflow,/classroom-mcp-deployer@classroom-mcp-512122\.iam\.gserviceaccount\.com/);
+assert.match(workflow,/id-token: write/);
+assert.match(workflow,/academic-classroom-mcp-oauth/);
+assert.match(workflow,/roles\/iam\.serviceAccountUser/);
+assert.match(workflow,/gcloud secrets describe/);
+assert.match(workflow,/get-iam-policy/);
+assert.match(workflow,/\$GITHUB_STEP_SUMMARY/);
+assert.doesNotMatch(workflow,/gcloud secrets versions access|gcloud secrets versions add|gcloud secrets create/);
+assert.doesNotMatch(workflow,/gcloud run deploy|gcloud run services update|gcloud run services delete/);
+assert.doesNotMatch(workflow,/gcloud projects add-iam-policy-binding|gcloud iam service-accounts add-iam-policy-binding/);
+assert.doesNotMatch(workflow,/gcloud classroom|classroom\.googleapis\.com/);
+assert.doesNotMatch(workflow,/ACADEMIC_WRITE_HMAC_KEY\s*:/);
+console.log('PASS: federated Cloud IAM audit runs automatically, checks only metadata, and never touches academic or secret values.');
