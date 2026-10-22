@@ -11,6 +11,8 @@ assert.match(workflow,/roles\/iam\.serviceAccountUser/);
 assert.match(workflow,/gcloud secrets describe/);
 assert.match(workflow,/get-iam-policy/);
 assert.match(workflow,/\$GITHUB_STEP_SUMMARY/);
+assert.doesNotMatch(workflow,/echo\s+"[^"\n]*`[^"\n]*"/,'Bash must not execute backtick markdown in double-quoted echo');
+assert.match(workflow,/cat "\$GITHUB_STEP_SUMMARY"/,'Print only sanitized read-only audit summary');
 assert.doesNotMatch(workflow,/gcloud secrets versions access|gcloud secrets versions add|gcloud secrets create/);
 assert.doesNotMatch(workflow,/gcloud run deploy|gcloud run services update|gcloud run services delete/);
 assert.doesNotMatch(workflow,/gcloud projects add-iam-policy-binding|gcloud iam service-accounts add-iam-policy-binding/);

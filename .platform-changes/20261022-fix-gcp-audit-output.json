@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "La idea es que configures tú lo más que puedas sin depender de mí; auditoría de Cloud Shell para proyecto Classroom MCP y GitHub Actions provista para continuar.",
+  "reason": "The first authenticated read-only GCP IAM audit successfully verified WIF but a bash double-quoted echo with Markdown backticks accidentally invoked shell substitutions and erased the actual service and secret names. Fix output escaping to preserve factual names and append non-sensitive IAM/project metadata to job logs for inspection without asking the user for another screenshot. Keep every audit command read-only and no secret values logged. Add regression preventing shell backtick substitution.",
+  "allowedChangedPaths": [
+    ".github/workflows/audit-classroom-mcp-wif.yml",
+    "scripts/test-mcp-wif-audit-workflow.mjs"
+  ]
+}
