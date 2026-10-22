@@ -1,0 +1,93 @@
+name: Deploy Independent Academic MCP to Cloud Run
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: 'Explicitly authorize deployment of the OAuth-protected academic MCP adapter'
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: academic-mcp-cloudrun-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: inputs.confirm_deploy == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require Cloud Run, OAuth and Secret Manager configuration
+        env:
+          PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          REGION: ${{ vars.GCP_REGION }}
+          WIF: ${{ vars.GCP_WIF_PROVIDER }}
+          DEPLOY_SA: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+          RUNTIME_SA: ${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
+          OAUTH_ISSUER: ${{ vars.MCP_OAUTH_ISSUER }}
+          OAUTH_JWKS: ${{ vars.MCP_OAUTH_JWKS_URL }}
+          HMAC_SECRET: ${{ vars.GCP_MCP_HMAC_SECRET_NAME }}
+          SUBJECT_SECRET: ${{ vars.GCP_MCP_SUBJECT_ALLOWLIST_SECRET_NAME }}
+        run: |
+          set -euo pipefail
+          for value in PROJECT REGION WIF DEPLOY_SA RUNTIME_SA OAUTH_ISSUER OAUTH_JWKS HMAC_SECRET SUBJECT_SECRET; do
+            if [[ -z "${!value}" ]]; then echo "::error::Missing required Cloud Run/OAuth configuration: $value"; exit 1; fi
+          done
+      - name: Synchronize exact canonical Apps Script operational context
+        run: node mcp-cloud-run/sync-context.mjs
+      - name: Test OAuth MCP and signed unit grade transport (mocked upstream only)
+        working-directory: mcp-cloud-run
+        run: |
+          npm install --no-audit --no-fund
+          npm run check
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Deploy only the MCP adapter (never execute academic operations)
+        env:
+          PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          REGION: ${{ vars.GCP_REGION }}
+          RUNTIME_SA: ${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
+          ISSUER: ${{ vars.MCP_OAUTH_ISSUER }}
+          JWKS: ${{ vars.MCP_OAUTH_JWKS_URL }}
+          PREFERRED_URL: ${{ vars.MCP_PUBLIC_URL }}
+          HMAC_SECRET: ${{ vars.GCP_MCP_HMAC_SECRET_NAME }}
+          SUBJECT_SECRET: ${{ vars.GCP_MCP_SUBJECT_ALLOWLIST_SECRET_NAME }}
+        run: |
+          set -euo pipefail
+          SERVICE=academic-classroom-mcp
+          OLD_URL="$(gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" --format='value(status.url)' 2>/dev/null || true)"
+          URL="${PREFERRED_URL:-${OLD_URL:-https://bootstrap.invalid}}"
+          gcloud run deploy "$SERVICE" \
+            --project "$PROJECT" --region "$REGION" \
+            --source ./mcp-cloud-run --service-account "$RUNTIME_SA" \
+            --allow-unauthenticated --ingress all \
+            --min-instances=0 --memory=512Mi --timeout=300 \
+            --set-env-vars "MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=$ISSUER,MCP_OAUTH_JWKS_URL=$JWKS" \
+            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=$HMAC_SECRET:latest,MCP_ALLOWED_SUBJECTS=$SUBJECT_SECRET:latest" \
+            --quiet
+          REAL_URL="$(gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" --format='value(status.url)')"
+          if [[ -z "$REAL_URL" || "$REAL_URL" != https://* ]]; then
+            echo "::error::Cloud Run did not return HTTPS URL"; exit 1
+          fi
+          if [[ "$URL" == https://bootstrap.invalid ]]; then
+            gcloud run services update "$SERVICE" \
+              --project "$PROJECT" --region "$REGION" \
+              --update-env-vars "MCP_PUBLIC_URL=$REAL_URL" --quiet
+            URL="$REAL_URL"
+          fi
+          echo "MCP HTTPS endpoint: $URL/mcp"
+          echo "OAuth resource metadata: $URL/.well-known/oauth-protected-resource"
+          {
+            echo "## Independent Academic MCP"
+            echo "Endpoint: $URL/mcp"
+            echo "OAuth required, subjects allowlisted, all writes signed to canonical Apps Script."
+            echo "No Classroom operation was executed during deployment."
+          } >> "$GITHUB_STEP_SUMMARY"

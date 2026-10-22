@@ -6,11 +6,16 @@ on:
       - 'config/**'
       - 'scripts/**'
       - '.github/workflows/**'
+      - 'mcp-cloud-run/**'
+      - 'README.md'
+      - 'AGENTS.md'
   pull_request:
     paths:
       - 'src/**'
       - 'scripts/test-*.mjs'
       - '.github/workflows/validate-minimal-academic-operations.yml'
+      - '.github/workflows/deploy-cloud-run-mcp.yml'
+      - 'mcp-cloud-run/**'
   workflow_dispatch:
 
 jobs:
@@ -35,6 +40,12 @@ jobs:
             cp "$f" "/tmp/$(basename "$f").js"
             node --check "/tmp/$(basename "$f").js"
           done
+      - name: Test independent OAuth MCP transport without connecting to Classroom
+        run: |
+          node mcp-cloud-run/sync-context.mjs
+          cd mcp-cloud-run
+          npm install --no-audit --no-fund
+          npm run check
       - name: Exercise minimal-operation and academic regressions
         run: |
           node scripts/test-academic-write-auth.mjs
