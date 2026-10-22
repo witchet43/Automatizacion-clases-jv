@@ -54,6 +54,8 @@ En la solicitud de entrada oculta, pegar el valor original y presionar Enter. La
 
 **OAuth:** Solo después de identificar al usuario en un IdP real y su `sub`, ejecutar el mismo script con `--subject`; pegar el identificador en el prompt oculto. Jamás inventar el `sub` ni utilizar el correo como sustituto sin corroboración.
 
+Al iniciar, el script concede al **deployer** `roles/secretmanager.viewer` solo sobre estos dos secretos, si todavía no lo tiene: permite ver si existen y comprobar sus políticas/metadata desde el auditor de GitHub, pero **NO** permite leer los valores. La cuenta runtime conserva su acceso a los valores. La auditoría separa "no verificable" de ausencia real; falta de permisos no equivale a secreto inexistente.
+
 El script no habilita OAuth ni publica la actividad de Classroom. No ejecutar el workflow de despliegue hasta que ambos secretos contengan una versión habilitada y el issuer/JWKS del IdP sean comprobados.
 
 ## Seguridad y configuración previa indispensable
