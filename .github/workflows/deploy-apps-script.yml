@@ -312,7 +312,7 @@ jobs:
         run: |
           set -euo pipefail
           changed="$(git diff --name-only HEAD^ HEAD)"
-          if grep -Eq '^(src/|config/academic-context\\.json$)' <<< "$changed"; then
+          if grep -Eq '^(src/|config/academic-context[.]json$)' <<< "$changed"; then
             echo 'needs_deploy=true' >> "$GITHUB_OUTPUT"
             echo 'Apps Script source/config changed; deployment required.'
           else
