@@ -1,0 +1,14 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Configura un proveedor OAuth nuevo para Classroom Academic Gateway. Ejecuta los cambios canónicos autorizados mediante GitHub, GitHub Actions, sin Work Mode ni Codex ni ChatGPT Sites.",
+  "reason": "Choose new managed Auth0 tenant (no admin connection yet), prepare automated OAuth discovery and DCR/PKCE S256/JWKS preflight before Cloud Run deploy, document exact restricted tenant and protected-resource setup. No tokens or secrets in code, no Cloud Run/Apps Script/Classroom changes.",
+  "allowedChangedPaths": [
+    "scripts/verify-auth0-mcp.mjs",
+    "scripts/test-auth0-mcp-preflight.mjs",
+    ".github/workflows/deploy-cloud-run-mcp.yml",
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    "mcp-cloud-run/README.md"
+  ]
+}
