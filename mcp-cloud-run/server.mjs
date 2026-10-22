@@ -56,13 +56,15 @@ export function loadConfig(env=process.env,contextPath=join(dirname(fileURLToPat
   };
 }
 
-export function signedClosureRequest(config,courseId,unidad){
+export function signedClosureRequest(config,courseId,unidad,existingRequestId=null){
   const id=String(courseId);
   if(!config.courseIds.has(id))throw Error('COURSE_NOT_REGISTERED');
   if(!Number.isSafeInteger(unidad)||unidad<1||unidad>50)
     throw Error('UNIT_NUMBER_INVALID');
   const title='Calificación Unidad '+unidad;
-  const requestId='grade_'+id+'_'+unidad+'_'+randomBytes(12).toString('hex');
+  const requestId=existingRequestId===null
+    ? 'grade_'+id+'_'+unidad+'_'+randomBytes(12).toString('hex')
+    : String(existingRequestId);
   if(!UUIDISH.test(requestId))throw Error('MCP_REQUEST_ID_INVALID');
   const unsigned={
     action:'uaqExecutor',operation:'cerrarUnidad',courseId:id,
