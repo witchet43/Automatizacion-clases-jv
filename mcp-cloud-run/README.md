@@ -25,6 +25,21 @@ bash /tmp/auditar-classroom-mcp-gcp.sh
 
 La auditoría comprueba APIs habilitadas, servicios existentes, cuentas de servicio, nombres WIF y nombres de secretos; jamás lee valores secretos ni modifica la infraestructura. Si no se tiene acceso autenticado a Cloud Shell, primero iniciarlo desde Google Cloud Console.
 
+## Preparación de IAM y fichas de secretos (única ejecución, idempotente)
+
+La federación WIF GitHub → Google Cloud ya fue comprobada en [GitHub Actions](https://github.com/witchet43/Automatizacion-clases-jv/actions/workflows/audit-classroom-mcp-wif.yml). La cuenta de deployer puede autenticarse y leer servicios, pero no puede inspeccionar todas las políticas IAM; por eso preparamos este script de intervención mínima.
+
+En **Cloud Shell** del proyecto `classroom-mcp-512122` ejecutar:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/witchet43/Automatizacion-clases-jv/main/scripts/preparar-mcp-iam-secrets.sh -o /tmp/preparar-mcp-iam-secrets.sh
+bash /tmp/preparar-mcp-iam-secrets.sh --apply
+```
+
+Es una **mutación de configuración IAM y Secret Manager**, no una auditoría. Se limita a crear las fichas vacías `academic-write-hmac` y `academic-mcp-allowed-subjects` si faltan; otorgar `roles/secretmanager.secretAccessor` a la cuenta runtime en esos dos secretos; y `roles/iam.serviceAccountUser` a deployer sobre la cuenta runtime. **No escribe valores secretos, ni lee el antiguo `classroom-mcp-token`, ni despliega servicios.** Segunda ejecución no añade recursos duplicados.
+
+El valor de `academic-write-hmac` ha de coincidir con la propiedad `ACADEMIC_WRITE_HMAC_KEY` del Apps Script existente (no revelar en chat/terminal visible). La segunda ficha recibirá el `sub` validado del proveedor OAuth una vez configurado. Estos contenidos deberán cargarse posteriormente mediante un mecanismo de lectura oculta en Cloud Shell, nunca por GitHub ni el chat.
+
 ## Seguridad y configuración previa indispensable
 
 ChatGPT **no puede entregar un token API fijo** en una conexión MCP; requiere OAuth 2.1 (PKCE S256) para acceso privado. Utilizar un proveedor OAuth gestionado compatible con MCP, por ejemplo Auth0, que emita JWT RS256 con el parámetro `resource` y `aud` correspondiente a la URL del servidor. Habilitar descubrimiento OAuth, CIMD o DCR, permitir el redirect URI que ChatGPT muestre y el scope `academic.read` / `academic.close_unit`. No intentar montar un servidor OAuth propio ad hoc.

@@ -47,6 +47,10 @@ jobs:
         run: node scripts/test-mcp-wif-audit-workflow.mjs
       - name: Verify MCP reuses existing audited GCP identity and secrets without disclosure
         run: node scripts/test-mcp-audited-gcp-config.mjs
+      - name: Validate opt-in Secret Manager and least-privilege IAM bootstrap
+        run: |
+          bash -n scripts/preparar-mcp-iam-secrets.sh
+          node scripts/test-mcp-iam-bootstrap.mjs
       - name: Validate Cloud Shell read-only audit syntax
         run: bash -n scripts/auditar-classroom-mcp-gcp.sh
       - name: Test independent OAuth MCP transport without connecting to Classroom

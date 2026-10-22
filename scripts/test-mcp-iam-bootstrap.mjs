@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+const source=fs.readFileSync('scripts/preparar-mcp-iam-secrets.sh','utf8');
+assert.match(source,/PROJECT=classroom-mcp-512122/);
+assert.match(source,/\$\{1:-\}.*--apply/);
+assert.match(source,/gcloud secrets describe/);
+assert.match(source,/gcloud secrets create/);
+assert.match(source,/gcloud secrets add-iam-policy-binding/);
+assert.match(source,/roles\/secretmanager\.secretAccessor/);
+assert.match(source,/roles\/iam\.serviceAccountUser/);
+assert.match(source,/--replication-policy=automatic/);
+assert.doesNotMatch(source,/gcloud secrets versions access/);
+assert.doesNotMatch(source,/gcloud secrets versions add/);
+assert.doesNotMatch(source,/gcloud projects add-iam-policy-binding/);
+assert.doesNotMatch(source,/gcloud run (deploy|services update|services delete)/);
+assert.doesNotMatch(source,/classroom-mcp-token.*(delete|create|versions add)/);
+assert.doesNotMatch(source,/assignedGrade|StudentSubmissions/);
+console.log('PASS: opt-in, idempotent IAM and empty secret provisioning, no secret values, no Cloud Run or Classroom changes.');
