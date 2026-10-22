@@ -8,7 +8,7 @@ for (const p of [
   /--filter='state=ENABLED'/,/YA_EXISTE_VERSION_HABILITADA/,
   /printf '%s' "\$VALUE" \| gcloud secrets versions add/,
   /--data-file=-/,/VERSION_HABILITADA_CONFIRMADA/,
-  /roles\\/secretmanager\\.viewer/,/METADATOS_AUTORIZADOS/,
+  /roles\/secretmanager\.viewer/,/METADATOS_AUTORIZADOS/,
   /gcloud secrets get-iam-policy/,/gcloud secrets add-iam-policy-binding/
 ]) assert.match(s,p);
 for (const p of [/gcloud secrets versions access/,/gcloud secrets (create|delete)/,
