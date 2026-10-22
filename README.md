@@ -5,12 +5,12 @@ Contrato **STATIC_WEB_APP_SERVICE**: operaciones **data-only**. Ante fallo, bloq
 
 ## Operación académica (sin GitHub Actions)
 
-**ChatGPT → Portal Académico privado → WebApp canónica de Google Apps Script → Classroom / Drive / Forms.**
+**ChatGPT → (Portal Académico legado o MCP OAuth independiente en Cloud Run) → WebApp canónica de Google Apps Script → Classroom / Drive / Forms.**
 Gamma y Notion se acceden mediante sus conectores para presentaciones y notas docentes.
 
-Las operaciones de lectura usan el diagnóstico del Portal Académico. Las escrituras pasan por una solicitud autorizada y firmada (HMAC), el entrypoint genérico `uaqExecutor`, la lógica canónica de Apps Script y postflight. Solo **DRAFT** para recursos de Classroom y Forms sin publicar. Google Docs de actividades, tareas y prácticas se adjuntan como **STUDENT_COPY**.
+Las operaciones de lectura usan el diagnóstico del Portal Académico. Las escrituras pasan por una solicitud autorizada y firmada (HMAC), el entrypoint genérico `uaqExecutor`, la lógica canónica de Apps Script y postflight. Los recursos didácticos ordinarios quedan **DRAFT** y Forms sin publicar. **Excepción administrativa explícita:** `Calificación Unidad N` tiene CourseWork `PUBLISHED`, pero cada nota individual queda en `draftGrade`, nunca `assignedGrade`. Google Docs de actividades, tareas y prácticas se adjuntan como **STUDENT_COPY**.
 
-No usar Codex, Work Mode, Cloud Run, GitHub Actions, Execution API, `clasp run`, workflows por archivo o scripts ad hoc como rutas académicas. Un fallo no autoriza reintentar con otro requestId: se consulta Classroom primero y se exige idempotencia.
+No usar Codex, Work Mode, GitHub Actions, Execution API, `clasp run`, workflows por archivo o scripts ad hoc para ejecutar operaciones académicas. Cloud Run está autorizado exclusivamente como adaptador MCP OAuth que firma y transporta solicitudes a la misma WebApp canónica; no contiene algoritmos académicos. Un fallo no autoriza reintentar con otro requestId: se consulta Classroom primero y se exige idempotencia.
 
 El servicio canónico es el mismo endpoint registrado en `config/academic-context.json`. **No cambiar su URL, deployment, firma ni identificadores de curso durante una limpieza**.
 
@@ -24,9 +24,9 @@ El servicio canónico es el mismo endpoint registrado en `config/academic-contex
 
 ## Mantenimiento de plataforma
 
-GitHub se utiliza exclusivamente para versionar, validar y desplegar **cambios de código aprobados por el usuario**. El único workflow de despliegue es `deploy-apps-script.yml`, disparado por una evidencia `.platform-changes/*.json`. `validate-minimal-academic-operations.yml` ejecuta regresiones. No crea recursos de alumnos.
+GitHub se utiliza exclusivamente para versionar, validar y desplegar **cambios de código aprobados por el usuario**. Apps Script se despliega exclusivamente por `deploy-apps-script.yml` y evidencia `.platform-changes/*.json`. El adaptador MCP independiente tiene `deploy-cloud-run-mcp.yml`, manual y protegido por WIF + OAuth + Secret Manager; ninguno de los dos workflows ejecuta operaciones de alumnos. `validate-minimal-academic-operations.yml` ejecuta regresiones. No crea recursos de alumnos.
 
-Las antiguas solicitudes `.academic-requests/` y el workflow `academic-webapp.yml` quedaron retirados del árbol activo; su historial permanece en Git y en la rama de archivo `archive/academic-requests-before-direct-webapp-20261020`. El adaptador `mcp-cloud-run/` también fue retirado del código actual.
+Las antiguas solicitudes `.academic-requests/` y el workflow `academic-webapp.yml` quedaron retirados del árbol activo; su historial permanece en Git y en la rama de archivo `archive/academic-requests-before-direct-webapp-20261020`. El adaptador MCP original de token fijo fue retirado. Existe un **nuevo** `mcp-cloud-run/` con OAuth (no hereda la antigua credencial ni ejecuta lógica de Classroom): ver `mcp-cloud-run/README.md`. Su despliegue queda separado del de Apps Script y requiere infraestructura y OAuth configurados.
 
 **Compatibilidad temporal que no debe tocarse sin actualizar el Site:** el manifest aún expone metadatos históricos `workflow.name/path`, `operations.*.requestDirectory` y otros campos de envoltura. El Site desplegado usa el SHA-256 de ese manifest para validar las solicitudes: modificarlo ahora sin republicar el Site cortaría el acceso académico. Son **metadatos inertes**, no una ruta ejecutable. Ver `docs/cleanup-register-20261020.md` para cerrar esa dependencia.
 
