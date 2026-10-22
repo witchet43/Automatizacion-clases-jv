@@ -1,7 +1,7 @@
 /**
- * Crea/reutiliza la actividad sintética "Calificación Unidad N" como DRAFT
+ * Crea/reutiliza la actividad sintética "Calificación Unidad N" como PUBLISHED
  * y carga únicamente draftGrade desde el reporte auditable "Promedios Unidad".
- * La actividad y la nota son visibles SOLO para docentes:
+ * La actividad puede ser visible, pero la nota automática nunca se publica:
  * assignedGrade debe permanecer vacío para revisión docente.
  */
 const UNIT_GRADE_PUBLISH = Object.freeze({
@@ -88,28 +88,33 @@ function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
     if (!work.associatedWithDeveloper) {
       throw new Error('La actividad existente no es administrable por este Apps Script.');
     }
-    // The existing CourseWork identity must be stable: never retopic, publish,
-    // unpublish or rewrite an existing assignment as a side effect of grading.
-    if (String(work.topicId || '') !== String(topicId))
-      throw new Error('UNIT_GRADE_TOPIC_MISMATCH: corregir la ubicación manualmente sin alterar el trabajo original.');
-    if (String(work.state || '').toUpperCase() !== 'DRAFT')
-      throw new Error('UNIT_GRADE_REQUIRES_DRAFT: existe un trabajo no-DRAFT; no se publicará ni despublicará automáticamente.');
-    if (Number(work.maxPoints||0) !== 100 || String(work.workType||'') !== 'ASSIGNMENT')
-      throw new Error('UNIT_GRADE_WORK_IDENTITY_MISMATCH: el trabajo existente no es una actividad de 100 puntos.');
+    if (String(work.topicId || '') !== String(topicId)) {
+      work = Classroom.Courses.CourseWork.patch(
+        {topicId: topicId}, String(courseId), String(work.id), {updateMask: 'topicId'}
+      );
+    }
+    if (String(work.state || '').toUpperCase() === 'DRAFT') {
+      work = Classroom.Courses.CourseWork.patch(
+        {state: 'PUBLISHED'}, String(courseId), String(work.id), {updateMask: 'state'}
+      );
+    } else if (String(work.state || '').toUpperCase() !== 'PUBLISHED') {
+      throw new Error('La actividad final existe en estado incompatible: ' + work.state);
+    }
   } else {
     work = Classroom.Courses.CourseWork.create({
       title: canonicalTitle,
       description:
         'Calificación final de ' + unidad + '. Cálculo: Examen 70% + promedio de tareas, actividades, quizzes y prácticas 30%. La nota queda en borrador para revisión docente.',
       workType: 'ASSIGNMENT',
-      state: 'DRAFT',
+      state: 'PUBLISHED',
       maxPoints: 100,
       topicId: topicId
     }, String(courseId));
   }
 
-  if (String(work.state || '').toUpperCase() !== 'DRAFT')
-    throw new Error('UNIT_GRADE_DRAFT_REQUIRED: el trabajo debe permanecer DRAFT.');
+  if (String(work.state || '').toUpperCase() !== 'PUBLISHED') {
+    throw new Error('No se logró dejar PUBLISHED la actividad final.');
+  }
 
   let submissions = {};
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -135,8 +140,9 @@ function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
       throw new Error('CLOSE_MANUAL_GRADE_PRESENT: existe una calificación asignada por el docente; se protege y se detiene el recálculo.');
     return {uid:uid,submissionId:String(sub.id),grade:grade};
   });
-  // Idempotent grade updates: when the previously saved draft matches, do
-  // nothing. NEVER write assignedGrade, return work, or publish CourseWork.
+  // Idempotencia: crear/reutilizar el trabajo PUBLISHED una sola vez,
+  // conservar todas las notas individuales en draftGrade.
+  // Al recalcular, escribir únicamente los borradores cuyo valor cambió.
   const toWrite=objetivos.filter(function(x){
     const sub=submissions[x.uid];
     return sub.draftGrade===undefined||sub.draftGrade===null||
