@@ -84,6 +84,9 @@ const ACADEMIC_POLICY = Object.freeze({
     DEFAULT_TOPIC_PREFIX: 'Unidad ',
     FINAL_GRADE_PREFIX: 'Calificación Unidad ',
     FINAL_GRADE_COURSEWORK_STATE: 'PUBLISHED',
+    UNIT_GRADE_POSTING_MODE: 'PUBLISHED_COURSEWORK_DRAFT_GRADE_ONLY',
+    UNIT_GRADE_NAMING: 'Calificación Unidad N',
+    UNIT_GRADE_REUSE_SAME_COURSEWORK: true,
     AUTOMATIC_GRADE_FIELD: 'draftGrade',
     AUTOMATIC_ASSIGNED_GRADE: false,
     AUTOMATIC_RETURN: false,
@@ -352,6 +355,10 @@ function validarPoliticasCanonicas_(){
     if(p.CLASSROOM.DEFAULT_COURSEWORK_STATE!=='DRAFT') throw new Error('El estado automático ordinario de Classroom debe ser DRAFT.');
   const did=p.CLASSROOM.DIDACTIC_INSTRUCTIONS;
   if(!did||did.PERSONAL_WINDOWS_DEVICE!==true||did.EXPLAIN_COMMANDS!==true||did.REMOVE_ADMINISTRATIVE_TEXT!==true||did.FOR_ALL_SUBJECTS!==true||did.FORMAT_REQUIRED!==true) throw new Error('La didáctica transversal (Windows personal, comandos explicados, sin texto administrativo) es obligatoria.');
+  if(p.CLASSROOM.FINAL_GRADE_COURSEWORK_STATE!=='PUBLISHED'||
+    p.CLASSROOM.UNIT_GRADE_POSTING_MODE!=='PUBLISHED_COURSEWORK_DRAFT_GRADE_ONLY'||
+    p.CLASSROOM.UNIT_GRADE_REUSE_SAME_COURSEWORK!==true)
+    throw new Error('La actividad de unidad debe estar PUBLISHED y cada nota permanecer draftGrade, sin duplicados.');
   if(p.CLASSROOM.AUTOMATIC_GRADE_FIELD!=='draftGrade'||p.CLASSROOM.AUTOMATIC_ASSIGNED_GRADE!==false||p.CLASSROOM.AUTOMATIC_RETURN!==false) throw new Error('La política automática de calificaciones debe ser DRAFT_ONLY.');
   const activityDue=p.CLASSROOM.ACTIVITY_IN_CLASS_DUE;
   if(!activityDue||activityDue.REQUIRED!==true||activityDue.DEFAULT!=='SESSION_END'||activityDue.MAXIMUM!=='SESSION_END'||activityDue.REQUIRES_SESSION_CONTEXT!==true||activityDue.PAST_SESSION_CREATION!=='BLOCK'||activityDue.DUE_MUST_BE_FUTURE!==true) throw new Error('La política de vencimiento de ACTIVIDAD EN CLASE debe exigir fin de sesión, futuro válido y bloqueo posterior.');

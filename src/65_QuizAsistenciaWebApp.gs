@@ -22,7 +22,7 @@
 const ACADEMIC_WEB = Object.freeze({
   COURSE_REGISTRY_SOURCE:'ACADEMIC_CONTEXT_CONFIG',
   ACTIONS:Object.freeze(['uaqExecutor','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts','listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft']),
-  ROUTINE_OPERATIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase']),
+  ROUTINE_OPERATIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','cerrarUnidad']),
   FAST_PATHS:Object.freeze({
     quizAsistencia:Object.freeze({singleExternalInput:'materia',firstExternalAction:'WEB_APP',preflightReadsAllowed:false,documentationRead:false,auxiliaryReads:false,diagnosticOnlyAfterError:true})
   })
@@ -226,6 +226,24 @@ function leerUltimoFalloAcademicoWeb_(courseId) {
   }catch(ignore){return null;}
 }
 
+/**
+ * Canonical explicit authorized unit closing operation.
+ * Classroom assignment is PUBLISHED; all students' grades remain draftGrade.
+ * Cannot be tunneled through the draft-only actividad operation.
+ */
+function validarCierreUnidadWeb_(p,source){
+  const n=normalizarUnidadOperacion_(source&&source.unidad);
+  const title=ACADEMIC_POLICY.CLASSROOM.FINAL_GRADE_PREFIX+extraerNumeroUnidad_(n);
+  if(String(source&&source.titulo||'').trim()!==title||
+     String(p&&p.title||'').trim()!==title)
+    throw new Error('UNIT_GRADE_TITLE_MISMATCH');
+  if(String(source&&source.modo||'')!=='PUBLISHED_COURSEWORK_DRAFT_GRADE_ONLY')
+    throw new Error('UNIT_GRADE_EXPLICIT_POSTING_INTENT_REQUIRED');
+  if(source&&('alumnos' in source||'notas' in source||'calificaciones' in source))
+    throw new Error('UNIT_GRADE_SCORES_MUST_COME_FROM_CLASSROOM');
+  return n;
+}
+
 function ejecutarUaqExecutorWeb_(p){
   const operation=String(p&&p.operation||'').trim();
   if(ACADEMIC_WEB.ROUTINE_OPERATIONS.indexOf(operation)<0)
@@ -244,6 +262,9 @@ function ejecutarUaqExecutorWeb_(p){
     result=crearPaqueteClaseWeb_(course,source);
   }else if(operation==='material'){
     result=crearMaterialDidacticoWeb_(course,{params:source});
+  }else if(operation==='cerrarUnidad'){
+    const unidad=validarCierreUnidadWeb_(p,source);
+    result=cerrarUnidad({courseId:String(course.id),unidad:unidad});
   }else{
     const payload=normalizarPayloadAcademicoWeb_(course,{params:source});
     if(operation==='actividad')result=crearActividad(payload);

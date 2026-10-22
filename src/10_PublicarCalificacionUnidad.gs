@@ -140,10 +140,21 @@ function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
       throw new Error('CLOSE_MANUAL_GRADE_PRESENT: existe una calificación asignada por el docente; se protege y se detiene el recálculo.');
     return {uid:uid,submissionId:String(sub.id),grade:grade};
   });
-  objetivos.forEach(function(x){
+  // Idempotencia: crear/reutilizar el trabajo PUBLISHED una sola vez,
+  // conservar todas las notas individuales en draftGrade.
+  // Al recalcular, escribir únicamente los borradores cuyo valor cambió.
+  const toWrite=objetivos.filter(function(x){
+    const sub=submissions[x.uid];
+    return sub.draftGrade===undefined||sub.draftGrade===null||
+      Math.abs(Number(sub.draftGrade)-x.grade)>0.000001;
+  });
+  toWrite.forEach(function(x){
     escribirCalificacionDraft_(courseId,work.id,x.submissionId,x.grade);
   });
-  const pendientes=verificarYReintentarCalificacionUnidad_(courseId,work.id,objetivos);
+  // Sin nuevas escrituras, la respuesta inicial basta: evitar relecturas.
+  // Cuando hubo cambios, verificar solo los drafts realmente modificados.
+  const pendientes=toWrite.length?
+    verificarYReintentarCalificacionUnidad_(courseId,work.id,toWrite):[];
   if(pendientes.length){
     // No se exponen identidades individuales en correos automáticos.
     throw new Error('CLOSE_VERIFY_PENDING: '+pendientes.length+
@@ -156,7 +167,8 @@ function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
     alternateLink: work.alternateLink || '',
     estado: work.state,
     titulo: canonicalTitle,
-    actualizadas: updated,
+    actualizadas: toWrite.length,
+    sinCambios: updated-toWrite.length,
     alumnosReporte: rows.length,
     verificadas: rows.length,
     estadoCalificacion: 'DRAFT_ONLY'

@@ -67,3 +67,4 @@ jobs:
           node scripts/test-forms-import-without-turnedin.mjs
           node scripts/test-academic-error-notifications.mjs
           node scripts/test-grade-closure-resilience.mjs
+          node scripts/test-unit-grade-draft-idempotency.mjs
