@@ -69,7 +69,8 @@ test('OAuth issuer, subject, audience and scope; MCP rejects anonymous and execu
  assert.ok((await verifyBearer(f.config,'Bearer '+grade,'academic.close_unit',jwks)).subject);
  await assert.rejects(()=>verifyBearer(f.config,'Bearer '+denied,'academic.close_unit',jwks),/SUBJECT_NOT_ALLOWED/);
  await assert.rejects(()=>verifyBearer(f.config,'Bearer '+grade,'academic.read',jwks),/INSUFFICIENT_SCOPE/);
- await assert.rejects(()=>verifyBearer(f.config,'Bearer '+await token('academic-user-123','academic.close_unit','other-audience'),'academic.close_unit',jwks));
+ const wrongAudience=await token('academic-user-123','academic.close_unit','other-audience');
+ await assert.rejects(()=>verifyBearer(f.config,'Bearer '+wrongAudience,'academic.close_unit',jwks));
  const calls=[];
  const app=createApp(f.config,{jwks,fetcher:async(_url,init)=>{
    const body=JSON.parse(init.body);
