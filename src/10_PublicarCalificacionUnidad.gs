@@ -1,7 +1,7 @@
 /**
- * Crea/reutiliza la actividad sintética "Calificación Unidad N" como PUBLISHED
+ * Crea/reutiliza la actividad sintética "Calificación Unidad N" como DRAFT
  * y carga únicamente draftGrade desde el reporte auditable "Promedios Unidad".
- * La actividad puede ser visible, pero la nota automática nunca se publica:
+ * La actividad y la nota son visibles SOLO para docentes:
  * assignedGrade debe permanecer vacío para revisión docente.
  */
 const UNIT_GRADE_PUBLISH = Object.freeze({
@@ -88,33 +88,28 @@ function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
     if (!work.associatedWithDeveloper) {
       throw new Error('La actividad existente no es administrable por este Apps Script.');
     }
-    if (String(work.topicId || '') !== String(topicId)) {
-      work = Classroom.Courses.CourseWork.patch(
-        {topicId: topicId}, String(courseId), String(work.id), {updateMask: 'topicId'}
-      );
-    }
-    if (String(work.state || '').toUpperCase() === 'DRAFT') {
-      work = Classroom.Courses.CourseWork.patch(
-        {state: 'PUBLISHED'}, String(courseId), String(work.id), {updateMask: 'state'}
-      );
-    } else if (String(work.state || '').toUpperCase() !== 'PUBLISHED') {
-      throw new Error('La actividad final existe en estado incompatible: ' + work.state);
-    }
+    // The existing CourseWork identity must be stable: never retopic, publish,
+    // unpublish or rewrite an existing assignment as a side effect of grading.
+    if (String(work.topicId || '') !== String(topicId))
+      throw new Error('UNIT_GRADE_TOPIC_MISMATCH: corregir la ubicación manualmente sin alterar el trabajo original.');
+    if (String(work.state || '').toUpperCase() !== 'DRAFT')
+      throw new Error('UNIT_GRADE_REQUIRES_DRAFT: existe un trabajo no-DRAFT; no se publicará ni despublicará automáticamente.');
+    if (Number(work.maxPoints||0) !== 100 || String(work.workType||'') !== 'ASSIGNMENT')
+      throw new Error('UNIT_GRADE_WORK_IDENTITY_MISMATCH: el trabajo existente no es una actividad de 100 puntos.');
   } else {
     work = Classroom.Courses.CourseWork.create({
       title: canonicalTitle,
       description:
         'Calificación final de ' + unidad + '. Cálculo: Examen 70% + promedio de tareas, actividades, quizzes y prácticas 30%. La nota queda en borrador para revisión docente.',
       workType: 'ASSIGNMENT',
-      state: 'PUBLISHED',
+      state: 'DRAFT',
       maxPoints: 100,
       topicId: topicId
     }, String(courseId));
   }
 
-  if (String(work.state || '').toUpperCase() !== 'PUBLISHED') {
-    throw new Error('No se logró dejar PUBLISHED la actividad final.');
-  }
+  if (String(work.state || '').toUpperCase() !== 'DRAFT')
+    throw new Error('UNIT_GRADE_DRAFT_REQUIRED: el trabajo debe permanecer DRAFT.');
 
   let submissions = {};
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -140,7 +135,14 @@ function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
       throw new Error('CLOSE_MANUAL_GRADE_PRESENT: existe una calificación asignada por el docente; se protege y se detiene el recálculo.');
     return {uid:uid,submissionId:String(sub.id),grade:grade};
   });
-  objetivos.forEach(function(x){
+  // Idempotent grade updates: when the previously saved draft matches, do
+  // nothing. NEVER write assignedGrade, return work, or publish CourseWork.
+  const toWrite=objetivos.filter(function(x){
+    const sub=submissions[x.uid];
+    return sub.draftGrade===undefined||sub.draftGrade===null||
+      Math.abs(Number(sub.draftGrade)-x.grade)>0.000001;
+  });
+  toWrite.forEach(function(x){
     escribirCalificacionDraft_(courseId,work.id,x.submissionId,x.grade);
   });
   const pendientes=verificarYReintentarCalificacionUnidad_(courseId,work.id,objetivos);
@@ -156,7 +158,8 @@ function publicarCalificacionUnidadFinal_(ss, courseId, unidad, titulo) {
     alternateLink: work.alternateLink || '',
     estado: work.state,
     titulo: canonicalTitle,
-    actualizadas: updated,
+    actualizadas: toWrite.length,
+    sinCambios: updated-toWrite.length,
     alumnosReporte: rows.length,
     verificadas: rows.length,
     estadoCalificacion: 'DRAFT_ONLY'
