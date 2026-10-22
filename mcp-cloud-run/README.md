@@ -58,6 +58,35 @@ Al iniciar, el script concede al **deployer** `roles/secretmanager.viewer` solo 
 
 El script no habilita OAuth ni publica la actividad de Classroom. No ejecutar el workflow de despliegue hasta que ambos secretos contengan una versión habilitada y el issuer/JWKS del IdP sean comprobados.
 
+## Proveedor nuevo elegido: Auth0 Free (no creado todavía)
+
+Proveedor de autorización **gestionado**, tenant nuevo dedicado a Classroom JV; el plan Free de Auth0 es suficiente para iniciar este único usuario. El registro inicial requiere confirmar la identidad del propietario en [Auth0](https://auth0.com/signup); GitHub Actions y Cloud Shell **no crean una cuenta externa automáticamente**.
+
+### Datos fijos que no se vuelven a solicitar
+
+- Proyecto de Cloud Run: `classroom-mcp-512122`, región `us-central1`
+- Recurso nuevo: `academic-classroom-mcp-oauth`; ninguno de los dos servicios existentes se modifica
+- API de Auth0: **Classroom Academic Gateway MCP**
+- Tipo: OAuth Authorization Code + PKCE **S256**
+- API scopes: `academic.read`, `academic.close_unit`
+- Firma de API: **RS256**
+- Cliente ChatGPT: **DCR** (Dynamic Client Registration), no CIMD hasta probar su compatibilidad
+- Configuración de tenant Auth0 → Settings → Advanced: activar **Dynamic Client Registration** y **Resource Parameter Compatibility Profile**; tener presente que DCR público permite registrar aplicaciones, por lo que se usa un tenant nuevo dedicado, protección Auth0 y la allowlist `sub` en el MCP
+
+### Secuencia para no duplicar infraestructura ni exponer secretos
+
+1. El propietario registra un tenant **Free** en Auth0 y comparte únicamente el **dominio del tenant** (p. ej. `tenant.us.auth0.com`). No compartir contraseña, tokens ni client secrets. Verificar en `https://DOMINIO/.well-known/openid-configuration` el issuer exacto y el JWKS.
+2. Se configura el tenant gestionado y su DCR/Resource Compatibility, habilitando solo el usuario autorizado. Su `user_id` real (claim JWT `sub`, no un email supuesto) se añade **con entrada oculta** al secreto `academic-mcp-allowed-subjects` usando `scripts/cargar-mcp-secreto.sh --subject`. El HMAC ya está provisionado: no volver a cargarlo.
+3. El API Identifier de Auth0 tiene que igualar **exactamente** la URL HTTPS real del Cloud Run. Como aún no existe `academic-classroom-mcp-oauth`, no se debe inventar su URL. La primera implementación, si es autorizada con ambos secretos e issuer/JWKS verificados, usa exclusivamente el servicio NUEVO como bootstrap privado lógicamente **deny-by-default**, obtiene la URL real y corrige `MCP_PUBLIC_URL` en el mismo workflow. La API de Auth0 **todavía no puede emitir tokens válidos para ese público** hasta registrar exactamente esa URL como Audience en Auth0. Nunca se debe declarar OAuth operativo durante esta etapa.
+4. Registrar la **API de Auth0** con identifier/audience igual a la URL real resultante; agregar scopes `academic.read` y `academic.close_unit`, firma RS256, y verificar que el token tenga `iss`, `aud`, `sub` y `scope` correctos.
+5. Conectar ChatGPT usando DCR y OAuth: exactamente el endpoint `<URL_REAL>/mcp`. Permitir el redirect URI que indique la interfaz de Plugins si el proveedor lo exige. Probar primero `gateway_status` y `diagnosticar_clase`, luego el cierre de la Unidad 2 del curso `871149624583`, conservando `PUBLISHED` y `draftGrade`.
+
+### Preflight del proveedor (no escribe ni consulta secretos)
+
+Con `MCP_OAUTH_ISSUER` y `MCP_OAUTH_JWKS_URL` definidos en las variables de GitHub, el workflow `deploy-cloud-run-mcp.yml` ejecuta `node scripts/verify-auth0-mcp.mjs` antes de cualquier intento de desplegar. Comprueba con HTTPS descubrimiento, `issuer`, PKCE S256, endpoint DCR, JWKS RSA y coincidencia exacta con la URL JWKS configurada. **No es posible verificar externamente** desde ese script que la opción Resource Parameter Compatibility Profile esté habilitada o que la API Audience y el `sub` coincidan; estos controles se verifican en la integración real.
+
+**No usar WIF de GitHub como si fuese el OAuth de ChatGPT.** Los dos usan identidad, pero tienen funciones y límites distintos.
+
 ## Seguridad y configuración previa indispensable
 
 ChatGPT **no puede entregar un token API fijo** en una conexión MCP; requiere OAuth 2.1 (PKCE S256) para acceso privado. Utilizar un proveedor OAuth gestionado compatible con MCP, por ejemplo Auth0, que emita JWT RS256 con el parámetro `resource` y `aud` correspondiente a la URL del servidor. Habilitar descubrimiento OAuth, CIMD o DCR, permitir el redirect URI que ChatGPT muestre y el scope `academic.read` / `academic.close_unit`. No intentar montar un servidor OAuth propio ad hoc.
