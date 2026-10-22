@@ -50,6 +50,20 @@ jobs:
           workload_identity_provider: projects/148028894895/locations/global/workloadIdentityPools/github-classroom-pool/providers/github
           service_account: classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com
       - uses: google-github-actions/setup-gcloud@v2
+      - name: Require both enabled Secret Manager versions (metadata only)
+        env:
+          PROJECT: classroom-mcp-512122
+        shell: bash
+        run: |
+          set -euo pipefail
+          for secret in academic-write-hmac academic-mcp-allowed-subjects; do
+            state="$(gcloud secrets versions describe latest --secret="$secret" --project="$PROJECT" --format='value(state)' 2>/dev/null || true)"
+            if [[ "$state" != "ENABLED" ]]; then
+              echo "::error::Missing enabled secret version or insufficient metadata permissions: $secret"
+              exit 1
+            fi
+            echo "Ready: $secret latest ENABLED (metadata only)"
+          done
       - name: Deploy only the MCP adapter (never execute academic operations)
         env:
           PROJECT: classroom-mcp-512122

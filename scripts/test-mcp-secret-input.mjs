@@ -5,7 +5,7 @@ for (const p of [
   /set \+x/,/set -euo pipefail/,/PROJECT="classroom-mcp-512122"/,
   /SECRET="academic-write-hmac"/,/SECRET="academic-mcp-allowed-subjects"/,
   /\[\[ -t 0 \]\]/,/read -r -s -p/,
-  /--filter='state=ENABLED'/,/YA_EXISTE_VERSION_HABILITADA/,
+  /--format=json/,/YA_EXISTE_VERSION_HABILITADA/,
   /printf '%s' "\$VALUE" \| gcloud secrets versions add/,
   /--data-file=-/,/VERSION_HABILITADA_CONFIRMADA/,
   /roles\/secretmanager\.viewer/,/METADATOS_AUTORIZADOS/,
@@ -16,4 +16,10 @@ for (const p of [/gcloud secrets versions access/,/gcloud secrets (create|delete
   /Classroom\./,/assignedGrade/,/set -x/,
   /echo\s+["']?\$VALUE/,/--data-file=\/tmp/])
  assert.doesNotMatch(s,p);
-console.log('PASS: secure interactive input only; no secret value in GitHub, command-line arguments, temp file, terminal echo, or logs.');
+assert.ok(s.includes('gcloud secrets versions list "$SECRET" --project="$PROJECT" --format=json'));
+assert.ok(s.includes('gcloud secrets versions describe latest --secret="$SECRET"'));
+assert.ok(s.includes('current_state" == "ENABLED"'));
+assert.ok(s.includes('state" != "ENABLED"'));
+assert.ok(s.includes("VERSION_EXISTENTE_REVISAR"));
+assert.ok(!s.includes("--filter='state=ENABLED'"));
+console.log('PASS: hidden input and fail-closed metadata-only secret version checks; no secret payload reads.');

@@ -50,7 +50,7 @@ curl -fsSL https://raw.githubusercontent.com/witchet43/Automatizacion-clases-jv/
 bash /tmp/cargar-mcp-secreto.sh --hmac
 ```
 
-En la solicitud de entrada oculta, pegar el valor original y presionar Enter. La orden no lo escribe en historial, repositorio, archivo temporal ni logs; se transfiere por stdin directamente a Secret Manager. Si ya hay versión habilitada, la ejecución se omite (sin rotar el secreto).
+En la solicitud de entrada oculta, pegar el valor original y presionar Enter. La orden no lo escribe en historial, repositorio, archivo temporal ni logs; se transfiere por stdin directamente a Secret Manager. Si ya existe cualquier versión, el script NO agrega otra automáticamente: si `latest` está en estado `ENABLED`, devuelve `YA_EXISTE_VERSION_HABILITADA`; de lo contrario, detiene la operación para revisión. El estado se verifica mediante `gcloud secrets versions describe latest` (únicamente metadatos), sin depender del filtro `state=ENABLED` que produjo la advertencia de Cloud Shell.
 
 **OAuth:** Solo después de identificar al usuario en un IdP real y su `sub`, ejecutar el mismo script con `--subject`; pegar el identificador en el prompt oculto. Jamás inventar el `sub` ni utilizar el correo como sustituto sin corroboración.
 

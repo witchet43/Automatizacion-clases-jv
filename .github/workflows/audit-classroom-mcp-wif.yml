@@ -74,11 +74,20 @@ jobs:
               else
                 echo '  - No direct runtime accessor binding confirmed; inherited roles may differ.' >> "$GITHUB_STEP_SUMMARY"
               fi
+              # Only SecretVersion METADATA: do not read or echo any value.
+              version_state="$(gcloud secrets versions describe latest --secret="$secret" --project="$PROJECT" --format='value(state)' 2>/dev/null || true)"
+              if [[ "$version_state" == "ENABLED" ]]; then
+                echo '  - Latest secret version: ENABLED (metadata only).' >> "$GITHUB_STEP_SUMMARY"
+              elif [[ -n "$version_state" ]]; then
+                echo "  - Latest secret version: $version_state (not ready)." >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo '  - No readable latest version; not ready.' >> "$GITHUB_STEP_SUMMARY"
+              fi
             else
               echo "- Not verified (missing or permission denied): $secret" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
           echo '### Status' >> "$GITHUB_STEP_SUMMARY"
-          echo 'No secret versions or values accessed. No Cloud Run, IAM, GitHub or Classroom resources modified.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Only secret VERSION METADATA read; no values accessed. No Cloud Run, IAM, GitHub or Classroom resources modified.' >> "$GITHUB_STEP_SUMMARY"
           # Non-secret IAM roles/service names only; expose audit without a user screenshot.
           cat "$GITHUB_STEP_SUMMARY"
