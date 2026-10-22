@@ -38,7 +38,23 @@ bash /tmp/preparar-mcp-iam-secrets.sh --apply
 
 Es una **mutación de configuración IAM y Secret Manager**, no una auditoría. Se limita a crear las fichas vacías `academic-write-hmac` y `academic-mcp-allowed-subjects` si faltan; otorgar `roles/secretmanager.secretAccessor` a la cuenta runtime en esos dos secretos; y `roles/iam.serviceAccountUser` a deployer sobre la cuenta runtime. También verifica **antes de modificar IAM** que exista la cuenta predeterminada de compilación `148028894895-compute@developer.gserviceaccount.com` (sin crear cuentas nuevas) y añade, solo si faltan, los permisos documentados del despliegue desde código fuente: `roles/run.sourceDeveloper` y `roles/serviceusage.serviceUsageConsumer` para deployer, y `roles/run.builder` para la cuenta de compilación. Si la cuenta de compilación predeterminada no existe, se detiene sin crear recursos, para identificar primero la identidad que realmente usa Cloud Build. Estos permisos de proyecto son necesarios para crear el tercer servicio; no autorizan modificar deliberadamente los servicios históricos. **No escribe valores secretos, ni lee el antiguo `classroom-mcp-token`, ni despliega servicios.** Segunda ejecución no añade recursos duplicados.
 
-El valor de `academic-write-hmac` ha de coincidir con la propiedad `ACADEMIC_WRITE_HMAC_KEY` del Apps Script existente (no revelar en chat/terminal visible). La segunda ficha recibirá el `sub` validado del proveedor OAuth una vez configurado. Estos contenidos deberán cargarse posteriormente mediante un mecanismo de lectura oculta en Cloud Shell, nunca por GitHub ni el chat.
+El valor de `academic-write-hmac` ha de coincidir con la propiedad `ACADEMIC_WRITE_HMAC_KEY` del Apps Script existente (no revelar en chat/terminal visible). La segunda ficha recibirá el `sub` validado del proveedor OAuth una vez configurado. Estos contenidos solo se cargan de forma interactiva desde Cloud Shell, nunca por GitHub ni el chat.
+
+### Carga segura de versiones (solo cuando el valor original ya es conocido)
+
+**HMAC:** En Apps Script → Configuración del proyecto → Propiedades del script, verificar que exista `ACADEMIC_WRITE_HMAC_KEY`; copiar su valor exacto, sin enviarlo al chat. Google Apps Script no expone esta propiedad mediante la API ordinaria de código del repositorio; este script **no puede comprobar si el valor copiado coincide con Apps Script**. Ejecutar desde Cloud Shell:
+
+```bash
+gcloud config set project classroom-mcp-512122 >/dev/null
+curl -fsSL https://raw.githubusercontent.com/witchet43/Automatizacion-clases-jv/main/scripts/cargar-mcp-secreto.sh -o /tmp/cargar-mcp-secreto.sh
+bash /tmp/cargar-mcp-secreto.sh --hmac
+```
+
+En la solicitud de entrada oculta, pegar el valor original y presionar Enter. La orden no lo escribe en historial, repositorio, archivo temporal ni logs; se transfiere por stdin directamente a Secret Manager. Si ya hay versión habilitada, la ejecución se omite (sin rotar el secreto).
+
+**OAuth:** Solo después de identificar al usuario en un IdP real y su `sub`, ejecutar el mismo script con `--subject`; pegar el identificador en el prompt oculto. Jamás inventar el `sub` ni utilizar el correo como sustituto sin corroboración.
+
+El script no habilita OAuth ni publica la actividad de Classroom. No ejecutar el workflow de despliegue hasta que ambos secretos contengan una versión habilitada y el issuer/JWKS del IdP sean comprobados.
 
 ## Seguridad y configuración previa indispensable
 

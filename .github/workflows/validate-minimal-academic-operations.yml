@@ -51,6 +51,10 @@ jobs:
         run: |
           bash -n scripts/preparar-mcp-iam-secrets.sh
           node scripts/test-mcp-iam-bootstrap.mjs
+      - name: Validate hidden interactive MCP secret provisioning
+        run: |
+          bash -n scripts/cargar-mcp-secreto.sh
+          node scripts/test-mcp-secret-input.mjs
       - name: Validate Cloud Shell read-only audit syntax
         run: bash -n scripts/auditar-classroom-mcp-gcp.sh
       - name: Test independent OAuth MCP transport without connecting to Classroom
