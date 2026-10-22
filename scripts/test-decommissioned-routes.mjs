@@ -6,11 +6,11 @@ const paths=[
  '.github/workflows/academic-webapp.yml',
  'scripts/assert-academic-request-data-only.mjs',
  'scripts/execute-academic-request.mjs',
- 'mcp-cloud-run'
+ 'deprecated-cloud-run-executor'
 ];
 for(const p of paths)assert.equal(fs.existsSync(p),false,'Retired alternate execution path remains: '+p);
 const allowed=fs.readdirSync('.github/workflows').filter(x=>/\.ya?ml$/.test(x)).sort();
-assert.deepEqual(allowed,['deploy-apps-script.yml','validate-minimal-academic-operations.yml']);
+assert.deepEqual(allowed,['deploy-apps-script.yml','deploy-cloud-run-mcp.yml','validate-minimal-academic-operations.yml']);
 const deployment=fs.readFileSync('.github/workflows/deploy-apps-script.yml','utf8');
 assert.match(deployment,/assert-platform-change-authorized\.mjs/);
 const trigger=(deployment.match(/on:[\s\S]*?concurrency:/)||[''])[0];
@@ -28,4 +28,8 @@ assert.match(site,/HMAC|hmac/i);
 // newly computed manifest digest. No legacy executable may survive meanwhile.
 assert.equal(ctx.workflow.path,'.github/workflows/academic-webapp.yml');
 assert.equal(fs.existsSync(ctx.workflow.path),false);
-console.log('PASS: only Site -> signed canonical WebApp is executable; obsolete Actions, Cloud Run and request files retired.');
+const adapter=fs.readFileSync('mcp-cloud-run/server.mjs','utf8');
+assert.match(adapter,/signedClosureRequest/);
+assert.match(adapter,/verifyBearer/);
+assert.doesNotMatch(adapter,/classroom\.googleapis\.com|forms\.googleapis\.com|script\.googleapis\.com/);
+console.log('PASS: retired alternate actions and request files remain absent; independent OAuth MCP proxies only the signed canonical WebApp.');
