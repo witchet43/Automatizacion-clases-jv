@@ -1,0 +1,82 @@
+name: Verify Classroom MCP GitHub Cloud Identity
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.platform-changes/**'
+      - '.github/workflows/audit-classroom-mcp-wif.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  readonly:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate with existing restricted GitHub Workload Identity Federation
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/148028894895/locations/global/workloadIdentityPools/github-classroom-pool/providers/github
+          service_account: classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com
+          token_format: access_token
+          access_token_lifetime: 600s
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Audit deployment identity, services and secret metadata (read-only)
+        shell: bash
+        env:
+          PROJECT: classroom-mcp-512122
+          REGION: us-central1
+          DEPLOYER: classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com
+          RUNTIME: classroom-mcp-sa@classroom-mcp-512122.iam.gserviceaccount.com
+        run: |
+          set -euo pipefail
+          {
+            echo '## Classroom MCP — GitHub Identity (READ ONLY)'
+            echo "Project: $PROJECT; region: $REGION"
+            echo '### Workload Identity Federation'
+            echo 'OIDC GitHub -> IAM deployer: authenticated successfully'
+            echo '### Cloud Run services'
+          } >> "$GITHUB_STEP_SUMMARY"
+          for svc in academic-classroom-mcp academic-classroom-chatgpt-gateway academic-classroom-mcp-oauth; do
+            if gcloud run services describe "$svc" --project "$PROJECT" --region "$REGION" --format='value(metadata.name)' >/dev/null 2>&1; then
+              echo "- Existing: `$svc`" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "- Absent or not accessible: `$svc`" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          echo '### Project IAM grants to deployer/runtime' >> "$GITHUB_STEP_SUMMARY"
+          policy="$(gcloud projects get-iam-policy "$PROJECT" --format=json 2>/dev/null || true)"
+          if [[ -n "$policy" ]]; then
+            jq -r --arg deployer "serviceAccount:$DEPLOYER" --arg runtime "serviceAccount:$RUNTIME" \
+              '.bindings[]? | select(any(.members[]?; .==$deployer or .==$runtime)) | "- " + .role' \
+              <<<"$policy" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '- Permission to read project IAM not available; IAM not assessed.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo '### Runtime account permissions' >> "$GITHUB_STEP_SUMMARY"
+          bindings="$(gcloud iam service-accounts get-iam-policy "$RUNTIME" --project "$PROJECT" --format=json 2>/dev/null || true)"
+          if [[ -n "$bindings" ]]; then
+            jq -r --arg deployer "serviceAccount:$DEPLOYER" \
+              '.bindings[]? | select(any(.members[]?; .==$deployer)) | "- " + .role' \
+              <<<"$bindings" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '- Cannot read runtime service-account IAM; roles/iam.serviceAccountUser not confirmed.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo '### Secret names and runtime access (no values)' >> "$GITHUB_STEP_SUMMARY"
+          for secret in academic-write-hmac academic-mcp-allowed-subjects; do
+            if gcloud secrets describe "$secret" --project "$PROJECT" --format='value(name)' >/dev/null 2>&1; then
+              echo "- Exists: `$secret`" >> "$GITHUB_STEP_SUMMARY"
+              iam="$(gcloud secrets get-iam-policy "$secret" --project "$PROJECT" --format=json 2>/dev/null || true)"
+              if jq -e --arg account "serviceAccount:$RUNTIME" \
+                '.bindings[]? | select(.role=="roles/secretmanager.secretAccessor") | .members[]? | select(.==$account)' \
+                <<<"$iam" >/dev/null 2>&1; then
+                echo '  - Runtime has direct Secret Accessor binding.' >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo '  - No direct runtime accessor binding confirmed; inherited roles may differ.' >> "$GITHUB_STEP_SUMMARY"
+              fi
+            else
+              echo "- Missing: `$secret`" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          done
+          echo '### Status' >> "$GITHUB_STEP_SUMMARY"
+          echo 'No secret versions or values accessed. No Cloud Run, IAM, GitHub or Classroom resources modified.' >> "$GITHUB_STEP_SUMMARY"
