@@ -15,6 +15,7 @@ on:
       - 'scripts/test-*.mjs'
       - '.github/workflows/validate-minimal-academic-operations.yml'
       - '.github/workflows/deploy-cloud-run-mcp.yml'
+      - '.github/workflows/audit-classroom-mcp-wif.yml'
       - 'mcp-cloud-run/**'
   workflow_dispatch:
 
@@ -42,6 +43,8 @@ jobs:
           done
       - name: Verify Apps Script deployments happen only when source changes
         run: node scripts/test-apps-script-source-gate.mjs
+      - name: Verify GitHub WIF audit workflow is read-only and credential-safe
+        run: node scripts/test-mcp-wif-audit-workflow.mjs
       - name: Verify MCP reuses existing audited GCP identity and secrets without disclosure
         run: node scripts/test-mcp-audited-gcp-config.mjs
       - name: Validate Cloud Shell read-only audit syntax
