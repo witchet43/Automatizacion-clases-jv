@@ -55,6 +55,8 @@ jobs:
         run: |
           bash -n scripts/cargar-mcp-secreto.sh
           node scripts/test-mcp-secret-input.mjs
+      - name: Validate managed Auth0 MCP discovery contract (mocked; no tenant calls)
+        run: node --test scripts/test-auth0-mcp-preflight.mjs
       - name: Validate Cloud Shell read-only audit syntax
         run: bash -n scripts/auditar-classroom-mcp-gcp.sh
       - name: Test independent OAuth MCP transport without connecting to Classroom
