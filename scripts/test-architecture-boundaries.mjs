@@ -81,12 +81,15 @@ if (requiredContract.some(re => !re.test(contract))) fail.push('architecture con
 const workflowsDir = path.join(root,'.github','workflows');
 const allowedWorkflows = new Set([
   'deploy-apps-script.yml',
-  'validate-minimal-academic-operations.yml'
+  'validate-minimal-academic-operations.yml',
+  'deploy-cloud-run-mcp.yml'
 ]);
 const deployWorkflowText = fs.readFileSync(path.join(workflowsDir,'deploy-apps-script.yml'),'utf8');
 if (fs.existsSync(path.join(workflowsDir,'academic-webapp.yml'))) fail.push('legacy GitHub academic workflow must not exist');
 if (fs.existsSync(path.join(root,'.academic-requests'))) fail.push('legacy academic request files must not be active');
-if (fs.existsSync(path.join(root,'mcp-cloud-run'))) fail.push('alternate MCP Cloud Run adapter must not exist');
+const mcpSource = fs.readFileSync(path.join(root,'mcp-cloud-run','server.mjs'),'utf8');
+if (!/verifyBearer/.test(mcpSource)||!/signedClosureRequest/.test(mcpSource)) fail.push('MCP adapter must verify OAuth and sign requests to canonical WebApp');
+if (/classroom\.googleapis\.com|forms\.googleapis\.com|script\.googleapis\.com/.test(mcpSource)) fail.push('MCP adapter may not access Google academic APIs directly');
 if (!deployWorkflowText.includes('assert-platform-change-authorized.mjs')) fail.push('Deploy must enforce explicit platform-change authorization');
 const deployTriggerBlock=(deployWorkflowText.match(/on:[\s\S]*?concurrency:/)||[''])[0];
 if (!/\.platform-changes\/\*\*/.test(deployTriggerBlock) || /src\/\*\*|workflow_dispatch/.test(deployTriggerBlock))
