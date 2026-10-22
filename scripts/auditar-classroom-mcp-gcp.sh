@@ -51,4 +51,39 @@ printf '\n[Secret Manager: NOMBRES unicamente. Nunca se leen valores.]\n'
 gcloud secrets list --project="$PROJECT_ID" --format='value(name)' 2>/dev/null | while IFS= read -r secret; do
   [[ "$secret" == *mcp* || "$secret" == *academic* || "$secret" == *classroom* ]] && echo "SECRET  $secret"
 done || true
+
+printf '\n[VERIFICACION DE PERMISOS PARA GITHUB ACTIONS — SOLO LECTURA]\n'
+DEPLOYER="classroom-mcp-deployer@$PROJECT_ID.iam.gserviceaccount.com"
+RUNTIME="classroom-mcp-sa@$PROJECT_ID.iam.gserviceaccount.com"
+WIF_PROVIDER="projects/$PROJECT_NUMBER/locations/global/workloadIdentityPools/github-classroom-pool/providers/github"
+printf 'WIF esperado: %s\n' "$WIF_PROVIDER"
+condition="$(gcloud iam workload-identity-pools providers describe github \
+  --project="$PROJECT_ID" --location=global \
+  --workload-identity-pool=github-classroom-pool \
+  --format='value(attributeCondition)' 2>/dev/null || true)"
+if [[ "$condition" == *"witchet43/Automatizacion-clases-jv"* ]]; then
+  echo "OK  Provider WIF restringido al repositorio academico."
+elif [[ -z "$condition" ]]; then
+  echo "REVISAR  Provider WIF sin condicion visible (o permisos de lectura insuficientes)."
+else
+  echo "REVISAR  Condicion de WIF: $condition"
+fi
+printf '\n[Cuenta de despliegue — WIF roles/iam.workloadIdentityUser]\n'
+gcloud iam service-accounts get-iam-policy "$DEPLOYER" \
+  --project="$PROJECT_ID" --format=json 2>/dev/null | \
+  jq -r '.bindings[]? | select(.role=="roles/iam.workloadIdentityUser") | .members[]? | "WIF_MEMBER  "+.' || \
+  echo "REVISAR  No se pudo leer la politica de la cuenta deployer."
+printf '\n[Roles del proyecto para deployer y runtime — sin credenciales]\n'
+gcloud projects get-iam-policy "$PROJECT_ID" --format=json 2>/dev/null | \
+  jq -r --arg a "serviceAccount:$DEPLOYER" --arg b "serviceAccount:$RUNTIME" \
+  '.bindings[]? | select(any(.members[]?; .==$a or .==$b)) | "IAM_ROLE  "+.role' || \
+  echo "REVISAR  No se pudo consultar IAM del proyecto."
+printf '\n[Secretos requeridos por el nuevo adaptador — NO se leen valores]\n'
+for secret in academic-write-hmac academic-mcp-allowed-subjects; do
+  if gcloud secrets describe "$secret" --project="$PROJECT_ID" >/dev/null 2>&1; then
+    echo "OK  $secret"
+  else
+    echo "FALTA  $secret"
+  fi
+done
 printf '\n=== FIN DE LA AUDITORIA - SIN MODIFICACIONES ===\n'

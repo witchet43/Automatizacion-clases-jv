@@ -42,6 +42,8 @@ jobs:
           done
       - name: Verify Apps Script deployments happen only when source changes
         run: node scripts/test-apps-script-source-gate.mjs
+      - name: Verify MCP reuses existing audited GCP identity and secrets without disclosure
+        run: node scripts/test-mcp-audited-gcp-config.mjs
       - name: Validate Cloud Shell read-only audit syntax
         run: bash -n scripts/auditar-classroom-mcp-gcp.sh
       - name: Test independent OAuth MCP transport without connecting to Classroom
