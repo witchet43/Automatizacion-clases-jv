@@ -38,6 +38,11 @@ jobs:
           for value in PROJECT REGION WIF DEPLOY_SA RUNTIME_SA OAUTH_ISSUER OAUTH_JWKS HMAC_SECRET SUBJECT_SECRET; do
             if [[ -z "${!value}" ]]; then echo "::error::Missing required Cloud Run/OAuth configuration: $value"; exit 1; fi
           done
+      - name: Verify new Auth0 authorization server (discovery, PKCE S256, DCR, JWKS)
+        env:
+          MCP_OAUTH_ISSUER: ${{ vars.MCP_OAUTH_ISSUER }}
+          MCP_OAUTH_JWKS_URL: ${{ vars.MCP_OAUTH_JWKS_URL }}
+        run: node scripts/verify-auth0-mcp.mjs
       - name: Synchronize exact canonical Apps Script operational context
         run: node mcp-cloud-run/sync-context.mjs
       - name: Test OAuth MCP and signed unit grade transport (mocked upstream only)
