@@ -79,6 +79,8 @@ if(process.argv[1]&&import.meta.url===new URL('file://'+process.argv[1]).href){
   if(!issuer)throw Error('AUTH0_ISSUER_NOT_SET');
   try {
     const result=await probeAuth0(issuer);
+    if(!process.env.MCP_OAUTH_JWKS_URL || result.jwksUrl!==process.env.MCP_OAUTH_JWKS_URL)
+      throw Error('AUTH0_CONFIGURED_JWKS_URL_MISMATCH');
     console.log('AUTH0_DISCOVERY_VERIFIED: issuer, PKCE S256, DCR, RS256 JWKS metadata');
     console.log('MCP_OAUTH_ISSUER='+result.issuer);
     console.log('MCP_OAUTH_JWKS_URL='+result.jwksUrl);
