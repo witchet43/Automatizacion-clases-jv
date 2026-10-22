@@ -40,6 +40,8 @@ jobs:
             cp "$f" "/tmp/$(basename "$f").js"
             node --check "/tmp/$(basename "$f").js"
           done
+      - name: Verify Apps Script deployments happen only when source changes
+        run: node scripts/test-apps-script-source-gate.mjs
       - name: Validate Cloud Shell read-only audit syntax
         run: bash -n scripts/auditar-classroom-mcp-gcp.sh
       - name: Test independent OAuth MCP transport without connecting to Classroom
