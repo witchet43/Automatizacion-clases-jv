@@ -14,7 +14,7 @@ Este adaptador nunca calcula calificaciones ni reescribe la lógica académica: 
 
 El proyecto que ya cuenta con facturación y servicios Cloud Run es **`classroom-mcp-512122`** (región `us-central1`). En la consola se verificaron `academic-classroom-mcp` y `academic-classroom-chatgpt-gateway` como servicios existentes.
 
-Se han fijado en el workflow las identidades previas `classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com` y `classroom-mcp-sa@classroom-mcp-512122.iam.gserviceaccount.com`; su existencia/permisos deben auditarse antes de ejecutar el despliegue. **No** se sobrescribirá ninguno de esos dos servicios: el adaptador OAuth irá a `academic-classroom-mcp-oauth` dentro del mismo proyecto, sin afectar la WebApp de Apps Script.
+La auditoría real confirmó las siete APIs habilitadas, ambas cuentas de servicio, el proveedor de GitHub `projects/148028894895/locations/global/workloadIdentityPools/github-classroom-pool/providers/github` y el secreto histórico `classroom-mcp-token`. Este último pertenece a la integración previa: **NO es la clave HMAC ni un proveedor OAuth**, por lo que no se reutiliza para las calificaciones. Falta registrar en Secret Manager `academic-write-hmac` con el mismo valor del Apps Script y `academic-mcp-allowed-subjects` con el `sub` real del usuario de OAuth. Se han fijado en el workflow las identidades previas `classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com` y `classroom-mcp-sa@classroom-mcp-512122.iam.gserviceaccount.com`; su existencia/permisos deben auditarse antes de ejecutar el despliegue. **No** se sobrescribirá ninguno de esos dos servicios: el adaptador OAuth irá a `academic-classroom-mcp-oauth` dentro del mismo proyecto, sin afectar la WebApp de Apps Script.
 
 Auditoría **solo lectura** sin exponer valores de Secret Manager:
 
@@ -31,18 +31,15 @@ ChatGPT **no puede entregar un token API fijo** en una conexión MCP; requiere O
 
 El adaptador devuelve el recurso protegido en `/.well-known/oauth-protected-resource`, comprueba `iss`, `aud`, firma JWKS, `exp`, `sub` permitido y permisos por operación. Sin OAuth válido, devuelve 401. No hay endpoint académico anónimo.
 
-**GitHub Actions Variables (Settings → Secrets and variables → Actions → Variables):**
+**Únicas variables GitHub Actions que todavía necesita el nuevo adaptador (cuando exista proveedor OAuth):**
 
 | Variable | Valor necesario |
 |---|---|
-| `GCP_WIF_PROVIDER` | nombre completo del proveedor Workload Identity Federation de GitHub |
 | `MCP_OAUTH_ISSUER` | issuer exacto del OAuth gestionado |
 | `MCP_OAUTH_JWKS_URL` | URL JWKS HTTPS del mismo origen del issuer |
-| `GCP_MCP_HMAC_SECRET_NAME` | nombre en Secret Manager del **mismo** `ACADEMIC_WRITE_HMAC_KEY` de Apps Script |
-| `GCP_MCP_SUBJECT_ALLOWLIST_SECRET_NAME` | nombre del secreto que contiene los `sub` OAuth autorizados, separados por coma |
 | `MCP_PUBLIC_URL` | opcional, URL HTTPS de dominio propio; sin ella usa la URL de Cloud Run |
 
-El proyecto `classroom-mcp-512122`, la región `us-central1` y las dos cuentas de servicio están preconfigurados en el workflow; **no** hay que dar de alta variables GitHub para ellos. Sigue siendo imprescindible que IAM y WIF permitan su uso. La clave HMAC debe provisionarse en Secret Manager por una persona autorizada, **sin copiarse al repositorio ni al chat**. No modificar/eliminar la propiedad Apps Script original. El valor de `MCP_ALLOWED_SUBJECTS` procede de Secret Manager y limita los usuarios incluso si el proveedor OAuth emite tokens válidos para otras cuentas.
+El proyecto `classroom-mcp-512122`, la región `us-central1`, el proveedor WIF verificado, las dos cuentas de servicio y los NOMBRES de ambos secretos nuevos están preconfigurados en el workflow; su contenido sigue faltando. No vuelvas a cargar el token antiguo como HMAC. **no** hay que dar de alta variables GitHub para ellos. Sigue siendo imprescindible que IAM y WIF permitan su uso. La clave HMAC debe provisionarse en Secret Manager por una persona autorizada, **sin copiarse al repositorio ni al chat**. No modificar/eliminar la propiedad Apps Script original. El valor de `MCP_ALLOWED_SUBJECTS` procede de Secret Manager y limita los usuarios incluso si el proveedor OAuth emite tokens válidos para otras cuentas.
 
 **GitHub Actions Secrets** no se necesitan para contraseñas: el despliegue usa OIDC y Workload Identity Federation. El servicio Cloud Run permite acceso HTTPS a su endpoint para que ChatGPT lo alcance, pero todas las rutas académicas bajo `/mcp` exigen validación OAuth del JWT; no confundir con acceso anónimo a datos.
 
