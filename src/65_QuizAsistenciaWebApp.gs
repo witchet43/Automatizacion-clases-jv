@@ -22,7 +22,7 @@
 const ACADEMIC_WEB = Object.freeze({
   COURSE_REGISTRY_SOURCE:'ACADEMIC_CONTEXT_CONFIG',
   ACTIONS:Object.freeze(['uaqExecutor','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts','listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft']),
-  ROUTINE_OPERATIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase']),
+  ROUTINE_OPERATIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','cerrarUnidad']),
   FAST_PATHS:Object.freeze({
     quizAsistencia:Object.freeze({singleExternalInput:'materia',firstExternalAction:'WEB_APP',preflightReadsAllowed:false,documentationRead:false,auxiliaryReads:false,diagnosticOnlyAfterError:true})
   })
@@ -227,32 +227,21 @@ function leerUltimoFalloAcademicoWeb_(courseId) {
 }
 
 /**
- * One canonical grading intent carried through the installed Gateway's
- * authorized actividad operation. Strict exact identity prevents an
- * ordinary activity request from accidentally invoking a unit closure.
- * HMAC, requestId and replay protection remain in uaqExecutor.
+ * Canonical explicit authorized unit closing operation.
+ * Classroom assignment is PUBLISHED; all students' grades remain draftGrade.
+ * Cannot be tunneled through the draft-only actividad operation.
  */
-function esCalificacionUnidadDraftWeb_(operation,source){
-  const p=source&&typeof source==='object'?source:{};
-  const title=String(p.titulo||p.title||'').trim();
-  const mode=String(p.modo||'').trim().toUpperCase();
-  const exact=/^Calificación Unidad [1-9]\d*$/.test(title);
-  const reserved=/^Calificación\s+Unidad\b/i.test(title);
-  if(mode!=='CALIFICACION_UNIDAD_DRAFT_V1'){
-    if(reserved)throw new Error('UNIT_GRADE_REQUIRES_CANONICAL_MODE');
-    return false;
-  }
-  if(operation!=='actividad'||!exact)
-    throw new Error('UNIT_GRADE_CANONICAL_TITLE_OR_OPERATION_INVALID');
-  const unit=normalizarUnidadOperacion_(p.unidad);
-  const expected=ACADEMIC_POLICY.CLASSROOM.FINAL_GRADE_PREFIX+extraerNumeroUnidad_(unit);
-  if(title!==expected)throw new Error('UNIT_GRADE_TITLE_UNIT_MISMATCH');
-  if(p.estado&&String(p.estado).toUpperCase()!=='DRAFT'||
-     p.state&&String(p.state).toUpperCase()!=='DRAFT')
-    throw new Error('UNIT_GRADE_DRAFT_ONLY');
-  if(p.notas||p.calificaciones||p.alumnos)
+function validarCierreUnidadWeb_(p,source){
+  const n=normalizarUnidadOperacion_(source&&source.unidad);
+  const title=ACADEMIC_POLICY.CLASSROOM.FINAL_GRADE_PREFIX+extraerNumeroUnidad_(n);
+  if(String(source&&source.titulo||'').trim()!==title||
+     String(p&&p.title||'').trim()!==title)
+    throw new Error('UNIT_GRADE_TITLE_MISMATCH');
+  if(String(source&&source.modo||'')!=='PUBLISHED_COURSEWORK_DRAFT_GRADE_ONLY')
+    throw new Error('UNIT_GRADE_EXPLICIT_POSTING_INTENT_REQUIRED');
+  if(source&&('alumnos' in source||'notas' in source||'calificaciones' in source))
     throw new Error('UNIT_GRADE_SCORES_MUST_COME_FROM_CLASSROOM');
-  return true;
+  return n;
 }
 
 function ejecutarUaqExecutorWeb_(p){
@@ -273,17 +262,12 @@ function ejecutarUaqExecutorWeb_(p){
     result=crearPaqueteClaseWeb_(course,source);
   }else if(operation==='material'){
     result=crearMaterialDidacticoWeb_(course,{params:source});
-  }else if(operation==='actividad'&&esCalificacionUnidadDraftWeb_(operation,source)){
-    // The existing unit engine calculates 70/30 from source Classroom grades,
-    // writes the private audit report and fills only draftGrade in one DRAFT
-    // CourseWork named Calificación Unidad N. Nothing is published/returned.
-    result=cerrarUnidad({courseId:String(course.id),unidad:source.unidad});
+  }else if(operation==='cerrarUnidad'){
+    const unidad=validarCierreUnidadWeb_(p,source);
+    result=cerrarUnidad({courseId:String(course.id),unidad:unidad});
   }else{
     const payload=normalizarPayloadAcademicoWeb_(course,{params:source});
-    if(operation==='actividad'){
-      esCalificacionUnidadDraftWeb_(operation,source);
-      result=crearActividad(payload);
-    }
+    if(operation==='actividad')result=crearActividad(payload);
     if(operation==='tarea')result=crearTarea(payload);
     if(operation==='practica')result=crearPractica(payload);
     if(operation==='quiz')result=crearQuiz(payload);
