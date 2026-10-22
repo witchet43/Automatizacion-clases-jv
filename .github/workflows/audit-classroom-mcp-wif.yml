@@ -75,7 +75,7 @@ jobs:
                 echo '  - No direct runtime accessor binding confirmed; inherited roles may differ.' >> "$GITHUB_STEP_SUMMARY"
               fi
             else
-              echo "- Missing: $secret" >> "$GITHUB_STEP_SUMMARY"
+              echo "- Not verified (missing or permission denied): $secret" >> "$GITHUB_STEP_SUMMARY"
             fi
           done
           echo '### Status' >> "$GITHUB_STEP_SUMMARY"
