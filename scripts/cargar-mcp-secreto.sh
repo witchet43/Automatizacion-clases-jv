@@ -49,11 +49,17 @@ for item in academic-write-hmac academic-mcp-allowed-subjects; do
     echo "METADATOS_AUTORIZADOS: $item (sin acceso al valor)"
   fi
 done
-# Do not rotate or overwrite existing enabled versions accidentally.
-existing="$(gcloud secrets versions list "$SECRET" --project="$PROJECT" --filter='state=ENABLED' --format='value(name)')"
-if [[ -n "$existing" ]]; then
-  echo "YA_EXISTE_VERSION_HABILITADA: $SECRET. Sin cambios; no se subio ningun valor."
-  exit 0
+# Fail closed on ANY pre-existing version, including DISABLED or DESTROYED.
+# Use unfiltered version metadata; the state list filter is SDK-dependent.
+existing_json="$(gcloud secrets versions list "$SECRET" --project="$PROJECT" --format=json)"
+if jq -e 'length > 0' <<<"$existing_json" >/dev/null; then
+  current_state="$(gcloud secrets versions describe latest --secret="$SECRET" --project="$PROJECT" --format='value(state)' 2>/dev/null || true)"
+  if [[ "$current_state" == "ENABLED" ]]; then
+    echo "YA_EXISTE_VERSION_HABILITADA: $SECRET. Sin cambios; no se subio ningun valor."
+    exit 0
+  fi
+  echo "VERSION_EXISTENTE_REVISAR: $SECRET. Sin cambios; estado latest no confirmado como ENABLED."
+  exit 1
 fi
 VALUE=''
 trap 'unset VALUE' EXIT
@@ -75,8 +81,9 @@ fi
 printf '%s' "$VALUE" | gcloud secrets versions add "$SECRET" \
   --project="$PROJECT" --data-file=- --quiet --format='value(name)' >/dev/null
 unset VALUE
-if [[ -z "$(gcloud secrets versions list "$SECRET" --project="$PROJECT" --filter='state=ENABLED' --format='value(name)')" ]]; then
-  echo "VERSION_NO_VERIFICADA: revise metadatos sin leer el valor."
+state="$(gcloud secrets versions describe latest --secret="$SECRET" --project="$PROJECT" --format='value(state)')"
+if [[ "$state" != "ENABLED" ]]; then
+  echo "VERSION_NO_VERIFICADA: latest no confirmado como ENABLED; no se consulto el valor."
   exit 1
 fi
 echo "VERSION_HABILITADA_CONFIRMADA: $SECRET (valor NO mostrado)"
