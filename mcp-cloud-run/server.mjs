@@ -217,6 +217,7 @@ function buildServer(config,identity,fetcher){
     ...gradeSecurity,annotations:{readOnlyHint:false,destructiveHint:false}
   },async({courseId,operation,title,requestId,params})=>{
     try{
+      if(config.authMode!=='oauth')throw Error('WRITE_AUTH_REQUIRED');
       if(!identity.scopes.has(SCOPES.grade))throw Error('INSUFFICIENT_SCOPE');
       const request=signedAcademicRequest(config,operation,courseId,title,params,requestId);
       const data=await callWebApp(config,request,fetcher);
@@ -256,7 +257,7 @@ function buildServer(config,identity,fetcher){
   });
   server.registerTool('cerrar_unidad',{
     title:'Calificación Unidad N (actividad publicada, notas en borrador)',
-    description:'Recalcula la unidad exacta con 70% examen y 30% trabajos publicados. Crea o reutiliza una actividad Classroom PUBLISHED llamada Calificación Unidad N, guardando únicamente draftGrade. No publica assignedGrade ni devuelve entregas. La ruta anónima no autentica al solicitante.',
+    description:'Recalcula la unidad exacta con 70% examen y 30% trabajos publicados. Crea o reutiliza una actividad Classroom PUBLISHED llamada Calificación Unidad N, guardando únicamente draftGrade. No publica assignedGrade ni devuelve entregas. El cierre exige OAuth y confirmación explícita.',
     inputSchema:{
       courseId:z.string().regex(/^\d+$/),
       unidad:z.number().int().min(1).max(50),
@@ -265,7 +266,8 @@ function buildServer(config,identity,fetcher){
     ...gradeSecurity,
     annotations:{readOnlyHint:false,destructiveHint:false,openWorldHint:true}
   },async({courseId,unidad,confirmar})=>{
-    if(!identity.scopes.has(SCOPES.grade)||(config.authMode==='oauth'&&confirmar!==true))
+    if(config.authMode!=='oauth')return toolFail(Error('WRITE_AUTH_REQUIRED'));
+    if(!identity.scopes.has(SCOPES.grade)||confirmar!==true)
       return toolFail(Error('INSUFFICIENT_SCOPE_OR_CONFIRMATION'));
     try{
       const result=await callWebApp(config,signedClosureRequest(config,courseId,unidad),fetcher);
@@ -307,7 +309,7 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
     let identity;
     try{
       if(config.authMode==='anonymous'){
-        identity={subject:'anonymous',scopes:new Set([SCOPES.read,SCOPES.grade])};
+        identity={subject:'anonymous',scopes:new Set([SCOPES.read])};
       }else{
         identity=await verifyBearer(config,req.headers.authorization,SCOPES.read,jwks)
           .catch(async first=>{
