@@ -630,6 +630,8 @@ function prepararDocumentoRecursoClaseWeb_(item){
 }
 
 function crearPaqueteClaseWeb_(course,p){
+  // Capture timing inside the canonical WebApp invocation: no extra API reads.
+  const startedMs=Date.now();
   if(String(p.gammaUrl||'').trim())
     throw new Error('CLASE_RECURSOS_PRIMERO: gammaUrl solo se verifica después de preparar los recursos.');
   const mode=String(p.mode||p.executionMode||'EXECUTE').trim().toUpperCase();
@@ -638,9 +640,12 @@ function crearPaqueteClaseWeb_(course,p){
   if(mode==='FINALIZE'&&!String(p.requestedSession||p.sesion||p.target&&p.target.session||'').trim())
     throw new Error('CLASE_FINALIZE_REQUIERE_SESION_EXPLICITA');
   const resources=Array.isArray(p.resources)?p.resources:[];
+  const readStartedMs=Date.now();
   const works=listarCourseWorkClase_(course.id);
+  const classroomReadMs=Date.now()-readStartedMs;
   if(mode==='PLAN'||mode==='FINALIZE'||!resources.length){
     const result=planificarClaseCanonicaWeb_(course,p,works);
+    result.timingsMs={classroomRead:classroomReadMs,total:Date.now()-startedMs};
     if(mode==='FINALIZE'){
       result.finalizationAttempted=true;
       // Never mark a package complete from a Gamma link in planning or a
@@ -651,6 +656,14 @@ function crearPaqueteClaseWeb_(course,p){
     }
     return result;
   }
+  // Reuse one title index instead of scanning the whole CourseWork inventory
+  // for every resource. Keep all topic, state and duplicate checks unchanged.
+  const worksByTitle=Object.create(null);
+  works.forEach(function(w){
+    const key=String(w.title||'').trim();
+    if(!worksByTitle[key])worksByTitle[key]=[];
+    worksByTitle[key].push(w);
+  });
   const allowed=['actividad','tarea','practica','quiz','material'];
   const seen={};
   const prepared=resources.map(function(item,index){
@@ -675,7 +688,7 @@ function crearPaqueteClaseWeb_(course,p){
     const type=item.type,payload=item.payload,title=item.title;
     let existing=null;
     if(type!=='material'){
-      const matches=works.filter(function(w){
+      const matches=(worksByTitle[title]||[]).filter(function(w){
         const state=String(w.state||'').toUpperCase();
         return (state==='DRAFT'||state==='PUBLISHED') &&
           String(w.title||'').trim()===title &&
@@ -737,13 +750,19 @@ function crearPaqueteClaseWeb_(course,p){
     missingResourceContent:requiresContent,
     resourceErrors:results.filter(function(r){return r.status==='BLOCKED';})
       .map(function(r){return {type:r.type,title:r.title,errorCode:r.result.errorCode};}),
-    resources:results,nextPhase:'PROVIDE_ONLY_MISSING_CONTENT'
+    resources:results,nextPhase:'PROVIDE_ONLY_MISSING_CONTENT',
+    timingsMs:{classroomRead:classroomReadMs,total:Date.now()-startedMs}
   };
+  const preparationStartedMs=Date.now();
   const ready=pending.map(function(item){
     const payload=prepararDocumentoRecursoClaseWeb_(item);
     return {type:item.type,title:item.title,payload:payload};
   });
+  const resourcePreparationMs=Date.now()-preparationStartedMs;
+  const resourceTimings=[];
+  const writesStartedMs=Date.now();
   ready.forEach(function(item){
+    const resourceStartedMs=Date.now();
     const type=item.type,payload=item.payload,title=item.title;
     let r;
     if(type==='actividad')r=crearActividad(payload);
@@ -752,7 +771,9 @@ function crearPaqueteClaseWeb_(course,p){
     else if(type==='quiz')r=crearQuiz(payload);
     else if(type==='material')r=crearMaterialDidacticoWeb_(course,{params:payload});
     results.push({type:type,title:title,status:r&&r.reutilizado?'REUSED':'CREATED',result:r});
+    resourceTimings.push({type:type,elapsed:Date.now()-resourceStartedMs});
   });
+  const resourceWritesMs=Date.now()-writesStartedMs;
   const expected=(Array.isArray(p.expectedResourceTypes)?p.expectedResourceTypes:[])
     .map(function(x){return String(x||'').trim().toLowerCase();}).filter(Boolean);
   const actual=results.filter(function(x){return x.status!=='BLOCKED';})
@@ -776,7 +797,9 @@ function crearPaqueteClaseWeb_(course,p){
     gammaUrl:'',
     nextPhase:resourcePhaseStatus==='PARCIAL'?'COMPLETE_MISSING_RESOURCES':
       'GENERATE_OR_REUSE_GAMMA_AND_NOTION',
-    resources:results
+    resources:results,
+    timingsMs:{classroomRead:classroomReadMs,resourcePreparation:resourcePreparationMs,
+      resourceWrites:resourceWritesMs,resources:resourceTimings,total:Date.now()-startedMs}
   };
 }
 
