@@ -70,6 +70,7 @@ jobs:
           gcloud run deploy "$SERVICE" \
             --project "$PROJECT" --region "$REGION" \
             --source ./mcp-cloud-run --service-account "$RUNTIME_SA" \
+            --build-service-account "projects/$PROJECT/serviceAccounts/$RUNTIME_SA" \
             --allow-unauthenticated --ingress all \
             --min-instances=0 --memory=512Mi --timeout=300 \
             --set-env-vars "MCP_AUTH_MODE=anonymous,MCP_PUBLIC_URL=$URL" \
