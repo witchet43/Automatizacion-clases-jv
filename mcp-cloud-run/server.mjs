@@ -26,15 +26,21 @@ function validHttps(value,name){
 }
 export function loadConfig(env=process.env,contextPath=join(dirname(fileURLToPath(import.meta.url)),'context.json')){
   const publicUrl=required('MCP_PUBLIC_URL',env).replace(/\/$/,'');
-  const issuer=required('MCP_OAUTH_ISSUER',env);
-  const jwksUrl=required('MCP_OAUTH_JWKS_URL',env);
+  const authMode=String(env.MCP_AUTH_MODE||'oauth').trim().toLowerCase();
+  if(!['oauth','anonymous'].includes(authMode))throw Error('MCP_AUTH_MODE_INVALID');
+  const issuer=authMode==='oauth'?required('MCP_OAUTH_ISSUER',env):'';
+  const jwksUrl=authMode==='oauth'?required('MCP_OAUTH_JWKS_URL',env):'';
   validHttps(publicUrl,'MCP_PUBLIC_URL');
-  const issuerUrl=validHttps(issuer,'MCP_OAUTH_ISSUER');
-  const jwks=validHttps(jwksUrl,'MCP_OAUTH_JWKS_URL');
-  if(issuerUrl.origin!==jwks.origin)throw Error('MCP_JWKS_ISSUER_ORIGIN_MISMATCH');
+  if(authMode==='oauth'){
+    const issuerUrl=validHttps(issuer,'MCP_OAUTH_ISSUER');
+    const jwks=validHttps(jwksUrl,'MCP_OAUTH_JWKS_URL');
+    if(issuerUrl.origin!==jwks.origin)throw Error('MCP_JWKS_ISSUER_ORIGIN_MISMATCH');
+  }
   if(new URL(publicUrl).pathname!=='/')throw Error('MCP_PUBLIC_URL_MUST_BE_ROOT');
-  const allowed=new Set(required('MCP_ALLOWED_SUBJECTS',env).split(',').map(x=>x.trim()).filter(Boolean));
-  if(!allowed.size)throw Error('MCP_SUBJECT_ALLOWLIST_REQUIRED');
+  const allowed=authMode==='oauth'
+    ?new Set(required('MCP_ALLOWED_SUBJECTS',env).split(',').map(x=>x.trim()).filter(Boolean))
+    :new Set();
+  if(authMode==='oauth'&&!allowed.size)throw Error('MCP_SUBJECT_ALLOWLIST_REQUIRED');
   const hmac=required('ACADEMIC_WRITE_HMAC_KEY',env);
   if(hmac.length<32)throw Error('MCP_HMAC_KEY_TOO_SHORT');
   const config=JSON.parse(fs.readFileSync(contextPath,'utf8'));
@@ -50,7 +56,7 @@ export function loadConfig(env=process.env,contextPath=join(dirname(fileURLToPat
   if(!Array.isArray(config.courseIds)||!config.courseIds.length||
     !config.courseIds.every(x=>/^\d+$/.test(x)))throw Error('MCP_COURSE_REGISTRY_INVALID');
   return {
-    publicUrl,issuer,jwksUrl,allowedSubjects:allowed,hmac,
+    publicUrl,issuer,jwksUrl,allowedSubjects:allowed,hmac,authMode,
     operationalContext:ctx,upstreamUrl:ctx.endpoint,
     courseIds:new Set(config.courseIds),port:Number(env.PORT||8080)
   };
@@ -125,20 +131,22 @@ function challenge(config,scope,error='invalid_token'){
     '", error="'+error+'", error_description="Authorize academic access"';
 }
 function buildServer(config,identity,fetcher){
+  const readSecurity=config.authMode==='anonymous'?{}:{securitySchemes:[{type:'oauth2',scopes:[SCOPES.read]}]};
+  const gradeSecurity=config.authMode==='anonymous'?{}:{securitySchemes:[{type:'oauth2',scopes:[SCOPES.grade]}]};
   const server=new McpServer({name:'academic-jv-classroom',version:'1.0.0'});
   server.registerTool('gateway_status',{
     title:'Estado del Gateway académico',
     description:'Comprobar únicamente el estado local del adaptador MCP independiente, sin acceso a calificaciones ni secretos.',
-    inputSchema:{},securitySchemes:[{type:'oauth2',scopes:[SCOPES.read]}],
+    inputSchema:{},...readSecurity,
     annotations:{readOnlyHint:true}
-  },async()=>toolOk({configured:true,transport:'STREAMABLE_HTTP_OAUTH',
+  },async()=>toolOk({configured:true,transport:config.authMode==='anonymous'?'STREAMABLE_HTTP_ANONYMOUS':'STREAMABLE_HTTP_OAUTH',
     service:'ACADEMIC_CLASSROOM_CANONICAL_MCP',writesThrough:'SIGNED_WEBAPP_ONLY',
     siteEdited:false,secretExposed:false}));
   server.registerTool('diagnosticar_clase',{
     title:'Diagnóstico académico de Classroom',
     description:'Consultar trabajos DRAFT y PUBLISHED en el curso registrado mediante la WebApp canónica, sin cambios.',
     inputSchema:{courseId:z.string().regex(/^\d+$/),soloClassroom:z.boolean().optional()},
-    securitySchemes:[{type:'oauth2',scopes:[SCOPES.read]}],
+    ...readSecurity,
     annotations:{readOnlyHint:true}
   },async({courseId,soloClassroom=true})=>{
     try{
@@ -153,16 +161,16 @@ function buildServer(config,identity,fetcher){
   });
   server.registerTool('cerrar_unidad',{
     title:'Calificación Unidad N (actividad publicada, notas en borrador)',
-    description:'Recalcula la unidad exacta con 70% examen y 30% trabajos publicados. Crea o reutiliza una sola actividad Classroom PUBLISHED llamada Calificación Unidad N. Guarda exclusivamente draftGrade para cada estudiante; NO publica assignedGrade ni devuelve entregas. Requiere autorización del docente.',
+    description:'Recalcula la unidad exacta con 70% examen y 30% trabajos publicados. Crea o reutiliza una actividad Classroom PUBLISHED llamada Calificación Unidad N, guardando únicamente draftGrade. No publica assignedGrade ni devuelve entregas. La ruta anónima no autentica al solicitante.',
     inputSchema:{
       courseId:z.string().regex(/^\d+$/),
       unidad:z.number().int().min(1).max(50),
-      confirmar:z.literal(true)
+      confirmar:z.boolean().optional()
     },
-    securitySchemes:[{type:'oauth2',scopes:[SCOPES.grade]}],
+    ...gradeSecurity,
     annotations:{readOnlyHint:false,destructiveHint:false,openWorldHint:true}
   },async({courseId,unidad,confirmar})=>{
-    if(!identity.scopes.has(SCOPES.grade)||confirmar!==true)
+    if(!identity.scopes.has(SCOPES.grade)||(config.authMode==='oauth'&&confirmar!==true))
       return toolFail(Error('INSUFFICIENT_SCOPE_OR_CONFIRMATION'));
     try{
       const result=await callWebApp(config,signedClosureRequest(config,courseId,unidad),fetcher);
@@ -188,27 +196,31 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
   const app=express();
   app.disable('x-powered-by');
   app.use(express.json({limit:'64kb'}));
-  app.get('/healthz',(_req,res)=>res.json({status:'ok',service:'academic-jv-classroom-mcp',auth:'required'}));
+  app.get('/healthz',(_req,res)=>res.json({status:'ok',service:'academic-jv-classroom-mcp',auth:config.authMode}));
   const metadata={
     resource:config.publicUrl,
     authorization_servers:[config.issuer],
     scopes_supported:[SCOPES.read,SCOPES.grade]
   };
-  app.get(['/.well-known/oauth-protected-resource','/.well-known/oauth-protected-resource/mcp'],
-    (_req,res)=>res.json(metadata));
+  if(config.authMode==='oauth')
+    app.get(['/.well-known/oauth-protected-resource','/.well-known/oauth-protected-resource/mcp'],
+      (_req,res)=>res.json(metadata));
   app.all('/mcp',async(req,res)=>{
     if(req.headers.origin&&!['https://chatgpt.com','https://chat.openai.com'].includes(req.headers.origin))
       return res.status(403).json({error:'origin_forbidden'});
     if(req.method!=='POST')return res.status(405).set('Allow','POST').end();
     let identity;
     try{
-      identity=await verifyBearer(config,req.headers.authorization,SCOPES.read,jwks)
-        .catch(async first=>{
-          // The write-only scope is intentionally insufficient for diagnostics.
-          if(req.body?.method==='tools/call'&&req.body?.params?.name==='cerrar_unidad')
-            return await verifyBearer(config,req.headers.authorization,SCOPES.grade,jwks);
-          throw first;
-        });
+      if(config.authMode==='anonymous'){
+        identity={subject:'anonymous',scopes:new Set([SCOPES.read,SCOPES.grade])};
+      }else{
+        identity=await verifyBearer(config,req.headers.authorization,SCOPES.read,jwks)
+          .catch(async first=>{
+            if(req.body?.method==='tools/call'&&req.body?.params?.name==='cerrar_unidad')
+              return await verifyBearer(config,req.headers.authorization,SCOPES.grade,jwks);
+            throw first;
+          });
+      }
     }catch(e){
       const scope=req.body?.params?.name==='cerrar_unidad'?SCOPES.grade:SCOPES.read;
       return res.status(401).set('WWW-Authenticate',challenge(config,scope,
@@ -232,6 +244,6 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
 if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]){
   const config=loadConfig();
   createApp(config).listen(config.port,'0.0.0.0',()=>{
-    console.log('Academic JV MCP ready on port '+config.port+' (OAuth enforced)');
+    console.log('Academic JV MCP ready on port '+config.port+' (auth='+config.authMode+')');
   });
 }

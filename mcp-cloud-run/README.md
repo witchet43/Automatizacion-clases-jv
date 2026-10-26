@@ -1,3 +1,13 @@
+# Estado vigente — 26 de octubre de 2026
+
+**Modo público sin OAuth:** el MCP admite conexiones anónimas por HTTPS a `/mcp`, sin Auth0, JWT, issuer, JWKS ni una allowlist de sujetos. GitHub Actions despliega únicamente el adaptador separado `academic-classroom-mcp-oauth` cuando se modifica su fuente o workflow autorizado. El nombre del servicio es histórico: ahora su configuración efectiva es `MCP_AUTH_MODE=anonymous`.
+
+**Advertencia de seguridad:** Cloud Run expone el MCP a Internet; cualquier cliente que descubra su URL puede llamar `cerrar_unidad` para los cursos incluidos en el contexto. El secreto HMAC se conserva exclusivamente en Secret Manager y permite firmar las peticiones internas a la WebApp, **pero no autentica al usuario del MCP**. El adaptador no incluye calificaciones personales en sus respuestas. Las calificaciones individuales se guardan en `draftGrade`, nunca en `assignedGrade`. No desplegar este modo si se requiere restringir quién puede iniciar recálculos.
+
+La guía OAuth que sigue es histórica y **no aplica al despliegue anónimo vigente**.
+
+---
+
 # Classroom JV — MCP independiente en Cloud Run
 
 Servicio **MCP Streamable HTTP**, conectado exclusivamente a la WebApp canónica de Google Apps Script. No requiere modificar ChatGPT Sites, no ejecuta Apps Script mediante GitHub Actions y no llama directamente a las APIs de Classroom, Drive ni Forms.
