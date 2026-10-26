@@ -41,10 +41,9 @@ test('Auth0 provider readiness is read-only, HTTP discovery and JWKS only',async
  ]);
  assert.ok(calls.every(c=>c.opts.redirect==='error'));
 });
-test('deployment prohibits Auth0 secrets or academic data in the workflow',()=>{
+test('anonymous deployment never depends on Auth0 or leaks secrets',()=>{
  const deploy=fs.readFileSync('.github/workflows/deploy-cloud-run-mcp.yml','utf8');
- assert.match(deploy,/node scripts\/verify-auth0-mcp\.mjs/);
- assert.match(deploy,/MCP_OAUTH_ISSUER/);
- assert.match(deploy,/academic-mcp-allowed-subjects/);
+ assert.match(deploy,/MCP_AUTH_MODE=anonymous/);
+ assert.doesNotMatch(deploy,/MCP_OAUTH_ISSUER|MCP_OAUTH_JWKS_URL|academic-mcp-allowed-subjects/);
  assert.doesNotMatch(deploy,/AUTH0_CLIENT_SECRET|AUTH0_MGMT_TOKEN|gcloud secrets versions access/);
 });
