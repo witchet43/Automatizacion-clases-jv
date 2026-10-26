@@ -18,9 +18,10 @@ const existingTask={id:'101',title:tasks[0].params.titulo,topicId:'123',state:'D
 const existingPractice={id:'102',title:tasks[1].params.titulo,topicId:'123',state:'DRAFT',
  materials:studentDoc('doc102')};
 
-function scenario(initial){
+function scenario(initial, opts={}){
  const works=initial.slice(),calls={tarea:0,practica:0,delete:0,format:0,plan:0,read:0},sandbox={
   String,Array,Object,Error,console,
+  Utilities:{sleep(){calls.sleeps=(calls.sleeps||0)+1;}},
   normalizarPayloadAcademicoWeb_(_course,p){return {...p.params,courseId:course.id}},
   listarCourseWorkClase_(){calls.read++;return works},
   leerPlaneacionSiguienteClase_(){calls.plan++;return {rows:[{session:'19',unit:'2',
@@ -46,7 +47,7 @@ function scenario(initial){
   construirHtmlPractica_(){return '<h1>Practice</h1>'},
   construirHtmlDocumentoAcademico_(){return '<h1>Doc</h1>'},
   validarFormatoHtmlDocumentoAcademico_(){return true},
-  crearTarea(){calls.tarea++;return {workId:'201',state:'DRAFT',creado:true}},
+  crearTarea(){calls.tarea++;if(opts.failFirstTaskLock&&calls.tarea===1)throw Error('IDEMPOTENCY_LOCK_BUSY: locked');return {workId:'201',state:'DRAFT',creado:true}},
   crearPractica(){calls.practica++;return {workId:'202',state:'DRAFT',creado:true}},
   crearActividad(){throw Error('Unexpected activity mutation')},
   crearQuiz(){throw Error('Unexpected quiz mutation')},
@@ -67,6 +68,14 @@ assert.equal(result.reusedCount,2);
 assert.equal(result.createdCount,0);
 assert.equal(s.calls.tarea+s.calls.practica+s.calls.delete+s.calls.format,0);
 assert.equal(s.calls.read,1,'Only one inventory read');
+s=scenario([],{failFirstTaskLock:true});
+result=s.run([tasks[0]],{expectedResourceTypes:['tarea']});
+assert.equal(result.createdCount,1,'Resource created after transient lock');
+assert.equal(s.calls.tarea,2,'Only the lock-busy resource retries once');
+assert.equal(s.calls.sleeps,1,'Bounded retry waits exactly once');
+assert.equal(result.timingsMs.resources[0].retries,1,'Retry is measured');
+assert.equal(s.calls.read,1,'Retry does not repeat package inventory');
+
 assert.ok(result.timingsMs);
 assert.equal(typeof result.timingsMs.total,'number');
 s=scenario([existingTask]);result=s.run();
