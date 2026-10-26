@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Ya hazlo, y hazlo simple: reutiliza la infraestructura existente y despliega el MCP sin nuevas configuraciones.",
+  "reason": "Resolve GitHub Actions source deployment failing on unexpected default Cloud Build identity by explicitly using the pre-existing approved classroom-mcp-sa as build account; no new accounts, OAuth, or academic business logic.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-cloud-run-mcp.yml"
+  ]
+}
