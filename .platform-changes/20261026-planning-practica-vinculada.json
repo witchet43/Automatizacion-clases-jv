@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Sigamos optimizando permanentemente los scripts y la WebApp en cada iteración y genera la siguiente clase de Administración sin configuraciones nuevas.",
+  "reason": "The existing Administración sheet uses header Práctica vinculada; the canonical parser omitted that exact alias, making FINALIZE incorrectly report missing Classroom despite an existing draft. Include literal header and a regression verifying title reconciliation; no new infrastructure or resources.",
+  "allowedChangedPaths": [
+    "src/41_SiguienteClase.gs",
+    "scripts/test-next-class-real-state.mjs"
+  ]
+}
