@@ -764,14 +764,27 @@ function crearPaqueteClaseWeb_(course,p){
   ready.forEach(function(item){
     const resourceStartedMs=Date.now();
     const type=item.type,payload=item.payload,title=item.title;
-    let r;
-    if(type==='actividad')r=crearActividad(payload);
-    else if(type==='tarea')r=crearTarea(payload);
-    else if(type==='practica')r=crearPractica(payload);
-    else if(type==='quiz')r=crearQuiz(payload);
-    else if(type==='material')r=crearMaterialDidacticoWeb_(course,{params:payload});
+    let r,retries=0;
+    for(let attempt=0;attempt<2;attempt++){
+      try{
+        if(type==='actividad')r=crearActividad(payload);
+        else if(type==='tarea')r=crearTarea(payload);
+        else if(type==='practica')r=crearPractica(payload);
+        else if(type==='quiz')r=crearQuiz(payload);
+        else if(type==='material')r=crearMaterialDidacticoWeb_(course,{params:payload});
+        break;
+      }catch(err){
+        // Only lock acquisition failure is safe to retry: it occurs BEFORE
+        // creation. All uncertain writes still fail for reconciliation.
+        if(attempt!==0||
+          String(err&&err.message||err).indexOf('IDEMPOTENCY_LOCK_BUSY')<0)
+          throw err;
+        retries++;
+        Utilities.sleep(1000);
+      }
+    }
     results.push({type:type,title:title,status:r&&r.reutilizado?'REUSED':'CREATED',result:r});
-    resourceTimings.push({type:type,elapsed:Date.now()-resourceStartedMs});
+    resourceTimings.push({type:type,elapsed:Date.now()-resourceStartedMs,retries:retries});
   });
   const resourceWritesMs=Date.now()-writesStartedMs;
   const expected=(Array.isArray(p.expectedResourceTypes)?p.expectedResourceTypes:[])
