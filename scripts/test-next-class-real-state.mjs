@@ -74,6 +74,35 @@ ctx.Date=class extends Date {constructor(){throw Error('PROHIBIDO_USAR_FECHA_ACT
 ctx.Utilities={sleep:()=>{}};
 vm.runInContext(classroomList,ctx,{filename:'42_SiguienteClaseDraftVisibility.gs'});
 vm.runInContext(resolver,ctx,{filename:'41_SiguienteClase.gs'});
+
+// Las planeaciones UAQ usan el encabezado literal "Práctica vinculada":
+// debe conservar el título exacto de la actividad para la conciliación.
+{
+  const actualSource=ctx.resolvePlanningSource_;
+  const actualSheets=ctx.SpreadsheetApp;
+  const adminRows=[
+    ['Sesión','Unidad','Tema / subtema','Tipo de sesión','Práctica vinculada'],
+    ['26','Unidad 5','5.1 Planeación','Actividad en clase','Actividad 23 - Plan administrativo inicial de la empresa']
+  ];
+  ctx.resolvePlanningSource_=()=>({spreadsheetId:'PLANEACION_ADMIN',preferredSheet:'Planeación',headerRow:1});
+  ctx.SpreadsheetApp={openById:()=>({
+    getSheetByName:()=>({getDataRange:()=>({getDisplayValues:()=>adminRows})}),
+    getSheets:()=>[]
+  })};
+  const admin=ctx.leerPlaneacionSiguienteClase_('Administración');
+  assert.equal(admin.rows.length,1);
+  assert.equal(admin.rows[0].practice,
+    'Actividad 23 - Plan administrativo inicial de la empresa',
+    'La columna Práctica vinculada debe permitir identificar la actividad real en FINALIZE');
+  const evidence=ctx.evidenciaSesionReal_(admin.rows[0],[
+    {id:'895936997908',title:'Actividad 23 - Plan administrativo inicial de la empresa',state:'DRAFT'}
+  ],{},{});
+  assert.equal(evidence.recursoPreparado,true,
+    'El título exacto de la actividad en la planeación debe reconciliar el borrador real');
+  ctx.resolvePlanningSource_=actualSource;
+  ctx.SpreadsheetApp=actualSheets;
+}
+
 const live=(status,id)=>({source:'GAMMA_LIVE_CONNECTOR',status,gammaId:id,gammaUrl:'https://gamma.app/docs/live-'+id,title:'Tema',
   archived:status==='LIVE_ARCHIVED',contentVerified:status==='LIVE_ACTIVE_CANONICAL',
   canonicalTopicVerified:status==='LIVE_ACTIVE_CANONICAL',searchPerformed:true,activeEquivalentFound:false});
