@@ -65,8 +65,9 @@ jobs:
           set -euo pipefail
           SERVICE=academic-classroom-mcp-oauth
           # Reuse the already planned dedicated service name. Never touch the two legacy services.
-          OLD_URL="$(gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" --format='value(status.url)' 2>/dev/null || true)"
-          URL="${OLD_URL:-https://bootstrap.invalid}"
+          # Canonical deployed host reported by gcloud run deploy on 2026-10-26.
+          # The legacy status.url alias returned 404; do not use it for health checks.
+          URL="https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app"
           gcloud run deploy "$SERVICE" \
             --project "$PROJECT" --region "$REGION" \
             --source ./mcp-cloud-run --service-account "$RUNTIME_SA" \
@@ -76,13 +77,8 @@ jobs:
             --set-env-vars "MCP_AUTH_MODE=anonymous,MCP_PUBLIC_URL=$URL" \
             --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest" \
             --quiet
-          REAL_URL="$(gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" --format='value(status.url)')"
+          REAL_URL="$URL"
           [[ "$REAL_URL" == https://* ]] || { echo "::error::Missing public Cloud Run HTTPS URL"; exit 1; }
-          if [[ "$URL" == https://bootstrap.invalid ]]; then
-            gcloud run services update "$SERVICE" \
-              --project "$PROJECT" --region "$REGION" \
-              --update-env-vars "MCP_PUBLIC_URL=$REAL_URL" --quiet
-          fi
           echo "MCP_ENDPOINT=$REAL_URL/mcp" >> "$GITHUB_ENV"
           {
             echo '## Classroom Academic Gateway — anonymous MCP'
