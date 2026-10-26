@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Optimiza permanentemente los scripts y WebApp y genera siguiente clase, sin nuevas configuraciones.",
+  "reason": "Index single authoritative Classroom listing by title and add per-stage execution timing to the existing Apps Script WebApp, keeping all safety, idempotency and Classroom draft constraints unchanged.",
+  "allowedChangedPaths": [
+    "src/65_QuizAsistenciaWebApp.gs",
+    "scripts/test-class-package-reconciliation.mjs"
+  ]
+}
