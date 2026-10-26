@@ -97,7 +97,7 @@ jobs:
           gcloud run services describe academic-classroom-mcp-oauth \
             --project classroom-mcp-512122 --region us-central1 --format=json |
             jq '{service:.metadata.name,ingress:.metadata.annotations["run.googleapis.com/ingress"],defaultUrlDisabled:.metadata.annotations["run.googleapis.com/default-url-disabled"],statusUrl:.status.url,ready:.status.conditions[-1].status}'
-          status="$(curl --silent --show-error --max-time 30 -o /tmp/mcp-health-body -D /tmp/mcp-health-headers -w '%{http_code}' "$BASE/healthz")"
+          status="$(curl --silent --show-error --max-time 30 -o /tmp/mcp-health-body -D /tmp/mcp-health-headers -w '%{http_code}' "$BASE/health")"
           head -n 16 /tmp/mcp-health-headers
           if [[ "$status" != 200 ]]; then
             echo "Cloud Run health HTTP status: $status"
