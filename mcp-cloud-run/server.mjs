@@ -109,7 +109,7 @@ export function signedSubmissionRequest(config, action, courseId, courseWorkId, 
   const actions=new Set(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft']);
   if(!actions.has(action))throw Error('SUBMISSION_ACTION_INVALID');
   if(!config.courseIds.has(String(courseId)))throw Error('COURSE_NOT_REGISTERED');
-  if(!/^\\d+$/.test(String(courseWorkId)))throw Error('COURSEWORK_ID_INVALID');
+  if(!/^\d+$/.test(String(courseWorkId)))throw Error('COURSEWORK_ID_INVALID');
   const payload={...(params||{}),courseWorkId:String(courseWorkId)};
   if(action==='guardarEvaluacionDraft'){
     if(!UUIDISH.test(String(requestId)))throw Error('REQUEST_ID_INVALID');
@@ -208,7 +208,7 @@ function buildServer(config,identity,fetcher){
     title:'Crear recurso académico en borrador',
     description:'Crea o reutiliza una actividad, tarea, práctica, material, quiz, examen o paquete de clase mediante la WebApp canónica. Jamás publica recursos automáticamente.',
     inputSchema:{
-      courseId:z.string().regex(/^\\d+$/),
+      courseId:z.string().regex(/^\d+$/),
       operation:z.enum(['actividad','tarea','practica','quiz','examen','material','clase','quizAsistencia']),
       title:z.string().min(1).max(250),
       requestId:z.string().regex(UUIDISH),
@@ -226,7 +226,7 @@ function buildServer(config,identity,fetcher){
   server.registerTool('listar_entregas',{
     title:'Consultar entregas evaluables',
     description:'Consulta entregas de un trabajo mediante la WebApp canónica. Requiere OAuth por contener datos personales.',
-    inputSchema:{courseId:z.string().regex(/^\\d+$/),courseWorkId:z.string().regex(/^\\d+$/)},
+    inputSchema:{courseId:z.string().regex(/^\d+$/),courseWorkId:z.string().regex(/^\d+$/)},
     ...readSecurity,annotations:{readOnlyHint:true}
   },async({courseId,courseWorkId})=>{
     try{
@@ -240,7 +240,7 @@ function buildServer(config,identity,fetcher){
     title:'Calificar entrega en borrador',
     description:'Guarda la evaluación de una entrega solo en draftGrade mediante Apps Script. Requiere OAuth; nunca assignedGrade.',
     inputSchema:{
-      courseId:z.string().regex(/^\\d+$/),courseWorkId:z.string().regex(/^\\d+$/),
+      courseId:z.string().regex(/^\d+$/),courseWorkId:z.string().regex(/^\d+$/),
       submissionId:z.string().min(1),grade:z.number().min(0).max(100),
       feedback:z.string().max(5000).optional(),requestId:z.string().regex(UUIDISH)
     },
