@@ -11,7 +11,7 @@ assert.doesNotMatch(deploy,/classroom-mcp-token/);
 assert.doesNotMatch(deploy,/MCP_OAUTH_ISSUER/);
 assert.doesNotMatch(deploy,/MCP_OAUTH_JWKS_URL/);
 assert.match(deploy,/MCP_AUTH_MODE=anonymous/);
-assert.match(deploy,/\.platform-changes\/\*\*/);
+assert.match(deploy,/mcp-cloud-run\/\*\*/);
 assert.match(deploy,/--allow-unauthenticated/);
 assert.match(deploy,/--set-secrets/);
 assert.match(audit,/gcloud iam service-accounts get-iam-policy/);
