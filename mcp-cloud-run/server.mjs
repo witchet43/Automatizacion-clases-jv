@@ -82,6 +82,51 @@ export function signedClosureRequest(config,courseId,unidad){
   return {...unsigned,auth:{timestamp,nonce,signature}};
 }
 
+/**
+ * The MCP only transports minimal requests. Academic rules, student evidence,
+ * grading and idempotency are exclusively implemented by the canonical WebApp.
+ */
+export function signedAcademicRequest(config, operation, courseId, title, params, requestId) {
+  const id=String(courseId);
+  const allowed=new Set(['actividad','tarea','practica','quiz','examen','material','clase','quizAsistencia']);
+  if(!allowed.has(operation))throw Error('OPERATION_NOT_ALLOWED');
+  if(!config.courseIds.has(id))throw Error('COURSE_NOT_REGISTERED');
+  if(typeof title!=='string'||!title.trim()||title.length>250)throw Error('TITLE_INVALID');
+  if(!UUIDISH.test(String(requestId)))throw Error('REQUEST_ID_INVALID');
+  if(!params||typeof params!=='object'||Array.isArray(params))throw Error('PARAMS_INVALID');
+  if('assignedGrade' in params||'state' in params&&params.state!=='DRAFT')
+    throw Error('DRAFT_ONLY_REQUIRED');
+  const unsigned={
+    action:'uaqExecutor',operation,courseId:id,title:title.trim(),requestId,
+    params:{...params,title:title.trim(),state:'DRAFT'},
+    operationalContext:config.operationalContext
+  };
+  const timestamp=Date.now(),nonce=randomBytes(24).toString('base64url');
+  const signature=createHmac('sha256',config.hmac).update(JSON.stringify(unsigned)).digest('hex');
+  return {...unsigned,auth:{timestamp,nonce,signature}};
+}
+export function signedSubmissionRequest(config, action, courseId, courseWorkId, params, requestId) {
+  const actions=new Set(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft']);
+  if(!actions.has(action))throw Error('SUBMISSION_ACTION_INVALID');
+  if(!config.courseIds.has(String(courseId)))throw Error('COURSE_NOT_REGISTERED');
+  if(!/^\\d+$/.test(String(courseWorkId)))throw Error('COURSEWORK_ID_INVALID');
+  const payload={...(params||{}),courseWorkId:String(courseWorkId)};
+  if(action==='guardarEvaluacionDraft'){
+    if(!UUIDISH.test(String(requestId)))throw Error('REQUEST_ID_INVALID');
+    if(!Number.isFinite(payload.grade)||payload.grade<0||payload.grade>100)
+      throw Error('GRADE_INVALID');
+    if('assignedGrade' in payload)throw Error('DRAFT_ONLY_REQUIRED');
+  }
+  const unsigned={
+    action,courseId:String(courseId),
+    ...(requestId?{requestId}:{}),params:payload,
+    operationalContext:config.operationalContext
+  };
+  const timestamp=Date.now(),nonce=randomBytes(24).toString('base64url');
+  const signature=createHmac('sha256',config.hmac).update(JSON.stringify(unsigned)).digest('hex');
+  return {...unsigned,auth:{timestamp,nonce,signature}};
+}
+
 function safeError(err){
   const message=String(err?.message||err||'UNKNOWN');
   // Never include HTTP request bodies, personal grades or credentials in an
@@ -159,6 +204,56 @@ function buildServer(config,identity,fetcher){
       return toolOk(data);
     }catch(e){return toolFail(e);}
   });
+  server.registerTool('crear_recurso',{
+    title:'Crear recurso académico en borrador',
+    description:'Crea o reutiliza una actividad, tarea, práctica, material, quiz, examen o paquete de clase mediante la WebApp canónica. Jamás publica recursos automáticamente.',
+    inputSchema:{
+      courseId:z.string().regex(/^\\d+$/),
+      operation:z.enum(['actividad','tarea','practica','quiz','examen','material','clase','quizAsistencia']),
+      title:z.string().min(1).max(250),
+      requestId:z.string().regex(UUIDISH),
+      params:z.record(z.string(),z.unknown()).default({})
+    },
+    ...gradeSecurity,annotations:{readOnlyHint:false,destructiveHint:false}
+  },async({courseId,operation,title,requestId,params})=>{
+    try{
+      if(!identity.scopes.has(SCOPES.grade))throw Error('INSUFFICIENT_SCOPE');
+      const request=signedAcademicRequest(config,operation,courseId,title,params,requestId);
+      const data=await callWebApp(config,request,fetcher);
+      return toolOk({ok:true,operation,courseId,requestId,result:data});
+    }catch(e){return toolFail(e);}
+  });
+  server.registerTool('listar_entregas',{
+    title:'Consultar entregas evaluables',
+    description:'Consulta entregas de un trabajo mediante la WebApp canónica. Requiere OAuth por contener datos personales.',
+    inputSchema:{courseId:z.string().regex(/^\\d+$/),courseWorkId:z.string().regex(/^\\d+$/)},
+    ...readSecurity,annotations:{readOnlyHint:true}
+  },async({courseId,courseWorkId})=>{
+    try{
+      if(config.authMode!=='oauth')throw Error('STUDENT_DATA_REQUIRES_AUTH');
+      if(!identity.scopes.has(SCOPES.read))throw Error('INSUFFICIENT_SCOPE');
+      const data=await callWebApp(config,signedSubmissionRequest(config,'listarEntregasEvaluables',courseId,courseWorkId,{}),fetcher);
+      return toolOk(data);
+    }catch(e){return toolFail(e);}
+  });
+  server.registerTool('calificar_entrega_draft',{
+    title:'Calificar entrega en borrador',
+    description:'Guarda la evaluación de una entrega solo en draftGrade mediante Apps Script. Requiere OAuth; nunca assignedGrade.',
+    inputSchema:{
+      courseId:z.string().regex(/^\\d+$/),courseWorkId:z.string().regex(/^\\d+$/),
+      submissionId:z.string().min(1),grade:z.number().min(0).max(100),
+      feedback:z.string().max(5000).optional(),requestId:z.string().regex(UUIDISH)
+    },
+    ...gradeSecurity,annotations:{readOnlyHint:false,destructiveHint:false}
+  },async({courseId,courseWorkId,submissionId,grade,feedback,requestId})=>{
+    try{
+      if(config.authMode!=='oauth')throw Error('STUDENT_GRADES_REQUIRE_AUTH');
+      if(!identity.scopes.has(SCOPES.grade))throw Error('INSUFFICIENT_SCOPE');
+      const body=signedSubmissionRequest(config,'guardarEvaluacionDraft',courseId,courseWorkId,
+        {submissionId,grade,...(feedback?{feedback}:{})},requestId);
+      return toolOk(await callWebApp(config,body,fetcher));
+    }catch(e){return toolFail(e);}
+  });
   server.registerTool('cerrar_unidad',{
     title:'Calificación Unidad N (actividad publicada, notas en borrador)',
     description:'Recalcula la unidad exacta con 70% examen y 30% trabajos publicados. Crea o reutiliza una actividad Classroom PUBLISHED llamada Calificación Unidad N, guardando únicamente draftGrade. No publica assignedGrade ni devuelve entregas. La ruta anónima no autentica al solicitante.',
@@ -216,13 +311,13 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
       }else{
         identity=await verifyBearer(config,req.headers.authorization,SCOPES.read,jwks)
           .catch(async first=>{
-            if(req.body?.method==='tools/call'&&req.body?.params?.name==='cerrar_unidad')
+            if(req.body?.method==='tools/call'&&['cerrar_unidad','crear_recurso','calificar_entrega_draft'].includes(req.body?.params?.name))
               return await verifyBearer(config,req.headers.authorization,SCOPES.grade,jwks);
             throw first;
           });
       }
     }catch(e){
-      const scope=req.body?.params?.name==='cerrar_unidad'?SCOPES.grade:SCOPES.read;
+      const scope=['cerrar_unidad','crear_recurso','calificar_entrega_draft'].includes(req.body?.params?.name)?SCOPES.grade:SCOPES.read;
       return res.status(401).set('WWW-Authenticate',challenge(config,scope,
         e.message==='INSUFFICIENT_SCOPE'?'insufficient_scope':'invalid_token'))
         .json({error:'unauthorized'});
