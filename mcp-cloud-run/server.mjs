@@ -196,7 +196,7 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
   const app=express();
   app.disable('x-powered-by');
   app.use(express.json({limit:'64kb'}));
-  app.get('/healthz',(_req,res)=>res.json({status:'ok',service:'academic-jv-classroom-mcp',auth:config.authMode}));
+  app.get(['/health','/healthz'],(_req,res)=>res.json({status:'ok',service:'academic-jv-classroom-mcp',auth:config.authMode}));
   const metadata={
     resource:config.publicUrl,
     authorization_servers:[config.issuer],
