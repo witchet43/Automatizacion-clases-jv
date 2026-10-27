@@ -1,6 +1,6 @@
 import express from 'express';
 import fs from 'node:fs';
-import { randomBytes, createHmac } from 'node:crypto';
+import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { jwtVerify, createRemoteJWKSet, SignJWT, importPKCS8 } from 'jose';
@@ -201,6 +201,27 @@ export async function callWebApp(config,body,fetcher=fetch){
   }finally{clearTimeout(timeout);}
 }
 
+// Read-only runtime check; no secret values, hashes or fingerprints are returned.
+export async function runtimeHmacMatchesLatest(config,fetcher=fetch){
+  const metadata='http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token';
+  const tokenResp=await fetcher(metadata,{headers:{'Metadata-Flavor':'Google'},signal:AbortSignal.timeout(8000)});
+  if(!tokenResp.ok)throw Error('GCP_METADATA_TOKEN_UNAVAILABLE');
+  const token=await tokenResp.json();
+  if(!token.access_token)throw Error('GCP_METADATA_TOKEN_INVALID');
+  const url='https://secretmanager.googleapis.com/v1/projects/classroom-mcp-512122/secrets/academic-write-hmac/versions/latest:access';
+  const res=await fetcher(url,{
+    headers:{Authorization:'Bearer '+token.access_token},signal:AbortSignal.timeout(12000)
+  });
+  if(!res.ok)throw Error('SECRET_MANAGER_LATEST_ACCESS_FAILED');
+  const data=await res.json();
+  if(typeof data.payload?.data!=='string')throw Error('SECRET_MANAGER_PAYLOAD_MISSING');
+  const latest=Buffer.from(data.payload.data,'base64');
+  const current=Buffer.from(config.hmac,'utf8');
+  // Match Apps Script's and the MCP's whitespace normalization.
+  const normalized=Buffer.from(latest.toString('utf8').trim(),'utf8');
+  return current.length===normalized.length && timingSafeEqual(current,normalized);
+}
+
 // Google Cloud Run API read-only diagnosis using attached workload identity.
 // Metadata-server token is scoped to Google APIs; it is never sent to ChatGPT.
 export async function describeCloudRunDeployment({fetcher=fetch,env=process.env}={}){
@@ -333,8 +354,17 @@ function buildServer(config,identity,fetcher){
     if(!verificarFirma)return toolOk(status);
     try{
       const data=await callWebApp(config,signedHmacProbe(config),fetcher);
-      if(data.signatureAccepted!==true)
-        throw Error(data.keyEquivalent===false?'ACADEMIC_HMAC_KEYS_DIFFER':'ACADEMIC_HMAC_SIGNED_PAYLOAD_DIFFERS');
+      if(data.signatureAccepted!==true){
+        let runtimeMatchesLatest=null;
+        if(data.keyEquivalent===false){
+          runtimeMatchesLatest=await runtimeHmacMatchesLatest(config,fetcher).catch(()=>null);
+        }
+        throw Error(data.keyEquivalent===false
+          ?(runtimeMatchesLatest===true?'APPS_SCRIPT_HMAC_DIFFERS_FROM_SECRET_MANAGER'
+            :runtimeMatchesLatest===false?'CLOUD_RUN_HMAC_DIFFERS_FROM_SECRET_MANAGER'
+            :'ACADEMIC_HMAC_KEYS_DIFFER')
+          :'ACADEMIC_HMAC_SIGNED_PAYLOAD_DIFFERS');
+      }
       return toolOk({...status,upstreamHmacAccepted:true});
     }catch(error){return toolFail(error);}
   });
