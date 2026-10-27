@@ -1,0 +1,53 @@
+name: Repair Canonical WebApp HTTP 403
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/repair-canonical-webapp.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install existing clasp
+        run: npm install --no-audit --no-fund
+      - name: Probe canonical WebApp (nonmutating invalid action)
+        id: pre
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json,urllib.request,urllib.error,os
+          u=json.load(open('config/academic-context.json'))['webApp']['url']
+          req=urllib.request.Request(u,data=b'{"action":"nonexistentReadOnlyProbe"}',headers={'Content-Type':'text/plain;charset=utf-8'},method='POST')
+          try:
+            with urllib.request.urlopen(req,timeout=30) as r:
+              status=r.status; body=r.read(600).decode('utf8','replace')
+          except urllib.error.HTTPError as e:
+            status=e.code;body=e.read(600).decode('utf8','replace')
+          print('WEBAPP_STATUS_BEFORE:',status,'BODY:',body[:250])
+          with open(os.environ['GITHUB_OUTPUT'],'a') as f:
+            print('needs_repair='+('true' if status==403 else 'false'),file=f)
+          if status!=403 and status!=200:
+            raise SystemExit('Unexpected status: '+str(status))
+          PY
+      - name: Update existing canonical deployment only if forbidden
+        if: steps.pre.outputs.needs_repair == 'true'
+        shell: bash
+        env:
+          clasp_config_auth: .clasprc.json
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          set -euo pipefail
+          test -n "$CLASPRC_JSON" || { echo "::error::CLASPRC_JSON unavailable"; exit 1; }
+          printf '%s' "$CLASPRC_JSON" > .clasprc.json
+          chmod 600 .clasprc.json
+          npm run apps-script:deploy
+          rm -f .clasprc.json
+      - name: Verify canonical WebApp post repair
+        run: node scripts/verify-academic-webapp.mjs
