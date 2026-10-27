@@ -296,7 +296,7 @@ function buildServer(config,identity,fetcher){
     title:'Cerrar materia: promedio de unidades en borrador',
     description:'Calcula en Apps Script el promedio de todas las unidades requeridas. Pesos iguales por defecto; diferentes únicamente si se proporcionan explícitamente. Nunca publica notas individuales.',
     inputSchema:{
-      courseId:z.string().regex(/^\\d+$/),
+      courseId:z.string().regex(/^\d+$/),
       unidades:z.array(z.number().int().min(1).max(50)).min(1),
       ponderaciones:z.array(z.number().min(0).max(100)).optional(),
       confirmar:z.literal(true)
