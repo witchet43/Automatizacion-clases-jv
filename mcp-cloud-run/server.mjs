@@ -7,6 +7,7 @@ import { jwtVerify, createRemoteJWKSet, SignJWT, importPKCS8 } from 'jose';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
+import { ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
 const SCOPES=Object.freeze({read:'academic.read',grade:'academic.close_unit'});
 const UUIDISH=/^[a-zA-Z0-9_-]{12,96}$/;
@@ -338,7 +339,10 @@ function challenge(config,scope,error='invalid_token'){
     '", error="'+error+'", error_description="Authorize academic access"';
 }
 function buildServer(config,identity,fetcher){
-  const readSecurity={}; // Read-only MCP tools remain accessible without OAuth; grading is protected.
+  // Explicit tool-level policies are required for mixed authentication: an absent
+  // securitySchemes array inherits the server's OAuth policy in ChatGPT.
+  const readSecurity={securitySchemes:[{type:'noauth'}]};
+  const privateReadSecurity={securitySchemes:[{type:'oauth2',scopes:[SCOPES.read]}]};
   const gradeSecurity=config.authMode==='anonymous'?{}:{securitySchemes:[{type:'oauth2',scopes:[SCOPES.grade]}]};
   const server=new McpServer({name:'classroom-academic-gateway',version:'1.0.0'});
   server.registerTool('gateway_status',{
@@ -464,7 +468,7 @@ function buildServer(config,identity,fetcher){
     title:'Consultar entregas evaluables',
     description:'Consulta entregas de un trabajo mediante la WebApp canónica. Requiere OAuth por contener datos personales.',
     inputSchema:{courseId:z.string().regex(/^\d+$/),courseWorkId:z.string().regex(/^\d+$/)},
-    ...readSecurity,annotations:{readOnlyHint:true}
+    ...privateReadSecurity,annotations:{readOnlyHint:true}
   },async({courseId,courseWorkId})=>{
     try{
       if(config.authMode!=='oauth')throw Error('STUDENT_DATA_REQUIRES_AUTH');
@@ -547,6 +551,24 @@ function buildServer(config,identity,fetcher){
         gradesChanged:closure.actualizadas,unchanged:closure.sinCambios,
         noAssignedGradesPublished:true});
     }catch(e){return toolFail(e);}
+  });
+  // SDK v1 silently drops `securitySchemes` passed to registerTool().
+  // Preserve SDK-generated JSON schemas by decorating its tools/list handler,
+  // so ChatGPT can distinguish public reads from OAuth-protected operations.
+  const baseListHandler=server.server._requestHandlers?.get('tools/list');
+  if(typeof baseListHandler!=='function')throw Error('MCP_TOOLS_LIST_HANDLER_MISSING');
+  const requiredWrite=new Set(['iniciar_despliegue_mcp','crear_recurso',
+    'calificar_entrega_draft','cerrar_materia','cerrar_unidad']);
+  server.server.setRequestHandler(ListToolsRequestSchema,async(request,extra)=>{
+    const listed=await baseListHandler(request,extra);
+    return {...listed,tools:listed.tools.map(tool=>{
+      const securitySchemes=requiredWrite.has(tool.name)
+        ? [{type:'oauth2',scopes:[SCOPES.grade]}]
+        : tool.name==='listar_entregas'
+          ? [{type:'oauth2',scopes:[SCOPES.read]}]
+          : [{type:'noauth'}];
+      return {...tool,securitySchemes};
+    })};
   });
   return server;
 }

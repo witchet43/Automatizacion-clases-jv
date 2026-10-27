@@ -49,6 +49,23 @@ test('MCP initializes, exposes all tools and runs gateway_status without OAuth',
       'auditar_recursos','crear_recurso','listar_entregas','calificar_entrega_draft',
       'cerrar_materia','cerrar_unidad'];
     assert.deepEqual(names.slice().sort(),expected.slice().sort());
+    // Mixed auth must expose public reads explicitly, without inheriting OAuth.
+    const discovered=new Map((r.json.result?.tools||[]).map(t=>[t.name,t]));
+    for(const publicTool of ['gateway_status','consultar_despliegues_mcp',
+      'consultar_ejecucion_mcp','verificar_despliegue','diagnosticar_clase',
+      'auditar_recursos']){
+      assert.deepEqual(discovered.get(publicTool)?.securitySchemes,
+        [{type:'noauth'}],publicTool+' must be anonymously discoverable');
+    }
+    assert.deepEqual(discovered.get('listar_entregas')?.securitySchemes,
+      [{type:'oauth2',scopes:['academic.read']}],
+      'Student submissions require authenticated academic.read');
+    for(const protectedTool of ['iniciar_despliegue_mcp','crear_recurso',
+      'calificar_entrega_draft','cerrar_materia','cerrar_unidad']){
+      assert.deepEqual(discovered.get(protectedTool)?.securitySchemes,
+        [{type:'oauth2',scopes:['academic.close_unit']}],
+        protectedTool+' must require scoped OAuth');
+    }
     r=await rpc(base,'tools/call',{name:'gateway_status',arguments:{}},3);
     assert.equal(r.status,200,JSON.stringify(r.json));
     assert.notEqual(r.json.result.isError,true);
