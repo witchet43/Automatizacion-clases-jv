@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Completa todo tu plan, hasta que quede funcional. Objetivo claro: que funcione. Solo terminas si necesito ejecutar algo manualmente.",
+  "reason": "Add a signed, non-mutating HMAC compatibility probe to canonical Apps Script to diagnose effective runtime keys without touching Classroom.",
+  "allowedChangedPaths": [
+    "src/65_QuizAsistenciaWebApp.gs",
+    "scripts/test-academic-write-auth.mjs"
+  ]
+}
