@@ -95,6 +95,8 @@ test('OAuth issuer, subject, audience and scope; MCP rejects anonymous and execu
    assert.equal(metadata.status,200);
    assert.deepEqual((await metadata.json()).scopes_supported,['academic.read','academic.close_unit']);
    let response=await rpc('', 'initialize',{protocolVersion:'2025-06-18',capabilities:{},clientInfo:{name:'test',version:'1'}});
+   assert.equal(response.status,200);
+   response=await rpc('', 'tools/call',{name:'cerrar_unidad',arguments:{courseId:'871149624583',unidad:2,confirmar:true}},9);
    assert.equal(response.status,401);
    assert.match(response.headers.get('www-authenticate'),/resource_metadata=/);
    response=await rpc(denied,'initialize',{protocolVersion:'2025-06-18',capabilities:{},clientInfo:{name:'test',version:'1'}});
