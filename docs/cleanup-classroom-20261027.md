@@ -61,6 +61,17 @@ Evidencia operativa directa:
 - `gateway_status(verificarFirma=true)`: firma HMAC aceptada; `diagnosticar_clase` de Sistemas Operativos: `ok=true`, 53 trabajos; sin cambios en Classroom.
 - Continúan fuera del alcance automático la revisión de triggers Apps Script y el consumo real de los dos plugins de ChatGPT. Mantenerlos mientras no se pueda demostrar que no se usan.
 
+## Reconciliación adicional de recursos reales (solo lectura)
+Comprobación posterior por `diagnosticar_clase`, sin eliminar ni crear recursos:
+- **UAQ Sistemas Distribuidos** (`871158466533`): Práctica 16 canónica `893237625248` **existe** y está `PUBLISHED`. Duplicado anteriormente reportado `883005863308` **no aparece** entre 43 trabajos actuales. No hay eliminación manual pendiente de ese duplicado.
+- **ITQ Sistemas Operativos** (`875776451793`): los cinco borradores de prueba del registro del 20/10 (`893232046159`, `893232707530`, `874130972863`, `874131420573`, `893236212306`) **ya no aparecen** entre 53 trabajos actuales. No eliminarlos otra vez.
+- **Quiz 15** `893236157701` **sí existe** como `DRAFT`: fue solicitado como recurso oficial y debe conservarse.
+
+## Verificación periódica pendiente
+- El tenant Auth0 mostró **17 días restantes de prueba** el 27/10. Según Auth0, al vencer se activa el plan Free automáticamente, pero las funciones exclusivas del trial pueden dejar de estar disponibles. Revisar **Settings → Subscription** y la continuidad de DCR, conexión delegada, permisos de la API y login después del cambio de plan. No contratar un plan ni introducir datos de facturación sin consentimiento.
+- Las invocaciones efectivas a los **dos Cloud Run legados** siguen sin verificarse: el workflow auditor encontró metadatos pero **Cloud Logging fue inconcluso** por acceso/retención. Se requiere consultar tráfico en Cloud Console con una identidad autorizada antes de eliminar servicios.
+- Triggers y deployments de Apps Script y uso del complemento heredado no están inventariados desde sus interfaces administrativas; **no desinstalar a ciegas**.
+
 ## Criterios para próximas acciones
 - Si Cloud Logging devuelve **INCONCLUSIVE** por permisos/retención, no interpretarlo como 0 solicitudes; no eliminar servicios.
 - Si una rama fue fusionada pero es referencia de archivo/rollback, conservarla; el conteo no es objetivo de seguridad.
