@@ -27,3 +27,27 @@ jobs:
           jq '{service:.metadata.name,url:.status.url,latestCreated:.status.latestCreatedRevisionName,latestReady:.status.latestReadyRevisionName,traffic:.status.traffic}' /tmp/service.json
           jq -r '.[] | [.metadata.name, (.spec.containers[0].image // "unknown"), (.status.conditions[-1].status // "unknown")] | @tsv' /tmp/revisions.json
           echo 'See job logs for full revision and traffic data.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Probe active MCP endpoints without credentials or writes
+        shell: bash
+        run: |
+          set -euo pipefail
+          OFFICIAL_URL="$(jq -r '.status.url' /tmp/service.json)"
+          CONFIGURED_URL="https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app"
+          for URL in "$OFFICIAL_URL" "$CONFIGURED_URL"; do
+            echo "::group::Probe $URL"
+            for PATH in /health /.well-known/oauth-protected-resource /mcp; do
+              echo "PATH=$PATH"
+              if [ "$PATH" = /mcp ]; then
+                CODE=$(curl --max-time 15 -sS -o /tmp/probe-body -w '%{http_code}' -X POST "$URL$PATH" -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' -H 'MCP-Protocol-Version: 2025-03-26' --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"cloudrun-audit","version":"1.0"}}}' || true)
+              else
+                CODE=$(curl --max-time 15 -sS -o /tmp/probe-body -w '%{http_code}' "$URL$PATH" || true)
+              fi
+              echo "HTTP_STATUS=${CODE:-NETWORK_ERROR}"
+              head -c 500 /tmp/probe-body 2>/dev/null || true
+              echo
+            done
+            echo "::endgroup::"
+          done
+          echo '### Endpoint probes' >> "$GITHUB_STEP_SUMMARY"
+          echo 'See **Probe active MCP endpoints** job logs for HTTP status codes for both Cloud Run URLs.' >> "$GITHUB_STEP_SUMMARY"
