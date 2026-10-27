@@ -1,0 +1,16 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Tu encargate de la limpieza, reorganización, documentación, y me indicas si hace falta algo de revisar despues de todo",
+  "reason": "Limpieza y reorganización documental de Classroom Academic Gateway con auditoría exclusivamente de lectura; sin cambiar Apps Script, Gateway en ejecución, IAM, OAuth, HMAC ni recursos Classroom.",
+  "allowedChangedPaths": [
+    ".github/workflows/audit-cloud-run-mcp.yml",
+    "AGENTS.md",
+    "README.md",
+    "docs/academic-webapp-architecture.md",
+    "docs/cleanup-classroom-20261027.md",
+    "docs/cleanup-register-20261020.md",
+    "mcp-cloud-run/README.md"
+  ]
+}
