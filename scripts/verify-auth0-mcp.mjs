@@ -37,8 +37,11 @@ export function verifyAuth0Metadata(issuer,discovery,jwks){
     throw Error('AUTH0_DISCOVERY_OAUTH_ENDPOINT_MISSING');
   sameOrigin(origin,discovery.authorization_endpoint,'AUTHORIZATION');
   sameOrigin(origin,discovery.token_endpoint,'TOKEN');
-  if(!discovery.registration_endpoint)throw Error('AUTH0_DCR_REGISTRATION_ENDPOINT_MISSING');
-  sameOrigin(origin,discovery.registration_endpoint,'REGISTRATION');
+  const supportsCimd=discovery.client_id_metadata_document_supported===true;
+  const supportsDcr=Boolean(discovery.registration_endpoint);
+  if(!supportsCimd&&!supportsDcr)
+    throw Error('AUTH0_CLIENT_REGISTRATION_UNAVAILABLE: enable manual CIMD or DCR in Auth0');
+  if(supportsDcr)sameOrigin(origin,discovery.registration_endpoint,'REGISTRATION');
   // ChatGPT creates a PUBLIC DCR client with PKCE. An alternative auth method
   // must not silently replace "none" when a provider publishes this field.
   if(Array.isArray(discovery.token_endpoint_auth_methods_supported)&&
@@ -55,7 +58,8 @@ export function verifyAuth0Metadata(issuer,discovery,jwks){
   return {
     issuer:i,
     jwksUrl:jwksLocation.href,
-    registrationUrl:discovery.registration_endpoint,
+    registrationUrl:discovery.registration_endpoint||null,
+    registrationMode:supportsCimd?'cimd':'dcr',
     pkceS256:true,
     scopeNames:['academic.read','academic.close_unit']
   };
@@ -81,7 +85,7 @@ if(process.argv[1]&&import.meta.url===new URL('file://'+process.argv[1]).href){
     const result=await probeAuth0(issuer);
     if(!process.env.MCP_OAUTH_JWKS_URL || result.jwksUrl!==process.env.MCP_OAUTH_JWKS_URL)
       throw Error('AUTH0_CONFIGURED_JWKS_URL_MISMATCH');
-    console.log('AUTH0_DISCOVERY_VERIFIED: issuer, PKCE S256, DCR, RS256 JWKS metadata');
+    console.log('AUTH0_DISCOVERY_VERIFIED: issuer, PKCE S256, '+result.registrationMode+', RS256 JWKS metadata');
     console.log('MCP_OAUTH_ISSUER='+result.issuer);
     console.log('MCP_OAUTH_JWKS_URL='+result.jwksUrl);
     console.log('AUTH0_RESOURCE_COMPATIBILITY_TOGGLE_NOT_VERIFIABLE_REMOTELY');
