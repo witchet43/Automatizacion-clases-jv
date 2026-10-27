@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Vamos a corregirlo",
+  "reason": "Permitir registro CIMD sin abrir DCR, conservando PKCE y JWT verificado.",
+  "allowedChangedPaths": [
+    "scripts/verify-auth0-mcp.mjs",
+    "scripts/test-auth0-mcp-preflight.mjs"
+  ]
+}
