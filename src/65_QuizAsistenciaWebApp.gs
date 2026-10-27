@@ -70,7 +70,7 @@ function ejecutarServicioAcademicoWeb_(params){
       // Dedicated non-mutating diagnostic. Only boolean comparisons are disclosed.
       // Never access Classroom or return keys, full signatures, fingerprints or receipts.
       const d=p.diagnostic;
-      if(!d||typeof d!=='object'||!/.*/.test(String(d.challenge||''))||
+      if(!d||typeof d!=='object'||
          !/^[a-f0-9]{32}$/.test(String(d.challenge||''))||
          !/^[a-f0-9]{64}$/.test(String(d.proof||'')))
         throw new Error('ACADEMIC_HMAC_DIAGNOSTIC_INVALID');
