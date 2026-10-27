@@ -7,6 +7,7 @@ on:
       - '.github/workflows/audit-classroom-mcp-oauth-discovery.yml'
 permissions:
   contents: read
+  id-token: write
 jobs:
   audit:
     runs-on: ubuntu-latest
@@ -96,4 +97,42 @@ jobs:
               print('MCP_READ_ONLY_GATEWAY_STATUS_OK',not result.get('isError',False))
           print('AUTH0_DISCOVERY_ENDPOINTS_SUCCESSFUL',len(responses))
           print('NO_OAUTH_REGISTRATION_ATTEMPTED_NO_CLASSROOM_RESOURCES_MODIFIED')
+          PY
+
+      - name: Audit recent Cloud Run MCP request patterns from logs (aggregate only)
+        continue-on-error: true
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/148028894895/locations/global/workloadIdentityPools/github-classroom-pool/providers/github
+          service_account: classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Aggregate Cloud Run requests without IPs, identities, paths with query strings or bodies
+        shell: bash
+        run: |
+          set -uo pipefail
+          filter='resource.type="cloud_run_revision" AND resource.labels.service_name="academic-classroom-mcp-oauth" AND logName="projects/classroom-mcp-512122/logs/run.googleapis.com%2Frequests"'
+          if ! gcloud logging read "$filter" --project classroom-mcp-512122 --freshness=6h --limit=500 --format=json > /tmp/mcp-request-logs.json 2>/tmp/mcp-read-error; then
+            echo 'CLOUD_RUN_LOG_AGGREGATE_UNAVAILABLE: insufficient permission or API error; no IAM changes performed'
+            exit 0
+          fi
+          python3 - <<'PY'
+          import json,collections,urllib.parse
+          with open('/tmp/mcp-request-logs.json') as f: rows=json.load(f)
+          totals=collections.Counter()
+          for row in rows:
+              http=row.get('httpRequest') or {}
+              path=urllib.parse.urlsplit(http.get('requestUrl') or '').path
+              if path not in ('/mcp','/.well-known/oauth-protected-resource',
+                              '/.well-known/oauth-protected-resource/mcp'):
+                  continue
+              user_agent=(http.get('userAgent') or '').lower()
+              category=('github-python-client' if 'python-urllib' in user_agent
+                else 'possible-openai-client' if any(x in user_agent for x in ('openai','chatgpt'))
+                else 'other-or-unidentified')
+              totals[(path,http.get('requestMethod','?'),http.get('status','?'),category)]+=1
+          print('CLOUD_RUN_LAST_6_HOURS_MATCHED_REQUESTS',sum(totals.values()))
+          print('CLOUD_RUN_LOG_SAMPLE_LIMIT',500)
+          for key,n in sorted(totals.items()):
+              print('REQUEST_AGGREGATE',*key,'COUNT',n)
+          print('NO_IP_ADDRESS_NO_USER_AGENT_STRING_NO_TOKEN_NO_REQUEST_BODY_LOGGED')
           PY
