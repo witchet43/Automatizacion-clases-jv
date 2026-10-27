@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       confirm_deploy:
-        description: 'Deploy the anonymous academic MCP with synchronized context'
+        description: 'Deploy the OAuth-protected academic MCP with synchronized context'
         required: true
         type: boolean
         default: false
@@ -55,6 +55,19 @@ jobs:
           if [[ "$state" != ENABLED ]]; then
             echo "::error::Missing enabled academic-write-hmac"; exit 1
           fi
+      - name: Validate Auth0 OAuth discovery, PKCE, and JWKS
+        env:
+          MCP_OAUTH_ISSUER: https://dev-67cfevmusm7px130.us.auth0.com/
+          MCP_OAUTH_JWKS_URL: https://dev-67cfevmusm7px130.us.auth0.com/.well-known/jwks.json
+        run: node scripts/verify-auth0-mcp.mjs
+      - name: Require OAuth subject allowlist secret (metadata only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          state="$(gcloud secrets versions describe latest --secret academic-mcp-allowed-subjects --project classroom-mcp-512122 --format='value(state)')"
+          if [[ "$state" != ENABLED ]]; then
+            echo "::error::Missing enabled OAuth subject allowlist"; exit 1
+          fi
       - name: Deploy only new independent MCP adapter
         env:
           PROJECT: classroom-mcp-512122
@@ -75,38 +88,43 @@ jobs:
             --build-service-account "projects/$PROJECT/serviceAccounts/$RUNTIME_SA" \
             --allow-unauthenticated --ingress all \
             --min-instances=0 --memory=512Mi --timeout=300 \
-            --set-env-vars "MCP_AUTH_MODE=anonymous,MCP_PUBLIC_URL=$URL,MCP_DEPLOY_COMMIT=${{ github.sha }}" \
-            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest" \
+            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=https://dev-67cfevmusm7px130.us.auth0.com/,MCP_OAUTH_JWKS_URL=https://dev-67cfevmusm7px130.us.auth0.com/.well-known/jwks.json,MCP_DEPLOY_COMMIT=${{ github.sha }}" \
+            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest,MCP_ALLOWED_SUBJECTS=academic-mcp-allowed-subjects:latest" \
             --quiet
           REAL_URL="$URL"
           [[ "$REAL_URL" == https://* ]] || { echo "::error::Missing public Cloud Run HTTPS URL"; exit 1; }
           echo "MCP_ENDPOINT=$REAL_URL/mcp" >> "$GITHUB_ENV"
           {
-            echo '## Classroom Academic Gateway — anonymous MCP'
+            echo '## Classroom Academic Gateway — OAuth MCP'
             echo "Endpoint: $REAL_URL/mcp"
-            echo 'MCP_AUTH_MODE=anonymous (user requested).'
+            echo 'MCP_AUTH_MODE=oauth; protected user-grading actions require academic.close_unit.'
             echo 'Only the runtime can access Secret Manager HMAC; requests are signed to canonical WebApp.'
             echo 'Academic mutations use the existing canonical signed WebApp workflow.'
             echo 'Deployment performs no Classroom grade mutation.'
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Verify live anonymous MCP and gateway_status
+      - name: Verify live OAuth metadata and unauthenticated rejection
         shell: bash
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import urllib.request,json
-          url='https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app'
-          with urllib.request.urlopen(url+'/health',timeout=30) as r:
+          import urllib.request,urllib.error,json
+          base='https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app'
+          issuer='https://dev-67cfevmusm7px130.us.auth0.com/'
+          with urllib.request.urlopen(base+'/health',timeout=30) as r:
               d=json.load(r)
-              print('HEALTH',d)
-              assert d['status']=='ok' and d['auth']=='anonymous'
-          for method,params in [('tools/list',{}),('tools/call',{'name':'gateway_status','arguments':{}})]:
-              data=json.dumps({'jsonrpc':'2.0','id':1,'method':method,'params':params}).encode()
-              req=urllib.request.Request(url+'/mcp',data=data,headers={'Content-Type':'application/json','Accept':'application/json, text/event-stream','MCP-Protocol-Version':'2025-03-26'},method='POST')
-              with urllib.request.urlopen(req,timeout=30) as r:
-                  body=r.read().decode()
-                  print(method,body[:5000])
-                  assert r.status==200 and '"error"' not in body
-                  if method=='tools/list':
-                      assert 'gateway_status' in body and 'listar_entregas' in body
+              assert d['status']=='ok' and d['auth']=='oauth', d
+          with urllib.request.urlopen(base+'/.well-known/oauth-protected-resource',timeout=30) as r:
+              d=json.load(r)
+              assert d['authorization_servers']==[issuer], d
+              assert d['resource']==base, d
+              assert 'academic.close_unit' in d['scopes_supported'], d
+          data=json.dumps({'jsonrpc':'2.0','id':1,'method':'tools/call','params':{'name':'cerrar_unidad','arguments':{'courseId':'871149624583','unidad':2,'confirmar':True}}}).encode()
+          req=urllib.request.Request(base+'/mcp',data=data,headers={'Content-Type':'application/json','Accept':'application/json, text/event-stream'},method='POST')
+          try:
+              urllib.request.urlopen(req,timeout=30)
+              raise AssertionError('Anonymous grade closure was accepted')
+          except urllib.error.HTTPError as e:
+              assert e.code==401, e.code
+              assert 'resource_metadata=' in e.headers.get('WWW-Authenticate','')
+          print('OAUTH_DEPLOYMENT_VERIFIED; ANONYMOUS_GRADE_WRITE_DENIED')
           PY
