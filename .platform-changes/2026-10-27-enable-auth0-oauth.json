@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Aquí te comparto la evidencia de la configuración anterior. Ahora completa la revisión y aprobación del cambio de infraestructura.",
+  "reason": "Activar y verificar OAuth Auth0 en el servicio Cloud Run ya existente",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-cloud-run-mcp.yml"
+  ]
+}
