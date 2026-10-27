@@ -1,0 +1,12 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Completa todo tu plan, hasta que quede funcional. Objetivo claro: que funcione. Solo terminas si necesito ejecutar algo manualmente.",
+  "reason": "Verify end-to-end HMAC compatibility via signed non-mutating Apps Script request from Cloud Run and enforce real runtime proof after deployment.",
+  "allowedChangedPaths": [
+    "mcp-cloud-run/server.mjs",
+    "mcp-cloud-run/tests/discovery.test.mjs",
+    ".github/workflows/deploy-cloud-run-mcp.yml"
+  ]
+}
