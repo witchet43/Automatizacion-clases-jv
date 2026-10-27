@@ -97,3 +97,19 @@ jobs:
               sys.exit(1)
           print('GATEWAY_STATUS_EXPOSED_BY_DEPLOYED_MCP')
           PY
+
+      - name: Invoke gateway_status on deployed MCP (read only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import urllib.request,urllib.error,json,sys
+          url='https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app/mcp'
+          req=urllib.request.Request(url,data=json.dumps({'jsonrpc':'2.0','id':3,'method':'tools/call','params':{'name':'gateway_status','arguments':{}}}).encode(),headers={'Content-Type':'application/json','Accept':'application/json, text/event-stream','MCP-Protocol-Version':'2025-03-26'},method='POST')
+          with urllib.request.urlopen(req,timeout=20) as r:
+              data=r.read(30000).decode('utf-8','replace')
+              print('GATEWAY_STATUS_HTTP:',r.status)
+              print('GATEWAY_STATUS_RESPONSE:',data)
+              assert r.status==200
+              assert '"isError":true' not in data and '"error"' not in data
+          PY
