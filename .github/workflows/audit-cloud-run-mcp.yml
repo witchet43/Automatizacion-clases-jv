@@ -55,7 +55,7 @@ jobs:
               FILTER="resource.type=cloud_run_revision AND resource.labels.service_name=$SERVICE AND logName=projects/$PROJECT/logs/run.googleapis.com%2Frequests AND timestamp>=\"$(date -u -d "$DAYS days ago" +'%Y-%m-%dT%H:%M:%SZ')\""
               if gcloud logging read "$FILTER" --project "$PROJECT" --limit=1000 --format='value(timestamp)' > /tmp/classroom-request-times 2>/tmp/classroom-log-error; then
                 COUNT="$(wc -l < /tmp/classroom-request-times | tr -d ' ')"
-                RECENT="$(sort -r /tmp/classroom-request-times | head -1)"
+                RECENT="$(sort -r /tmp/classroom-request-times | sed -n '1p')"
                 echo "  RequestLog_${DAYS}d: sampled_count=$COUNT (max 1000), latest=${RECENT:-none}"
                 echo "- $SERVICE: request-log timestamps in ${DAYS}d: $COUNT sampled (max 1000); latest ${RECENT:-none}" >> "$GITHUB_STEP_SUMMARY"
               else
