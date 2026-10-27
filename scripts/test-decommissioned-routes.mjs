@@ -9,7 +9,7 @@ const paths=[
 ];
 for(const p of paths)assert.equal(fs.existsSync(p),false,'Retired alternate execution path remains: '+p);
 const allowed=fs.readdirSync('.github/workflows').filter(x=>/\.ya?ml$/.test(x)).sort();
-assert.deepEqual(allowed,['audit-classroom-mcp-wif.yml','deploy-apps-script.yml','deploy-cloud-run-mcp.yml','validate-minimal-academic-operations.yml']);
+assert.deepEqual(allowed,['audit-classroom-mcp-wif.yml','audit-cloud-run-mcp.yml','deploy-apps-script.yml','deploy-cloud-run-mcp.yml','validate-minimal-academic-operations.yml']);
 const deployment=fs.readFileSync('.github/workflows/deploy-apps-script.yml','utf8');
 assert.match(deployment,/assert-platform-change-authorized\.mjs/);
 const trigger=(deployment.match(/on:[\s\S]*?concurrency:/)||[''])[0];
