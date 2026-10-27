@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "El usuario solicita diagnosticar la pérdida de herramientas MCP causada al incorporar autenticación OAuth sin abandonar el complemento existente.",
+  "reason": "Determine whether Auth0 DCR is disabled despite advertised endpoint using empty invalid payload which cannot register a client, and without altering any existing permissions or credentials.",
+  "allowedChangedPaths": [
+    ".github/workflows/audit-classroom-mcp-oauth-discovery.yml"
+  ]
+}
