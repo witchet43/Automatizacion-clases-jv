@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Pues resuelvelo tomate tu tiempo",
+  "reason": "Diagnosticar discrepancia persistente de manifiesto mediante huella SHA pública del MCP; no exponer credenciales ni datos personales.",
+  "allowedChangedPaths": [
+    "mcp-cloud-run/server.mjs"
+  ]
+}
