@@ -21,12 +21,19 @@ Evidencia operativa directa:
 | Secret antiguo `classroom-mcp-token` | Referido como legado en documentación | NO VERIFICADO | Buscar consumidores y versiones sin leer valores; no borrar aún |
 | Auth0 tenant `dev-67cfevmusm7px130` | Login OAuth funcional, DCR y permisos API | CRÍTICO | Conservar tenant, API y cliente ChatGPT que funciona |
 | Plugins USER | 2: `plugin_asdk_app_6ae122d7590c819189986ae8d91db706` (v1.0.1) y `plugins_6ad6d4abed4c819197eab7830fe773af` (v0.3.13) | REVISAR | Comparar en ChatGPT cuál es usado; el antiguo también apunta al MCP activo; desconectar solo con verificación |
-| GitHub | 112 ramas, 2 PR abiertos (#2 y #4), más de 1900 ejecuciones históricas de Actions | REVISAR | Conservar `main`, ramas de PR y archivo; identificar ramas fusionadas antes de borrarlas |
+| GitHub | 112 ramas históricas al inicio (113 con rama de esta auditoría); los PR #2 y #4 cerrados sin fusión por obsolescencia, sus ramas preservadas | EN PROCESO | Conservar `main`, ramas de archivo y evidencias; identificar ramas fusionadas antes de eliminarlas |
 | `.platform-changes/` | Evidencias de cambios y autorizaciones previas | AUDITORÍA | Conservar por trazabilidad y pruebas |
 | `config/academic-context.json` | SHA fijado y campos de compatibilidad de workflow anterior | CRÍTICO | No tocar hasta migración coordinada con Apps Script y MCP |
 | Deployments Apps Script | Endpoint canónico firmado y funcional | CRÍTICO | No reemplazar; identificar versiones anteriores con inventario de consumidores |
 | Triggers y Script Properties Apps Script | Sin inventario actual de instancias instaladas | NO VERIFICADO | Diagnosticar antes de retirar; jamás borrar recibos HMAC, PENDING o claves de idempotencia por antigüedad |
 | Historial de documentos y Classroom | Documentación histórica identifica algunos duplicados de pruebas | REVISAR | Confirmar IDs reales y vínculos antes de cualquier eliminación |
+
+## Limpieza de organización ejecutada
+- Cerrado PR #4 (transporte directo experimental ChatGPT → Apps Script), no fusionado. Comentario explicativo y rama conservada.
+- Cerrado PR #2 (ejecución de próxima clase mediante GitHub Actions/Execution API), no fusionado; `resolverSiguienteClase` existe en la fuente canónica actual. Rama conservada.
+- Actualizados README, AGENTS y documentación histórica para fijar que el MCP OAuth es la ruta verificada.
+- El workflow `audit-cloud-run-mcp.yml` fue ampliado para mostrar metadata y contar solo timestamps de logs de solicitud en 7/30 días para tres servicios (si IAM lo permite). No borra recursos ni lee cuerpos, credenciales ni datos personales.
+- Retirado del workflow de auditoría el intento de POST inválido a registro DCR de Auth0; el descubrimiento OAuth ahora usa GET exclusivamente.
 
 ## Inconsistencias observadas
 - `mcp-cloud-run/README.md` afirma anónimo sin OAuth, pero el despliegue actual es `STREAMABLE_HTTP_OAUTH`.
@@ -45,7 +52,14 @@ Evidencia operativa directa:
 6. Atender por separado las dos herramientas opcionales de observabilidad: repararlas sin ampliar IAM innecesariamente o retirarlas del contrato mediante cambio probado.
 7. Verificar nuevamente `gateway_status(verificarFirma=true)`, `diagnosticar_clase` y pruebas regresivas; evitar escrituras de prueba.
 
+## Criterios para próximas acciones
+- Si Cloud Logging devuelve **INCONCLUSIVE** por permisos/retención, no interpretarlo como 0 solicitudes; no eliminar servicios.
+- Si una rama fue fusionada pero es referencia de archivo/rollback, conservarla; el conteo no es objetivo de seguridad.
+- Los dos complementos personales exponen 9 habilidades semejantes; uno referencia explícita al MCP con OAuth y el otro usa la app registrada. No desconectar ningún complemento hasta constatar por su ID cuál está instalado/operando en los chats que se utilizan.
+- `academic-write-hmac`, `academic-mcp-allowed-subjects` y `config/academic-context.json` se consideran **inmutables** en la presente limpieza.
+- No hay acceso de modificación a inventario real de triggers, implementaciones Apps Script o secretos GCP desde las herramientas de esta sesión; requerir evidencia de lectura antes de cada borrado.
+
 ## Guardrails
 Prohibido publicar automáticamente notas individuales, escribir `assignedGrade`, reusar recibos inciertos, publicar nuevos trabajos para probar limpieza, leer secretos, eliminar un servicio por coincidencia de nombre o cambiar el manifest fijado por SHA sin despliegue coordinado.
 
-**Estado de esta auditoría:** solo lectura de infraestructura y código; documentación separada de la ejecución. No se eliminaron servicios, ramas, plugins, trabajos ni secretos.
+**Estado de esta auditoría:** se cerraron 2 PR experimentales sin fusionarlos y se actualizaron documentos y un workflow de inspección solo lectura. No se eliminaron servicios, ramas, plugins, trabajos, secretos ni recursos de alumnos.
