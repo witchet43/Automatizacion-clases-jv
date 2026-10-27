@@ -22,26 +22,8 @@ jobs:
           SERVICE=academic-classroom-mcp-oauth
           gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" --format=json > /tmp/service.json
           gcloud run revisions list --service "$SERVICE" --project "$PROJECT" --region "$REGION" --format=json > /tmp/revisions.json
-          python3 - <<'PY'
-          import json,os
-          s=json.load(open('/tmp/service.json'))
-          revisions=json.load(open('/tmp/revisions.json'))
-          status=s.get('status',{})
-          traffic=status.get('traffic',[])
-          print('SERVICE:',s.get('metadata',{}).get('name'))
-          print('URL:',status.get('url'))
-          print('LATEST_CREATED_REVISION:',status.get('latestCreatedRevisionName'))
-          print('LATEST_READY_REVISION:',status.get('latestReadyRevisionName'))
-          print('TRAFFIC:',json.dumps(traffic))
-          for r in revisions:
-              spec=r.get('spec',{})
-              containers=spec.get('containers') or []
-              print('REVISION:',r.get('metadata',{}).get('name'),'IMAGE:',containers[0].get('image') if containers else None,'READY:',r.get('status',{}).get('conditions',[]))
-          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as out:
-              out.write('## Cloud Run audit (read-only)\n')
-              out.write('Service: '+str(s.get('metadata',{}).get('name'))+'\n\n')
-              out.write('URL: '+str(status.get('url'))+'\n\n')
-              out.write('Latest ready: '+str(status.get('latestReadyRevisionName'))+'\n\n')
-              out.write('Traffic: `'+json.dumps(traffic)+'`\n\n')
-              out.write('Revision count: '+str(len(revisions))+'\n')
-          PY
+          echo "## Cloud Run audit (read-only)" >> "$GITHUB_STEP_SUMMARY"
+          echo '### Service / revision / traffic' >> "$GITHUB_STEP_SUMMARY"
+          jq '{service:.metadata.name,url:.status.url,latestCreated:.status.latestCreatedRevisionName,latestReady:.status.latestReadyRevisionName,traffic:.status.traffic}' /tmp/service.json
+          jq -r '.[] | [.metadata.name, (.spec.containers[0].image // "unknown"), (.status.conditions[-1].status // "unknown")] | @tsv' /tmp/revisions.json
+          echo 'See job logs for full revision and traffic data.' >> "$GITHUB_STEP_SUMMARY"
