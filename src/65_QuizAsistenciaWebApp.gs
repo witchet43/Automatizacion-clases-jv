@@ -167,7 +167,8 @@ function ejecutarServicioAcademicoWeb_(params){
     return respuestaAcademicaWeb_({
       ok:false,errorCode:details.code,error:original,
       errorDetails:{code:details.code,stage:details.stage,cause:details.cause,
-        requestIdHint:details.requestIdHint,sourceLocation:details.sourceLocation,loggedAt:details.at}
+        requestIdHint:details.requestIdHint,sourceLocation:details.sourceLocation,loggedAt:details.at,
+        mismatchFields:Array.isArray(err&&err.mismatchFields)?err.mismatchFields:undefined}
     });
   }
 }
