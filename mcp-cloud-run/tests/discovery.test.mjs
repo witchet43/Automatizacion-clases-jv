@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHmac} from 'node:crypto';
-import {loadConfig,createApp,signedSubmissionRequest} from '../server.mjs';
+import {loadConfig,createApp,signedSubmissionRequest,signedHmacProbe} from '../server.mjs';
 
 function fixture(){
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'academic-mcp-discovery-'));
@@ -75,5 +75,37 @@ test('signed student submission reads include correlation id and valid HMAC',()=
     assert.equal(auth.signature,expected);
     assert.match(auth.signature,/^[a-f0-9]{64}$/);
     assert.equal(req.params.courseWorkId,'893188672194');
+  }finally{fs.rmSync(f.dir,{recursive:true,force:true});}
+});
+
+test('HMAC read-only probe matches signing contract and never sends academic writes',async()=>{
+  const f=fixture();
+  try{
+    const request=signedHmacProbe(f.config);
+    const {auth,...unsigned}=request;
+    assert.equal(request.action,'diagnosticarFirma');
+    assert.equal('courseId' in request,false);
+    assert.equal('operation' in request,false);
+    assert.equal('params' in request,false);
+    assert.equal(auth.signature,createHmac('sha256',f.config.hmac)
+      .update(JSON.stringify(unsigned)).digest('hex'));
+    const sent=[];
+    const app=createApp(f.config,{fetcher:async(_url,options)=>{
+      sent.push(JSON.parse(options.body));
+      return new Response(JSON.stringify({ok:true,signatureAccepted:true}),{status:200});
+    }});
+    const listener=await new Promise(resolve=>{
+      const s=app.listen(0,'127.0.0.1',()=>resolve(s));
+    });
+    const base='http://127.0.0.1:'+listener.address().port;
+    try{
+      const r=await rpc(base,'tools/call',{name:'gateway_status',
+        arguments:{verificarFirma:true}});
+      assert.equal(r.status,200,JSON.stringify(r.json));
+      assert.notEqual(r.json.result?.isError,true);
+      assert.equal(JSON.parse(r.json.result.content[0].text).upstreamHmacAccepted,true);
+      assert.equal(sent.length,1);
+      assert.equal(sent[0].action,'diagnosticarFirma');
+    }finally{await new Promise(resolve=>listener.close(resolve));}
   }finally{fs.rmSync(f.dir,{recursive:true,force:true});}
 });

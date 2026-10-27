@@ -157,9 +157,10 @@ jobs:
               'auditar_recursos','crear_recurso','listar_entregas','calificar_entrega_draft',
               'cerrar_materia','cerrar_unidad'}
           assert tools==expected,(tools^expected)
-          result=rpc('tools/call',{'name':'gateway_status','arguments':{}},3)['result']
+          result=rpc('tools/call',{'name':'gateway_status','arguments':{'verificarFirma':True}},3)['result']
           assert result.get('isError')!=True, result
           status=json.loads(result['content'][0]['text'])
           assert status['configured'] is True and status['writesThrough']=='SIGNED_WEBAPP_ONLY'
-          print('LIVE_MCP_TOOLS_DISCOVERY_VERIFIED: 12 tools and gateway_status')
+          assert status['upstreamHmacAccepted'] is True, status
+          print('LIVE_MCP_TOOLS_DISCOVERY_AND_HMAC_VERIFIED: 12 tools and signed Apps Script challenge')
           PY
