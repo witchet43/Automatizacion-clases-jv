@@ -76,8 +76,8 @@ jobs:
             --role="roles/run.viewer" --condition=None --quiet
       - name: Require GitHub App configuration for deploy diagnostics
         env:
-          GITHUB_APP_ID: ${{ vars.GITHUB_APP_ID }}
-          GITHUB_APP_INSTALLATION_ID: ${{ vars.GITHUB_APP_INSTALLATION_ID }}
+          GITHUB_APP_ID: ${{ vars.ACADEMIC_APP_ID }}
+          GITHUB_APP_INSTALLATION_ID: ${{ vars.ACADEMIC_APP_INSTALLATION_ID }}
         run: |
           set -euo pipefail
           [[ "$GITHUB_APP_ID" =~ ^[0-9]+$ ]] || { echo "::error::GITHUB_APP_ID variable required"; exit 1; }
@@ -104,7 +104,7 @@ jobs:
             --build-service-account "projects/$PROJECT/serviceAccounts/$RUNTIME_SA" \
             --allow-unauthenticated --ingress all \
             --min-instances=0 --memory=512Mi --timeout=300 \
-            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=${{ vars.MCP_OAUTH_ISSUER }},MCP_OAUTH_JWKS_URL=${{ vars.MCP_OAUTH_JWKS_URL }},MCP_DEPLOY_COMMIT=${{ github.sha }},GITHUB_APP_ID=${{ vars.GITHUB_APP_ID }},GITHUB_APP_INSTALLATION_ID=${{ vars.GITHUB_APP_INSTALLATION_ID }}" \
+            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=${{ vars.MCP_OAUTH_ISSUER }},MCP_OAUTH_JWKS_URL=${{ vars.MCP_OAUTH_JWKS_URL }},MCP_DEPLOY_COMMIT=${{ github.sha }},GITHUB_APP_ID=${{ vars.ACADEMIC_APP_ID }},GITHUB_APP_INSTALLATION_ID=${{ vars.ACADEMIC_APP_INSTALLATION_ID }}" \
             --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest,MCP_ALLOWED_SUBJECTS=academic-mcp-allowed-subjects:latest,GITHUB_APP_PRIVATE_KEY=academic-github-app-key:latest" \
             --quiet
           REAL_URL="$URL"
