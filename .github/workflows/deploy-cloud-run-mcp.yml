@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       confirm_deploy:
-        description: 'Deploy the authenticated academic MCP (OAuth required)'
+        description: 'Deploy the anonymous academic MCP with synchronized context'
         required: true
         type: boolean
         default: false
@@ -55,25 +55,6 @@ jobs:
           if [[ "$state" != ENABLED ]]; then
             echo "::error::Missing enabled academic-write-hmac"; exit 1
           fi
-      - name: Require verified OAuth configuration and subject allowlist
-        env:
-          MCP_OAUTH_ISSUER: ${{ vars.MCP_OAUTH_ISSUER }}
-          MCP_OAUTH_JWKS_URL: ${{ vars.MCP_OAUTH_JWKS_URL }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ "$MCP_OAUTH_ISSUER" == https://* ]] || { echo "::error::MCP_OAUTH_ISSUER is missing or not HTTPS"; exit 1; }
-          [[ "$MCP_OAUTH_JWKS_URL" == https://* ]] || { echo "::error::MCP_OAUTH_JWKS_URL is missing or not HTTPS"; exit 1; }
-          MCP_OAUTH_ISSUER="$MCP_OAUTH_ISSUER" MCP_OAUTH_JWKS_URL="$MCP_OAUTH_JWKS_URL" node scripts/verify-auth0-mcp.mjs
-          state="$(gcloud secrets versions describe latest --secret academic-mcp-allowed-subjects --project classroom-mcp-512122 --format='value(state)' 2>/dev/null || true)"
-          [[ "$state" == ENABLED ]] || { echo "::error::MCP_ALLOWED_SUBJECTS is required for private academic data. Secret academic-mcp-allowed-subjects must exist with an enabled version."; exit 1; }
-      - name: Grant existing runtime identity Cloud Run read-only visibility
-        shell: bash
-        run: |
-          set -euo pipefail
-          gcloud projects add-iam-policy-binding classroom-mcp-512122 \
-            --member="serviceAccount:classroom-mcp-sa@classroom-mcp-512122.iam.gserviceaccount.com" \
-            --role="roles/run.viewer" --condition=None --quiet
       - name: Require GitHub App configuration for deploy diagnostics
         env:
           GITHUB_APP_ID: ${{ vars.ACADEMIC_APP_ID }}
@@ -104,39 +85,38 @@ jobs:
             --build-service-account "projects/$PROJECT/serviceAccounts/$RUNTIME_SA" \
             --allow-unauthenticated --ingress all \
             --min-instances=0 --memory=512Mi --timeout=300 \
-            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=${{ vars.MCP_OAUTH_ISSUER }},MCP_OAUTH_JWKS_URL=${{ vars.MCP_OAUTH_JWKS_URL }},MCP_DEPLOY_COMMIT=${{ github.sha }},GITHUB_APP_ID=${{ vars.ACADEMIC_APP_ID }},GITHUB_APP_INSTALLATION_ID=${{ vars.ACADEMIC_APP_INSTALLATION_ID }}" \
-            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest,MCP_ALLOWED_SUBJECTS=academic-mcp-allowed-subjects:latest,GITHUB_APP_PRIVATE_KEY=academic-github-app-key:latest" \
+            --set-env-vars "MCP_AUTH_MODE=anonymous,MCP_PUBLIC_URL=$URL,MCP_DEPLOY_COMMIT=${{ github.sha }},GITHUB_APP_ID=${{ vars.ACADEMIC_APP_ID }},GITHUB_APP_INSTALLATION_ID=${{ vars.ACADEMIC_APP_INSTALLATION_ID }}" \
+            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest,GITHUB_APP_PRIVATE_KEY=academic-github-app-key:latest" \
             --quiet
           REAL_URL="$URL"
           [[ "$REAL_URL" == https://* ]] || { echo "::error::Missing public Cloud Run HTTPS URL"; exit 1; }
           echo "MCP_ENDPOINT=$REAL_URL/mcp" >> "$GITHUB_ENV"
           {
-            echo '## Classroom Academic Gateway — authenticated MCP'
+            echo '## Classroom Academic Gateway — anonymous MCP'
             echo "Endpoint: $REAL_URL/mcp"
-            echo 'Cloud Run ingress is public but academic requests require verified OAuth bearer tokens.'
+            echo 'MCP_AUTH_MODE=anonymous (user requested).'
             echo 'Only the runtime can access Secret Manager HMAC; requests are signed to canonical WebApp.'
-            echo 'Academic writes require verified OAuth subject, scope and explicit confirmation.'
+            echo 'Academic mutations use the existing canonical signed WebApp workflow.'
             echo 'Deployment performs no Classroom grade mutation.'
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Verify live OAuth health and reject anonymous MCP invocation
+      - name: Verify live anonymous MCP and gateway_status
         shell: bash
         run: |
           set -euo pipefail
-          BASE="${MCP_ENDPOINT%/mcp}"
-          # Diagnose the public endpoint using metadata only; never read HMAC or grades.
-          gcloud run services describe academic-classroom-mcp-oauth \
-            --project classroom-mcp-512122 --region us-central1 --format=json |
-            jq '{service:.metadata.name,ingress:.metadata.annotations["run.googleapis.com/ingress"],defaultUrlDisabled:.metadata.annotations["run.googleapis.com/default-url-disabled"],statusUrl:.status.url,ready:.status.conditions[-1].status}'
-          status="$(curl --silent --show-error --max-time 30 -o /tmp/mcp-health-body -D /tmp/mcp-health-headers -w '%{http_code}' "$BASE/health")"
-          head -n 16 /tmp/mcp-health-headers
-          if [[ "$status" != 200 ]]; then
-            echo "Cloud Run health HTTP status: $status"
-            head -c 700 /tmp/mcp-health-body
-            exit 1
-          fi
-          python3 -c 'import json; d=json.load(open("/tmp/mcp-health-body")); assert d["status"]=="ok" and d["auth"]=="oauth"'
-          code="$(curl --silent --show-error --max-time 30 -o /dev/null -w '%{http_code}' "$MCP_ENDPOINT" \
-            -H 'content-type: application/json' \
-            -H 'accept: application/json, text/event-stream' \
-            --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"github-healthcheck","version":"1"}}}')"
-          [[ "$code" == 401 ]] || { echo "::error::Anonymous MCP handshake must return 401 (got $code)"; exit 1; }
+          python3 - <<'PY'
+          import urllib.request,json
+          url='https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app'
+          with urllib.request.urlopen(url+'/health',timeout=30) as r:
+              d=json.load(r)
+              print('HEALTH',d)
+              assert d['status']=='ok' and d['auth']=='anonymous'
+          for method,params in [('tools/list',{}),('tools/call',{'name':'gateway_status','arguments':{}})]:
+              data=json.dumps({'jsonrpc':'2.0','id':1,'method':method,'params':params}).encode()
+              req=urllib.request.Request(url+'/mcp',data=data,headers={'Content-Type':'application/json','Accept':'application/json, text/event-stream','MCP-Protocol-Version':'2025-03-26'},method='POST')
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  body=r.read().decode()
+                  print(method,body[:5000])
+                  assert r.status==200 and '"error"' not in body
+                  if method=='tools/list':
+                      assert 'gateway_status' in body and 'listar_entregas' in body
+          PY
