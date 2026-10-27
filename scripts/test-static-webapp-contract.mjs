@@ -77,7 +77,7 @@ assert.equal(fs.existsSync('.github/workflows/academic-webapp.yml'),false,'Old G
 assert.equal(fs.existsSync('scripts/execute-academic-request.mjs'),false);
 assert.equal(fs.existsSync('.academic-requests'),false);
 const webSource=fs.readFileSync('src/65_QuizAsistenciaWebApp.gs','utf8');
-assert.match(webSource,/ACTIONS:Object\.freeze\(\['uaqExecutor','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts','listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft'\]\)/,'canonical public gateway source');
+assert.match(webSource,/ACTIONS:Object\.freeze\(\['uaqExecutor','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts','listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft','diagnosticarFirma'\]\)/,'canonical public gateway source');
 assert.match(webSource,/ROUTINE_OPERATIONS:Object\.freeze/);
 assert.match(deploy,/assert-platform-change-authorized\.mjs/);
 const onBlock=(deploy.match(/on:[\s\S]*?concurrency:/)||[''])[0];
