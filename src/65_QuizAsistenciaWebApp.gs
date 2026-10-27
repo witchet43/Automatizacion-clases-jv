@@ -1,3 +1,4 @@
+// Canonical context republish requested 2026-10-27; no execution behavior changed.
 /**
  * WEB APP ACADÉMICO CANÓNICO
  *
