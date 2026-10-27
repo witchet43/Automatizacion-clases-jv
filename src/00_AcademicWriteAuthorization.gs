@@ -53,8 +53,9 @@ function validateAcademicWriteAuthorization_(request, props) {
   if(typeof auth.nonce!=='string' || !/^[a-zA-Z0-9_-]{16,128}$/.test(auth.nonce) ||
      typeof auth.signature!=='string' || !/^[a-f0-9]{64}$/.test(auth.signature))
     throw new Error('ACADEMIC_WRITE_AUTH_INVALID');
-  const key=props.getProperty(ACADEMIC_WRITE_GATE.KEY_PROPERTY);
-  if(!key || String(key).length<ACADEMIC_WRITE_GATE.MIN_KEY_LENGTH)
+  // Match the MCP configuration loader, which trims surrounding whitespace from secrets.
+  const key=String(props.getProperty(ACADEMIC_WRITE_GATE.KEY_PROPERTY)||'').trim();
+  if(key.length<ACADEMIC_WRITE_GATE.MIN_KEY_LENGTH)
     throw new Error('ACADEMIC_WRITE_KEY_NOT_CONFIGURED');
 
   const unsigned={};
