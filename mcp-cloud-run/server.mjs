@@ -189,8 +189,21 @@ export async function describeCloudRunDeployment({fetcher=fetch,env=process.env}
   const result=await fetcher(base+'/services/'+service,{headers,signal:AbortSignal.timeout(12000)});
   if(!result.ok)throw Error('CLOUD_RUN_VIEWER_ACCESS_OR_API_ERROR: '+result.status);
   const data=await result.json();
-  const traffic=(data.trafficStatuses||data.traffic||[]).map(t=>({
-    revision:t.revision||null,percent:Number(t.percent||0),type:t.type||null
+  const traffic=await Promise.all((data.trafficStatuses||data.traffic||[]).map(async t=>{
+    const revision=t.revision||null;
+    let image=null,imageDigest=null,revisionCommit=null;
+    if(revision){
+      if(!/^academic-classroom-mcp-oauth-[a-zA-Z0-9-]+$/.test(revision))
+        throw Error('CLOUD_RUN_REVISION_NAME_INVALID');
+      const revisionResponse=await fetcher(base+'/services/'+service+'/revisions/'+revision,
+        {headers,signal:AbortSignal.timeout(12000)});
+      if(!revisionResponse.ok)throw Error('CLOUD_RUN_REVISION_READ_FAILED: '+revisionResponse.status);
+      const details=await revisionResponse.json();
+      image=details.containers?.[0]?.image||null;
+      imageDigest=details.containers?.[0]?.imageDigest||null;
+      revisionCommit=details.labels?.['github-commit']||null;
+    }
+    return {revision,percent:Number(t.percent||0),type:t.type||null,image,imageDigest,revisionCommit};
   }));
   return {
     project,location,service,
