@@ -109,8 +109,13 @@ function validarArranqueAcademicoWeb_(action,p) {
     manifestSha256:c.manifestSha256,repository:c.repository,workflow:c.workflow.name,endpoint:c.webApp.url};
   const supplied=p.operationalContext;
   if(!supplied||typeof supplied!=='object'||Array.isArray(supplied))throw new Error('ACADEMIC_CONTEXT_REQUIRED');
-  if(Object.keys(supplied).length!==Object.keys(expected).length||Object.keys(expected).some(function(k){return supplied[k]!==expected[k];}))
-    throw new Error('ACADEMIC_CONTEXT_MISMATCH');
+  const mismatchFields=Object.keys(expected).filter(function(k){return supplied[k]!==expected[k];});
+  const extraFields=Object.keys(supplied).filter(function(k){return !Object.prototype.hasOwnProperty.call(expected,k);});
+  if(mismatchFields.length||extraFields.length){
+    const mismatch=new Error('ACADEMIC_CONTEXT_MISMATCH');
+    mismatch.mismatchFields=mismatchFields.concat(extraFields).slice(0,6);
+    throw mismatch;
+  }
   validarSolicitudContextoAcademico_(p);
   return expected;
 }

@@ -169,8 +169,13 @@ export async function callWebApp(config,body,fetcher=fetch){
     if(raw.length>1024*1024)throw Error('UPSTREAM_RESPONSE_TOO_LARGE');
     let result;
     try{result=JSON.parse(raw);}catch{throw Error('UPSTREAM_NON_JSON');}
-    if(!result||result.ok!==true)
+    if(!result||result.ok!==true){
+      if(result?.errorCode==='ACADEMIC_CONTEXT_MISMATCH'&&Array.isArray(result?.errorDetails?.mismatchFields)){
+        const keys=result.errorDetails.mismatchFields.filter(k=>/^(source|contractVersion|manifestSha256|repository|workflow|endpoint)$/.test(k));
+        if(keys.length)throw Error('ACADEMIC_CONTEXT_MISMATCH_'+keys.map(k=>k.replace(/([a-z])([A-Z])/g,'$1_$2').toUpperCase()).join('_'));
+      }
       throw Error(String(result?.errorCode||'UPSTREAM_REJECTED'));
+    }
     return result;
   }finally{clearTimeout(timeout);}
 }

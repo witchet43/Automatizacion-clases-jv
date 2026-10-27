@@ -1,0 +1,12 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Pues resuelvelo tomate tu tiempo",
+  "reason": "Localizar y reparar rechazo del contexto académico sin desactivar validación ni exponer valores secretos.",
+  "allowedChangedPaths": [
+    "src/00_AcademicContextGuard.gs",
+    "src/65_QuizAsistenciaWebApp.gs",
+    "mcp-cloud-run/server.mjs"
+  ]
+}
