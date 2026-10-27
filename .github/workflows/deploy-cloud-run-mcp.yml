@@ -55,16 +55,6 @@ jobs:
           if [[ "$state" != ENABLED ]]; then
             echo "::error::Missing enabled academic-write-hmac"; exit 1
           fi
-      - name: Require GitHub App configuration for deploy diagnostics
-        env:
-          GITHUB_APP_ID: ${{ vars.ACADEMIC_APP_ID }}
-          GITHUB_APP_INSTALLATION_ID: ${{ vars.ACADEMIC_APP_INSTALLATION_ID }}
-        run: |
-          set -euo pipefail
-          [[ "$GITHUB_APP_ID" =~ ^[0-9]+$ ]] || { echo "::error::GITHUB_APP_ID variable required"; exit 1; }
-          [[ "$GITHUB_APP_INSTALLATION_ID" =~ ^[0-9]+$ ]] || { echo "::error::GITHUB_APP_INSTALLATION_ID variable required"; exit 1; }
-          state="$(gcloud secrets versions describe latest --secret academic-github-app-key --project classroom-mcp-512122 --format='value(state)')"
-          [[ "$state" == ENABLED ]] || { echo "::error::academic-github-app-key secret unavailable"; exit 1; }
       - name: Deploy only new independent MCP adapter
         env:
           PROJECT: classroom-mcp-512122
@@ -85,8 +75,8 @@ jobs:
             --build-service-account "projects/$PROJECT/serviceAccounts/$RUNTIME_SA" \
             --allow-unauthenticated --ingress all \
             --min-instances=0 --memory=512Mi --timeout=300 \
-            --set-env-vars "MCP_AUTH_MODE=anonymous,MCP_PUBLIC_URL=$URL,MCP_DEPLOY_COMMIT=${{ github.sha }},GITHUB_APP_ID=${{ vars.ACADEMIC_APP_ID }},GITHUB_APP_INSTALLATION_ID=${{ vars.ACADEMIC_APP_INSTALLATION_ID }}" \
-            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest,GITHUB_APP_PRIVATE_KEY=academic-github-app-key:latest" \
+            --set-env-vars "MCP_AUTH_MODE=anonymous,MCP_PUBLIC_URL=$URL,MCP_DEPLOY_COMMIT=${{ github.sha }}" \
+            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest" \
             --quiet
           REAL_URL="$URL"
           [[ "$REAL_URL" == https://* ]] || { echo "::error::Missing public Cloud Run HTTPS URL"; exit 1; }
