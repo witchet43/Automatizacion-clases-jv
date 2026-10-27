@@ -1,5 +1,8 @@
 # Arquitectura académica canónica (operación y mantenimiento separados)
 
+> **ACTUALIZACIÓN 27/10/2026:** este documento refleja la arquitectura de Portal/Site anterior y contiene referencias obsoletas a la ausencia de Cloud Run. La ruta actualmente verificada es **ChatGPT → MCP OAuth Cloud Run → WebApp Apps Script firmada con HMAC → Classroom**. Conservar los principios pedagógicos y de protección; consultar [inventario vigente de limpieza](cleanup-classroom-20261027.md) antes de modificar infraestructura.
+
+
 Contrato **STATIC_WEB_APP_SERVICE**: operaciones **data-only**. Ante fallo, bloquear y reconciliar sin ruta alternativa; **Work mode** no se utiliza.
 
 
