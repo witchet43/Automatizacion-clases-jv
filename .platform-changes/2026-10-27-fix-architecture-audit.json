@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Corrigelo",
+  "reason": "Reparar segunda aserción obsoleta que rechaza auditoría Cloud Run existente y bloquea validación de Apps Script.",
+  "allowedChangedPaths": [
+    "scripts/test-architecture-boundaries.mjs"
+  ]
+}
