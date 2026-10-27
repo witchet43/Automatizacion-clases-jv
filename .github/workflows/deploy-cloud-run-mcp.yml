@@ -128,3 +128,38 @@ jobs:
               assert 'resource_metadata=' in e.headers.get('WWW-Authenticate','')
           print('OAUTH_DEPLOYMENT_VERIFIED; ANONYMOUS_GRADE_WRITE_DENIED')
           PY
+
+      - name: Verify live MCP initialization, tools/list and gateway_status
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import urllib.request,json
+          base='https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app/mcp'
+          def rpc(method, params, identifier):
+              data=json.dumps({'jsonrpc':'2.0','id':identifier,'method':method,'params':params}).encode()
+              req=urllib.request.Request(base,data=data,headers={
+                  'Content-Type':'application/json',
+                  'Accept':'application/json, text/event-stream'
+              },method='POST')
+              with urllib.request.urlopen(req,timeout=30) as r:
+                  raw=r.read().decode()
+                  assert r.status==200, (method,r.status)
+              events=[line[6:] for line in raw.splitlines() if line.startswith('data: ')]
+              return json.loads(events[0] if events else raw)
+          init=rpc('initialize',{'protocolVersion':'2025-06-18',
+              'capabilities':{},'clientInfo':{'name':'github-live-probe','version':'1'}},1)
+          assert init.get('result',{}).get('serverInfo',{}).get('name')=='classroom-academic-gateway',init
+          listed=rpc('tools/list',{},2)
+          tools={tool['name'] for tool in listed['result']['tools']}
+          expected={'gateway_status','consultar_despliegues_mcp','consultar_ejecucion_mcp',
+              'iniciar_despliegue_mcp','verificar_despliegue','diagnosticar_clase',
+              'auditar_recursos','crear_recurso','listar_entregas','calificar_entrega_draft',
+              'cerrar_materia','cerrar_unidad'}
+          assert tools==expected,(tools^expected)
+          result=rpc('tools/call',{'name':'gateway_status','arguments':{}},3)['result']
+          assert result.get('isError')!=True, result
+          status=json.loads(result['content'][0]['text'])
+          assert status['configured'] is True and status['writesThrough']=='SIGNED_WEBAPP_ONLY'
+          print('LIVE_MCP_TOOLS_DISCOVERY_VERIFIED: 12 tools and gateway_status')
+          PY

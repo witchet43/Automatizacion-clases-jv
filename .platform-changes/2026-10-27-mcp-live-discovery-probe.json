@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Completa todo tu plan, hasta que quede funcional. Objetivo claro: que funcione. Solo terminas si necesito ejecutar algo manualmente.",
+  "reason": "Require live MCP tools/list and gateway_status verification on each existing Cloud Run deployment; no Classroom mutations.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-cloud-run-mcp.yml"
+  ]
+}
