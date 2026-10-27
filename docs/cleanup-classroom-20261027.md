@@ -52,6 +52,15 @@ Evidencia operativa directa:
 6. Atender por separado las dos herramientas opcionales de observabilidad: repararlas sin ampliar IAM innecesariamente o retirarlas del contrato mediante cambio probado.
 7. Verificar nuevamente `gateway_status(verificarFirma=true)`, `diagnosticar_clase` y pruebas regresivas; evitar escrituras de prueba.
 
+## Resultado de verificación posterior al PR #111
+- PR #111 integrado como commit `a15754f5253a54baefae55214e237d8acdfc98e0`.
+- Pruebas principales y auditorías GitHub Actions aprobaron: workflows `40604410166`, `40604410156`, `40604410260`, `40604410285`.
+- El README de `mcp-cloud-run/` activó inesperadamente el deploy por la regla amplia `mcp-cloud-run/**`; la actualización de Cloud Run terminó satisfactoriamente (`40604410097`), OAuth y HMAC continuaron funcionando.
+- Para evitar despliegues por documentación se agrega un filtro negativo `!mcp-cloud-run/**/*.md` al workflow de despliegue, sin modificar código del adaptador.
+- Cloud Logging devolvió resultado **INCONCLUSIVE** para los tres servicios y periodos 7/30 días debido a autorización o disponibilidad; **no se obtuvo evidencia de ausencia de uso** de los dos servicios legados. No eliminarlos.
+- `gateway_status(verificarFirma=true)`: firma HMAC aceptada; `diagnosticar_clase` de Sistemas Operativos: `ok=true`, 53 trabajos; sin cambios en Classroom.
+- Continúan fuera del alcance automático la revisión de triggers Apps Script y el consumo real de los dos plugins de ChatGPT. Mantenerlos mientras no se pueda demostrar que no se usan.
+
 ## Criterios para próximas acciones
 - Si Cloud Logging devuelve **INCONCLUSIVE** por permisos/retención, no interpretarlo como 0 solicitudes; no eliminar servicios.
 - Si una rama fue fusionada pero es referencia de archivo/rollback, conservarla; el conteo no es objetivo de seguridad.

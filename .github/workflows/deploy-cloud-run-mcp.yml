@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - 'mcp-cloud-run/**'
+      # README and Markdown guides are not container source changes.
+      - '!mcp-cloud-run/**/*.md'
       - '.github/workflows/deploy-cloud-run-mcp.yml'
   workflow_dispatch:
     inputs:
