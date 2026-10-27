@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Te quiero dar una última oportunidad, por lo que pido que refines tus algoritmos, revises detalladamente todos los pasos que vas a hacer y dejes todo el sistema funcionando",
+  "reason": "OAuth solo en herramientas de escritura de calificaciones, preservando consulta MCP anónima y exigencia de identity en cierre de unidad.",
+  "allowedChangedPaths": [
+    "mcp-cloud-run/server.mjs",
+    "mcp-cloud-run/tests/adapter.test.mjs"
+  ]
+}
