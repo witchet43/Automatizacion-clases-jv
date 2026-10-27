@@ -87,12 +87,15 @@ test('HMAC read-only probe matches signing contract and never sends academic wri
     assert.equal('courseId' in request,false);
     assert.equal('operation' in request,false);
     assert.equal('params' in request,false);
+    assert.match(request.diagnostic.challenge,/^[a-f0-9]{32}$/);
+    assert.equal(request.diagnostic.proof,createHmac('sha256',f.config.hmac)
+      .update('academic-hmac-key-equivalence:'+request.diagnostic.challenge).digest('hex'));
     assert.equal(auth.signature,createHmac('sha256',f.config.hmac)
       .update(JSON.stringify(unsigned)).digest('hex'));
     const sent=[];
     const app=createApp(f.config,{fetcher:async(_url,options)=>{
       sent.push(JSON.parse(options.body));
-      return new Response(JSON.stringify({ok:true,signatureAccepted:true}),{status:200});
+      return new Response(JSON.stringify({ok:true,signatureAccepted:true,keyEquivalent:true}),{status:200});
     }});
     const listener=await new Promise(resolve=>{
       const s=app.listen(0,'127.0.0.1',()=>resolve(s));
