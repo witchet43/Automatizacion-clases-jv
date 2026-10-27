@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Hazlo o dime que hago",
+  "reason": "Agregar workflow de diagnóstico solo lectura de Cloud Run mediante WIF ya existente, sin desplegar ni modificar recursos.",
+  "allowedChangedPaths": [
+    ".github/workflows/audit-cloud-run-mcp.yml"
+  ]
+}
