@@ -5,10 +5,10 @@ Contrato **STATIC_WEB_APP_SERVICE**: operaciones **data-only**. Ante fallo, bloq
 
 ## Operación académica (sin GitHub Actions)
 
-**ChatGPT → (Portal Académico legado o MCP OAuth independiente en Cloud Run) → WebApp canónica de Google Apps Script → Classroom / Drive / Forms.**
+**Ruta principal verificada: ChatGPT → Classroom Academic Gateway (OAuth/Auth0) → Cloud Run `academic-classroom-mcp-oauth` → WebApp canónica Google Apps Script (HMAC) → Classroom / Drive / Forms.** El Portal Académico/Site queda como integración heredada pendiente de evaluación; no debe sustituir automáticamente la conexión funcional.
 Gamma y Notion se acceden mediante sus conectores para presentaciones y notas docentes.
 
-Las operaciones de lectura usan el diagnóstico del Portal Académico. Las escrituras pasan por una solicitud autorizada y firmada (HMAC), el entrypoint genérico `uaqExecutor`, la lógica canónica de Apps Script y postflight. Los recursos didácticos ordinarios quedan **DRAFT** y Forms sin publicar. **Excepción administrativa explícita:** `Calificación Unidad N` tiene CourseWork `PUBLISHED`, pero cada nota individual queda en `draftGrade`, nunca `assignedGrade`. Google Docs de actividades, tareas y prácticas se adjuntan como **STUDENT_COPY**.
+Las operaciones de lectura usan preferentemente las herramientas MCP (`gateway_status`, `diagnosticar_clase`, `auditar_recursos`). Las escrituras pasan por una solicitud autorizada y firmada (HMAC), el entrypoint genérico `uaqExecutor`, la lógica canónica de Apps Script y postflight. Los recursos didácticos ordinarios quedan **DRAFT** y Forms sin publicar. **Excepción administrativa explícita:** `Calificación Unidad N` tiene CourseWork `PUBLISHED`, pero cada nota individual queda en `draftGrade`, nunca `assignedGrade`. Google Docs de actividades, tareas y prácticas se adjuntan como **STUDENT_COPY**.
 
 No usar Codex, Work Mode, GitHub Actions, Execution API, `clasp run`, workflows por archivo o scripts ad hoc para ejecutar operaciones académicas. Cloud Run está autorizado exclusivamente como adaptador MCP OAuth que firma y transporta solicitudes a la misma WebApp canónica; no contiene algoritmos académicos. Un fallo no autoriza reintentar con otro requestId: se consulta Classroom primero y se exige idempotencia.
 
@@ -39,4 +39,4 @@ Las antiguas solicitudes `.academic-requests/` y el workflow `academic-webapp.ym
 - Integración de calificaciones GitHub es una función distinta de la creación de clases; auditar uso antes de desinstalar sus triggers.
 - Sin eliminaciones en Classroom mediante vías alternativas.
 
-Consulta `AGENTS.md`, `docs/academic-webapp-architecture.md` y `docs/cleanup-register-20261020.md`.
+**Mantenimiento vigente:** [Inventario de limpieza de Classroom — 27/10/2026](docs/cleanup-classroom-20261027.md). Los registros del 20/10 son históricos y no deben utilizarse como instrucción actual de desinstalación. Consulta también `AGENTS.md`.
