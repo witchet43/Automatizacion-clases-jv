@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "El usuario solicita corregir la pérdida de lecturas después de introducir OAuth y conservar la automatización existente sin duplicados ni nuevos servicios.",
+  "reason": "Restore five canonical workflows by deleting temporary diagnostic workflow and moving safe Auth0 DCR verification into existing Cloud Run audit; no Classroom operations or deployment.",
+  "allowedChangedPaths": [
+    ".github/workflows/audit-classroom-mcp-oauth-discovery.yml",
+    ".github/workflows/audit-cloud-run-mcp.yml"
+  ]
+}
