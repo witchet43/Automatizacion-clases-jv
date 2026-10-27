@@ -83,7 +83,8 @@ const allowedWorkflows = new Set([
   'deploy-apps-script.yml',
   'validate-minimal-academic-operations.yml',
   'deploy-cloud-run-mcp.yml',
-  'audit-classroom-mcp-wif.yml'
+  'audit-classroom-mcp-wif.yml',
+  'audit-cloud-run-mcp.yml'
 ]);
 const deployWorkflowText = fs.readFileSync(path.join(workflowsDir,'deploy-apps-script.yml'),'utf8');
 if (fs.existsSync(path.join(workflowsDir,'academic-webapp.yml'))) fail.push('legacy GitHub academic workflow must not exist');
