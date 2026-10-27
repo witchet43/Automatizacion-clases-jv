@@ -1,5 +1,8 @@
 # Registro de limpieza profunda — 20 de octubre de 2026
 
+> **REGISTRO HISTÓRICO, NO PLAN OPERATIVO VIGENTE.** Este documento captura el estado del **20/10/2026**, cuando se intentó retirar el adaptador Cloud Run y usar Portal/Site. El **27/10/2026** se recuperó y verificó el Gateway MCP OAuth. Para cualquier limpieza actual usar [el inventario confirmado del 27/10](cleanup-classroom-20261027.md). No eliminar `academic-classroom-mcp-oauth` ni sus secretos basándose en instrucciones anteriores.
+
+
 ## Arquitectura vigente
 
 ChatGPT → Portal académico privado → WebApp canónica Apps Script (`uaqExecutor`) → Google Classroom, Forms y Drive. Gamma y Notion usan conectores propios. GitHub solo valida y despliega cambios de código explícitamente autorizados.

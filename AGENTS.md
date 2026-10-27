@@ -7,7 +7,7 @@ Contrato **STATIC_WEB_APP_SERVICE**: operaciones **data-only**. Ante fallo, bloq
 
 ## Operaciones rutinarias: DATA_ONLY
 
-Leer `config/academic-context.json` para obtener cursos, operación y contrato. Invocar las herramientas instaladas del Portal académico; no crear archivos de solicitud GitHub. Las operaciones soportadas pasan por el gateway firmado `uaqExecutor`; los diagnósticos autorizados son de solo lectura. Nunca utilizar GitHub Actions, `.academic-requests`, Execution API, `clasp run`, Work Mode ni Codex para crear contenido. Cloud Run sólo puede actuar como transporte OAuth + firma HMAC a la misma WebApp, sin ejecutar directamente Classroom.
+Leer `config/academic-context.json` para obtener cursos, operación y contrato. Invocar preferentemente las herramientas instaladas del Classroom Academic Gateway MCP OAuth; el Portal/Site es un transporte heredado pendiente de verificar. No crear archivos de solicitud GitHub. Las operaciones soportadas pasan por el gateway firmado `uaqExecutor`; los diagnósticos autorizados son de solo lectura. Nunca utilizar GitHub Actions, `.academic-requests`, Execution API, `clasp run`, Work Mode ni Codex para crear contenido. Cloud Run sólo puede actuar como transporte OAuth + firma HMAC a la misma WebApp, sin ejecutar directamente Classroom.
 
 Proteger DRAFT (sin publicación), Forms sin publicar y Google Docs con `STUDENT_COPY`. Los recursos existentes se reutilizan por curso+título+tema+documentId y se deben consultar con estados `DRAFT` y `PUBLISHED`. Cuando una operación devuelve timeout o fallo incierto, **consultar estado real primero**; no reintentar con otro ID ni crear duplicados. Si hay dos coincidentes, bloquear e informar.
 
@@ -21,8 +21,8 @@ Exigen autorización explícita del propietario (una autorización global espec�
 
 ## Pendientes de mantenimiento
 
-Ver `docs/cleanup-register-20261020.md`: posibles triggers heredados, despliegues externos, plugins privados antiguos, duplicado de Práctica 16 y migración de metadatos Site. No borrar Google Docs canónicos, calificaciones, Script Properties HMAC ni recibos académicos. Eliminar siempre de forma específica y verificar después.
+Ver **`docs/cleanup-classroom-20261027.md`** para la arquitectura operativa y candidatos actuales. `docs/cleanup-register-20261020.md` es un registro histórico y no autoriza retirar el MCP Cloud Run que hoy funciona. No borrar Google Docs canónicos, calificaciones, Script Properties HMAC ni recibos académicos. Eliminar siempre de forma específica y verificar después.
 
 ## MCP independiente sin Sites ni Codex
 
-Nuevo adaptador OAuth en `mcp-cloud-run/` con herramientas `gateway_status`, `diagnosticar_clase`, `cerrar_unidad`. Sólo firma y envía solicitudes a la WebApp; requiere scopes, audiencia, allowlist `sub` y autenticación PKCE mediante un proveedor OAuth gestionado. El workflow de Cloud Run no crea materiales. Configuración externa inicial y enlace de plugin son obligatorios antes de usarlo desde este chat. No declarar un cierre académico ejecutado sin un `courseWorkId` real. Véase `mcp-cloud-run/README.md`.
+Adaptador OAuth **operativo y comprobado** en `mcp-cloud-run/`, con 12 operaciones incluyendo `gateway_status`, `diagnosticar_clase`, `cerrar_unidad`, `listar_entregas` y `calificar_entrega_draft`. La conexión OAuth/Auth0 y la firma HMAC funcionan; nunca declarar una escritura terminada sin los IDs y estado reales. No volver a habilitar modo anónimo ni volver a registrar clientes DCR por errores de aplicación sin diagnóstico. La configuración del transporte y reglas reside en código y se valida por regresiones. No declarar un cierre académico ejecutado sin un `courseWorkId` real. Véase `mcp-cloud-run/README.md`.

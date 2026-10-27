@@ -1,10 +1,15 @@
-# Estado vigente — 26 de octubre de 2026
+# Estado operativo verificado — 27 de octubre de 2026
 
-**Modo público sin OAuth:** el MCP admite conexiones anónimas por HTTPS a `/mcp`, sin Auth0, JWT, issuer, JWKS ni una allowlist de sujetos. GitHub Actions despliega únicamente el adaptador separado `academic-classroom-mcp-oauth` cuando se modifica su fuente o workflow autorizado. El nombre del servicio es histórico: ahora su configuración efectiva es `MCP_AUTH_MODE=anonymous`.
+**La configuración vigente utiliza OAuth de Auth0, no acceso anónimo.**
+El complemento Classroom Academic Gateway invoca por HTTPS el MCP `academic-classroom-mcp-oauth` (Streamable HTTP, OAuth); Cloud Run firma llamadas a la WebApp canónica de Apps Script mediante HMAC. `gateway_status(verificarFirma=true)` confirmó `upstreamHmacAccepted=true`; `diagnosticar_clase` y `cerrar_unidad` se ejecutaron correctamente.
 
-**Advertencia de seguridad:** Cloud Run expone el MCP a Internet; cualquier cliente que descubra su URL puede llamar `cerrar_unidad` para los cursos incluidos en el contexto. El secreto HMAC se conserva exclusivamente en Secret Manager y permite firmar las peticiones internas a la WebApp, **pero no autentica al usuario del MCP**. El adaptador no incluye calificaciones personales en sus respuestas. Las calificaciones individuales se guardan en `draftGrade`, nunca en `assignedGrade`. No desplegar este modo si se requiere restringir quién puede iniciar recálculos.
+- URL MCP: `https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app/mcp`.
+- Contrato académico: `1.1.0`.
+- Escritura: `SIGNED_WEBAPP_ONLY`; calificaciones individuales en `draftGrade`, no `assignedGrade`.
+- El nombre `oauth` del servicio **sí corresponde al modo de autenticación vigente**.
+- Auditoría y candidatos de limpieza: [cleanup-classroom-20261027.md](../docs/cleanup-classroom-20261027.md).
 
-La guía OAuth que sigue es histórica y **no aplica al despliegue anónimo vigente**.
+> **Nota histórica:** la configuración anónima del 26 de octubre fue temporal y ya no debe presentarse como vigente. No se debe reactivar para solucionar errores de acceso.
 
 ---
 

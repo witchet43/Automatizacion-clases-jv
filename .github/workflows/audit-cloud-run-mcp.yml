@@ -32,6 +32,39 @@ jobs:
           jq -r '.[] | [.metadata.name, (.spec.containers[0].image // "unknown"), (.status.conditions[-1].status // "unknown")] | @tsv' /tmp/revisions.json
           echo 'See job logs for full revision and traffic data.' >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Inventory all academic Cloud Run services and request-log evidence (read-only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT=classroom-mcp-512122
+          REGION=us-central1
+          echo '### Legacy service inventory (metadata and aggregate request counts only)' >> "$GITHUB_STEP_SUMMARY"
+          for SERVICE in academic-classroom-mcp academic-classroom-chatgpt-gateway academic-classroom-mcp-oauth; do
+            echo "SERVICE: $SERVICE"
+            if ! gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" --format=json > /tmp/classroom-service.json 2>/tmp/classroom-service-error; then
+              echo "  Metadata: NOT_READABLE_OR_MISSING"
+              echo "- $SERVICE: metadata not readable or missing" >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+            jq -r '"  URL: " + (.status.url // "unavailable"),
+                   "  LatestReady: " + (.status.latestReadyRevisionName // "unavailable"),
+                   "  Traffic: " + ((.status.traffic // []) | map((.revisionName // .revision // "latest")+":"+((.percent // 0)|tostring)+"%") | join(","))' /tmp/classroom-service.json
+            # Only the timestamps of request logs; no URLs, request bodies, headers or identities.
+            # A missing log is NOT proof of zero traffic (retention/IAM can mask activity).
+            for DAYS in 7 30; do
+              FILTER="resource.type=cloud_run_revision AND resource.labels.service_name=$SERVICE AND logName=projects/$PROJECT/logs/run.googleapis.com%2Frequests AND timestamp>=\"$(date -u -d "$DAYS days ago" +'%Y-%m-%dT%H:%M:%SZ')\""
+              if gcloud logging read "$FILTER" --project "$PROJECT" --limit=1000 --format='value(timestamp)' > /tmp/classroom-request-times 2>/tmp/classroom-log-error; then
+                COUNT="$(wc -l < /tmp/classroom-request-times | tr -d ' ')"
+                RECENT="$(sort -r /tmp/classroom-request-times | sed -n '1p')"
+                echo "  RequestLog_${DAYS}d: sampled_count=$COUNT (max 1000), latest=${RECENT:-none}"
+                echo "- $SERVICE: request-log timestamps in ${DAYS}d: $COUNT sampled (max 1000); latest ${RECENT:-none}" >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo "  RequestLog_${DAYS}d: INCONCLUSIVE (Cloud Logging access or logging unavailable)"
+                echo "- $SERVICE: ${DAYS}d logging inconclusive; do not delete" >> "$GITHUB_STEP_SUMMARY"
+              fi
+            done
+          done
+
       - name: Probe active MCP endpoints with Python standard library
         shell: bash
         run: |
@@ -114,40 +147,25 @@ jobs:
               assert '"isError":true' not in data and '"error"' not in data
           PY
 
-      - name: Verify Auth0 DCR endpoint is enabled without registering any client
+      - name: Verify Auth0 OAuth discovery using GET only
         shell: bash
         run: |
+          set -euo pipefail
           python3 - <<'PY'
-          import json, urllib.request, urllib.error
-          base='https://dev-67cfevmusm7px130.us.auth0.com'
-          def fetch(url, method='GET', data=None):
-              req=urllib.request.Request(url,data=data,method=method,
-                  headers={'Content-Type':'application/json','Accept':'application/json'})
-              try:
-                  with urllib.request.urlopen(req,timeout=15) as r:
-                      return r.status,r.read(3500).decode('utf8','replace')
-              except urllib.error.HTTPError as e:
-                  return e.code,e.read(3500).decode('utf8','replace')
+          import json, urllib.request
+          issuer='https://dev-67cfevmusm7px130.us.auth0.com'
           for path in ('/.well-known/oauth-authorization-server',
                        '/.well-known/openid-configuration'):
-              status,raw=fetch(base+path)
-              print('AUTH0_METADATA_HTTP',path,status)
-              if status!=200:continue
-              doc=json.loads(raw)
-              print('AUTH0_DCR_ADVERTISED',bool(doc.get('registration_endpoint')))
+              request=urllib.request.Request(issuer+path,method='GET',
+                  headers={'Accept':'application/json'})
+              with urllib.request.urlopen(request,timeout=15) as response:
+                  status=response.status
+                  metadata=json.load(response)
+              if status!=200:
+                  raise RuntimeError('OAUTH_DISCOVERY_HTTP_'+str(status))
+              print('AUTH0_DISCOVERY_GET',path,'OK')
+              print('AUTH0_DCR_ADVERTISED',bool(metadata.get('registration_endpoint')))
               print('AUTH0_PKCE_S256_SUPPORTED',
-                    'S256' in doc.get('code_challenge_methods_supported',[]))
-          # Auth0 requires redirect_uris. Empty JSON cannot create a client;
-          # use it only to distinguish "registration disabled" from validation errors.
-          code,raw=fetch(base+'/oidc/register','POST',b'{}')
-          print('AUTH0_DCR_INVALID_EMPTY_REQUEST_HTTP',code)
-          try:
-              error=json.loads(raw)
-              print('AUTH0_DCR_ERROR_CODE',str(error.get('error') or error.get('code') or 'none')[:100])
-              print('AUTH0_DCR_ERROR_DESCRIPTION',str(error.get('error_description') or error.get('message') or '')[:180])
-          except ValueError:
-              print('AUTH0_DCR_RESPONSE_NOT_JSON')
-          if code in (200,201):
-              raise RuntimeError('UNEXPECTED_AUTH0_DCR_CLIENT_CREATED_FROM_INVALID_EMPTY_PAYLOAD')
-          print('AUTH0_DCR_PROBE_COMPLETED_NO_OAUTH_CLIENT_CREATED_NO_CLASSROOM_WRITES')
+                  'S256' in metadata.get('code_challenge_methods_supported',[]))
+          print('AUTH0_READONLY_DISCOVERY_COMPLETED')
           PY
