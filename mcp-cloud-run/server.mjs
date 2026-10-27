@@ -127,6 +127,28 @@ export function signedSubmissionRequest(config, action, courseId, courseWorkId, 
   return {...unsigned,auth:{timestamp,nonce,signature}};
 }
 
+export function signedCourseClosureRequest(config,courseId,unidades,ponderaciones){
+  const id=String(courseId);
+  if(!config.courseIds.has(id))throw Error('COURSE_NOT_REGISTERED');
+  if(!Array.isArray(unidades)||!unidades.length||unidades.some(n=>!Number.isSafeInteger(n)||n<1||n>50)||
+     new Set(unidades).size!==unidades.length)throw Error('UNITS_INVALID');
+  if(ponderaciones!==undefined&&(!Array.isArray(ponderaciones)||ponderaciones.length!==unidades.length||
+    ponderaciones.some(x=>typeof x!=='number'||!Number.isFinite(x)||x<0)||
+    Math.abs(ponderaciones.reduce((a,b)=>a+b,0)-100)>1e-6))
+    throw Error('COURSE_WEIGHTS_INVALID');
+  const title='Calificación Final del Curso';
+  const requestId='course_'+id+'_'+randomBytes(12).toString('hex');
+  const unsigned={
+    action:'uaqExecutor',operation:'cerrarMateria',courseId:id,title,requestId,
+    params:{titulo:title,title,modo:GRADE_MODE,unidades,
+      ...(ponderaciones===undefined?{}:{ponderaciones})},
+    operationalContext:config.operationalContext
+  };
+  const timestamp=Date.now(),nonce=randomBytes(24).toString('base64url');
+  return {...unsigned,auth:{timestamp,nonce,
+    signature:createHmac('sha256',config.hmac).update(JSON.stringify(unsigned)).digest('hex')}};
+}
+
 function safeError(err){
   const message=String(err?.message||err||'UNKNOWN');
   // Never include HTTP request bodies, personal grades or credentials in an
@@ -270,6 +292,32 @@ function buildServer(config,identity,fetcher){
       return toolOk(await callWebApp(config,body,fetcher));
     }catch(e){return toolFail(e);}
   });
+  server.registerTool('cerrar_materia',{
+    title:'Cerrar materia: promedio de unidades en borrador',
+    description:'Calcula en Apps Script el promedio de todas las unidades requeridas. Pesos iguales por defecto; diferentes únicamente si se proporcionan explícitamente. Nunca publica notas individuales.',
+    inputSchema:{
+      courseId:z.string().regex(/^\\d+$/),
+      unidades:z.array(z.number().int().min(1).max(50)).min(1),
+      ponderaciones:z.array(z.number().min(0).max(100)).optional(),
+      confirmar:z.literal(true)
+    },
+    ...gradeSecurity,annotations:{readOnlyHint:false,destructiveHint:false}
+  },async({courseId,unidades,ponderaciones,confirmar})=>{
+    try{
+      if(config.authMode!=='oauth'||!identity.scopes.has(SCOPES.grade)||confirmar!==true)
+        throw Error('WRITE_AUTH_REQUIRED');
+      const result=await callWebApp(config,
+        signedCourseClosureRequest(config,courseId,unidades,ponderaciones),fetcher);
+      if(result.modo==='OMITIDO_POR_NOTAS_ASIGNADAS')
+        return toolOk({ok:true,operation:'cerrarMateria',mode:'SKIPPED_ASSIGNED',courseId,
+          courseWorkId:result.finalCourseWorkId||'',noWrites:true});
+      if(result.estadoCalificacion!=='DRAFT_ONLY'||result.estado!=='PUBLISHED'||
+        !result.courseWorkId)throw Error('COURSE_CLOSE_POSTFLIGHT_MISMATCH');
+      return toolOk({ok:true,operation:'cerrarMateria',courseId,
+        courseWorkId:result.courseWorkId,courseWorkState:'PUBLISHED',
+        studentGradeState:'DRAFT_ONLY',students:result.alumnos,updated:result.actualizadas});
+    }catch(e){return toolFail(e);}
+  });
   server.registerTool('cerrar_unidad',{
     title:'Calificación Unidad N (actividad publicada, notas en borrador)',
     description:'Recalcula la unidad exacta con 70% examen y 30% trabajos publicados. Crea o reutiliza una actividad Classroom PUBLISHED llamada Calificación Unidad N, guardando únicamente draftGrade. No publica assignedGrade ni devuelve entregas. El cierre exige OAuth y confirmación explícita.',
@@ -328,13 +376,13 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
       }else{
         identity=await verifyBearer(config,req.headers.authorization,SCOPES.read,jwks)
           .catch(async first=>{
-            if(req.body?.method==='tools/call'&&['cerrar_unidad','crear_recurso','calificar_entrega_draft'].includes(req.body?.params?.name))
+            if(req.body?.method==='tools/call'&&['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft'].includes(req.body?.params?.name))
               return await verifyBearer(config,req.headers.authorization,SCOPES.grade,jwks);
             throw first;
           });
       }
     }catch(e){
-      const scope=['cerrar_unidad','crear_recurso','calificar_entrega_draft'].includes(req.body?.params?.name)?SCOPES.grade:SCOPES.read;
+      const scope=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft'].includes(req.body?.params?.name)?SCOPES.grade:SCOPES.read;
       return res.status(401).set('WWW-Authenticate',challenge(config,scope,
         e.message==='INSUFFICIENT_SCOPE'?'insufficient_scope':'invalid_token'))
         .json({error:'unauthorized'});
