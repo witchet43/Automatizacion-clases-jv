@@ -16,9 +16,10 @@ test('Cloud Run deployment inspection uses runtime identity, never exposes token
    })};
  };
  const out=await describeCloudRunDeployment({fetcher,env:{MCP_DEPLOY_COMMIT:'test-commit'}});
- assert.equal(calls.length,2);
+ assert.equal(calls.length,3);
  assert.match(calls[1].url,/run.googleapis.com\/v2\/projects\/classroom-mcp-512122\/locations\/us-central1\/services\/academic-classroom-mcp-oauth/);
  assert.equal(out.traffic[0].percent,100);
+ assert.match(calls[2].url,/\/revisions\/academic-classroom-mcp-oauth-00012$/);
  assert.equal(out.deploymentCommit,'test-commit');
  assert.equal(JSON.stringify(out).includes('private-access-token'),false);
 });
