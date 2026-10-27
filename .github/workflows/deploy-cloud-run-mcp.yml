@@ -67,6 +67,13 @@ jobs:
           state="$(gcloud secrets versions describe latest --secret academic-mcp-allowed-subjects --project classroom-mcp-512122 --format='value(state)')"
           [[ "$state" == ENABLED ]] || { echo "::error::OAuth subject allowlist is missing"; exit 1; }
           MCP_OAUTH_ISSUER="$MCP_OAUTH_ISSUER" MCP_OAUTH_JWKS_URL="$MCP_OAUTH_JWKS_URL" node scripts/verify-auth0-mcp.mjs
+      - name: Grant existing runtime identity Cloud Run read-only visibility
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcloud projects add-iam-policy-binding classroom-mcp-512122 \
+            --member="serviceAccount:classroom-mcp-sa@classroom-mcp-512122.iam.gserviceaccount.com" \
+            --role="roles/run.viewer" --condition=None --quiet
       - name: Deploy only new independent MCP adapter
         env:
           PROJECT: classroom-mcp-512122
@@ -86,7 +93,7 @@ jobs:
             --build-service-account "projects/$PROJECT/serviceAccounts/$RUNTIME_SA" \
             --allow-unauthenticated --ingress all \
             --min-instances=0 --memory=512Mi --timeout=300 \
-            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=${{ vars.MCP_OAUTH_ISSUER }},MCP_OAUTH_JWKS_URL=${{ vars.MCP_OAUTH_JWKS_URL }}" \
+            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=${{ vars.MCP_OAUTH_ISSUER }},MCP_OAUTH_JWKS_URL=${{ vars.MCP_OAUTH_JWKS_URL }},MCP_DEPLOY_COMMIT=${{ github.sha }}" \
             --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest,MCP_ALLOWED_SUBJECTS=academic-mcp-allowed-subjects:latest" \
             --quiet
           REAL_URL="$URL"
