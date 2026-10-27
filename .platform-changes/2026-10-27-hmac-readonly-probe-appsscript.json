@@ -6,6 +6,7 @@
   "reason": "Add a signed, non-mutating HMAC compatibility probe to canonical Apps Script to diagnose effective runtime keys without touching Classroom.",
   "allowedChangedPaths": [
     "src/65_QuizAsistenciaWebApp.gs",
-    "scripts/test-academic-write-auth.mjs"
+    "scripts/test-academic-write-auth.mjs",
+    "scripts/test-static-webapp-contract.mjs"
   ]
 }
