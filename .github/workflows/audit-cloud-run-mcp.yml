@@ -32,6 +32,39 @@ jobs:
           jq -r '.[] | [.metadata.name, (.spec.containers[0].image // "unknown"), (.status.conditions[-1].status // "unknown")] | @tsv' /tmp/revisions.json
           echo 'See job logs for full revision and traffic data.' >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Inventory all academic Cloud Run services and request-log evidence (read-only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT=classroom-mcp-512122
+          REGION=us-central1
+          echo '### Legacy service inventory (metadata and aggregate request counts only)' >> "$GITHUB_STEP_SUMMARY"
+          for SERVICE in academic-classroom-mcp academic-classroom-chatgpt-gateway academic-classroom-mcp-oauth; do
+            echo "SERVICE: $SERVICE"
+            if ! gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" --format=json > /tmp/classroom-service.json 2>/tmp/classroom-service-error; then
+              echo "  Metadata: NOT_READABLE_OR_MISSING"
+              echo "- $SERVICE: metadata not readable or missing" >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+            jq -r '"  URL: " + (.status.url // "unavailable"),
+                   "  LatestReady: " + (.status.latestReadyRevisionName // "unavailable"),
+                   "  Traffic: " + ((.status.traffic // []) | map((.revisionName // .revision // "latest")+":"+((.percent // 0)|tostring)+"%") | join(","))' /tmp/classroom-service.json
+            # Only the timestamps of request logs; no URLs, request bodies, headers or identities.
+            # A missing log is NOT proof of zero traffic (retention/IAM can mask activity).
+            for DAYS in 7 30; do
+              FILTER="resource.type=cloud_run_revision AND resource.labels.service_name=$SERVICE AND logName=projects/$PROJECT/logs/run.googleapis.com%2Frequests AND timestamp>=\"$(date -u -d "$DAYS days ago" +'%Y-%m-%dT%H:%M:%SZ')\""
+              if gcloud logging read "$FILTER" --project "$PROJECT" --limit=1000 --format='value(timestamp)' > /tmp/classroom-request-times 2>/tmp/classroom-log-error; then
+                COUNT="$(wc -l < /tmp/classroom-request-times | tr -d ' ')"
+                RECENT="$(sort -r /tmp/classroom-request-times | head -1)"
+                echo "  RequestLog_${DAYS}d: sampled_count=$COUNT (max 1000), latest=${RECENT:-none}"
+                echo "- $SERVICE: request-log timestamps in ${DAYS}d: $COUNT sampled (max 1000); latest ${RECENT:-none}" >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo "  RequestLog_${DAYS}d: INCONCLUSIVE (Cloud Logging access or logging unavailable)"
+                echo "- $SERVICE: ${DAYS}d logging inconclusive; do not delete" >> "$GITHUB_STEP_SUMMARY"
+              fi
+            done
+          done
+
       - name: Probe active MCP endpoints with Python standard library
         shell: bash
         run: |
