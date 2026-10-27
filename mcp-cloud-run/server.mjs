@@ -458,7 +458,7 @@ function buildServer(config,identity,fetcher){
   });
   server.registerTool('cerrar_unidad',{
     title:'Calificación Unidad N (actividad publicada, notas en borrador)',
-    description:'Recalcula la unidad exacta con 70% examen y 30% trabajos publicados. Crea o reutiliza una actividad Classroom PUBLISHED llamada Calificación Unidad N, guardando únicamente draftGrade. No publica assignedGrade ni devuelve entregas. El cierre exige OAuth y confirmación explícita.',
+    description:'Recalcula la unidad exacta con 70% examen y 30% trabajos publicados. Crea o reutiliza una actividad Classroom PUBLISHED llamada Calificación Unidad N, guardando únicamente draftGrade. No publica assignedGrade ni devuelve entregas. El cierre requiere confirmación explícita y firma HMAC hacia la WebApp.',
     inputSchema:{
       courseId:z.string().regex(/^\d+$/),
       unidad:z.number().int().min(1).max(50),
@@ -467,8 +467,7 @@ function buildServer(config,identity,fetcher){
     ...gradeSecurity,
     annotations:{readOnlyHint:false,destructiveHint:false,openWorldHint:true}
   },async({courseId,unidad,confirmar})=>{
-    if(config.authMode!=='oauth')return toolFail(Error('WRITE_AUTH_REQUIRED'));
-    if(!identity.scopes.has(SCOPES.grade)||confirmar!==true)
+    if((config.authMode==='oauth'&&!identity.scopes.has(SCOPES.grade))||confirmar!==true)
       return toolFail(Error('INSUFFICIENT_SCOPE_OR_CONFIRMATION'));
     try{
       const result=await callWebApp(config,signedClosureRequest(config,courseId,unidad),fetcher);
