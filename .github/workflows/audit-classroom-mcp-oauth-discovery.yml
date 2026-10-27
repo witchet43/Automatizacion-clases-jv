@@ -136,3 +136,34 @@ jobs:
               print('REQUEST_AGGREGATE',*key,'COUNT',n)
           print('NO_IP_ADDRESS_NO_USER_AGENT_STRING_NO_TOKEN_NO_REQUEST_BODY_LOGGED')
           PY
+
+      - name: Check Auth0 DCR switch without creating OAuth clients
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json,urllib.request,urllib.error
+          # Registration requires redirect_uris, so an empty object cannot register a client.
+          url='https://dev-67cfevmusm7px130.us.auth0.com/oidc/register'
+          request=urllib.request.Request(url,data=b'{}',
+            headers={'Content-Type':'application/json','Accept':'application/json'},method='POST')
+          try:
+              with urllib.request.urlopen(request,timeout=15) as r:
+                  status=r.status
+                  raw=r.read(2500).decode('utf8','replace')
+          except urllib.error.HTTPError as e:
+              status=e.code
+              raw=e.read(2500).decode('utf8','replace')
+          except Exception as e:
+              print('AUTH0_DCR_EMPTY_REQUEST_NETWORK_ERROR',type(e).__name__)
+              raise
+          print('AUTH0_DCR_EMPTY_REQUEST_HTTP',status)
+          try:
+              obj=json.loads(raw)
+              print('AUTH0_DCR_ERROR_CODE',str(obj.get('error') or obj.get('code') or 'none')[:100])
+              print('AUTH0_DCR_ERROR_TYPE',str(obj.get('error_description') or obj.get('message') or '')[:180])
+          except ValueError:
+              print('AUTH0_DCR_RESPONSE_NOT_JSON')
+          if status in (200,201):
+              raise RuntimeError('UNEXPECTED_REGISTRATION_SUCCESS_FOR_INVALID_EMPTY_PAYLOAD')
+          print('AUTH0_DCR_PROBE_NO_CLIENT_CREATED_NO_CREDENTIALS_SUPPLIED')
+          PY
