@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {loadConfig,createApp} from '../server.mjs';
 
-test('anonymous MCP permits confirmed unit closure but blocks other academic writes',async()=>{
+test('anonymous MCP rejects all academic grading writes',async()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'academic-anonymous-'));
   const file=path.join(dir,'context.json');
   const context={operationalContext:{
@@ -76,11 +76,9 @@ test('anonymous MCP permits confirmed unit closure but blocks other academic wri
     let payload=await confirmed.text();
     if(payload.includes('data: '))payload=payload.match(/data: (.+)/)?.[1]||payload;
     const closure=JSON.parse(payload).result;
-    assert.equal(closure.isError,undefined);
-    assert.match(JSON.stringify(closure),/DRAFT_ONLY/);
-    assert.equal(calls.length,1,'confirmed closure reaches signed WebApp exactly once');
-    assert.equal(calls[0].operation,'cerrarUnidad');
-    assert.match(calls[0].auth.signature,/^[a-f0-9]{64}$/);
+    assert.equal(closure.isError,true);
+    assert.match(closure.content[0].text,/WRITE_AUTH_REQUIRED/);
+    assert.equal(calls.length,0,'anonymous grading writes must never reach WebApp');
   }finally{
     await new Promise(resolve=>server.close(resolve));
     fs.rmSync(dir,{recursive:true,force:true});
