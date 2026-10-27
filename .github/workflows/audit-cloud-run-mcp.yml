@@ -113,3 +113,41 @@ jobs:
               assert r.status==200
               assert '"isError":true' not in data and '"error"' not in data
           PY
+
+      - name: Verify Auth0 DCR endpoint is enabled without registering any client
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, urllib.request, urllib.error
+          base='https://dev-67cfevmusm7px130.us.auth0.com'
+          def fetch(url, method='GET', data=None):
+              req=urllib.request.Request(url,data=data,method=method,
+                  headers={'Content-Type':'application/json','Accept':'application/json'})
+              try:
+                  with urllib.request.urlopen(req,timeout=15) as r:
+                      return r.status,r.read(3500).decode('utf8','replace')
+              except urllib.error.HTTPError as e:
+                  return e.code,e.read(3500).decode('utf8','replace')
+          for path in ('/.well-known/oauth-authorization-server',
+                       '/.well-known/openid-configuration'):
+              status,raw=fetch(base+path)
+              print('AUTH0_METADATA_HTTP',path,status)
+              if status!=200:continue
+              doc=json.loads(raw)
+              print('AUTH0_DCR_ADVERTISED',bool(doc.get('registration_endpoint')))
+              print('AUTH0_PKCE_S256_SUPPORTED',
+                    'S256' in doc.get('code_challenge_methods_supported',[]))
+          # Auth0 requires redirect_uris. Empty JSON cannot create a client;
+          # use it only to distinguish "registration disabled" from validation errors.
+          code,raw=fetch(base+'/oidc/register','POST',b'{}')
+          print('AUTH0_DCR_INVALID_EMPTY_REQUEST_HTTP',code)
+          try:
+              error=json.loads(raw)
+              print('AUTH0_DCR_ERROR_CODE',str(error.get('error') or error.get('code') or 'none')[:100])
+              print('AUTH0_DCR_ERROR_DESCRIPTION',str(error.get('error_description') or error.get('message') or '')[:180])
+          except ValueError:
+              print('AUTH0_DCR_RESPONSE_NOT_JSON')
+          if code in (200,201):
+              raise RuntimeError('UNEXPECTED_AUTH0_DCR_CLIENT_CREATED_FROM_INVALID_EMPTY_PAYLOAD')
+          print('AUTH0_DCR_PROBE_COMPLETED_NO_OAUTH_CLIENT_CREATED_NO_CLASSROOM_WRITES')
+          PY
