@@ -301,7 +301,7 @@ function buildServer(config,identity,fetcher){
     annotations:{readOnlyHint:true}
   },async()=>toolOk({configured:true,transport:config.authMode==='anonymous'?'STREAMABLE_HTTP_ANONYMOUS':'STREAMABLE_HTTP_OAUTH',
     service:'ACADEMIC_CLASSROOM_CANONICAL_MCP',writesThrough:'SIGNED_WEBAPP_ONLY',
-    siteEdited:false,secretExposed:false,manifestSha256:config.operationalContext.manifestSha256,contextVersion:config.operationalContext.contractVersion}));
+    siteEdited:false,secretExposed:false,manifestSha256:config.operationalContext.manifestSha256,contextVersion:config.operationalContext.contractVersion,contextFields:config.operationalContext}));
   server.registerTool('consultar_despliegues_mcp',{
     title:'Consultar las últimas ejecuciones de despliegue',
     description:'Lista las veinte ejecuciones más recientes del workflow MCP autorizado en GitHub Actions.',
