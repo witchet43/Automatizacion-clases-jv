@@ -178,7 +178,7 @@ function challenge(config,scope,error='invalid_token'){
 function buildServer(config,identity,fetcher){
   const readSecurity=config.authMode==='anonymous'?{}:{securitySchemes:[{type:'oauth2',scopes:[SCOPES.read]}]};
   const gradeSecurity=config.authMode==='anonymous'?{}:{securitySchemes:[{type:'oauth2',scopes:[SCOPES.grade]}]};
-  const server=new McpServer({name:'academic-jv-classroom',version:'1.0.0'});
+  const server=new McpServer({name:'classroom-academic-gateway',version:'1.0.0'});
   server.registerTool('gateway_status',{
     title:'Estado del Gateway académico',
     description:'Comprobar únicamente el estado local del adaptador MCP independiente, sin acceso a calificaciones ni secretos.',
@@ -202,6 +202,21 @@ function buildServer(config,identity,fetcher){
         operationalContext:config.operationalContext
       },fetcher);
       return toolOk(data);
+    }catch(e){return toolFail(e);}
+  });
+  server.registerTool('auditar_recursos',{
+    title:'Auditar recursos académicos',
+    description:'Auditar encabezados y recursos existentes en Classroom mediante Apps Script, sin realizar cambios.',
+    inputSchema:{courseId:z.string().regex(/^\d+$/)},
+    ...readSecurity,annotations:{readOnlyHint:true}
+  },async({courseId})=>{
+    try{
+      if(!identity.scopes.has(SCOPES.read))throw Error('INSUFFICIENT_SCOPE');
+      if(!config.courseIds.has(courseId))throw Error('COURSE_NOT_REGISTERED');
+      return toolOk(await callWebApp(config,{
+        action:'auditarIdentidadClassroom',courseId,
+        operationalContext:config.operationalContext
+      },fetcher));
     }catch(e){return toolFail(e);}
   });
   server.registerTool('crear_recurso',{
@@ -293,7 +308,7 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
   const app=express();
   app.disable('x-powered-by');
   app.use(express.json({limit:'64kb'}));
-  app.get(['/health','/healthz'],(_req,res)=>res.json({status:'ok',service:'academic-jv-classroom-mcp',auth:config.authMode}));
+  app.get(['/health','/healthz'],(_req,res)=>res.json({status:'ok',service:'classroom-academic-gateway-mcp',auth:config.authMode}));
   const metadata={
     resource:config.publicUrl,
     authorization_servers:[config.issuer],
