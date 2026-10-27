@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Realiza los cambios, lo autorizo",
+  "reason": "Agregar diagnóstico autenticado de revisión, imagen y tráfico del MCP actual; reutilizar identidad Cloud Run y registrar commit de despliegue.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-cloud-run-mcp.yml",
+    "mcp-cloud-run/server.mjs",
+    "mcp-cloud-run/tests/cloudrun-deployment.test.mjs"
+  ],
+  "archiveCleanupApproved": false
+}
