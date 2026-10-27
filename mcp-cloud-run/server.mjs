@@ -105,6 +105,19 @@ export function signedAcademicRequest(config, operation, courseId, title, params
   const signature=createHmac('sha256',config.hmac).update(JSON.stringify(unsigned)).digest('hex');
   return {...unsigned,auth:{timestamp,nonce,signature}};
 }
+export function signedHmacProbe(config){
+  // Read-only Apps Script signature challenge. No Classroom operation and no receipt.
+  const unsigned={
+    action:'diagnosticarFirma',
+    requestId:'probe_'+randomBytes(18).toString('hex'),
+    operationalContext:config.operationalContext
+  };
+  const timestamp=Date.now(),nonce=randomBytes(24).toString('base64url');
+  const signature=createHmac('sha256',config.hmac)
+    .update(JSON.stringify(unsigned)).digest('hex');
+  return {...unsigned,auth:{timestamp,nonce,signature}};
+}
+
 export function signedSubmissionRequest(config, action, courseId, courseWorkId, params, requestId) {
   const actions=new Set(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft']);
   if(!actions.has(action))throw Error('SUBMISSION_ACTION_INVALID');
@@ -304,12 +317,21 @@ function buildServer(config,identity,fetcher){
   const server=new McpServer({name:'classroom-academic-gateway',version:'1.0.0'});
   server.registerTool('gateway_status',{
     title:'Estado del Gateway académico',
-    description:'Comprobar únicamente el estado local del adaptador MCP independiente, sin acceso a calificaciones ni secretos.',
-    inputSchema:{},...readSecurity,
+    description:'Estado local, o prueba HMAC firmada de solo lectura contra Apps Script cuando verificarFirma=true; nunca modifica Classroom.',
+    inputSchema:{verificarFirma:z.boolean().optional()},...readSecurity,
     annotations:{readOnlyHint:true}
-  },async()=>toolOk({configured:true,transport:config.authMode==='anonymous'?'STREAMABLE_HTTP_ANONYMOUS':'STREAMABLE_HTTP_OAUTH',
-    service:'ACADEMIC_CLASSROOM_CANONICAL_MCP',writesThrough:'SIGNED_WEBAPP_ONLY',
-    siteEdited:false,secretExposed:false,manifestSha256:config.operationalContext.manifestSha256,contextVersion:config.operationalContext.contractVersion,contextFields:config.operationalContext}));
+  },async({verificarFirma=false})=>{
+    const status={configured:true,transport:config.authMode==='anonymous'?'STREAMABLE_HTTP_ANONYMOUS':'STREAMABLE_HTTP_OAUTH',
+      service:'ACADEMIC_CLASSROOM_CANONICAL_MCP',writesThrough:'SIGNED_WEBAPP_ONLY',
+      siteEdited:false,secretExposed:false,manifestSha256:config.operationalContext.manifestSha256,
+      contextVersion:config.operationalContext.contractVersion,contextFields:config.operationalContext};
+    if(!verificarFirma)return toolOk(status);
+    try{
+      const data=await callWebApp(config,signedHmacProbe(config),fetcher);
+      if(data.signatureAccepted!==true)throw Error('ACADEMIC_HMAC_PROBE_NOT_ACCEPTED');
+      return toolOk({...status,upstreamHmacAccepted:true});
+    }catch(error){return toolFail(error);}
+  });
   server.registerTool('consultar_despliegues_mcp',{
     title:'Consultar las últimas ejecuciones de despliegue',
     description:'Lista las veinte ejecuciones más recientes del workflow MCP autorizado en GitHub Actions.',
