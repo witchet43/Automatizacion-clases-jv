@@ -64,9 +64,9 @@ jobs:
           set -euo pipefail
           [[ "$MCP_OAUTH_ISSUER" == https://* ]] || { echo "::error::MCP_OAUTH_ISSUER is missing or not HTTPS"; exit 1; }
           [[ "$MCP_OAUTH_JWKS_URL" == https://* ]] || { echo "::error::MCP_OAUTH_JWKS_URL is missing or not HTTPS"; exit 1; }
-          state="$(gcloud secrets versions describe latest --secret academic-mcp-allowed-subjects --project classroom-mcp-512122 --format='value(state)')"
-          [[ "$state" == ENABLED ]] || { echo "::error::OAuth subject allowlist is missing"; exit 1; }
           MCP_OAUTH_ISSUER="$MCP_OAUTH_ISSUER" MCP_OAUTH_JWKS_URL="$MCP_OAUTH_JWKS_URL" node scripts/verify-auth0-mcp.mjs
+          state="$(gcloud secrets versions describe latest --secret academic-mcp-allowed-subjects --project classroom-mcp-512122 --format='value(state)' 2>/dev/null || true)"
+          [[ "$state" == ENABLED ]] || { echo "::error::MCP_ALLOWED_SUBJECTS is required for private academic data. Secret academic-mcp-allowed-subjects must exist with an enabled version."; exit 1; }
       - name: Grant existing runtime identity Cloud Run read-only visibility
         shell: bash
         run: |

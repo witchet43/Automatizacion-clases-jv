@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Continua",
+  "reason": "Reordenar preflight para comprobar OAuth antes de exigir configuración de sujetos; no debilitar autorización.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-cloud-run-mcp.yml"
+  ]
+}
