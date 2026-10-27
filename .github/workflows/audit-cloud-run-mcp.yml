@@ -1,0 +1,47 @@
+name: Audit Academic MCP Cloud Run
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/148028894895/locations/global/workloadIdentityPools/github-classroom-pool/providers/github
+          service_account: classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Inspect existing Cloud Run service without mutations
+        shell: bash
+        run: |
+          set -euo pipefail
+          PROJECT=classroom-mcp-512122
+          REGION=us-central1
+          SERVICE=academic-classroom-mcp-oauth
+          gcloud run services describe "$SERVICE" --project "$PROJECT" --region "$REGION" --format=json > /tmp/service.json
+          gcloud run revisions list --service "$SERVICE" --project "$PROJECT" --region "$REGION" --format=json > /tmp/revisions.json
+          python3 - <<'PY'
+          import json,os
+          s=json.load(open('/tmp/service.json'))
+          revisions=json.load(open('/tmp/revisions.json'))
+          status=s.get('status',{})
+          traffic=status.get('traffic',[])
+          print('SERVICE:',s.get('metadata',{}).get('name'))
+          print('URL:',status.get('url'))
+          print('LATEST_CREATED_REVISION:',status.get('latestCreatedRevisionName'))
+          print('LATEST_READY_REVISION:',status.get('latestReadyRevisionName'))
+          print('TRAFFIC:',json.dumps(traffic))
+          for r in revisions:
+              spec=r.get('spec',{})
+              containers=spec.get('containers') or []
+              print('REVISION:',r.get('metadata',{}).get('name'),'IMAGE:',containers[0].get('image') if containers else None,'READY:',r.get('status',{}).get('conditions',[]))
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a') as out:
+              out.write('## Cloud Run audit (read-only)\n')
+              out.write('Service: '+str(s.get('metadata',{}).get('name'))+'\n\n')
+              out.write('URL: '+str(status.get('url'))+'\n\n')
+              out.write('Latest ready: '+str(status.get('latestReadyRevisionName'))+'\n\n')
+              out.write('Traffic: `'+json.dumps(traffic)+'`\n\n')
+              out.write('Revision count: '+str(len(revisions))+'\n')
+          PY
