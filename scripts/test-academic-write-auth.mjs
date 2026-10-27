@@ -81,4 +81,9 @@ assert.equal(effects,3);
 assert.match(web,/executeAuthenticatedAcademicWrite_\(p,function\(\)\{\s*return ejecutarUaqExecutorWeb_\(p\)/);
 assert.match(web,/executeAuthenticatedAcademicWrite_\(p,function\(\)\{\s*return eliminarCourseWorkDraftsWeb_\(course,p\)/);
 assert.match(web,/ACADEMIC_READ_ONLY_GET_REQUIRED/);
+
+// HMAC probe must validate the signature before any academic action or receipt.
+assert.match(web,/if\(action==='diagnosticarFirma'\)\{[\s\S]{0,300}?validateAcademicWriteAuthorization_\(p,PropertiesService\.getScriptProperties\(\)\)/);
+assert.match(web,/signatureAccepted:true/);
+
 console.log('PASS: HMAC authorization, reentrant quiz lock avoidance, duplicate blocking, and failure isolation.');

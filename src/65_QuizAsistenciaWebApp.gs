@@ -22,7 +22,7 @@
 // UAQ_EXECUTOR_SINGLE_ROUTINE_GATEWAY: routine academic mutations enter only through uaqExecutor.
 const ACADEMIC_WEB = Object.freeze({
   COURSE_REGISTRY_SOURCE:'ACADEMIC_CONTEXT_CONFIG',
-  ACTIONS:Object.freeze(['uaqExecutor','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts','listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft']),
+  ACTIONS:Object.freeze(['uaqExecutor','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts','listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft','diagnosticarFirma']),
   ROUTINE_OPERATIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','cerrarUnidad','cerrarMateria']),
   FAST_PATHS:Object.freeze({
     quizAsistencia:Object.freeze({singleExternalInput:'materia',firstExternalAction:'WEB_APP',preflightReadsAllowed:false,documentationRead:false,auxiliaryReads:false,diagnosticOnlyAfterError:true})
@@ -66,6 +66,12 @@ function ejecutarServicioAcademicoWeb_(params){
     const action=String(p.action||'').trim();
     if(!action)throw new Error('ACCION_REQUERIDA');
     if(ACADEMIC_WEB.ACTIONS.indexOf(action)<0)throw new Error('ACCION_NO_PERMITIDA');
+    if(action==='diagnosticarFirma'){
+      // HMAC-only non-mutating challenge: no Classroom, Forms, grades or receipts.
+      // It confirms the effective signer and validator agree without exposing keys.
+      validateAcademicWriteAuthorization_(p,PropertiesService.getScriptProperties());
+      return respuestaAcademicaWeb_({ok:true,action:'diagnosticarFirma',signatureAccepted:true});
+    }
     if(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft'].indexOf(action)<0)validarContratoOperacionWeb_(action);
     if(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft'].indexOf(action)>=0){
       // Academic grading operations are POST-only; mutating calls use HMAC + replay protection.
