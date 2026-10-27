@@ -117,9 +117,12 @@ export function signedSubmissionRequest(config, action, courseId, courseWorkId, 
       throw Error('GRADE_INVALID');
     if('assignedGrade' in payload)throw Error('DRAFT_ONLY_REQUIRED');
   }
+  // Apps Script authenticates every signed submission call, including reads,
+  // and requires a valid requestId. Read calls do not reserve write receipts.
+  const correlationId=requestId||('read_'+randomBytes(18).toString('hex'));
+  if(!UUIDISH.test(String(correlationId)))throw Error('REQUEST_ID_INVALID');
   const unsigned={
-    action,courseId:String(courseId),
-    ...(requestId?{requestId}:{}),params:payload,
+    action,courseId:String(courseId),requestId:correlationId,params:payload,
     operationalContext:config.operationalContext
   };
   const timestamp=Date.now(),nonce=randomBytes(24).toString('base64url');
@@ -514,7 +517,10 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
       }else{
         const tool=req.body?.method==='tools/call'?req.body?.params?.name:'';
         const protectedWrite=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','iniciar_despliegue_mcp'].includes(tool);
-        if(!req.headers.authorization && !protectedWrite){
+        // Submissions contain students' private data: never give an
+        // anonymous read-only identity to a submission-reading operation.
+        const privateRead=['listar_entregas'].includes(tool);
+        if(!req.headers.authorization && !protectedWrite && !privateRead){
           identity={subject:'anonymous-readonly',scopes:new Set([SCOPES.read])};
         }else{
           identity=await verifyBearer(config,req.headers.authorization,protectedWrite?SCOPES.grade:SCOPES.read,jwks)
