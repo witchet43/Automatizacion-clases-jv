@@ -174,6 +174,36 @@ export async function callWebApp(config,body,fetcher=fetch){
     return result;
   }finally{clearTimeout(timeout);}
 }
+
+// Google Cloud Run API read-only diagnosis using attached workload identity.
+// Metadata-server token is scoped to Google APIs; it is never sent to ChatGPT.
+export async function describeCloudRunDeployment({fetcher=fetch,env=process.env}={}){
+  const project='classroom-mcp-512122',location='us-central1',service='academic-classroom-mcp-oauth';
+  const metadata='http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token';
+  const tokenResponse=await fetcher(metadata,{headers:{'Metadata-Flavor':'Google'},signal:AbortSignal.timeout(8000)});
+  if(!tokenResponse.ok)throw Error('GCP_METADATA_TOKEN_UNAVAILABLE: '+tokenResponse.status);
+  const token=await tokenResponse.json();
+  if(!token.access_token)throw Error('GCP_METADATA_TOKEN_INVALID');
+  const base='https://run.googleapis.com/v2/projects/'+project+'/locations/'+location;
+  const headers={Authorization:'Bearer '+token.access_token};
+  const result=await fetcher(base+'/services/'+service,{headers,signal:AbortSignal.timeout(12000)});
+  if(!result.ok)throw Error('CLOUD_RUN_VIEWER_ACCESS_OR_API_ERROR: '+result.status);
+  const data=await result.json();
+  const traffic=(data.trafficStatuses||data.traffic||[]).map(t=>({
+    revision:t.revision||null,percent:Number(t.percent||0),type:t.type||null
+  }));
+  return {
+    project,location,service,
+    latestCreatedRevision:data.latestCreatedRevision||null,
+    latestReadyRevision:data.latestReadyRevision||null,
+    traffic,
+    deploymentCommit:env.MCP_DEPLOY_COMMIT||null,
+    expectedRuntimeImage:data.template?.containers?.[0]?.image||null,
+    serviceReady:(data.conditions||[]).filter(x=>x.type==='Ready').map(x=>x.state||x.status),
+    verifiedVia:'Cloud Run Admin API v2 with runtime service account'
+  };
+}
+
 function toolOk(payload){return {content:[{type:'text',text:JSON.stringify(payload)}]};}
 function toolFail(error){return {isError:true,content:[{type:'text',text:safeError(error)}]};}
 
@@ -209,6 +239,17 @@ function buildServer(config,identity,fetcher){
   },async()=>toolOk({configured:true,transport:config.authMode==='anonymous'?'STREAMABLE_HTTP_ANONYMOUS':'STREAMABLE_HTTP_OAUTH',
     service:'ACADEMIC_CLASSROOM_CANONICAL_MCP',writesThrough:'SIGNED_WEBAPP_ONLY',
     siteEdited:false,secretExposed:false}));
+  server.registerTool('verificar_despliegue',{
+    title:'Verificar despliegue de Classroom Academic Gateway',
+    description:'Consulta con identidad de Cloud Run la revisión, imagen, commit y distribución de tráfico del servicio MCP sin modificar recursos.',
+    inputSchema:{},...readSecurity,
+    annotations:{readOnlyHint:true}
+  },async()=>{
+    try{
+      if(!identity.scopes.has(SCOPES.read))throw Error('INSUFFICIENT_SCOPE');
+      return toolOk(await describeCloudRunDeployment({fetcher}));
+    }catch(e){return toolFail(e);}
+  });
   server.registerTool('diagnosticar_clase',{
     title:'Diagnóstico académico de Classroom',
     description:'Consultar trabajos DRAFT y PUBLISHED en el curso registrado mediante la WebApp canónica, sin cambios.',
