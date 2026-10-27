@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHmac} from 'node:crypto';
-import {loadConfig,createApp,signedSubmissionRequest,signedHmacProbe} from '../server.mjs';
+import {loadConfig,createApp,signedSubmissionRequest,signedHmacProbe,runtimeHmacMatchesLatest} from '../server.mjs';
 
 function fixture(){
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'academic-mcp-discovery-'));
@@ -110,5 +110,27 @@ test('HMAC read-only probe matches signing contract and never sends academic wri
       assert.equal(sent.length,1);
       assert.equal(sent[0].action,'diagnosticarFirma');
     }finally{await new Promise(resolve=>listener.close(resolve));}
+  }finally{fs.rmSync(f.dir,{recursive:true,force:true});}
+});
+
+test('runtime HMAC comparison checks latest secret without exposing its value',async()=>{
+  const f=fixture();
+  const secret=Buffer.from(f.config.hmac,'utf8').toString('base64');
+  const requests=[];
+  const fetcher=async (url,init)=>{
+    requests.push({url,headers:init.headers});
+    if(url.startsWith('http://metadata.google.internal/')){
+      return new Response(JSON.stringify({access_token:'fake-service-account-token'}));
+    }
+    if(url.includes('/versions/latest:access'))
+      return new Response(JSON.stringify({payload:{data:secret}}));
+    throw Error('UNKNOWN_REQUEST');
+  };
+  try{
+    assert.equal(await runtimeHmacMatchesLatest(f.config,fetcher),true);
+    assert.equal(requests.length,2);
+    assert.ok(requests[1].headers.Authorization.startsWith('Bearer '));
+    const modified={...f.config,hmac:'other-key-which-is-not-the-same'};
+    assert.equal(await runtimeHmacMatchesLatest(modified,fetcher),false);
   }finally{fs.rmSync(f.dir,{recursive:true,force:true});}
 });
