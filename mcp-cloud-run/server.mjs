@@ -338,6 +338,12 @@ function challenge(config,scope,error='invalid_token'){
   return 'Bearer resource_metadata="'+metadata+'", scope="'+scope+
     '", error="'+error+'", error_description="Authorize academic access"';
 }
+// Public read tools may receive either a read-only identity or an authenticated
+// owner with the stronger grading scope. Private student data still requires
+// the explicit academic.read scope and a verified OAuth subject.
+function mayUsePublicReadTool(identity){
+  return identity.scopes.has(SCOPES.read)||identity.scopes.has(SCOPES.grade);
+}
 function buildServer(config,identity,fetcher){
   // Explicit tool-level policies are required for mixed authentication: an absent
   // securitySchemes array inherits the server's OAuth policy in ChatGPT.
@@ -377,7 +383,7 @@ function buildServer(config,identity,fetcher){
     description:'Lista las veinte ejecuciones más recientes del workflow MCP autorizado en GitHub Actions.',
     inputSchema:{},...readSecurity,annotations:{readOnlyHint:true}
   },async()=>{
-    try{if(!identity.scopes.has(SCOPES.read))throw Error('INSUFFICIENT_SCOPE');
+    try{if(!mayUsePublicReadTool(identity))throw Error('INSUFFICIENT_SCOPE');
       return toolOk(await githubActionsCall('runs',{}, {fetcher}));}
     catch(e){return toolFail(e);}
   });
@@ -386,7 +392,7 @@ function buildServer(config,identity,fetcher){
     description:'Lee el estado y conclusión de un run de GitHub Actions del repositorio autorizado.',
     inputSchema:{runId:z.number().int().positive()},...readSecurity,annotations:{readOnlyHint:true}
   },async({runId})=>{
-    try{if(!identity.scopes.has(SCOPES.read))throw Error('INSUFFICIENT_SCOPE');
+    try{if(!mayUsePublicReadTool(identity))throw Error('INSUFFICIENT_SCOPE');
       return toolOk(await githubActionsCall('run',{runId},{fetcher}));}
     catch(e){return toolFail(e);}
   });
@@ -408,7 +414,7 @@ function buildServer(config,identity,fetcher){
     annotations:{readOnlyHint:true}
   },async()=>{
     try{
-      if(!identity.scopes.has(SCOPES.read))throw Error('INSUFFICIENT_SCOPE');
+      if(!mayUsePublicReadTool(identity))throw Error('INSUFFICIENT_SCOPE');
       return toolOk(await describeCloudRunDeployment({fetcher}));
     }catch(e){return toolFail(e);}
   });
@@ -420,7 +426,7 @@ function buildServer(config,identity,fetcher){
     annotations:{readOnlyHint:true}
   },async({courseId,soloClassroom=true})=>{
     try{
-      if(!identity.scopes.has(SCOPES.read))throw Error('INSUFFICIENT_SCOPE');
+      if(!mayUsePublicReadTool(identity))throw Error('INSUFFICIENT_SCOPE');
       if(!config.courseIds.has(courseId))throw Error('COURSE_NOT_REGISTERED');
       const data=await callWebApp(config,{
         action:'diagnosticarClase',courseId,soloClassroom,soloDrafts:false,
@@ -436,7 +442,7 @@ function buildServer(config,identity,fetcher){
     ...readSecurity,annotations:{readOnlyHint:true}
   },async({courseId})=>{
     try{
-      if(!identity.scopes.has(SCOPES.read))throw Error('INSUFFICIENT_SCOPE');
+      if(!mayUsePublicReadTool(identity))throw Error('INSUFFICIENT_SCOPE');
       if(!config.courseIds.has(courseId))throw Error('COURSE_NOT_REGISTERED');
       return toolOk(await callWebApp(config,{
         action:'auditarIdentidadClassroom',courseId,
