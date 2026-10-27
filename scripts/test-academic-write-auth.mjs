@@ -83,7 +83,10 @@ assert.match(web,/executeAuthenticatedAcademicWrite_\(p,function\(\)\{\s*return 
 assert.match(web,/ACADEMIC_READ_ONLY_GET_REQUIRED/);
 
 // HMAC probe must validate the signature before any academic action or receipt.
-assert.match(web,/if\(action==='diagnosticarFirma'\)\{[\s\S]{0,300}?validateAcademicWriteAuthorization_\(p,PropertiesService\.getScriptProperties\(\)\)/);
-assert.match(web,/signatureAccepted:true/);
+assert.match(web,/if\(action==='diagnosticarFirma'\)\{/);
+assert.match(web,/academic-hmac-key-equivalence:/);
+assert.match(web,/validateAcademicWriteAuthorization_\(p,props\)/);
+assert.match(web,/keyEquivalent,signatureAccepted/);
+assert.ok(web.indexOf("if(action==='diagnosticarFirma')") < web.indexOf("const operationalContext=validarArranqueAcademicoWeb_"));
 
 console.log('PASS: HMAC authorization, reentrant quiz lock avoidance, duplicate blocking, and failure isolation.');

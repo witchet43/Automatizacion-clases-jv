@@ -106,11 +106,16 @@ export function signedAcademicRequest(config, operation, courseId, title, params
   return {...unsigned,auth:{timestamp,nonce,signature}};
 }
 export function signedHmacProbe(config){
-  // Read-only Apps Script signature challenge. No Classroom operation and no receipt.
+  // Domain-separated key-equivalence proof; never transmits any secret or key digest.
+  // A distinct proof distinguishes mismatched keys from JSON encoding drift.
+  const challenge=randomBytes(16).toString('hex');
+  const proof=createHmac('sha256',config.hmac)
+    .update('academic-hmac-key-equivalence:'+challenge).digest('hex');
   const unsigned={
     action:'diagnosticarFirma',
     requestId:'probe_'+randomBytes(18).toString('hex'),
-    operationalContext:config.operationalContext
+    operationalContext:config.operationalContext,
+    diagnostic:{challenge,proof}
   };
   const timestamp=Date.now(),nonce=randomBytes(24).toString('base64url');
   const signature=createHmac('sha256',config.hmac)
@@ -328,7 +333,8 @@ function buildServer(config,identity,fetcher){
     if(!verificarFirma)return toolOk(status);
     try{
       const data=await callWebApp(config,signedHmacProbe(config),fetcher);
-      if(data.signatureAccepted!==true)throw Error('ACADEMIC_HMAC_PROBE_NOT_ACCEPTED');
+      if(data.signatureAccepted!==true)
+        throw Error(data.keyEquivalent===false?'ACADEMIC_HMAC_KEYS_DIFFER':'ACADEMIC_HMAC_SIGNED_PAYLOAD_DIFFERS');
       return toolOk({...status,upstreamHmacAccepted:true});
     }catch(error){return toolFail(error);}
   });

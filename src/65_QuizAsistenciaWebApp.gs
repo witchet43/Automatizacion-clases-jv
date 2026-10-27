@@ -67,10 +67,29 @@ function ejecutarServicioAcademicoWeb_(params){
     if(!action)throw new Error('ACCION_REQUERIDA');
     if(ACADEMIC_WEB.ACTIONS.indexOf(action)<0)throw new Error('ACCION_NO_PERMITIDA');
     if(action==='diagnosticarFirma'){
-      // HMAC-only non-mutating challenge: no Classroom, Forms, grades or receipts.
-      // It confirms the effective signer and validator agree without exposing keys.
-      validateAcademicWriteAuthorization_(p,PropertiesService.getScriptProperties());
-      return respuestaAcademicaWeb_({ok:true,action:'diagnosticarFirma',signatureAccepted:true});
+      // Dedicated non-mutating diagnostic. Only boolean comparisons are disclosed.
+      // Never access Classroom or return keys, full signatures, fingerprints or receipts.
+      const d=p.diagnostic;
+      if(!d||typeof d!=='object'||
+         !/^[a-f0-9]{32}$/.test(String(d.challenge||''))||
+         !/^[a-f0-9]{64}$/.test(String(d.proof||'')))
+        throw new Error('ACADEMIC_HMAC_DIAGNOSTIC_INVALID');
+      const props=PropertiesService.getScriptProperties();
+      const key=String(props.getProperty('ACADEMIC_WRITE_HMAC_KEY')||'').trim();
+      if(key.length<32)throw new Error('ACADEMIC_WRITE_KEY_NOT_CONFIGURED');
+      const expected=bytesHexAcademicWrite_(Utilities.computeHmacSha256Signature(
+        'academic-hmac-key-equivalence:'+d.challenge,key,Utilities.Charset.UTF_8));
+      const keyEquivalent=constantTimeEqualsAcademicWrite_(expected,d.proof);
+      let signatureAccepted=false;
+      try{
+        validateAcademicWriteAuthorization_(p,props);
+        signatureAccepted=true;
+      }catch(err){
+        if(String(err&&err.message||err)!=='ACADEMIC_WRITE_AUTH_INVALID')throw err;
+      }
+      return respuestaAcademicaWeb_({
+        ok:true,action:'diagnosticarFirma',keyEquivalent,signatureAccepted
+      });
     }
     if(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft'].indexOf(action)<0)validarContratoOperacionWeb_(action);
     if(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft'].indexOf(action)>=0){
