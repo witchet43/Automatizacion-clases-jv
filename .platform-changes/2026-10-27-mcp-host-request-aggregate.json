@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "El usuario solicita resolver la pérdida de herramientas de lectura del Classroom Academic Gateway tras incorporar OAuth, sin reinstalaciones adicionales.",
+  "reason": "Distinguish absent ChatGPT MCP connection requests from actual HTTP authentication or transport failures using only aggregated Cloud Run request logs. No Classroom access and no IAM mutation.",
+  "allowedChangedPaths": [
+    ".github/workflows/audit-classroom-mcp-oauth-discovery.yml"
+  ]
+}
