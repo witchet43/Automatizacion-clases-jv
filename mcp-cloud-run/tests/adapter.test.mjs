@@ -103,6 +103,14 @@ test('OAuth issuer, subject, audience and scope; MCP rejects anonymous and execu
    assert.equal(response.status,401);
    response=await rpc(read,'initialize',{protocolVersion:'2025-06-18',capabilities:{},clientInfo:{name:'test',version:'1'}});
    assert.equal(response.status,200);
+   const diagnosis=await rpc(grade,'tools/call',{name:'diagnosticar_clase',arguments:{courseId:'871149624583',soloClassroom:true}},10);
+   assert.equal(diagnosis.status,200);
+   let diagnosticText=await diagnosis.text();
+   if(diagnosticText.includes('data: '))diagnosticText=diagnosticText.match(/data: (.+)/)?.[1]||diagnosticText;
+   const diagnostic=JSON.parse(diagnosticText).result;
+   assert.notEqual(diagnostic.isError,true);
+   assert.equal(JSON.parse(diagnostic.content[0].text).ok,true);
+   calls.length=0;
    response=await rpc(grade,'tools/call',{name:'cerrar_unidad',arguments:{courseId:'871149624583',unidad:2,confirmar:true}},2);
    assert.equal(response.status,200);
    let raw=await response.text();
