@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {loadConfig,createApp} from '../server.mjs';
 
-test('anonymous MCP allows diagnostics but refuses all academic writes',async()=>{
+test('anonymous MCP permits confirmed unit closure but blocks other academic writes',async()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'academic-anonymous-'));
   const file=path.join(dir,'context.json');
   const context={operationalContext:{
@@ -58,7 +58,6 @@ test('anonymous MCP allows diagnostics but refuses all academic writes',async()=
     });
     assert.equal(initialized.status,200);
     for(const [name,args] of [
-      ['cerrar_unidad',{courseId:'871149624583',unidad:2,confirmar:true}],
       ['crear_recurso',{courseId:'871149624583',operation:'actividad',
         title:'Actividad segura',requestId:'req_test_123456789012',params:{}}],
       ['calificar_entrega_draft',{courseId:'871149624583',courseWorkId:'893188672194',
@@ -72,7 +71,16 @@ test('anonymous MCP allows diagnostics but refuses all academic writes',async()=
       assert.equal(result.isError,true,name+' must fail closed');
       assert.match(result.content[0].text,/WRITE_AUTH_REQUIRED|STUDENT_GRADES_REQUIRE_AUTH/);
     }
-    assert.equal(calls.length,0,'anonymous calls must never reach canonical WebApp');
+    const confirmed=await rpc('tools/call',{name:'cerrar_unidad',arguments:{courseId:'871149624583',unidad:2,confirmar:true}},3);
+    assert.equal(confirmed.status,200);
+    let payload=await confirmed.text();
+    if(payload.includes('data: '))payload=payload.match(/data: (.+)/)?.[1]||payload;
+    const closure=JSON.parse(payload).result;
+    assert.equal(closure.isError,undefined);
+    assert.match(JSON.stringify(closure),/DRAFT_ONLY/);
+    assert.equal(calls.length,1,'confirmed closure reaches signed WebApp exactly once');
+    assert.equal(calls[0].operation,'cerrarUnidad');
+    assert.match(calls[0].auth.signature,/^[a-f0-9]{64}$/);
   }finally{
     await new Promise(resolve=>server.close(resolve));
     fs.rmSync(dir,{recursive:true,force:true});
