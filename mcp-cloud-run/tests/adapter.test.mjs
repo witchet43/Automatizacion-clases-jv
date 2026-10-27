@@ -110,6 +110,14 @@ test('OAuth issuer, subject, audience and scope; MCP rejects anonymous and execu
    const diagnostic=JSON.parse(diagnosticText).result;
    assert.notEqual(diagnostic.isError,true);
    assert.equal(JSON.parse(diagnostic.content[0].text).ok,true);
+   const privatelyScoped=await rpc(grade,'tools/call',{name:'listar_entregas',arguments:{courseId:'871149624583',courseWorkId:'101'}},12);
+   assert.equal(privatelyScoped.status,200);
+   let privateText=await privatelyScoped.text();
+   if(privateText.includes('data: '))privateText=privateText.match(/data: (.+)/)?.[1]||privateText;
+   const privateResult=JSON.parse(privateText).result;
+   assert.equal(privateResult.isError,true);
+   assert.match(privateResult.content[0].text,/INSUFFICIENT_SCOPE/);
+   assert.equal(calls.length,1);
    calls.length=0;
    response=await rpc(grade,'tools/call',{name:'cerrar_unidad',arguments:{courseId:'871149624583',unidad:2,confirmar:true}},2);
    assert.equal(response.status,200);
