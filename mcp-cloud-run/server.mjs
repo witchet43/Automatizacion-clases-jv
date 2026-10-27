@@ -296,7 +296,7 @@ function challenge(config,scope,error='invalid_token'){
     '", error="'+error+'", error_description="Authorize academic access"';
 }
 function buildServer(config,identity,fetcher){
-  const readSecurity=config.authMode==='anonymous'?{}:{securitySchemes:[{type:'oauth2',scopes:[SCOPES.read]}]};
+  const readSecurity={}; // Read-only MCP tools remain accessible without OAuth; grading is protected.
   const gradeSecurity=config.authMode==='anonymous'?{}:{securitySchemes:[{type:'oauth2',scopes:[SCOPES.grade]}]};
   const server=new McpServer({name:'classroom-academic-gateway',version:'1.0.0'});
   server.registerTool('gateway_status',{
@@ -512,12 +512,18 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
       if(config.authMode==='anonymous'){
         identity={subject:'anonymous',scopes:new Set([SCOPES.read])};
       }else{
-        identity=await verifyBearer(config,req.headers.authorization,SCOPES.read,jwks)
-          .catch(async first=>{
-            if(req.body?.method==='tools/call'&&['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','iniciar_despliegue_mcp'].includes(req.body?.params?.name))
-              return await verifyBearer(config,req.headers.authorization,SCOPES.grade,jwks);
-            throw first;
-          });
+        const tool=req.body?.method==='tools/call'?req.body?.params?.name:'';
+        const protectedWrite=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','iniciar_despliegue_mcp'].includes(tool);
+        if(!req.headers.authorization && !protectedWrite){
+          identity={subject:'anonymous-readonly',scopes:new Set([SCOPES.read])};
+        }else{
+          identity=await verifyBearer(config,req.headers.authorization,protectedWrite?SCOPES.grade:SCOPES.read,jwks)
+            .catch(async error=>{
+              if(!protectedWrite && error.message==='INSUFFICIENT_SCOPE')
+                return await verifyBearer(config,req.headers.authorization,SCOPES.grade,jwks);
+              throw error;
+            });
+        }
       }
     }catch(e){
       const scope=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft'].includes(req.body?.params?.name)?SCOPES.grade:SCOPES.read;
