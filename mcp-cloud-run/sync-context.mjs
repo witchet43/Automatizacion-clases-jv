@@ -3,13 +3,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const dir=path.dirname(fileURLToPath(import.meta.url));
-const config=fs.readFileSync(path.resolve(dir,'../src/00_AcademicContextConfig.gs'),'utf8');
-const marker='const ACADEMIC_CONTEXT_CONFIG = ';
-const start=config.indexOf(marker);
-const end=config.lastIndexOf('};');
-if(start<0||end<=start)throw Error('CANONICAL_CONTEXT_NOT_FOUND');
-const json=config.slice(start+marker.length,end+1);
-const c=JSON.parse(json);
+const raw=fs.readFileSync(path.resolve(dir,'../config/academic-context.json'),'utf8');
+const manifest=JSON.parse(raw);
+const c={...manifest,manifestSha256:(await import('node:crypto')).createHash('sha256').update(raw).digest('hex')};
+// A generated Apps Script bundle may lag behind config in Git; the Apps Script
+// deployment builds that bundle before deploying. Cloud Run must independently
+// derive the same hash from the authoritative manifest, not from the stale bundle.
 if(!/^[a-f0-9]{64}$/.test(c.manifestSha256)||c.contractVersion!=='1.1.0')
   throw Error('CANONICAL_CONTEXT_INVALID');
 const fields={
