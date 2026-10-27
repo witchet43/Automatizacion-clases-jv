@@ -23,7 +23,7 @@ test('Auth0 DCR, PKCE, issuer and JWKS can be validated without calling Cloud Ru
  assert.throws(()=>canonicalAuth0Issuer('https://evil.example.net/'),/HOST_OR_PATH/);
  assert.throws(()=>verifyAuth0Metadata(issuer,{...metadata,issuer:'https://other.us.auth0.com/'},jwks),/ISSUER_MISMATCH/);
  assert.throws(()=>verifyAuth0Metadata(issuer,{...metadata,code_challenge_methods_supported:[]},jwks),/PKCE_S256_REQUIRED/);
- assert.throws(()=>verifyAuth0Metadata(issuer,{...metadata,registration_endpoint:null},jwks),/DCR_REGISTRATION_ENDPOINT_MISSING/);
+ assert.throws(()=>verifyAuth0Metadata(issuer,{...metadata,registration_endpoint:null},jwks),/CLIENT_REGISTRATION_UNAVAILABLE/);
  assert.throws(()=>verifyAuth0Metadata(issuer,{...metadata,jwks_uri:'https://evil.example.net/jwks'},jwks),/ORIGIN_MISMATCH/);
  assert.throws(()=>verifyAuth0Metadata(issuer,{...metadata,token_endpoint_auth_methods_supported:['client_secret_post']},jwks),/PUBLIC_CLIENT_METHOD_MISSING/);
  assert.throws(()=>verifyAuth0Metadata(issuer,metadata,{keys:[]}),/NO_RSA_KEY/);
@@ -48,4 +48,13 @@ test('authenticated deployment requires OAuth and never leaks secrets',()=>{
  assert.match(deploy,/MCP_OAUTH_JWKS_URL/);
  assert.match(deploy,/academic-mcp-allowed-subjects/);
  assert.doesNotMatch(deploy,/AUTH0_CLIENT_SECRET|AUTH0_MGMT_TOKEN|gcloud secrets versions access/);
+});
+
+test('Auth0 manual CIMD is accepted without open dynamic client registration',()=>{
+  const result=verifyAuth0Metadata(issuer,{
+    ...metadata,registration_endpoint:undefined,
+    client_id_metadata_document_supported:true
+  },jwks);
+  assert.equal(result.registrationMode,'cimd');
+  assert.equal(result.registrationUrl,null);
 });
