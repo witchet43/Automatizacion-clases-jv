@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Que hago? O lo haces tu? Lo haces tu.",
+  "reason": "Repair academic public-read OAuth scope mismatch; preserve grade-write and private-data authorization.",
+  "allowedChangedPaths": [
+    "mcp-cloud-run/server.mjs",
+    "mcp-cloud-run/tests/adapter.test.mjs"
+  ]
+}
