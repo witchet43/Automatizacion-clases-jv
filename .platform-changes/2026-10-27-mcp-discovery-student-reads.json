@@ -1,0 +1,12 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Completa todo tu plan, hasta que quede funcional. Objetivo claro: que funcione. Sin Work ni Codex.",
+  "reason": "Fix student-submission read authentication and HMAC request contract, add real MCP tool discovery tests before production deployment.",
+  "allowedChangedPaths": [
+    "mcp-cloud-run/server.mjs",
+    "mcp-cloud-run/tests/discovery.test.mjs",
+    ".github/workflows/test-cloud-run-mcp.yml"
+  ]
+}
