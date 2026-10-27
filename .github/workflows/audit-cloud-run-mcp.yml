@@ -1,5 +1,9 @@
 name: Audit Academic MCP Cloud Run
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/audit-cloud-run-mcp.yml'
   workflow_dispatch:
 permissions:
   contents: read
@@ -63,4 +67,33 @@ jobs:
           if failures:
               print('NETWORK_ERRORS:', failures, flush=True)
               sys.exit(1)
+          PY
+
+      - name: List deployed MCP tools and verify gateway_status exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import urllib.request,urllib.error,json,sys
+          url='https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app/mcp'
+          req=urllib.request.Request(url,data=json.dumps({'jsonrpc':'2.0','id':2,'method':'tools/list','params':{}}).encode(),headers={'Content-Type':'application/json','Accept':'application/json, text/event-stream','MCP-Protocol-Version':'2025-03-26'},method='POST')
+          try:
+              with urllib.request.urlopen(req,timeout=20) as r:
+                  data=r.read(200000).decode('utf-8','replace')
+                  print('TOOLS_HTTP:',r.status)
+                  print('TOOLS_RESPONSE:',data[:18000])
+          except urllib.error.HTTPError as err:
+              print('TOOLS_HTTP:',err.code,err.read(500).decode('utf-8','replace'))
+              sys.exit(1)
+          lines=[line[6:] for line in data.splitlines() if line.startswith('data: ')]
+          try:
+              obj=json.loads(lines[0] if lines else data)
+              names=[tool['name'] for tool in obj.get('result',{}).get('tools',[])]
+          except Exception as e:
+              print('UNPARSEABLE_TOOLS_LIST:',repr(e));sys.exit(1)
+          print('TOOL_NAMES:',json.dumps(names))
+          if 'gateway_status' not in names:
+              print('GATEWAY_STATUS_NOT_EXPOSED_BY_DEPLOYED_MCP')
+              sys.exit(1)
+          print('GATEWAY_STATUS_EXPOSED_BY_DEPLOYED_MCP')
           PY
