@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Autorizo que se haga sin autenticación, entiendo los riesgos pero por ahora va así",
+  "reason": "Permitir cerrar_unidad sin OAuth en la primera fase por autorización expresa del propietario, manteniendo confirmar=true y firma HMAC hacia Apps Script.",
+  "allowedChangedPaths": [
+    "mcp-cloud-run/server.mjs"
+  ]
+}
