@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Pues resuelvelo tomate tu tiempo",
+  "reason": "Localizar diferencia exacta entre campos de contexto del MCP y el manifiesto de Apps Script.",
+  "allowedChangedPaths": [
+    "mcp-cloud-run/server.mjs"
+  ]
+}
