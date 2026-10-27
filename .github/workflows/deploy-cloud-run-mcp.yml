@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       confirm_deploy:
-        description: 'Deploy the anonymous academic MCP (no Auth0); publicly callable'
+        description: 'Deploy the authenticated academic MCP (OAuth required)'
         required: true
         type: boolean
         default: false
@@ -55,6 +55,18 @@ jobs:
           if [[ "$state" != ENABLED ]]; then
             echo "::error::Missing enabled academic-write-hmac"; exit 1
           fi
+      - name: Require verified OAuth configuration and subject allowlist
+        env:
+          MCP_OAUTH_ISSUER: ${{ vars.MCP_OAUTH_ISSUER }}
+          MCP_OAUTH_JWKS_URL: ${{ vars.MCP_OAUTH_JWKS_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$MCP_OAUTH_ISSUER" == https://* ]] || { echo "::error::MCP_OAUTH_ISSUER is missing or not HTTPS"; exit 1; }
+          [[ "$MCP_OAUTH_JWKS_URL" == https://* ]] || { echo "::error::MCP_OAUTH_JWKS_URL is missing or not HTTPS"; exit 1; }
+          state="$(gcloud secrets versions describe latest --secret academic-mcp-allowed-subjects --project classroom-mcp-512122 --format='value(state)')"
+          [[ "$state" == ENABLED ]] || { echo "::error::OAuth subject allowlist is missing"; exit 1; }
+          MCP_OAUTH_ISSUER="$MCP_OAUTH_ISSUER" MCP_OAUTH_JWKS_URL="$MCP_OAUTH_JWKS_URL" node scripts/verify-auth0-mcp.mjs
       - name: Deploy only new independent MCP adapter
         env:
           PROJECT: classroom-mcp-512122
@@ -74,21 +86,21 @@ jobs:
             --build-service-account "projects/$PROJECT/serviceAccounts/$RUNTIME_SA" \
             --allow-unauthenticated --ingress all \
             --min-instances=0 --memory=512Mi --timeout=300 \
-            --set-env-vars "MCP_AUTH_MODE=anonymous,MCP_PUBLIC_URL=$URL" \
-            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest" \
+            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=${{ vars.MCP_OAUTH_ISSUER }},MCP_OAUTH_JWKS_URL=${{ vars.MCP_OAUTH_JWKS_URL }}" \
+            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest,MCP_ALLOWED_SUBJECTS=academic-mcp-allowed-subjects:latest" \
             --quiet
           REAL_URL="$URL"
           [[ "$REAL_URL" == https://* ]] || { echo "::error::Missing public Cloud Run HTTPS URL"; exit 1; }
           echo "MCP_ENDPOINT=$REAL_URL/mcp" >> "$GITHUB_ENV"
           {
-            echo '## Classroom Academic Gateway — anonymous MCP'
+            echo '## Classroom Academic Gateway — authenticated MCP'
             echo "Endpoint: $REAL_URL/mcp"
-            echo 'Cloud Run publicly accessible; no Auth0 / no OAuth.'
+            echo 'Cloud Run ingress is public but academic requests require verified OAuth bearer tokens.'
             echo 'Only the runtime can access Secret Manager HMAC; requests are signed to canonical WebApp.'
-            echo 'Risk: any Internet caller can invoke available MCP tools, including unit grade recalculation.'
+            echo 'Academic writes require verified OAuth subject, scope and explicit confirmation.'
             echo 'Deployment performs no Classroom grade mutation.'
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Verify live health and anonymous MCP handshake (read-only)
+      - name: Verify live OAuth health and reject anonymous MCP invocation
         shell: bash
         run: |
           set -euo pipefail
@@ -104,8 +116,9 @@ jobs:
             head -c 700 /tmp/mcp-health-body
             exit 1
           fi
-          python3 -c 'import json; d=json.load(open("/tmp/mcp-health-body")); assert d["status"]=="ok" and d["auth"]=="anonymous"'
-          curl --fail --silent --show-error --max-time 30 "$MCP_ENDPOINT" \
+          python3 -c 'import json; d=json.load(open("/tmp/mcp-health-body")); assert d["status"]=="ok" and d["auth"]=="oauth"'
+          code="$(curl --silent --show-error --max-time 30 -o /dev/null -w '%{http_code}' "$MCP_ENDPOINT" \
             -H 'content-type: application/json' \
             -H 'accept: application/json, text/event-stream' \
-            --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"github-healthcheck","version":"1"}}}' >/dev/null
+            --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"github-healthcheck","version":"1"}}}')"
+          [[ "$code" == 401 ]] || { echo "::error::Anonymous MCP handshake must return 401 (got $code)"; exit 1; }

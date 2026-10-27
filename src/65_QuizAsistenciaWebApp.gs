@@ -22,7 +22,7 @@
 const ACADEMIC_WEB = Object.freeze({
   COURSE_REGISTRY_SOURCE:'ACADEMIC_CONTEXT_CONFIG',
   ACTIONS:Object.freeze(['uaqExecutor','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts','listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft']),
-  ROUTINE_OPERATIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','cerrarUnidad']),
+  ROUTINE_OPERATIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','cerrarUnidad','cerrarMateria']),
   FAST_PATHS:Object.freeze({
     quizAsistencia:Object.freeze({singleExternalInput:'materia',firstExternalAction:'WEB_APP',preflightReadsAllowed:false,documentationRead:false,auxiliaryReads:false,diagnosticOnlyAfterError:true})
   })
@@ -262,6 +262,14 @@ function ejecutarUaqExecutorWeb_(p){
     result=crearPaqueteClaseWeb_(course,source);
   }else if(operation==='material'){
     result=crearMaterialDidacticoWeb_(course,{params:source});
+  }else if(operation==='cerrarMateria'){
+    const unidades=Array.isArray(source.unidades)?source.unidades:[];
+    const ponderaciones=Array.isArray(source.ponderaciones)?source.ponderaciones:undefined;
+    if(String(source.titulo||'')!=='Calificación Final del Curso'||
+       String(p.title||'')!=='Calificación Final del Curso'||
+       String(source.modo||'')!=='PUBLISHED_COURSEWORK_DRAFT_GRADE_ONLY')
+      throw new Error('COURSE_CLOSE_TITLE_OR_MODE_INVALID');
+    result=cerrarMateria({courseId:String(course.id),unidades:unidades,ponderaciones:ponderaciones});
   }else if(operation==='cerrarUnidad'){
     const unidad=validarCierreUnidadWeb_(p,source);
     result=cerrarUnidad({courseId:String(course.id),unidad:unidad});

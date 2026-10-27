@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {loadConfig,createApp} from '../server.mjs';
 
-test('anonymous MCP needs no Auth0 but retains HMAC and course restrictions',async()=>{
+test('anonymous MCP allows diagnostics but refuses all academic writes',async()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'academic-anonymous-'));
   const file=path.join(dir,'context.json');
   const context={operationalContext:{
@@ -57,22 +57,22 @@ test('anonymous MCP needs no Auth0 but retains HMAC and course restrictions',asy
       capabilities:{},clientInfo:{name:'anonymous-test',version:'1'}
     });
     assert.equal(initialized.status,200);
-    const response=await rpc('tools/call',{
-      name:'cerrar_unidad',arguments:{courseId:'871149624583',unidad:2}
-    },2);
-    assert.equal(response.status,200);
-    let raw=await response.text();
-    if(raw.includes('data: '))raw=raw.match(/data: (.+)/)?.[1]||raw;
-    const result=JSON.parse(raw).result;
-    const output=JSON.parse(result.content[0].text);
-    assert.equal(output.courseWorkState,'PUBLISHED');
-    assert.equal(output.studentGradeState,'DRAFT_ONLY');
-    assert.equal(calls.length,1);
-    assert.equal(calls[0].operation,'cerrarUnidad');
-    assert.equal(calls[0].auth.signature.length,64);
-    assert.equal(calls[0].courseId,'871149624583');
-    assert.ok(!JSON.stringify(calls[0]).includes('assignedGrade'));
-    assert.ok(!JSON.stringify(output).includes('email'));
+    for(const [name,args] of [
+      ['cerrar_unidad',{courseId:'871149624583',unidad:2,confirmar:true}],
+      ['crear_recurso',{courseId:'871149624583',operation:'actividad',
+        title:'Actividad segura',requestId:'req_test_123456789012',params:{}}],
+      ['calificar_entrega_draft',{courseId:'871149624583',courseWorkId:'893188672194',
+        submissionId:'sub1',grade:80,requestId:'req_test_123456789012'}]
+    ]){
+      const response=await rpc('tools/call',{name,arguments:args},2);
+      assert.equal(response.status,200);
+      let raw=await response.text();
+      if(raw.includes('data: '))raw=raw.match(/data: (.+)/)?.[1]||raw;
+      const result=JSON.parse(raw).result;
+      assert.equal(result.isError,true,name+' must fail closed');
+      assert.match(result.content[0].text,/WRITE_AUTH_REQUIRED|STUDENT_GRADES_REQUIRE_AUTH/);
+    }
+    assert.equal(calls.length,0,'anonymous calls must never reach canonical WebApp');
   }finally{
     await new Promise(resolve=>server.close(resolve));
     fs.rmSync(dir,{recursive:true,force:true});
