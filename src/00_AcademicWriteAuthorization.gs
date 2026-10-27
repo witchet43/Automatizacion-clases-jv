@@ -64,8 +64,11 @@ function validateAcademicWriteAuthorization_(request, props) {
     JSON.stringify(unsigned), key, Utilities.Charset.UTF_8
   );
   const calculated=bytesHexAcademicWrite_(mac);
-  if(!constantTimeEqualsAcademicWrite_(calculated,auth.signature))
-    throw new Error('ACADEMIC_WRITE_AUTH_INVALID');
+  if(!constantTimeEqualsAcademicWrite_(calculated,auth.signature)) {
+    const mismatch = new Error('ACADEMIC_WRITE_AUTH_INVALID');
+    mismatch.payloadDigest = bytesHexAcademicWrite_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,JSON.stringify(unsigned),Utilities.Charset.UTF_8));
+    throw mismatch;
+  }
   return requestId;
 }
 
