@@ -1,0 +1,12 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Ya hazlo lo autorizo",
+  "reason": "Exponer operaciones GitHub Actions de despliegue y consulta desde servidor MCP usando GitHub App privada con secretos en Cloud Secret Manager.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-cloud-run-mcp.yml",
+    "mcp-cloud-run/server.mjs",
+    "mcp-cloud-run/tests/github-actions.test.mjs"
+  ]
+}

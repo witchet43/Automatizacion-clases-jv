@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { randomBytes, createHmac } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { jwtVerify, createRemoteJWKSet } from 'jose';
+import { jwtVerify, createRemoteJWKSet, SignJWT, importPKCS8 } from 'jose';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
@@ -217,6 +217,56 @@ export async function describeCloudRunDeployment({fetcher=fetch,env=process.env}
   };
 }
 
+
+const GITHUB_OWNER='witchet43',GITHUB_REPO='Automatizacion-clases-jv';
+const GITHUB_WORKFLOW='deploy-cloud-run-mcp.yml';
+export async function githubActionsCall(kind,{runId,confirmar}={}, {fetcher=fetch,env=process.env}={}){
+  const appId=String(env.GITHUB_APP_ID||'').trim();
+  const installationId=String(env.GITHUB_APP_INSTALLATION_ID||'').trim();
+  const pem=String(env.GITHUB_APP_PRIVATE_KEY||'').replace(/\\n/g,'\n');
+  if(!/^\d+$/.test(appId)||!/^\d+$/.test(installationId)||!pem.includes('BEGIN PRIVATE KEY'))
+    throw Error('GITHUB_APP_CREDENTIALS_NOT_CONFIGURED');
+  const key=await importPKCS8(pem,'RS256');
+  const now=Math.floor(Date.now()/1000);
+  const jwt=await new SignJWT({iss:appId}).setProtectedHeader({alg:'RS256'})
+    .setIssuedAt(now-30).setExpirationTime(now+540).sign(key);
+  const headers={Authorization:'Bearer '+jwt,Accept:'application/vnd.github+json',
+    'X-GitHub-Api-Version':'2022-11-28'};
+  const root='https://api.github.com';
+  const install=await fetcher(root+'/app/installations/'+installationId+'/access_tokens',{
+    method:'POST',headers:{...headers,'Content-Type':'application/json'},
+    body:JSON.stringify({repositories:[GITHUB_REPO],permissions:{actions:kind==='dispatch'?'write':'read'}}),
+    signal:AbortSignal.timeout(12000)
+  });
+  if(!install.ok)throw Error('GITHUB_APP_TOKEN_FAILED: '+install.status);
+  const credentials=await install.json();
+  if(!credentials.token)throw Error('GITHUB_APP_TOKEN_MISSING');
+  const auth={Authorization:'Bearer '+credentials.token,Accept:'application/vnd.github+json',
+    'X-GitHub-Api-Version':'2022-11-28'};
+  const base=root+'/repos/'+GITHUB_OWNER+'/'+GITHUB_REPO+'/actions';
+  let url,opts={headers:auth,signal:AbortSignal.timeout(15000)};
+  if(kind==='dispatch'){
+    if(confirmar!==true)throw Error('DEPLOY_CONFIRMATION_REQUIRED');
+    url=base+'/workflows/'+GITHUB_WORKFLOW+'/dispatches';
+    opts={...opts,method:'POST',headers:{...auth,'Content-Type':'application/json'},
+      body:JSON.stringify({ref:'main',inputs:{confirm_deploy:true}})};
+  }else if(kind==='runs'){
+    url=base+'/workflows/'+GITHUB_WORKFLOW+'/runs?per_page=20';
+  }else if(kind==='run'){
+    if(!Number.isSafeInteger(runId)||runId<1)throw Error('WORKFLOW_RUN_ID_INVALID');
+    url=base+'/runs/'+runId;
+  }else throw Error('GITHUB_ACTIONS_OPERATION_INVALID');
+  const resp=await fetcher(url,opts);
+  if(!resp.ok)throw Error('GITHUB_ACTIONS_API_FAILED: '+resp.status);
+  if(kind==='dispatch')return {ok:true,accepted:true,workflow:GITHUB_WORKFLOW,ref:'main',executionId:null,
+    note:'GitHub accepts dispatch asynchronously; query recent runs to identify its execution.'};
+  const data=await resp.json();
+  const scrub=r=>({id:r.id,status:r.status,conclusion:r.conclusion,headSha:r.head_sha,
+    createdAt:r.created_at,updatedAt:r.updated_at,url:r.html_url,runAttempt:r.run_attempt});
+  return kind==='runs'?{ok:true,workflow:GITHUB_WORKFLOW,runs:(data.workflow_runs||[]).map(scrub)}:
+    {ok:true,run:scrub(data)};
+}
+
 function toolOk(payload){return {content:[{type:'text',text:JSON.stringify(payload)}]};}
 function toolFail(error){return {isError:true,content:[{type:'text',text:safeError(error)}]};}
 
@@ -252,6 +302,35 @@ function buildServer(config,identity,fetcher){
   },async()=>toolOk({configured:true,transport:config.authMode==='anonymous'?'STREAMABLE_HTTP_ANONYMOUS':'STREAMABLE_HTTP_OAUTH',
     service:'ACADEMIC_CLASSROOM_CANONICAL_MCP',writesThrough:'SIGNED_WEBAPP_ONLY',
     siteEdited:false,secretExposed:false}));
+  server.registerTool('consultar_despliegues_mcp',{
+    title:'Consultar las últimas ejecuciones de despliegue',
+    description:'Lista las veinte ejecuciones más recientes del workflow MCP autorizado en GitHub Actions.',
+    inputSchema:{},...readSecurity,annotations:{readOnlyHint:true}
+  },async()=>{
+    try{if(!identity.scopes.has(SCOPES.read))throw Error('INSUFFICIENT_SCOPE');
+      return toolOk(await githubActionsCall('runs',{}, {fetcher}));}
+    catch(e){return toolFail(e);}
+  });
+  server.registerTool('consultar_ejecucion_mcp',{
+    title:'Consultar una ejecución de despliegue',
+    description:'Lee el estado y conclusión de un run de GitHub Actions del repositorio autorizado.',
+    inputSchema:{runId:z.number().int().positive()},...readSecurity,annotations:{readOnlyHint:true}
+  },async({runId})=>{
+    try{if(!identity.scopes.has(SCOPES.read))throw Error('INSUFFICIENT_SCOPE');
+      return toolOk(await githubActionsCall('run',{runId},{fetcher}));}
+    catch(e){return toolFail(e);}
+  });
+  server.registerTool('iniciar_despliegue_mcp',{
+    title:'Iniciar despliegue autorizado del MCP',
+    description:'Dispara exclusivamente el workflow de Cloud Run sobre main, solo tras confirmación explícita.',
+    inputSchema:{confirmar:z.literal(true)},...gradeSecurity,
+    annotations:{readOnlyHint:false,destructiveHint:false}
+  },async({confirmar})=>{
+    try{if(config.authMode!=='oauth'||!identity.scopes.has(SCOPES.grade))
+      throw Error('WRITE_AUTH_REQUIRED');
+      return toolOk(await githubActionsCall('dispatch',{confirmar},{fetcher}));}
+    catch(e){return toolFail(e);}
+  });
   server.registerTool('verificar_despliegue',{
     title:'Verificar despliegue de Classroom Academic Gateway',
     description:'Consulta con identidad de Cloud Run la revisión, imagen, commit y distribución de tráfico del servicio MCP sin modificar recursos.',
@@ -430,7 +509,7 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
       }else{
         identity=await verifyBearer(config,req.headers.authorization,SCOPES.read,jwks)
           .catch(async first=>{
-            if(req.body?.method==='tools/call'&&['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft'].includes(req.body?.params?.name))
+            if(req.body?.method==='tools/call'&&['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','iniciar_despliegue_mcp'].includes(req.body?.params?.name))
               return await verifyBearer(config,req.headers.authorization,SCOPES.grade,jwks);
             throw first;
           });
