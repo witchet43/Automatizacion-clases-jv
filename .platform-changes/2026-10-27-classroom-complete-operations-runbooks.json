@@ -1,0 +1,16 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Debe quedar debidamente documentado todo el proceso para poder configurar correctamente el plugin, y además debe quedar debidamente documentado como modificaremos el plugin, el servidor MCP, Google Apps Script, el WebApp, y como usaremos GitHub y GitHub Actions",
+  "reason": "Establecer manuales canónicos verificables para configuración del plugin Auth0, cambios de MCP, WebApp Apps Script, GitHub y despliegues con postflight; agregar prueba de regresión documental sin modificar los ejecutores académicos, secretos, OAuth ni recursos Classroom.",
+  "allowedChangedPaths": [
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    "AGENTS.md",
+    "README.md",
+    "docs/CAMBIOS_Y_DESPLIEGUES.md",
+    "docs/CONFIGURACION_PLUGIN_Y_AUTH0.md",
+    "docs/DIAGNOSTICO_Y_RECUPERACION.md",
+    "scripts/test-classroom-operational-docs.mjs"
+  ]
+}
