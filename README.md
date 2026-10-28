@@ -16,6 +16,16 @@
 - Para clase completa: planeación y Classroom reales → recursos Google → Gamma LIVE → Notion LIVE → reconciliación. No inferir sesiones por fecha actual ni por Calendar.
 - Si existe **fallo** de conexión o permisos: detener escritura, diagnosticar el MCP y el destino. Nunca cambiar de transporte, deshabilitar OAuth o HMAC, ni utilizar Work mode o Codex como alternativa.
 
+## Manuales de configuración, cambios y recuperación
+
+La configuración y mantenimiento se documentan en tres procedimientos **vigentes y obligatorios**; no utilizar commits o manuales anteriores como guía de instalación:
+
+1. [Configurar / reconectar plugin, Auth0 y Cloud Run](docs/CONFIGURACION_PLUGIN_Y_AUTH0.md).
+2. [Modificar plugin, MCP, Apps Script, WebApp y usar GitHub Actions](docs/CAMBIOS_Y_DESPLIEGUES.md).
+3. [Diagnóstico, pruebas seguras y recuperación](docs/DIAGNOSTICO_Y_RECUPERACION.md).
+
+Cada cambio debe seguir la matriz de impacto, PR, evidencia de autorización exacta y verificaciones post-deploy. El plugin y su release se administran **por separado** del servidor MCP y la WebApp.
+
 ## Infraestructura operativa
 - Proyecto Google Cloud: `classroom-mcp-512122` (`us-central1`).
 - MCP: `https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app/mcp`.
