@@ -32,6 +32,8 @@ jobs:
       - name: Enforce explicit platform-change authorization on main
         if: github.event_name == 'push'
         run: node scripts/assert-platform-change-authorized.mjs
+      - name: Verify live Classroom setup and change runbooks
+        run: node scripts/test-classroom-operational-docs.mjs
       - name: Build canonical generated context
         run: node scripts/academic-context.mjs build
       - name: Check all Apps Script source syntax
