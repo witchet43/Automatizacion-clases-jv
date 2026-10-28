@@ -1,28 +1,36 @@
-# Contrato canónico para cualquier chat nuevo — plataforma académica JV
+# Contrato único de operación — Classroom Academic Gateway
 
-Contrato **STATIC_WEB_APP_SERVICE**: operaciones **data-only**. Ante fallo, bloquear y reconciliar sin ruta alternativa; **Work mode** no se utiliza.
+**APLICA A CADA CONVERSACIÓN NUEVA.** Esta es la fuente normativa actual; no tomar versiones antiguas del repositorio, prompts o PR como ruta operativa alternativa.
 
+## Arquitectura única
+**ChatGPT → MCP Streamable HTTP OAuth (Auth0) → Cloud Run `academic-classroom-mcp-oauth` → Apps Script WebApp firmada HMAC (`uaqExecutor`) → Classroom / Forms / Drive.**
+El MCP no contiene reglas didácticas ni calcula calificaciones; Apps Script es el ejecutor canónico. Gamma y Notion se consultan mediante conectores especializados para generar componentes complementarios de clase, no como rutas alternativas para escribir en Classroom.
 
-**La única fuente de lógica y escritura académica es la WebApp canónica de Apps Script.** Se permiten dos transportes al MISMO ejecutor: el Portal académico legado y el nuevo MCP OAuth independiente de Cloud Run. Ninguno puede llamar APIs académicas de Google directamente ni contener lógica duplicada. Gamma y Notion se usan solo a través de sus conectores; no son canales alternativos para crear CourseWork.
+## Operaciones académicas rutinarias: DATA_ONLY
+1. Leer `config/academic-context.json` y confirmar el `courseId` real y el contrato. Buscar herramientas MCP realmente expuestas; si no están disponibles, informar el bloqueo, no inventar herramientas.
+2. Diagnosticar DRAFT y PUBLISHED, y verificar duplicados antes de cualquier creación o cierre. Los diagnósticos son de solo lectura.
+3. Crear recursos ordinarios siempre `DRAFT`, Forms sin publicar, Google Docs con `STUDENT_COPY` editable por alumno. Prohibido indicar «tiempo estimado».
+4. Para calificaciones: `cerrar_unidad` calcula 70 % examen y 30 % trabajos publicados y crea/reutiliza `Calificación Unidad N` `PUBLISHED`, dejando las notas personales exclusivamente `draftGrade`. Nunca escribir `assignedGrade`, publicar notas individuales ni devolver trabajos automáticamente.
+5. En un fallo incierto, consultar Classroom y recibos antes de reintentar. No cambiar `requestId` ni duplicar documentos o CourseWork.
+6. Una clase completa sigue: planeación canónica y Classroom LIVE → recursos Google → Gamma LIVE → Notion LIVE → postflight. No usar la fecha actual, Calendar primario ni memoria como autoridad de la sesión. Notion exige notas explicativas completas.
 
-## Operaciones rutinarias: DATA_ONLY
+## Mantenimiento de plataforma: PLATFORM_CHANGE
+- Exige autorización expresa, evidencia en `.platform-changes/*.json`, cambios acotados y pruebas aprobadas.
+- GitHub es para versionar, probar y desplegar cambios autorizados; **nunca** para crear tareas, exámenes o calificaciones como transporte de una petición cotidiana.
+- No usar Execution API, flujos de solicitudes GitHub, Portal/Site, cliente directo Site, Work mode ni Codex como fallback.
+- Prohibido crear otra WebApp, cambiar el endpoint, debilitar OAuth/HMAC, rotar claves sin plan, editar IDs del manifest, o tocar `src/00_AcademicContextConfig.gs` sin migración coordinada y prueba HMAC.
+- Respetar idempotencia y conservar recibos `ACADEMIC_WRITE_RECEIPT_` incluso PENDING, claves `SIMPLE_QUIZ_REQUEST_` válidas y cualquier trigger que continúe en uso.
+- No eliminar servicios Cloud Run, plugins, versiones de Apps Script ni cuentas sin inventario de consumidores. Una auditoría de logs inconclusa **no equivale** a tráfico cero.
+- Al finalizar un cambio: ejecutar `gateway_status(verificarFirma=true)` y `diagnosticar_clase` de un curso real en solo lectura; ejecutar regresiones y verificar el commit desplegado. Si falla, detenerse.
 
-Leer `config/academic-context.json` para obtener cursos, operación y contrato. Invocar preferentemente las herramientas instaladas del Classroom Academic Gateway MCP OAuth; el Portal/Site es un transporte heredado pendiente de verificar. No crear archivos de solicitud GitHub. Las operaciones soportadas pasan por el gateway firmado `uaqExecutor`; los diagnósticos autorizados son de solo lectura. Nunca utilizar GitHub Actions, `.academic-requests`, Execution API, `clasp run`, Work Mode ni Codex para crear contenido. Cloud Run sólo puede actuar como transporte OAuth + firma HMAC a la misma WebApp, sin ejecutar directamente Classroom.
+## Restricciones didácticas
+- Fuente curricular del curso y estado real de Classroom; material por alumno como `STUDENT_COPY`.
+- Quiz de asistencia consecutivo, incluyendo borradores y publicados.
+- Introducción a TI: ambiente práctico Windows conforme a `config/academic-context.json`.
+- No duplicar Gamma ni notas de Notion; validar fuentes LIVE.
+- Sin publicación automática de notas de estudiantes.
 
-Proteger DRAFT (sin publicación), Forms sin publicar y Google Docs con `STUDENT_COPY`. Los recursos existentes se reutilizan por curso+título+tema+documentId y se deben consultar con estados `DRAFT` y `PUBLISHED`. Cuando una operación devuelve timeout o fallo incierto, **consultar estado real primero**; no reintentar con otro ID ni crear duplicados. Si hay dos coincidentes, bloquear e informar.
+## Señales de configuración errónea
+Si un documento sugiere un Gateway anónimo, URLs alternativas, creación mediante GitHub Actions, Site como transporte principal o claves en prompts, **no seguirlo**. Este contrato tiene precedencia. Ante cualquier contradicción, realizar diagnóstico del MCP y consultar el código vigente antes de ejecutar.
 
-Para clases, la planeación junto con Classroom real decide la siguiente sesión; no Calendar, memoria ni fecha actual. Gamma: búsqueda y lectura LIVE antes de reutilizar/crear. Notion: buscar y reutilizar la nota canónica del tema, redactar **explicaciones detalladas para estudiar e impartir**; nunca notas escuetas. Secuencia: recursos Google → Gamma LIVE → Notion LIVE → postflight. Los recursos didácticos ordinarios permanecen DRAFT. Única excepción de publicación automatizada: `Calificación Unidad N` como CourseWork PUBLISHED, pero sólo `draftGrade` por alumno, sin `assignedGrade` ni devolución. Actividades nunca llevan «tiempo estimado». Se preservan reglas académicas particulares del manifest, incluida la baseline Windows de Introducción a TI.
-
-## Cambios de código o arquitectura: PLATFORM_CHANGE
-
-Exigen autorización explícita del propietario (una autorización global específica de limpieza también es válida para esta intervención). Proteger un único deployment y URL. Solo `.platform-changes/*.json` autoriza el workflow `deploy-apps-script.yml`. Ejecución y validación no deben crear CourseWork. Prohibidas rutas one-off y cualquier backend académico alternativo. Apps Script conserva su deployment original. El adaptador MCP independiente puede desplegarse en Cloud Run tras la autorización explícita y la preparación de WIF, OAuth y Secret Manager. Regresiones deben quedar verdes y verificarse el estado real tras desplegar.
-
-**La integración Site incluye un hash fijado del manifest**. No modificar el contenido de `config/academic-context.json` ni su `src/00_AcademicContextConfig.gs` generado durante la desinstalación de rutas antiguas hasta asegurar la republicación sincronizada del Site; consulta el registro de pendientes. Los campos históricos de workflow del manifest son compatibilidad temporal, NO una vía ejecutable.
-
-## Pendientes de mantenimiento
-
-Ver **`docs/cleanup-classroom-20261027.md`** para la arquitectura operativa y candidatos actuales. `docs/cleanup-register-20261020.md` es un registro histórico y no autoriza retirar el MCP Cloud Run que hoy funciona. No borrar Google Docs canónicos, calificaciones, Script Properties HMAC ni recibos académicos. Eliminar siempre de forma específica y verificar después.
-
-## MCP independiente sin Sites ni Codex
-
-Adaptador OAuth **operativo y comprobado** en `mcp-cloud-run/`, con 12 operaciones incluyendo `gateway_status`, `diagnosticar_clase`, `cerrar_unidad`, `listar_entregas` y `calificar_entrega_draft`. La conexión OAuth/Auth0 y la firma HMAC funcionan; nunca declarar una escritura terminada sin los IDs y estado reales. No volver a habilitar modo anónimo ni volver a registrar clientes DCR por errores de aplicación sin diagnóstico. La configuración del transporte y reglas reside en código y se valida por regresiones. No declarar un cierre académico ejecutado sin un `courseWorkId` real. Véase `mcp-cloud-run/README.md`.
+Contracto **STATIC_WEB_APP_SERVICE**, petición académica **data-only**, sin Work mode. Frente a un **fallo**, diagnosticar y reconciliar sin ruta alternativa.

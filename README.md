@@ -1,42 +1,32 @@
-# Automatización académica JV — arquitectura vigente
+# Automatización académica JV — arquitectura única vigente
 
-Contrato **STATIC_WEB_APP_SERVICE**: operaciones **data-only**. Ante fallo, bloquear y reconciliar sin ruta alternativa; **Work mode** no se utiliza.
+**Estado operativo verificado: 27 de octubre de 2026.**
 
+**ChatGPT → Classroom Academic Gateway MCP (Auth0 OAuth) → Cloud Run `academic-classroom-mcp-oauth` → WebApp canónica de Google Apps Script (HMAC) → Google Classroom, Forms y Drive.**
 
-## Operación académica (sin GitHub Actions)
+`AGENTS.md` es el contrato obligatorio para toda conversación y toda operación. `docs/academic-webapp-architecture.md` describe el flujo y sus límites. No interpretar la historia de commits, PR cerrados ni pruebas anteriores como instrucciones de producción.
 
-**Ruta principal verificada: ChatGPT → Classroom Academic Gateway (OAuth/Auth0) → Cloud Run `academic-classroom-mcp-oauth` → WebApp canónica Google Apps Script (HMAC) → Classroom / Drive / Forms.** El Portal Académico/Site queda como integración heredada pendiente de evaluación; no debe sustituir automáticamente la conexión funcional.
-Gamma y Notion se acceden mediante sus conectores para presentaciones y notas docentes.
+## Reglas de operación
+- Contrato `STATIC_WEB_APP_SERVICE`: solicitudes académicas **data-only**; cambios del motor van por otra vía.
+- Apps Script es el único motor de negocio; Cloud Run es únicamente transporte OAuth + HMAC. GitHub Actions se utiliza solo para validar y desplegar código autorizado, nunca como ejecutor de trabajos académicos.
+- El manifest canónico es `config/academic-context.json` (contrato 1.1.0). **No modificar** su SHA, URLs, curso o deployment durante limpieza sin migración coordinada.
+- Recursos ordinarios en `DRAFT`; Forms no publicados; Google Docs `STUDENT_COPY`; sin «tiempo estimado».
+- Excepción deliberada: `Calificación Unidad N` puede estar en `PUBLISHED` con calificaciones individuales únicamente en `draftGrade`; nunca `assignedGrade` ni devolución automática.
+- Antes de cualquier escritura: confirmar curso, identidad, idempotencia y existencia de recursos `DRAFT` y `PUBLISHED`. Tras fallo, diagnosticar el estado real: no repetir con `requestId` nuevo.
+- Para clase completa: planeación y Classroom reales → recursos Google → Gamma LIVE → Notion LIVE → reconciliación. No inferir sesiones por fecha actual ni por Calendar.
+- Si existe **fallo** de conexión o permisos: detener escritura, diagnosticar el MCP y el destino. Nunca cambiar de transporte, deshabilitar OAuth o HMAC, ni utilizar Work mode o Codex como alternativa.
 
-Las operaciones de lectura usan preferentemente las herramientas MCP (`gateway_status`, `diagnosticar_clase`, `auditar_recursos`). Las escrituras pasan por una solicitud autorizada y firmada (HMAC), el entrypoint genérico `uaqExecutor`, la lógica canónica de Apps Script y postflight. Los recursos didácticos ordinarios quedan **DRAFT** y Forms sin publicar. **Excepción administrativa explícita:** `Calificación Unidad N` tiene CourseWork `PUBLISHED`, pero cada nota individual queda en `draftGrade`, nunca `assignedGrade`. Google Docs de actividades, tareas y prácticas se adjuntan como **STUDENT_COPY**.
+## Infraestructura operativa
+- Proyecto Google Cloud: `classroom-mcp-512122` (`us-central1`).
+- MCP: `https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app/mcp`.
+- Servicios y secretos esenciales: `academic-classroom-mcp-oauth`, `academic-write-hmac`, `academic-mcp-allowed-subjects`.
+- WebApp: la URL de `config/academic-context.json → webApp.url` (no crear otra).
+- Despliegues controlados: `.github/workflows/deploy-cloud-run-mcp.yml` y `.github/workflows/deploy-apps-script.yml`.
+- Pruebas: `.github/workflows/validate-minimal-academic-operations.yml`.
 
-No usar Codex, Work Mode, GitHub Actions, Execution API, `clasp run`, workflows por archivo o scripts ad hoc para ejecutar operaciones académicas. Cloud Run está autorizado exclusivamente como adaptador MCP OAuth que firma y transporta solicitudes a la misma WebApp canónica; no contiene algoritmos académicos. Un fallo no autoriza reintentar con otro requestId: se consulta Classroom primero y se exige idempotencia.
+## Seguridad y mantenimiento
+Conservar el cliente OAuth conectado, los secretos HMAC, las cuentas de servicio, los recibos de escritura, los registros de idempotencia y el deployment Apps Script. No eliminar servicios Cloud Run o plugins externos sin evidencia de consumidores y tráfico.
 
-El servicio canónico es el mismo endpoint registrado en `config/academic-context.json`. **No cambiar su URL, deployment, firma ni identificadores de curso durante una limpieza**.
+La evidencia de autorización para cambios de plataforma utiliza `.platform-changes/*.json`. Las evidencias de cambios anteriores se consultan en **Git history**, no permanecen en el árbol activo. No se deben utilizar manuales de rutas anteriores como instrucciones operativas.
 
-### Generación de clase completa
-
-1. Resolver la próxima sesión desde planeación y estado real de Classroom, no desde el día actual ni Calendar.
-2. Reutilizar documentos canónicos; crear recursos Google en DRAFT y verificar IDs, adjuntos, STUDENT_COPY y duplicados.
-3. Buscar la Gamma LIVE, verificar y reutilizar antes de generar otra.
-4. Buscar la nota de Notion bajo la materia; actualizar sin duplicar; notas explicativas completas para impartir la clase.
-5. Reconciliar el paquete. Nunca declarar completada una clase con algún componente pendiente.
-
-## Mantenimiento de plataforma
-
-GitHub se utiliza exclusivamente para versionar, validar y desplegar **cambios de código aprobados por el usuario**. Apps Script se despliega exclusivamente por `deploy-apps-script.yml` y evidencia `.platform-changes/*.json`. El adaptador MCP independiente tiene `deploy-cloud-run-mcp.yml`, manual y protegido por WIF + OAuth + Secret Manager; ninguno de los dos workflows ejecuta operaciones de alumnos. `validate-minimal-academic-operations.yml` ejecuta regresiones. No crea recursos de alumnos.
-
-Las antiguas solicitudes `.academic-requests/` y el workflow `academic-webapp.yml` quedaron retirados del árbol activo; su historial permanece en Git y en la rama de archivo `archive/academic-requests-before-direct-webapp-20261020`. El adaptador MCP original de token fijo fue retirado. Existe un **nuevo** `mcp-cloud-run/` con OAuth (no hereda la antigua credencial ni ejecuta lógica de Classroom): ver `mcp-cloud-run/README.md`. Su despliegue queda separado del de Apps Script y requiere infraestructura y OAuth configurados.
-
-**Compatibilidad temporal que no debe tocarse sin actualizar el Site:** el manifest aún expone metadatos históricos `workflow.name/path`, `operations.*.requestDirectory` y otros campos de envoltura. El Site desplegado usa el SHA-256 de ese manifest para validar las solicitudes: modificarlo ahora sin republicar el Site cortaría el acceso académico. Son **metadatos inertes**, no una ruta ejecutable. Ver `docs/cleanup-register-20261020.md` para cerrar esa dependencia.
-
-## Reglas protegidas
-
-- Política DRAFT; Forms no publicados; copia individual editable.
-- Consecutivo de Quiz de asistencia considerando DRAFT y PUBLISHED.
-- Una única fuente de comportamiento: Apps Script canónico.
-- Calificaciones existentes, registros académicos, trazabilidad e idempotencia se conservan.
-- Integración de calificaciones GitHub es una función distinta de la creación de clases; auditar uso antes de desinstalar sus triggers.
-- Sin eliminaciones en Classroom mediante vías alternativas.
-
-**Mantenimiento vigente:** [Inventario de limpieza de Classroom — 27/10/2026](docs/cleanup-classroom-20261027.md). Los registros del 20/10 son históricos y no deben utilizarse como instrucción actual de desinstalación. Consulta también `AGENTS.md`.
+Consulta `AGENTS.md` para políticas de ejecución y `mcp-cloud-run/README.md` para operar el transporte.
