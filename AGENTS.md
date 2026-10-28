@@ -23,6 +23,16 @@ El MCP no contiene reglas didácticas ni calcula calificaciones; Apps Script es 
 - No eliminar servicios Cloud Run, plugins, versiones de Apps Script ni cuentas sin inventario de consumidores. Una auditoría de logs inconclusa **no equivale** a tráfico cero.
 - Al finalizar un cambio: ejecutar `gateway_status(verificarFirma=true)` y `diagnosticar_clase` de un curso real en solo lectura; ejecutar regresiones y verificar el commit desplegado. Si falla, detenerse.
 
+## Procedimientos obligatorios para intervenir la plataforma
+
+Antes de realizar cualquier configuración, actualización o reparación, consultar:
+
+- [Configuración de plugin + Auth0 + Cloud Run](docs/CONFIGURACION_PLUGIN_Y_AUTH0.md)
+- [Cambios y despliegues separados por componente](docs/CAMBIOS_Y_DESPLIEGUES.md)
+- [Diagnóstico y recuperación](docs/DIAGNOSTICO_Y_RECUPERACION.md)
+
+Mantener estos tres manuales al día cuando cambien las herramientas, Auth0, los contratos o los workflows. La release del **plugin** no es el deployment de Cloud Run ni el de Apps Script. Nunca sustituir una validación OAuth/HMAC por haber obtenido un run `success` de Actions.
+
 ## Restricciones didácticas
 - Fuente curricular del curso y estado real de Classroom; material por alumno como `STUDENT_COPY`.
 - Quiz de asistencia consecutivo, incluyendo borradores y publicados.
