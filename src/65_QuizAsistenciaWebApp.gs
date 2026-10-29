@@ -583,6 +583,66 @@ function normalizarPayloadAcademicoWeb_(course,p){
  * EXECUTE: reuse live resources; normalize/prepare ALL missing documents in
  * memory before the first external write. No extra postflight reads are added.
  */
+/**
+ * Contrato obligatorio para Gamma. La IA no decide título, carpeta o tema:
+ * vienen del curso registrado y del subtema exacto de la planeación.
+ * Ninguna URL o texto generado por IA puede sobrescribir este contrato.
+ */
+function contratoGammaClaseCanonicaWeb_(course,row){
+  const courses=typeof ACADEMIC_CONTEXT_CONFIG!=='undefined'&&ACADEMIC_CONTEXT_CONFIG.courses
+    ? ACADEMIC_CONTEXT_CONFIG.courses:{};
+  const matches=Object.keys(courses).map(function(key){return courses[key];}).filter(function(item){
+    return item&&String(item.id||'')===String(course.id||'');
+  });
+  const configured=matches[0];
+  if(!configured||!String(configured.gammaThemeId||'').trim()||
+     !String(configured.gammaFolderId||'').trim())
+    throw new Error('GAMMA_IDENTITY_MANIFEST_REQUIRED: '+String(course.id||''));
+  if(matches.some(function(item){
+    return String(item.gammaThemeId)!==String(configured.gammaThemeId)||
+      String(item.gammaFolderId)!==String(configured.gammaFolderId);
+  }))throw new Error('GAMMA_IDENTITY_MANIFEST_AMBIGUOUS: '+String(course.id));
+  const topic=String(row&&row.topic||'').trim();
+  if(!topic)throw new Error('GAMMA_CANONICAL_TOPIC_MISSING');
+  // Inserta el separador oficial en cada subtema, incluidos temas compuestos.
+  const title=topic.replace(/(^|\s+\+\s+)(\d+(?:\.\d+)+)(?:\s*[-–—]\s*|\s+)/g,
+    function(_,prefix,num){return prefix+num+' - ';}).replace(/\s+/g,' ').trim();
+  return {
+    source:'MANIFEST_COURSE_AND_CANONICAL_PLANNING',
+    title:title,
+    coverTitle:String(row.unit||'').trim()+' · Tema '+title,
+    themeId:String(configured.gammaThemeId),
+    themeName:String(configured.gammaThemeName||''),
+    folderId:String(configured.gammaFolderId),
+    folderName:String(configured.gammaFolderName||''),
+    requireExactTitle:true,requireExactTheme:true,requireExactFolder:true,
+    noDefaultTheme:true,
+    instruction:'Gamma.generate debe recibir title, themeId y folderId exactamente como se indican; verificar antes de FINALIZE.'
+  };
+}
+/** Error no bloqueante: solicita reparar el Gamma existente, nunca duplicarlo. */
+function verificarIdentidadGammaClaseWeb_(raw,contract){
+  const evidence=raw&&typeof raw==='object'?raw:{};
+  const issues=[];
+  if(String(evidence.title||'').trim()!==contract.title)issues.push('GAMMA_TITLE_MISMATCH');
+  if(String(evidence.themeIdSent||'').trim()!==contract.themeId)
+    issues.push('GAMMA_THEME_NOT_SENT_FROM_MANIFEST');
+  if(evidence.themeRequestVerified!==true)
+    issues.push('GAMMA_THEME_REQUEST_UNVERIFIED');
+  if(evidence.themeIdReturned!=null&&String(evidence.themeIdReturned)!==contract.themeId)
+    issues.push('GAMMA_THEME_RETURNED_MISMATCH');
+  // NULL de Gamma no demuestra un tema incorrecto ni uno correcto:
+  // exige prueba independiente de aplicación, no basta el argumento enviado.
+  if(evidence.themeIdReturned==null&&evidence.themeAppliedVerified!==true)
+    issues.push('GAMMA_THEME_APPLIED_NOT_VERIFIED');
+  if(String(evidence.folderIdSent||'').trim()!==contract.folderId)
+    issues.push('GAMMA_FOLDER_NOT_SENT_FROM_MANIFEST');
+  if(evidence.folderRequestVerified!==true)
+    issues.push('GAMMA_FOLDER_REQUEST_UNVERIFIED');
+  return {valid:issues.length===0,issues:issues,
+    action:issues.length?'REPAIR_EXISTING_GAMMA_IDENTITY':'REUSE',
+    expected:contract};
+}
 function planificarClaseCanonicaWeb_(course,p,works){
   const planning=leerPlaneacionSiguienteClase_(course.materia);
   const target=p&&p.target&&typeof p.target==='object'?p.target:{};
@@ -601,9 +661,14 @@ function planificarClaseCanonicaWeb_(course,p,works){
   };
   const row=selection.target;
   const evidence=selection.evidence;
+  const gammaGeneration=contratoGammaClaseCanonicaWeb_(course,row);
+  const gammaRaw=(supplied.gammaLiveEvidence||{})[String(row.session||'')];
+  const gammaIdentity=verificarIdentidadGammaClaseWeb_(gammaRaw,gammaGeneration);
+  const gammaReady=!evidence.gammaRequired||
+    (evidence.gammaVerificada&&gammaIdentity.valid);
   const missingComponents=[];
   if(!evidence.recursoPreparado)missingComponents.push('CLASSROOM');
-  if(evidence.gammaRequired&&!evidence.gammaVerificada)missingComponents.push('GAMMA');
+  if(evidence.gammaRequired&&!gammaReady)missingComponents.push('GAMMA');
   if(!evidence.notionVerificada||
      (evidence.gammaRequired&&!evidence.notionGammaReferenceVerified))
     missingComponents.push('NOTION');
@@ -614,6 +679,8 @@ function planificarClaseCanonicaWeb_(course,p,works){
     package:canonicalComplete,packageStatus:canonicalComplete?'COMPLETE':'PLAN_READY',
     complete:canonicalComplete,readOnly:true,
     requiredComponents:['CLASSROOM'].concat(evidence.gammaRequired?['GAMMA']:[],['NOTION']),
+    gammaGeneration:gammaGeneration,
+    gammaIdentity:gammaIdentity,
     missingComponents:missingComponents,
     courseId:String(course.id),materia:String(course.materia),
     target:{session:String(row.session||''),unit:String(row.unit||''),
@@ -625,7 +692,8 @@ function planificarClaseCanonicaWeb_(course,p,works){
     historicalBacklog:selection.historicalBacklog||[],
     requiresExternalEvidence:selection.gammaVerificationOnly===true||
       selection.notionVerificationOnly===true,
-    gammaDecision:String(evidence.gammaDecision||''),
+    gammaDecision:gammaReady?String(evidence.gammaDecision||''):
+      gammaIdentity.issues.length?'REPAIR_EXISTING_GAMMA_IDENTITY':String(evidence.gammaDecision||''),
     notionDecision:String(evidence.notionDecision||''),
     existingResources:works.filter(function(w){
       return existingIds[String(w.id||'')]===true;
@@ -634,6 +702,7 @@ function planificarClaseCanonicaWeb_(course,p,works){
     createdCount:0,reusedCount:0,resources:[],
     nextPhase:canonicalComplete?'NONE':
       missingComponents[0]==='CLASSROOM'?'CLASSROOM_RESOURCES':
+      missingComponents[0]==='GAMMA'&&gammaRaw?'REPAIR_EXISTING_GAMMA_IDENTITY':
       missingComponents[0]==='GAMMA'?'GENERATE_OR_REUSE_GAMMA':
       'CREATE_OR_REUSE_NOTION_NOTES'
   };
