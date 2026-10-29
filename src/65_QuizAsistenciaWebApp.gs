@@ -622,7 +622,8 @@ function contratoGammaClaseCanonicaWeb_(course,row){
 }
 /** Error no bloqueante: solicita reparar el Gamma existente, nunca duplicarlo. */
 function verificarIdentidadGammaClaseWeb_(raw,contract){
-  const evidence=raw&&typeof raw==='object'?raw:{};
+  if(!raw||typeof raw!=='object')return {valid:false,issues:[],action:'VERIFY_LIVE',expected:contract};
+  const evidence=raw;
   const issues=[];
   if(String(evidence.title||'').trim()!==contract.title)issues.push('GAMMA_TITLE_MISMATCH');
   if(String(evidence.themeIdSent||'').trim()!==contract.themeId)
