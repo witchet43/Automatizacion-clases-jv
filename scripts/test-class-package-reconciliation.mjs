@@ -21,6 +21,11 @@ const existingPractice={id:'102',title:tasks[1].params.titulo,topicId:'123',stat
 function scenario(initial, opts={}){
  const works=initial.slice(),calls={tarea:0,practica:0,delete:0,format:0,plan:0,read:0},sandbox={
   String,Array,Object,Error,console,
+  ACADEMIC_CONTEXT_CONFIG:{courses:{'sistemas-operativos':{
+    id:course.id,materia:course.materia,gammaThemeId:'bfm8ztqy1whsib8',
+    gammaThemeName:'UAQ',gammaFolderId:'fo_mock_sistemas_operativos',
+    gammaFolderName:'ITQ - Sistemas Operativos'
+  }}},
   Utilities:{sleep(){calls.sleeps=(calls.sleeps||0)+1;}},
   normalizarPayloadAcademicoWeb_(_course,p){return {...p.params,courseId:course.id}},
   listarCourseWorkClase_(){calls.read++;return works},
@@ -113,6 +118,11 @@ result=s.run([], {mode:'PLAN',requestedSession:'19'});
 assert.equal(result.packageStatus,'PLAN_READY');
 assert.equal(result.target.session,'19');
 assert.equal(result.target.gammaUrlCandidate,'https://gamma.app/docs/gamma19','The canonical plan exposes existing Gamma link for reuse');
+assert.equal(result.gammaGeneration.title,'Sincronización: mutex y semáforos');
+assert.equal(result.gammaGeneration.themeId,'bfm8ztqy1whsib8');
+assert.equal(result.gammaGeneration.folderId,'fo_mock_sistemas_operativos');
+assert.equal(result.gammaIdentity.action,'VERIFY_LIVE');
+
 assert.equal(result.createdCount,0);
 assert.equal(s.calls.plan,1);
 assert.equal(s.calls.read,1);
@@ -147,13 +157,26 @@ assert.ok(result.missingComponents.includes('GAMMA'));
 assert.ok(result.missingComponents.includes('NOTION'));
 assert.equal(result.nextPhase,'GENERATE_OR_REUSE_GAMMA');
 assert.throws(()=>s.run([], {mode:'FINALIZE'}),/CLASE_FINALIZE_REQUIERE_SESION_EXPLICITA/);
-const gammaEvidence={status:'LIVE_ACTIVE_CANONICAL'};
+const gammaEvidence={status:'LIVE_ACTIVE_CANONICAL',
+ title:'Sincronización: mutex y semáforos',themeIdSent:'bfm8ztqy1whsib8',
+ themeRequestVerified:true,themeIdReturned:null,themeAppliedVerified:true,
+ folderIdSent:'fo_mock_sistemas_operativos',folderRequestVerified:true};
 const notionEvidence={status:'LIVE_CANONICAL',gammaReferenceVerified:true};
 result=s.run([], {mode:'FINALIZE',requestedSession:'19',options:{
  gammaLiveEvidence:{'19':gammaEvidence}}});
 assert.equal(result.complete,false);
 assert.equal(result.packageStatus,'INCOMPLETE');
 assert.deepEqual([...result.missingComponents],['NOTION']);
+assert.equal(result.gammaIdentity.valid,true);
+const invalidTheme=s.run([], {mode:'FINALIZE',requestedSession:'19',options:{
+ gammaLiveEvidence:{'19':{...gammaEvidence,themeIdSent:'incorrect_theme'}},
+ notionLiveEvidence:{'19':notionEvidence}
+}});
+assert.equal(invalidTheme.complete,false);
+assert.ok(invalidTheme.missingComponents.includes('GAMMA'));
+assert.ok(invalidTheme.gammaIdentity.issues.includes('GAMMA_THEME_NOT_SENT_FROM_MANIFEST'));
+assert.equal(invalidTheme.nextPhase,'REPAIR_EXISTING_GAMMA_IDENTITY');
+
 result=s.run([], {mode:'FINALIZE',requestedSession:'19',options:{
  gammaLiveEvidence:{'19':gammaEvidence},notionLiveEvidence:{'19':{...notionEvidence,gammaReferenceVerified:false}}}});
 assert.equal(result.complete,false,'Notion without Gamma reference cannot close the package');
