@@ -148,3 +148,17 @@ Consultar [DIAGNOSTICO_Y_RECUPERACION.md](DIAGNOSTICO_Y_RECUPERACION.md). Una ap
 - **Sesión automática:** la operación `clase EXECUTE` usa `requestedSession` o infiere la sesión canónica por estado real. Cada recurso recibe `sesionCanonica` y `explicitSequenceOverride`, siempre sometidos a validación estricta de coincidencia curricular en Apps Script. La ejecución no calcula progreso por fecha ni modifica la planeación.
 - **Gamma/Notion:** son componentes independientes y sus verificaciones LIVE siguen siendo obligatorias para declarar `COMPLETE`. Un paquete parcialmente creado informa `resourceRepairPending` y conserva `nextPhase=GENERATE_OR_REUSE_GAMMA_AND_NOTION` para no bloquear el trabajo independiente.
 - **Despliegue:** cambios exclusivos de `src/*.gs` requieren PR, tests en CI, merge revisado y despliegue en el Script ID y WebApp canónicos. Hasta esa validación el código de producción conserva su comportamiento anterior.
+
+## Contrato ejecutable de identidad Gamma (29-oct-2026)
+
+El título, la carpeta y el tema de una presentación nunca quedan a criterio del prompt ni de los valores predeterminados de Gamma. La respuesta `clase PLAN` expone `gammaGeneration` calculado exclusivamente de **config/academic-context.json** (registro del curso por `courseId`) y **planeación curricular** (`target.topic`). El generador debe enviar los tres argumentos exactos a `Gamma.generate`: `title=gammaGeneration.title`, `themeId=gammaGeneration.themeId`, `folderId=gammaGeneration.folderId`. El título aplica `<número> - <tema>` a cada parte de un subtema compuesto. No se añade "Sesión NN" ni se inventa el nombre de la clase.
+
+Caso UAQ Sistemas Distribuidos, sesión 19:
+
+- Título: `2.4 - Programación de socket con UDP + 2.5 - Construcción de un servidor Web`.
+- Tema: `UAQ` / `bfm8ztqy1whsib8`.
+- Carpeta: `UAQ - Sistemas Distribuidos` / `fo_2538kazbe3ajvec`.
+
+La operación `clase FINALIZE` devuelve `gammaIdentity` y no acredita el componente GAMMA como completo sin título exacto, confirmación de `themeIdSent`, verificación del request y carpeta, y comprobación de tema aplicado. Si el proveedor devuelve `themeIdReturned=null`, ello **no acredita** que se haya aplicado el tema: se exige una prueba independiente `themeAppliedVerified=true`. Si la identidad no corresponde, `nextPhase=REPAIR_EXISTING_GAMMA_IDENTITY`: corregir la presentación existente y reportar el componente pendiente; no crear otra presentación ni afectar los recursos Classroom o Notion. El conector `edit_gamma` no permite aplicar temas; nunca presentar una edición de título como corrección del tema visual.
+
+El contrato elimina decisiones de texto/estilo por parte del asistente, pero por sí mismo no puede imponer parámetros a un conector externo: el cliente de Gamma debe consumir explícitamente `gammaGeneration`. Las pruebas de CI comprueban generación de valores, desvíos, `null`, y no permiten que FINALIZE los acepte. Nunca declarar `COMPLETE` si Gamma no cumple la identidad institucional.
