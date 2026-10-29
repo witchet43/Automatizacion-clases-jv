@@ -80,6 +80,7 @@ jobs:
           node scripts/test-incident-regressions.mjs
           node scripts/test-static-webapp-contract.mjs
           node scripts/test-gamma-live-state-contract.mjs
+          node scripts/test-gamma-institutional-identity.mjs
           node scripts/test-class-package-reconciliation.mjs
           node scripts/test-nonblocking-class-reconciliation.mjs
           node scripts/test-academic-document-prose-regression.mjs
