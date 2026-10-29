@@ -47,6 +47,7 @@ jobs:
           node scripts/test-incident-regressions.mjs
           node scripts/test-static-webapp-contract.mjs
           node scripts/test-gamma-live-state-contract.mjs
+          node scripts/test-gamma-institutional-identity.mjs
           node scripts/test-class-package-reconciliation.mjs
           node scripts/test-exam-session-skip.mjs
           node scripts/test-notion-class-notes-contract.mjs
@@ -73,6 +74,9 @@ jobs:
 
       - name: Regression - next class follows real Classroom and live Gamma, never today
         run: node scripts/test-next-class-real-state.mjs
+
+      - name: Regression - institutional Gamma metadata
+        run: node scripts/test-gamma-institutional-identity.mjs
 
       - name: Regression - Gamma planning claims never replace LIVE verification
         run: node scripts/test-gamma-live-state-contract.mjs

@@ -1,0 +1,15 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "el thema de la Gamma es \"UAQ\" y nuevamente generaste el gamma sin el tema correcto, además de que le pusiste un texto incorrecto en el título ... Esto ya debió quedar de manera inamovible, inquebrantable, 100% definida en nuestros scripts, sin dejarte decisión a interpretación, debería ser inequivoco",
+  "reason": "Cerrar el incumplimiento del tema institucional y título académico al generar Gamma: resolver valores exclusivamente del curso en manifiesto y subtema curricular; exigir evidencia suficiente antes de certificar COMPLETE, conservar presentación existente y no duplicar.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-apps-script.yml",
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    "docs/CAMBIOS_Y_DESPLIEGUES.md",
+    "scripts/test-class-package-reconciliation.mjs",
+    "scripts/test-gamma-institutional-identity.mjs",
+    "src/65_QuizAsistenciaWebApp.gs"
+  ]
+}
