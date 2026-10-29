@@ -1,0 +1,17 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Lo que debes hacer es crear la siguiente no detenerte si encuentras alguna discrepancia, tienes que corregir el código para que se comporte de esta manera, si algo existe continua, si algo no existe lo completa, pero nunca se detine",
+  "reason": "Corregir el planificador de clases UAQ para priorizar el progreso publicado de Classroom, relegar discrepancias históricas Gamma/Notion a backlog y procesar de forma independiente los recursos faltantes; preservar DRAFT, verificación curricular e idempotencia ante escrituras inciertas.",
+  "allowedChangedPaths": [
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    "docs/CAMBIOS_Y_DESPLIEGUES.md",
+    "scripts/test-class-package-reconciliation.mjs",
+    "scripts/test-nonblocking-class-reconciliation.mjs",
+    "src/39_MasterGuardrails.gs",
+    "src/44_NomenclaturaRecursos.gs",
+    "src/60_SecuenciaRealClase.gs",
+    "src/65_QuizAsistenciaWebApp.gs"
+  ]
+}
