@@ -676,6 +676,9 @@ function crearPaqueteClaseWeb_(course,p){
   if(mode==='FINALIZE'&&!String(p.requestedSession||p.sesion||p.target&&p.target.session||'').trim())
     throw new Error('CLASE_FINALIZE_REQUIERE_SESION_EXPLICITA');
   const resources=Array.isArray(p.resources)?p.resources:[];
+  const readStartedMs=Date.now();
+  const works=listarCourseWorkClase_(course.id);
+  const classroomReadMs=Date.now()-readStartedMs;
   // La sesión de un paquete se infiere de la planeación+Classroom cuando no fue
   // informada. El guardrail de cada recurso valida igualdad exacta del tema y
   // de la sesión antes de aceptar cualquier reconciliación retrospectiva.
@@ -687,9 +690,6 @@ function crearPaqueteClaseWeb_(course,p){
       createdCount:0,reusedCount:0,resources:[],nextPhase:'NONE'};
     canonicalSession=String(selection.target.session||'').trim();
   }
-  const readStartedMs=Date.now();
-  const works=listarCourseWorkClase_(course.id);
-  const classroomReadMs=Date.now()-readStartedMs;
   if(mode==='PLAN'||mode==='FINALIZE'||!resources.length){
     const result=planificarClaseCanonicaWeb_(course,p,works);
     result.timingsMs={classroomRead:classroomReadMs,total:Date.now()-startedMs};
