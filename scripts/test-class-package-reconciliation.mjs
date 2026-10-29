@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const web=fs.readFileSync('src/65_QuizAsistenciaWebApp.gs','utf8');
-const start=web.indexOf('function planificarClaseCanonicaWeb_(');
+const start=web.indexOf('function contratoGammaClaseCanonicaWeb_(');
 const end=web.indexOf('function deduplicarDraftsExactosClaseWeb_(',start);
 assert.ok(start>=0&&end>start,'Canonical plan and execute functions are present');
 const code=web.slice(start,end);
