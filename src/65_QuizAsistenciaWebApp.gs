@@ -622,6 +622,7 @@ function planificarClaseCanonicaWeb_(course,p,works){
       next:String(row.next||''),gammaState:String(row.gammaState||''),
       gammaUrlCandidate:String(row.gammaUrl||'')},
     sequenceSource:String(selection.source||''),
+    historicalBacklog:selection.historicalBacklog||[],
     requiresExternalEvidence:selection.gammaVerificationOnly===true||
       selection.notionVerificationOnly===true,
     gammaDecision:String(evidence.gammaDecision||''),
@@ -675,6 +676,17 @@ function crearPaqueteClaseWeb_(course,p){
   if(mode==='FINALIZE'&&!String(p.requestedSession||p.sesion||p.target&&p.target.session||'').trim())
     throw new Error('CLASE_FINALIZE_REQUIERE_SESION_EXPLICITA');
   const resources=Array.isArray(p.resources)?p.resources:[];
+  // La sesión de un paquete se infiere de la planeación+Classroom cuando no fue
+  // informada. El guardrail de cada recurso valida igualdad exacta del tema y
+  // de la sesión antes de aceptar cualquier reconciliación retrospectiva.
+  let canonicalSession=String(p.requestedSession||p.sesion||p.target&&p.target.session||'').trim();
+  if(mode==='EXECUTE'&&resources.length&&!canonicalSession){
+    const planning=leerPlaneacionSiguienteClase_(course.materia);
+    const selection=seleccionarSiguienteClasePorEstadoReal_(planning.rows,works,'',{});
+    if(selection.complete)return {package:false,complete:true,packageStatus:'SEQUENCE_COMPLETE',
+      createdCount:0,reusedCount:0,resources:[],nextPhase:'NONE'};
+    canonicalSession=String(selection.target.session||'').trim();
+  }
   const readStartedMs=Date.now();
   const works=listarCourseWorkClase_(course.id);
   const classroomReadMs=Date.now()-readStartedMs;
@@ -708,6 +720,10 @@ function crearPaqueteClaseWeb_(course,p){
     const payload=normalizarPayloadAcademicoWeb_(course,{
       params:item&&item.params&&typeof item.params==='object'?item.params:{}
     });
+    if(canonicalSession){
+      payload.sesionCanonica=canonicalSession;
+      payload.explicitSequenceOverride=true;
+    }
     const title=String(payload.titulo||payload.title||'').trim();
     if(!title)throw new Error('CLASE_RECURSO_TITULO_REQUERIDO_'+index);
     const key=type+'|'+title;
@@ -778,7 +794,7 @@ function crearPaqueteClaseWeb_(course,p){
   // No mutation until every missing component has content AND the canonical
   // HTML/description can be prepared. This is one batch preparation, not
   // another round of readback or manual validation.
-  if(requiresContent.length)return {
+  if(requiresContent.length&&!pending.length)return {
     package:false,packageStatus:'CONTENT_REQUIRED',
     resourcePhaseStatus:'CONTENT_REQUIRED',createdCount:0,
     reusedCount:results.filter(function(r){return r.status==='REUSED';}).length,
@@ -789,9 +805,24 @@ function crearPaqueteClaseWeb_(course,p){
     timingsMs:{classroomRead:classroomReadMs,total:Date.now()-startedMs}
   };
   const preparationStartedMs=Date.now();
-  const ready=pending.map(function(item){
-    const payload=prepararDocumentoRecursoClaseWeb_(item);
-    return {type:item.type,title:item.title,payload:payload};
+  // Un documento faltante o mal formado afecta solamente a su recurso. Los
+  // demás continúan; nunca se inventa contenido ni se duplica un CourseWork.
+  requiresContent.forEach(function(item){
+    results.push({type:item.type,title:item.title,status:'BLOCKED',result:{
+      errorCode:item.errorCode,creado:false,reutilizado:false
+    }});
+  });
+  const ready=[];
+  pending.forEach(function(item){
+    try{
+      const payload=prepararDocumentoRecursoClaseWeb_(item);
+      ready.push({type:item.type,title:item.title,payload:payload});
+    }catch(err){
+      results.push({type:item.type,title:item.title,status:'BLOCKED',result:{
+        errorCode:String(err&&err.message||err).slice(0,240),
+        creado:false,reutilizado:false
+      }});
+    }
   });
   const resourcePreparationMs=Date.now()-preparationStartedMs;
   const resourceTimings=[];
@@ -807,15 +838,23 @@ function crearPaqueteClaseWeb_(course,p){
         else if(type==='practica')r=crearPractica(payload);
         else if(type==='quiz')r=crearQuiz(payload);
         else if(type==='material')r=crearMaterialDidacticoWeb_(course,{params:payload});
+        if(!r||r.ok===false||(!r.workId&&!r.documentId&&!r.formId))
+          throw new Error('CLASE_RECURSO_RESULTADO_INCIERTO_RECONCILIAR');
         break;
       }catch(err){
-        // Only lock acquisition failure is safe to retry: it occurs BEFORE
-        // creation. All uncertain writes still fail for reconciliation.
-        if(attempt!==0||
-          String(err&&err.message||err).indexOf('IDEMPOTENCY_LOCK_BUSY')<0)
-          throw err;
-        retries++;
-        Utilities.sleep(1000);
+        // Únicamente lock-busy se reintenta: ocurrió antes de la escritura.
+        // Todo fallo posterior se reporta como incierto y no se reintenta.
+        if(attempt===0&&String(err&&err.message||err).indexOf('IDEMPOTENCY_LOCK_BUSY')>=0){
+          retries++;
+          Utilities.sleep(1000);
+          continue;
+        }
+        results.push({type:type,title:title,status:'BLOCKED',result:{
+          errorCode:String(err&&err.message||err).slice(0,240),
+          creado:false,reutilizado:false,writeOutcome:'RECONCILE_BEFORE_RETRY'
+        }});
+        resourceTimings.push({type:type,elapsed:Date.now()-resourceStartedMs,retries:retries});
+        return;
       }
     }
     results.push({type:type,title:title,status:r&&r.reutilizado?'REUSED':'CREATED',result:r});
@@ -843,8 +882,8 @@ function crearPaqueteClaseWeb_(course,p){
     createdCount:created,reusedCount:reused,
     allResourcesAlreadyExisted:reused===results.length&&failures.length===0,
     gammaUrl:'',
-    nextPhase:resourcePhaseStatus==='PARCIAL'?'COMPLETE_MISSING_RESOURCES':
-      'GENERATE_OR_REUSE_GAMMA_AND_NOTION',
+    nextPhase:'GENERATE_OR_REUSE_GAMMA_AND_NOTION',
+    resourceRepairPending:resourcePhaseStatus==='PARCIAL',
     resources:results,
     timingsMs:{classroomRead:classroomReadMs,resourcePreparation:resourcePreparationMs,
       resourceWrites:resourceWritesMs,resources:resourceTimings,total:Date.now()-startedMs}
