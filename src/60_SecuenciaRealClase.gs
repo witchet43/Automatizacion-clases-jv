@@ -305,6 +305,49 @@ function seleccionarSiguienteClasePorEstadoReal_(rows, works, requestedSession, 
   const lastPlanningPrepared=seen.reduce(function(last,e,i){return (e.planningPaquetePreparado||e.paquetePreparado)?i:last;},-1);
   const lastPublished=seen.reduce(function(last,e,i){return e.publicado?i:last;},-1);
 
+  // El progreso pedagógico confirmado por Classroom tiene prioridad sobre el
+  // estado histórico de Gamma/Notion. Una nota antigua no verificada se registra
+  // como deuda de reconciliación, pero nunca regresa el selector a una clase ya
+  // sobrepasada por recursos PUBLISHED de sesiones posteriores.
+  if(lastPublished>=0 && lastPublished>=lastPlanningPrepared){
+    let nextIndex=lastPublished+1;
+    while(nextIndex<plan.length && seen[nextIndex].paquetePreparado)nextIndex++;
+    const historicalBacklog=seen.slice(0,lastPublished+1).filter(function(e){
+      return !e.paquetePreparado;
+    }).map(function(e){return {
+      session:e.session,
+      classroomReady:e.recursoPreparado,
+      gammaReady:e.gammaNoAplica||e.gammaVerificada,
+      notionReady:e.notionVerificada
+    };});
+    if(nextIndex>=plan.length)return {
+      complete:true,target:null,source:'CLASSROOM_PUBLISHED_PROGRESS',
+      lastPrepared:lastPlanningPrepared,lastPublished:lastPublished,
+      historicalBacklog:historicalBacklog,observed:seen,
+      gammaVerificationOnly:false,notionVerificationOnly:false,
+      provisionalNextSession:null
+    };
+    const next=plan[nextIndex];
+    if(requested){
+      const requestedIndex=plan.findIndex(function(r){
+        return String(r.session||'').trim()===requested;
+      });
+      if(requestedIndex<0)throw new Error('BLOCKED_UNKNOWN_CANONICAL_SESSION: '+requested);
+      if(requestedIndex!==nextIndex && opts.reconciliationMode!==true)
+        throw new Error('BLOCKED_SEQUENCE_REAL_STATE: la sesión solicitada '+requested+
+          ' difiere de la siguiente sesión observada '+next.session+'.');
+    }
+    return {
+      complete:false,target:next,evidence:seen[nextIndex],
+      source:'CLASSROOM_PUBLISHED_PROGRESS',
+      lastPrepared:lastPlanningPrepared,lastPublished:lastPublished,
+      inferredSession:String(next.session),reconciliation:requested!=='',
+      historicalBacklog:historicalBacklog,observed:seen,
+      gammaVerificationOnly:false,notionVerificationOnly:false,
+      provisionalNextSession:null
+    };
+  }
+
   // Para conservar velocidad no se vuelve a auditar todo el semestre. La frontera
   // de avance que la planeación considera preparada se valida LIVE antes de avanzar.
   // Si esa Gamma fue archivada/eliminada, la propia frontera vuelve a ser el objetivo.

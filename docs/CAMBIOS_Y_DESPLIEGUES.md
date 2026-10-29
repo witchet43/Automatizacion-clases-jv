@@ -139,3 +139,12 @@ Es operación **`CONTRACT_COORDINATED` de alto riesgo**. El `manifestSha256` se 
 - **Si hay PENDING o timeouts:** no repetir solicitud ni borrar recibos; reconciliar con Classroom y registros de Apps Script.
 
 Consultar [DIAGNOSTICO_Y_RECUPERACION.md](DIAGNOSTICO_Y_RECUPERACION.md). Una aprobación de CI no acredita por sí sola que una calificación se haya escrito; exigir ID y estado desde Classroom.
+
+## Reconciliación progresiva de clases (29-oct-2026)
+
+- **Progreso curricular:** la sesión siguiente se identifica por la planeación canónica y los recursos `PUBLISHED` que realmente existen en Classroom. Si ese avance supera la frontera con evidencia histórica de Gamma/Notion, la presentación o nota antigua pendiente se registra en `historicalBacklog` y **no retrocede la selección**. La deuda histórica se atiende en una reconciliación independiente.
+- **Componentes reutilizables:** cada recurso se identifica por título, tema y estado `DRAFT/PUBLISHED`. Un recurso completo se reutiliza; un borrador incompleto se repara mediante su entrada canónica; un publicado nunca se sustituye, borra ni publica nuevamente.
+- **Ejecución parcial:** ausencia de contenido, error de formato o fallo de creación se registra por recurso y no cancela los componentes restantes. Los fallos de escritura incierta se etiquetan `RECONCILE_BEFORE_RETRY`; **no** se reintentan con otro identificador sin verificar antes Classroom y recibos. Solo el lock de idempotencia admite reintento acotado.
+- **Sesión automática:** la operación `clase EXECUTE` usa `requestedSession` o infiere la sesión canónica por estado real. Cada recurso recibe `sesionCanonica` y `explicitSequenceOverride`, siempre sometidos a validación estricta de coincidencia curricular en Apps Script. La ejecución no calcula progreso por fecha ni modifica la planeación.
+- **Gamma/Notion:** son componentes independientes y sus verificaciones LIVE siguen siendo obligatorias para declarar `COMPLETE`. Un paquete parcialmente creado informa `resourceRepairPending` y conserva `nextPhase=GENERATE_OR_REUSE_GAMMA_AND_NOTION` para no bloquear el trabajo independiente.
+- **Despliegue:** cambios exclusivos de `src/*.gs` requieren PR, tests en CI, merge revisado y despliegue en el Script ID y WebApp canónicos. Hasta esa validación el código de producción conserva su comportamiento anterior.

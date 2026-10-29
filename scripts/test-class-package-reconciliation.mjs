@@ -127,10 +127,14 @@ assert.equal(s.calls.tarea+s.calls.practica+s.calls.format,0,
  'Missing content returns a precise plan without creating anything');
 s=scenario([]);
 const bad=[tasks[0],{...tasks[1],params:{...tasks[1].params,contenidoDocumento:'BLOCKED_FORMAT'}}];
-assert.throws(()=>s.run(bad),/BLOCKED_DOCUMENT_FORMAT/);
-assert.equal(s.calls.tarea+s.calls.practica,0,
- 'All missing documents must be ready before the first external mutation');
-assert.equal(s.calls.format,1,'Earlier item can be prepared in memory without writing');
+result=s.run(bad);
+assert.equal(result.packageStatus,'PARCIAL');
+assert.equal(result.createdCount,1,'Documento válido se crea pese a error de otro recurso');
+assert.equal(result.resourceErrors.length,1);
+assert.match(result.resourceErrors[0].errorCode,/BLOCKED_DOCUMENT_FORMAT/);
+assert.equal(s.calls.tarea,1);
+assert.equal(s.calls.practica,0);
+assert.equal(s.calls.format,1,'Only well-formed independent resource is prepared');
 assert.doesNotMatch(code,/deduplicarDraftsExactosClaseWeb_\(/,
  'Never delete existing drafts as a side effect');
 // The one canonical operation is a deterministic three-stage state machine.

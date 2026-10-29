@@ -22,7 +22,8 @@ function generarSiguienteClase(params){
  const idx=plan.rows.findIndex(function(x){return x.row===row.row;});
  const nextRow=idx>=0&&idx+1<plan.rows.length?plan.rows[idx+1]:null;
  // Validar únicamente identidad/secuencia antes de crear recursos. Gamma es SIEMPRE posterior.
- if(resolved.sequenceSource!=='PLANNING_REAL_PREPARATION_STATE'&&resolved.sequenceSource!=='EXPLICIT_CANONICAL_SESSION')
+ if(resolved.sequenceSource!=='PLANNING_REAL_PREPARATION_STATE'&&resolved.sequenceSource!=='EXPLICIT_CANONICAL_SESSION'&&
+    resolved.sequenceSource!=='CLASSROOM_PUBLISHED_PROGRESS')
    throw new Error('BLOCKED_CLASS_PACKAGE_SEQUENCE: no se resolvió una sesión canónica válida.');
  if(!String(row.practice||'').trim())
    throw new Error('BLOCKED_CLASS_PACKAGE_PRACTICE: la planeación no define práctica/actividad verificable.');
