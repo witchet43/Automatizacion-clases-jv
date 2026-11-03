@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Entonces haz todos los cambios para no tener acceso anónimo",
+  "reason": "Provide ScriptProperties stub in negative-path Apps Script test to unblock Google-authenticated WebApp deployment without changing HMAC behavior.",
+  "allowedChangedPaths": [
+    "scripts/test-academic-context.mjs",
+    "src/65_QuizAsistenciaWebApp.gs"
+  ],
+  "classroomMutationAllowed": false,
+  "newInfrastructureAllowed": false
+}
