@@ -71,6 +71,14 @@ assert.equal(classroom.provider,'GOOGLE_CLASSROOM');
 assert.equal(classroom.failedAt,'GOOGLE_CLASSROOM_API');
 assert.equal(classroom.stage,'ACADEMIC_EXECUTION');
 assert.ok(!JSON.stringify(classroom).includes('GoogleJsonResponseException'));
+const sheets=ctx.detallarFalloAcademicoWeb_(new Error(
+  'Exception: You do not have permission to call SpreadsheetApp.openById'),{action:'clase'});
+assert.equal(sheets.provider,'GOOGLE_SHEETS');
+assert.equal(sheets.failedAt,'GOOGLE_SHEETS_API');
+const docs=ctx.detallarFalloAcademicoWeb_(new Error(
+  'Exception: API call to Docs.Documents failed'),{action:'practica'});
+assert.equal(docs.provider,'GOOGLE_DOCS');
+assert.equal(docs.failedAt,'GOOGLE_DOCS_API');
 assert.equal(summary.claveHmacConfigurada,true);
 assert.ok(!log.join(' ').includes('DO_NOT_PRINT_THIS_TEST_SECRET_'));
 assert.ok(!log.join(' ').includes('ACADEMIC_WRITE_RECEIPT_111'));
