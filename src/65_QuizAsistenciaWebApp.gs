@@ -41,6 +41,7 @@ function cursosAcademicosWeb_(){
 
 
 function doGet(e){
+  // Access also requires a signed-in Google identity at the existing WebApp deployment.
   // Never expose academic reads in URL parameters; all operations are signed POST.
   return respuestaAcademicaWeb_({ok:false,
     errorCode:'ACADEMIC_POST_HMAC_REQUIRED',
