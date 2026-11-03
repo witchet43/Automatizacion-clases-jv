@@ -65,6 +65,18 @@ workflow de Cloud Run comprueba además una firma HMAC LIVE contra Apps Script
 tras desplegar; si falla, el resultado de la verificación no acredita operación
 académica aunque la revisión esté creada.
 
+## Acceso autenticado obligatorio — 3 de noviembre de 2026
+
+El flujo académico ya no permite ejecutar herramientas MCP de forma anónima.
+
+- **ChatGPT → MCP:** `tools/call` exige JWT OAuth de Auth0 autorizado. `academic.read` habilita lecturas generales; `academic.close_unit` habilita escrituras. Las lecturas privadas de estudiantes requieren `academic.read` explícito. `initialize`, `tools/list` y el documento OAuth discovery pueden seguir públicos porque solo describen el protocolo y no exponen datos académicos.
+- **Cloud Run:** la entrada HTTPS sigue invocable para permitir el flujo de OAuth **gestionado por la aplicación**; Google Cloud IAM no acepta directamente tokens Auth0 como si fueran ID tokens de servicio Google. No confundir transporte HTTP público con permiso para ejecutar herramientas.
+- **Cloud Run → Apps Script:** el servidor obtiene un token Google OAuth temporal de la **cuenta de servicio ya configurada**, mediante el metadata server, y lo envía únicamente a `script.google.com` usando el encabezado `Authorization: Bearer`. No se crea ni almacena una clave estática; el entorno de producción declara `GOOGLE_WEBAPP_AUTH_MODE=google_oauth`.
+- **Apps Script:** `webapp.access=ANYONE` significa **solo usuarios Google autenticados**; `ANYONE_ANONYMOUS` queda prohibido. `executeAs=USER_DEPLOYING` se conserva. Todas las operaciones académicas son POST con firma HMAC; GET no ejecuta diagnósticos ni expone datos.
+- **Validación:** la CI de Apps Script verifica el rechazo anónimo. El flujo completo solo se considera operativo después de que un cliente OAuth autorizado llame a `gateway_status(true)` y obtenga `upstreamHmacAccepted=true`.
+
+**Restricción técnica:** los tokens Google de una cuenta de servicio NO equivalen a una sesión Google personal. Google puede seguir respondiendo 401/403 pese a que el token se envíe correctamente; la transición no se declarará operativa hasta que el servidor acepte una llamada real. La API `scripts.run` no es un sustituto automático porque Google no admite service accounts para ese método. No reducir permisos ni abrir de nuevo el acceso anónimo como “solución” sin autorización explícita.
+
 ## 1. Health check seguro en orden
 
 | Prueba | Acción | Criterio mínimo |
