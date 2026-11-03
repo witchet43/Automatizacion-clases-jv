@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Entonces haz todos los cambios para no tener acceso anónimo",
+  "reason": "Completar el despliegue de la política Auth0 OAuth/Google sign-in para toda operación académica, corrigiendo la validación de alcance del primer squash y evitando que producción arranque sin Google OAuth.",
+  "allowedChangedPaths": [
+    "mcp-cloud-run/server.mjs",
+    "src/65_QuizAsistenciaWebApp.gs"
+  ],
+  "noNewInfrastructure": true,
+  "classroomMutationAllowed": false
+}
