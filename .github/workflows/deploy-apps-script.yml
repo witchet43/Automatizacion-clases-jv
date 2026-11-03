@@ -324,6 +324,12 @@ jobs:
             echo 'Only platform files changed; skipping Apps Script deployment.'
           fi
 
+      - name: Probe existing owner OAuth against restricted WebApp (read-only)
+        if: contains(github.event.head_commit.message, '[probe-owner-google-oauth]')
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: node scripts/probe-owner-webapp-oauth.mjs
+
       - name: Restore clasp credentials
         if: steps.source_gate.outputs.needs_deploy == 'true'
         shell: bash

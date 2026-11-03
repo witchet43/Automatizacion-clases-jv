@@ -1,0 +1,14 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Hazlo hasta completarlo",
+  "reason": "Diagnosticar de forma segura si la identidad OAuth Google existente del propietario (CLASPRC_JSON de Actions) puede atravesar la WebApp con login requerido. Solo GET, sin mutaciones, nunca mostrar credenciales.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-apps-script.yml",
+    "scripts/probe-owner-webapp-oauth.mjs"
+  ],
+  "noNewInfrastructure": true,
+  "classroomMutationAllowed": false,
+  "credentialMigrationAllowed": false
+}
