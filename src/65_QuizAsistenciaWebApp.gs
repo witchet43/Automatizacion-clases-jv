@@ -44,7 +44,7 @@ function doGet(e){
   // No academic mutation may be reached via a URL/query string.
   const params=e&&e.parameter?e.parameter:{};
   if(['diagnosticarClase','auditarIdentidadClassroom'].indexOf(String(params.action||''))<0)
-    return respuestaAcademicaWeb_({ok:false,error:'ACADEMIC_READ_ONLY_GET_REQUIRED'});
+    return respuestaAcademicaWeb_({ok:false,errorCode:'ACADEMIC_READ_ONLY_GET_REQUIRED',error:'ACADEMIC_READ_ONLY_GET_REQUIRED',errorDetails:{code:'ACADEMIC_READ_ONLY_GET_REQUIRED',failedAt:'APPS_SCRIPT_HTTP_ENTRY',stage:'REQUEST_VALIDATION',provider:'GOOGLE_APPS_SCRIPT'}});
   return ejecutarServicioAcademicoWeb_(params);
 }
 
@@ -53,7 +53,7 @@ function doPost(e){
   const raw=e&&e.postData?String(e.postData.contents||''):'';
   if(raw){
     try{params=JSON.parse(raw);}
-    catch(err){return respuestaAcademicaWeb_({ok:false,error:'JSON_INVALIDO'});}
+    catch(err){return respuestaAcademicaWeb_({ok:false,errorCode:'JSON_INVALIDO',error:'JSON_INVALIDO',errorDetails:{code:'JSON_INVALIDO',failedAt:'APPS_SCRIPT_REQUEST_PARSE',stage:'REQUEST_PARSE',provider:'GOOGLE_APPS_SCRIPT'}});}
   }else if(e&&e.parameter){
     params=e.parameter;
   }
