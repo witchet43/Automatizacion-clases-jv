@@ -225,13 +225,22 @@ function detallarFalloAcademicoWeb_(err,request) {
     :/\bForms\.(?:Forms|Responses)|forms\.googleapis|API call to forms/i.test(signature)
     ?'GOOGLE_FORMS'
     :/\bCalendar\.(?:Events|CalendarList)|calendar\.googleapis|API call to calendar/i.test(signature)
-    ?'GOOGLE_CALENDAR':'GOOGLE_APPS_SCRIPT';
+    ?'GOOGLE_CALENDAR'
+    :/\bSpreadsheetApp\b|\bSheets\.(?:Spreadsheets|Values)|sheets\.googleapis/i.test(signature)
+    ?'GOOGLE_SHEETS'
+    :/\bDocumentApp\b|\bDocs\.Documents|docs\.googleapis/i.test(signature)
+    ?'GOOGLE_DOCS'
+    :/\bUrlFetchApp\b|\bUrlFetch\b/i.test(signature)
+    ?'EXTERNAL_HTTP':'GOOGLE_APPS_SCRIPT';
   const failedAt=stage==='AUTHORIZATION_OR_CONTEXT'?'APPS_SCRIPT_AUTH_CONTEXT':
     stage==='PREFLIGHT_OR_POLICY'?'APPS_SCRIPT_POLICY_PREFLIGHT':
     provider==='GOOGLE_CLASSROOM'?'GOOGLE_CLASSROOM_API':
     provider==='GOOGLE_DRIVE'?'GOOGLE_DRIVE_API':
     provider==='GOOGLE_FORMS'?'GOOGLE_FORMS_API':
-    provider==='GOOGLE_CALENDAR'?'GOOGLE_CALENDAR_API':'APPS_SCRIPT_EXECUTION';
+    provider==='GOOGLE_CALENDAR'?'GOOGLE_CALENDAR_API':
+    provider==='GOOGLE_SHEETS'?'GOOGLE_SHEETS_API':
+    provider==='GOOGLE_DOCS'?'GOOGLE_DOCS_API':
+    provider==='EXTERNAL_HTTP'?'APPS_SCRIPT_EXTERNAL_HTTP':'APPS_SCRIPT_EXECUTION';
   const requestId=String(request&&request.requestId||'');
   const courseId=String(request&&request.courseId||'');
   const frames=String(err&&err.stack||'').split('\n').slice(1,6);
