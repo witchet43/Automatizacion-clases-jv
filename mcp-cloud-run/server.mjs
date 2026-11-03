@@ -230,7 +230,7 @@ export function diagnosticPayload(error){
   if(/^[A-Za-z0-9_-]{1,12}$/.test(String(explicit.requestIdHint||'')))
     data.requestIdHint=explicit.requestIdHint;
   if(source.length)data.sourceLocation=source;
-  if(['GOOGLE_APPS_SCRIPT','GOOGLE_CLASSROOM','GOOGLE_DRIVE','GOOGLE_FORMS','GOOGLE_CALENDAR','AUTH0','GITHUB','GOOGLE_CLOUD_RUN'].includes(explicit.provider))
+  if(['GOOGLE_APPS_SCRIPT','GOOGLE_CLASSROOM','GOOGLE_DRIVE','GOOGLE_FORMS','GOOGLE_CALENDAR','GOOGLE_SHEETS','GOOGLE_DOCS','EXTERNAL_HTTP','AUTH0','GITHUB','GOOGLE_CLOUD_RUN'].includes(explicit.provider))
     data.provider=explicit.provider;
   // Distinguishes an HTTP gate failure from an Apps Script HMAC failure.
   if(errorCode.startsWith('UPSTREAM_HTTP_'))data.nextCheck='CHECK_WEBAPP_HTTP_ACCESS_AND_REDIRECT';
