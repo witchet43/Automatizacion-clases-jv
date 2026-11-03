@@ -25,6 +25,13 @@ const ctx={
 };
 vm.createContext(ctx);
 vm.runInContext(web+'\n'+maintenance,ctx);
+const invalidJson=ctx.doPost({postData:{contents:'{invalid'}});
+assert.equal(invalidJson.errorCode,'JSON_INVALIDO');
+assert.equal(invalidJson.errorDetails.failedAt,'APPS_SCRIPT_REQUEST_PARSE');
+assert.equal(invalidJson.errorDetails.stage,'REQUEST_PARSE');
+const invalidGet=ctx.doGet({parameter:{action:'clase'}});
+assert.equal(invalidGet.errorCode,'ACADEMIC_READ_ONLY_GET_REQUIRED');
+assert.equal(invalidGet.errorDetails.failedAt,'APPS_SCRIPT_HTTP_ENTRY');
 const result=ctx.ejecutarServicioAcademicoWeb_({
  action:'uaqExecutor',operation:'examen',courseId:'875776451793',requestId:'test-request'
 });
