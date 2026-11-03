@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Hazlo hasta completarlo",
+  "reason": "Classify the existing owner's Google OAuth read-only WebApp response without exposing body or credentials to identify why HTTP 200 does not reach doGet.",
+  "allowedChangedPaths": [
+    "scripts/probe-owner-webapp-oauth.mjs"
+  ],
+  "noNewInfrastructure": true,
+  "classroomMutationAllowed": false,
+  "credentialMigrationAllowed": false
+}
