@@ -11,7 +11,7 @@ de diagnóstico seguro con estas claves:
 | Campo | Qué permite determinar |
 |---|---|
 | `errorCode` | Tipo de fallo, sin detalles privados |
-| `failedAt` | Último eslabón observable: OAuth, MCP, Google WebApp (entrada o redirección), Apps Script, Classroom/Drive/Forms/Calendar, Cloud Run Admin, Secret Manager o GitHub |
+| `failedAt` | Último eslabón observable: OAuth, MCP, Google WebApp (entrada o redirección), Apps Script, Classroom/Drive/Docs/Sheets/Forms/Calendar, Cloud Run Admin, Secret Manager o GitHub |
 | `phase` | Token, HTTP, transporte, lectura, decodificación, autorización/contexto, política o ejecución |
 | `httpStatus` | Código HTTP cuando una respuesta realmente se recibió |
 | `wasRedirected` | Si la respuesta final siguió una redirección |
@@ -52,7 +52,7 @@ servicio, almacenamiento, plugin ni credencial para la observabilidad.
 - `APPS_SCRIPT_RESPONSE_REDIRECT`: respuesta HTTP rechazada tras la redirección a Google Content.
 - `MCP_TO_APPS_SCRIPT_WEBAPP / NETWORK_TRANSPORT`: no se recibió una respuesta HTTP.
 - `APPS_SCRIPT_AUTH_CONTEXT`: el código Apps Script devolvió un fallo de firma o contexto.
-- `GOOGLE_CLASSROOM_API`, `GOOGLE_DRIVE_API`, `GOOGLE_FORMS_API`, `GOOGLE_CALENDAR_API`: la excepción de Apps Script contiene evidencia del proveedor; sin evidencia se conserva `APPS_SCRIPT_EXECUTION`.
+- `GOOGLE_CLASSROOM_API`, `GOOGLE_DRIVE_API`, `GOOGLE_DOCS_API`, `GOOGLE_SHEETS_API`, `GOOGLE_FORMS_API`, `GOOGLE_CALENDAR_API`: la excepción de Apps Script contiene evidencia del proveedor; sin evidencia se conserva `APPS_SCRIPT_EXECUTION`.
 - `CLOUD_RUN_ADMIN_API`, `CLOUD_RUN_METADATA_SERVER`, `GOOGLE_SECRET_MANAGER`: introspección GCP fallida; no equivale a una falla de Classroom.
 - `GITHUB_APP_CONFIG` o `GITHUB_APP_TOKEN_EXCHANGE`: herramienta auxiliar de GitHub; no implica que el MCP académico deje de funcionar.
 
