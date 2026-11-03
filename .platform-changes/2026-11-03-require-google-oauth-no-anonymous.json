@@ -12,6 +12,7 @@
     "mcp-cloud-run/tests/anonymous.test.mjs",
     "mcp-cloud-run/tests/chain-diagnostics.test.mjs",
     "mcp-cloud-run/tests/discovery.test.mjs",
+    "scripts/test-academic-write-auth.mjs",
     "scripts/test-webapp-error-diagnostics.mjs",
     "scripts/verify-academic-webapp.mjs",
     "src/65_QuizAsistenciaWebApp.gs",
