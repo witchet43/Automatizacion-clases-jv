@@ -324,6 +324,12 @@ jobs:
             echo 'Only platform files changed; skipping Apps Script deployment.'
           fi
 
+      - name: Inventory existing Apps Script API deployments (read-only)
+        if: contains(github.event.head_commit.message, '[inventory-script-api]')
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: node scripts/inventory-apps-script-deployments.mjs
+
       - name: Probe existing owner OAuth against restricted WebApp (read-only)
         if: contains(github.event.head_commit.message, '[probe-owner-google-oauth]')
         env:

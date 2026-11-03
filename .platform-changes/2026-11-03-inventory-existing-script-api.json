@@ -1,0 +1,14 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Pues hay que hacerlo, esto es raro por que ya había funcionado pero hay que hacerlo",
+  "reason": "Determinar si ya existe un deployment API Executable compatible con OAuth de usuario para evitar nuevos componentes innecesarios.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-apps-script.yml",
+    "scripts/inventory-apps-script-deployments.mjs"
+  ],
+  "noNewInfrastructure": true,
+  "classroomMutationAllowed": false,
+  "credentialMigrationAllowed": false
+}
