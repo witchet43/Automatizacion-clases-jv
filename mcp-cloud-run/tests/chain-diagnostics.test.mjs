@@ -68,6 +68,11 @@ test('GitHub and Cloud Run credential failures remain attributable and sanitized
   result=diagnosticPayload(new Error('CLOUD_RUN_VIEWER_ACCESS_OR_API_ERROR: 403'));
   assert.equal(result.failedAt,'CLOUD_RUN_ADMIN_API');
   assert.equal(result.httpStatus,403);
+  result=diagnosticPayload(new Error('MCP_CONFIG_REQUIRED: MCP_OAUTH_ISSUER'));
+  assert.equal(result.errorCode,'MCP_CONFIG_REQUIRED');
+  assert.equal(result.failedAt,'MCP_STARTUP_CONFIG');
+  assert.equal(result.phase,'CONFIG_VALIDATION');
+  assert.equal(result.configKey,'MCP_OAUTH_ISSUER');
   result=diagnosticPayload(new Error('token=DO_NOT_PRINT'));
   assert.equal(result.errorCode,'MCP_INTERNAL_FAILURE');
   assert.ok(!JSON.stringify(result).includes('DO_NOT_PRINT'));
