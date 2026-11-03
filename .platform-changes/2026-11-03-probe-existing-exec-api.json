@@ -1,0 +1,14 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Pues hay que hacerlo, esto es raro por que ya había funcionado pero hay que hacerlo",
+  "reason": "Verificar la autorización OAuth existente para uno de los API Executables existentes antes de introducir cualquier cliente o implementación nueva. La función de prueba es aleatoria e inexistente.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-apps-script.yml",
+    "scripts/probe-existing-script-execution-api.mjs"
+  ],
+  "noNewInfrastructure": true,
+  "classroomMutationAllowed": false,
+  "credentialMigrationAllowed": false
+}
