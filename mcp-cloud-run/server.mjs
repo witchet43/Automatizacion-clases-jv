@@ -58,6 +58,8 @@ export function loadConfig(env=process.env,contextPath=join(dirname(fileURLToPat
     !config.courseIds.every(x=>/^\d+$/.test(x)))throw Error('MCP_COURSE_REGISTRY_INVALID');
   const webAppAuthMode=String(env.GOOGLE_WEBAPP_AUTH_MODE||'legacy').trim();
   if(!['legacy','google_oauth'].includes(webAppAuthMode))throw Error('GOOGLE_WEBAPP_AUTH_MODE_INVALID');
+  if(env.MCP_DEPLOY_COMMIT&&webAppAuthMode!=='google_oauth')
+    throw Error('GOOGLE_WEBAPP_OAUTH_REQUIRED_IN_PRODUCTION');
   return {
     publicUrl,issuer,jwksUrl,allowedSubjects:allowed,hmac,authMode,webAppAuthMode,
     operationalContext:ctx,upstreamUrl:ctx.endpoint,
