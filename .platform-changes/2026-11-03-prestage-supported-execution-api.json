@@ -1,0 +1,18 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Pues hay que hacerlo, esto es raro por que ya había funcionado pero hay que hacerlo",
+  "reason": "Preparar el uso seguro y optativo de cuatro deployments Google Apps Script API Executable existentes con OAuth Google delegado por propietario; ningún acceso anónimo ni secretos en repositorio.",
+  "allowedChangedPaths": [
+    "docs/DIAGNOSTICO_Y_RECUPERACION.md",
+    "mcp-cloud-run/server.mjs",
+    "mcp-cloud-run/tests/execution-api.test.mjs",
+    "scripts/test-webapp-error-diagnostics.mjs",
+    "src/65_QuizAsistenciaWebApp.gs"
+  ],
+  "deployOnlyAfterAuthorizedConsent": true,
+  "noNewInfrastructure": true,
+  "classroomMutationAllowed": false,
+  "credentialMigrationAllowed": false
+}
