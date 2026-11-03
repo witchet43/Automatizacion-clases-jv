@@ -77,6 +77,55 @@ El flujo académico ya no permite ejecutar herramientas MCP de forma anónima.
 
 **Restricción técnica:** los tokens Google de una cuenta de servicio NO equivalen a una sesión Google personal. Google puede seguir respondiendo 401/403 pese a que el token se envíe correctamente; la transición no se declarará operativa hasta que el servidor acepte una llamada real. La API `scripts.run` no es un sustituto automático porque Google no admite service accounts para ese método. No reducir permisos ni abrir de nuevo el acceso anónimo como “solución” sin autorización explícita.
 
+## Ruta compatible para eliminar el 403 sin acceso anónimo — API Executable
+
+**Evidencia del 3 de noviembre de 2026:** el proyecto Apps Script está asociado
+al proyecto Google Cloud estándar `473915513985`; el MCP vive en
+`classroom-mcp-512122`. El inventario autenticado detectó **cuatro implementaciones
+`EXECUTION_API` existentes** (versión más alta: 226), sin necesidad de crear otra.
+La autorización OAuth de `clasp` omitía 13 de los 15 scopes del manifest y la
+prueba segura de `scripts.run` recibió `PERMISSION_DENIED` (403).
+
+Google explica los requisitos:
+https://developers.google.com/apps-script/api/how-tos/execute
+
+Se preparó un transportador opcional `ACADEMIC_UPSTREAM_TRANSPORT=script_api`,
+pero **NO debe habilitarse** hasta cumplir las siguientes condiciones:
+
+1. Crear o reutilizar un OAuth Client **en el proyecto Google Cloud 473915513985**
+   (el cliente Auth0 no es un token OAuth válido para Google).
+2. Obtener consentimiento **del usuario propietario** para todos los scopes
+   declarados en `src/appsscript.json`. El grant de `clasp` está reservado al
+   despliegue y no tiene permisos suficientes; no copiarlo a Cloud Run.
+3. Guardar `GOOGLE_ACADEMIC_OAUTH_CLIENT_ID`,
+   `GOOGLE_ACADEMIC_OAUTH_CLIENT_SECRET`,
+   `GOOGLE_ACADEMIC_OAUTH_REFRESH_TOKEN` en controles de secretos seguros y
+   con accesos mínimos, nunca en GitHub ni en logs.
+4. Elegir y actualizar **una** de las implementaciones API existentes a una
+   versión que contenga `ejecutarServicioAcademicoApi_`, revisando primero
+   descripción y clientes actuales; no alterar otras implementaciones.
+   Configurar `GOOGLE_ACADEMIC_EXECUTION_DEPLOYMENT_ID` con su ID exacto.
+5. Habilitar la API Google Apps Script en el proyecto **473915513985**.
+6. Solo entonces activar `ACADEMIC_UPSTREAM_TRANSPORT=script_api` en
+   Cloud Run. Los endpoints de la WebApp continúan requiriendo cuenta Google
+   y HMAC; no reabrir `ANYONE_ANONYMOUS`.
+7. Probar `gateway_status(true)` con
+   `upstreamHmacAccepted=true` y `diagnosticar_clase` para una materia
+   autorizada. No ejecutar cierres ni crear recursos hasta completar estas
+   pruebas de lectura.
+
+**Flujo técnico:** ChatGPT Auth0 → MCP Cloud Run (HMAC de aplicación) →
+OAuth Google del propietario → `script.googleapis.com/v1/scripts/{deploymentId}:run`
+→ `ejecutarServicioAcademicoApi_(params)` → dispatcher existente →
+Classroom/Drive/Forms/Sheets. El retorno es JSON plano; fallos OAuth,
+`scripts.run` y Apps Script exponen `failedAt`, `phase` y `diagnosticId`
+sin copiar la respuesta original ni credenciales.
+
+La ruta actual `webapp` permanece como predeterminada durante la preparación;
+**en producción sigue bloqueada por la autenticación de entrada de Google**.
+La existencia de código preparado no acredita autenticación ni funcionamiento
+hasta que se obtenga consentimiento Google y pasen pruebas reales.
+
 ## 1. Health check seguro en orden
 
 | Prueba | Acción | Criterio mínimo |
