@@ -9,6 +9,7 @@
     "mcp-cloud-run/server.mjs",
     "mcp-cloud-run/tests/execution-api.test.mjs",
     "scripts/test-architecture-boundaries.mjs",
+    "scripts/test-decommissioned-routes.mjs",
     "scripts/test-webapp-error-diagnostics.mjs",
     "src/65_QuizAsistenciaWebApp.gs"
   ],
