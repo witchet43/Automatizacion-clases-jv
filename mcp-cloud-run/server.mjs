@@ -204,7 +204,9 @@ export function diagnosticPayload(error){
   const explicit=error?.publicDiagnostic||{};
   const errorCode=safeDiagnosticToken(explicit.errorCode||match?.[1],'MCP_INTERNAL_FAILURE');
   const httpStatus=Number(explicit.httpStatus||match?.[2]||0);
-  const fallbackHop=/^GITHUB_APP_CREDENTIALS/.test(errorCode)?'GITHUB_APP_CONFIG':
+  const fallbackHop=/^(MCP_CONFIG_|MCP_INVALID_URL|MCP_MANIFEST_|MCP_CANONICAL_CONTEXT_|MCP_HMAC_)/.test(errorCode)?'MCP_STARTUP_CONFIG':
+    /^(WRITE_AUTH_REQUIRED|INSUFFICIENT_SCOPE|STUDENT_DATA_REQUIRES_AUTH|STUDENT_GRADES_REQUIRE_AUTH)/.test(errorCode)?'MCP_TOOL_AUTHORIZATION':
+    /^GITHUB_APP_CREDENTIALS/.test(errorCode)?'GITHUB_APP_CONFIG':
     /^GITHUB_APP_TOKEN/.test(errorCode)?'GITHUB_APP_TOKEN_EXCHANGE':
     /^GITHUB_ACTIONS_/.test(errorCode)?'GITHUB_ACTIONS_API':
     /^GITHUB_/.test(errorCode)?'GITHUB_APP':
@@ -219,10 +221,14 @@ export function diagnosticPayload(error){
     ok:false,
     errorCode,
     failedAt:safeDiagnosticToken(explicit.failedAt,fallbackHop),
-    phase:safeDiagnosticToken(explicit.phase,'OPERATION'),
+    phase:safeDiagnosticToken(explicit.phase,
+      fallbackHop==='MCP_STARTUP_CONFIG'?'CONFIG_VALIDATION':
+      fallbackHop==='MCP_TOOL_AUTHORIZATION'?'TOOL_AUTHORIZATION':'OPERATION'),
     diagnosticId:/^[a-f0-9]{16}$/.test(String(explicit.diagnosticId||''))
       ?explicit.diagnosticId:randomBytes(8).toString('hex')
   };
+  const configKey=raw.match(/^MCP_CONFIG_REQUIRED:\s*(MCP_[A-Z0-9_]+|ACADEMIC_WRITE_HMAC_KEY)$/)?.[1];
+  if(configKey)data.configKey=configKey; // name only, never value
   if(httpStatus>=100&&httpStatus<=599)data.httpStatus=httpStatus;
   if(explicit.wasRedirected===true)data.wasRedirected=true;
   if(['HTML','JSON','OTHER'].includes(explicit.responseType))data.responseType=explicit.responseType;
@@ -752,8 +758,16 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
   return app;
 }
 if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]){
-  const config=loadConfig();
-  createApp(config).listen(config.port,'0.0.0.0',()=>{
-    console.log('Academic JV MCP ready on port '+config.port+' (auth='+config.authMode+')');
-  });
+  try{
+    const config=loadConfig();
+    createApp(config).listen(config.port,'0.0.0.0',()=>{
+      console.log('Academic JV MCP ready on port '+config.port+' (auth='+config.authMode+')');
+    });
+  }catch(error){
+    const diagnostic=diagnosticPayload(error);
+    diagnostic.failedAt='MCP_STARTUP_CONFIG';
+    diagnostic.phase='CONFIG_VALIDATION';
+    console.error('MCP_CHAIN_DIAGNOSTIC '+JSON.stringify(diagnostic));
+    process.exitCode=1;
+  }
 }
