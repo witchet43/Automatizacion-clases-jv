@@ -13,6 +13,7 @@ const ctx=vm.createContext({
   // exercised without this stub in test-academic-write-auth.mjs.
   executeAuthenticatedAcademicWrite_:(_request,execute)=>execute(),
   validateAcademicWriteAuthorization_:p=>{if(!p.auth)throw Error('ACADEMIC_WRITE_AUTH_REQUIRED');},
+  PropertiesService:{getScriptProperties:()=>({getProperty:()=>null,setProperty:()=>null})},
   ContentService:{MimeType:{JSON:'json'},createTextOutput(text){return {setMimeType(){return JSON.parse(text);}};}},
   normalizarNombreCursoRapido_:s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(),
   crearQuizAsistenciaRapido:m=>{calls.push('quizAsistencia');return {workId:'attendance',state:'DRAFT'};},
