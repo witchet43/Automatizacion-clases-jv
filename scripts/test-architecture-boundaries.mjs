@@ -91,20 +91,20 @@ if (fs.existsSync(path.join(workflowsDir,'academic-webapp.yml'))) fail.push('leg
 if (fs.existsSync(path.join(root,'.academic-requests'))) fail.push('legacy academic request files must not be active');
 const mcpSource = fs.readFileSync(path.join(root,'mcp-cloud-run','server.mjs'),'utf8');
 if (!/verifyBearer/.test(mcpSource)||!/signedClosureRequest/.test(mcpSource)) fail.push('MCP adapter must verify OAuth and sign requests to canonical WebApp');
-// No direct Classroom/Forms/Drive/Sheets API calls from MCP. A single,
- // opt-in Google Apps Script Execution API transport may call the *same*
- // existing HMAC dispatcher only after owner OAuth consent and configuration.
- if (/classroom\\.googleapis\\.com|forms\\.googleapis\\.com|drive\\.googleapis\\.com|sheets\\.googleapis\\.com/.test(mcpSource))
-   fail.push('MCP adapter may not access Google academic APIs directly');
- const scriptApiMatches=[...mcpSource.matchAll(/script\\.googleapis\\.com\\/v1\\/scripts\\//g)];
- if (scriptApiMatches.length>1)fail.push('MCP must not create multiple direct Apps Script execution routes');
- if (scriptApiMatches.length>0 &&
-     (!/ACADEMIC_UPSTREAM_TRANSPORT/.test(mcpSource)||
-      !/config\\.academicTransport==='script_api'/.test(mcpSource)||
-      !/function:'ejecutarServicioAcademicoApi_'/.test(mcpSource)||
-      !/GOOGLE_ACADEMIC_OAUTH_REFRESH_TOKEN/.test(mcpSource)||
-      !/signedAcademicRequest/.test(mcpSource)))
-   fail.push('Optional Execution API must be owner-OAuth-only and preserve canonical signed dispatcher');
+// No direct Google Classroom/Forms/Drive/Sheets REST access is allowed.
+for (const host of ['classroom.googleapis.com','forms.googleapis.com',
+  'drive.googleapis.com','sheets.googleapis.com'])
+  if(mcpSource.includes(host))fail.push('MCP adapter may not access Google academic APIs directly');
+// A single opt-in Script API adapter may use the existing signed dispatcher.
+const scriptApiMatches=mcpSource.split('script.googleapis.com/v1/scripts/').length-1;
+if(scriptApiMatches>1)fail.push('MCP must not create multiple direct Apps Script execution routes');
+if(scriptApiMatches===1 &&
+   (!mcpSource.includes('ACADEMIC_UPSTREAM_TRANSPORT')||
+    !mcpSource.includes("config.academicTransport==='script_api'")||
+    !mcpSource.includes("function:'ejecutarServicioAcademicoApi_'")||
+    !mcpSource.includes('GOOGLE_ACADEMIC_OAUTH_REFRESH_TOKEN')||
+    !mcpSource.includes('signedAcademicRequest')))
+  fail.push('Optional Execution API must be user-OAuth-only and preserve canonical signed dispatcher');
 if (!deployWorkflowText.includes('assert-platform-change-authorized.mjs')) fail.push('Deploy must enforce explicit platform-change authorization');
 const deployTriggerBlock=(deployWorkflowText.match(/on:[\s\S]*?concurrency:/)||[''])[0];
 if (!/\.platform-changes\/\*\*/.test(deployTriggerBlock) || /src\/\*\*|workflow_dispatch/.test(deployTriggerBlock))
