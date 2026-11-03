@@ -211,7 +211,7 @@ export function diagnosticPayload(error){
     /^CLOUD_RUN_/.test(errorCode)?'CLOUD_RUN_ADMIN_API':
     /^GCP_METADATA_/.test(errorCode)?'CLOUD_RUN_METADATA_SERVER':
     /^SECRET_MANAGER_/.test(errorCode)?'GOOGLE_SECRET_MANAGER':
-    /^ACADEMIC_HMAC_/.test(errorCode)?'MCP_TO_APPS_SCRIPT_HMAC':
+    /^(ACADEMIC_HMAC_|APPS_SCRIPT_HMAC_|CLOUD_RUN_HMAC_)/.test(errorCode)?'MCP_TO_APPS_SCRIPT_HMAC':
     'MCP_ADAPTER';
   const source=Array.isArray(explicit.sourceLocation)
     ?explicit.sourceLocation.filter(x=>/^[A-Za-z_$][\w.$]{0,79}$/.test(String(x))).slice(0,3):[];
@@ -234,7 +234,7 @@ export function diagnosticPayload(error){
     data.provider=explicit.provider;
   // Distinguishes an HTTP gate failure from an Apps Script HMAC failure.
   if(errorCode.startsWith('UPSTREAM_HTTP_'))data.nextCheck='CHECK_WEBAPP_HTTP_ACCESS_AND_REDIRECT';
-  else if(/^ACADEMIC_HMAC_/.test(errorCode))data.nextCheck='CHECK_HMAC_EQUIVALENCE';
+  else if(/^(ACADEMIC_HMAC_|APPS_SCRIPT_HMAC_|CLOUD_RUN_HMAC_)/.test(errorCode))data.nextCheck='CHECK_HMAC_EQUIVALENCE';
   else if(errorCode==='GITHUB_APP_CREDENTIALS_NOT_CONFIGURED')data.nextCheck='CHECK_OPTIONAL_GITHUB_APP_SETTINGS';
   else if(errorCode==='MCP_INTERNAL_FAILURE')data.nextCheck='CHECK_CLOUD_RUN_DIAGNOSTIC_ID';
   return data;
