@@ -64,16 +64,25 @@ async function main(){
   });
   const finalHost=classify(response.url);
   let errorCode=null,hasExpectedHandler=false;
+  const contentType=String(response.headers.get('content-type')||'').toLowerCase();
+  let bodyCategory='NOT_READ',htmlPageCategory=null;
   if(response.ok){
-    const type=String(response.headers.get('content-type')||'');
-    if(type.includes('json')||type.includes('text/plain')){
-      const text=await response.text();
-      try{
-        const value=JSON.parse(text);
-        const code=String(value?.errorCode||'');
-        if(/^[A-Z][A-Z0-9_]{2,79}$/.test(code))errorCode=code;
-        hasExpectedHandler=code==='ACADEMIC_POST_HMAC_REQUIRED';
-      }catch{}
+    const text=await response.text();
+    try{
+      const value=JSON.parse(text);
+      const code=String(value?.errorCode||'');
+      if(/^[A-Z][A-Z0-9_]{2,79}$/.test(code))errorCode=code;
+      hasExpectedHandler=code==='ACADEMIC_POST_HMAC_REQUIRED';
+      bodyCategory='JSON';
+    }catch{
+      bodyCategory=text.trimStart().startsWith('<')?'HTML':'OTHER';
+      if(bodyCategory==='HTML'){
+        htmlPageCategory=/serviceLogin|Sign in to your Google Account|accounts\.google\.com/i.test(text)
+          ?'GOOGLE_LOGIN'
+          :/unable to open|cannot open|cannot access|request access/i.test(text)
+          ?'GOOGLE_DRIVE_ACCESS'
+          :'OTHER_HTML';
+      }
     }
   }
   console.log(JSON.stringify({
@@ -83,6 +92,12 @@ async function main(){
     finalHostClass:finalHost,
     followedRedirect:response.redirected===true,
     expectedPostOnlyError:hasExpectedHandler,
+    responseBodyCategory:bodyCategory,
+    responseContentType:contentType.includes('html')?'HTML':
+      contentType.includes('json')?'JSON':
+      contentType.includes('text/plain')?'TEXT':'OTHER',
+    htmlPageCategory,
+    returnedAppErrorCode:errorCode,
     // This only indicates a grant scope declared in clasp; no credential contents.
     declaredDriveScope:/https:\/\/www\.googleapis\.com\/auth\/drive(\b|\.)/.test(String(auth.scope||'')),
     noClassroomCalls:true,noCredentialsExposed:true
