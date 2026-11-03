@@ -1,0 +1,19 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Vas a analizar y hacer los cambios necesarios en todos los puntos de nuestra infraestructura, para que cuando haya un error, el error incluya el punto donde esta fallando, no podemos estar manejandro errores tan genericos, sobre todo si tenemos varios eslabones en la cadena",
+  "reason": "Atribuir fallas a cada eslabón en el Gateway OAuth/MCP, Cloud Run, Google Apps Script WebApp y Classroom/Drive/Forms, sin exponer credenciales o datos de alumnos y sin crear infraestructura nueva.",
+  "allowedChangedPaths": [
+    "docs/DIAGNOSTICO_Y_RECUPERACION.md",
+    "mcp-cloud-run/server.mjs",
+    "mcp-cloud-run/tests/adapter.test.mjs",
+    "mcp-cloud-run/tests/chain-diagnostics.test.mjs",
+    "scripts/test-webapp-error-diagnostics.mjs",
+    "scripts/verify-academic-webapp.mjs",
+    "src/65_QuizAsistenciaWebApp.gs"
+  ],
+  "rollback": "Revertir el commit de diagnósticos sin modificar URL, secrets, IAM, Auth0 ni recursos académicos.",
+  "classroomMutationAllowed": false,
+  "newInfrastructureAllowed": false
+}
