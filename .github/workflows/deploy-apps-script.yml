@@ -324,6 +324,12 @@ jobs:
             echo 'Only platform files changed; skipping Apps Script deployment.'
           fi
 
+      - name: Verify OAuth grants for an existing API Executable (nonexistent function only)
+        if: contains(github.event.head_commit.message, '[probe-existing-script-api]')
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: node scripts/probe-existing-script-execution-api.mjs
+
       - name: Inventory existing Apps Script API deployments (read-only)
         if: contains(github.event.head_commit.message, '[inventory-script-api]')
         env:
