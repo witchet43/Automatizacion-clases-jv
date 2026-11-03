@@ -12,6 +12,7 @@ const ctx=vm.createContext({
   // This fixture isolates canonical routing; real auth/replay rejection is
   // exercised without this stub in test-academic-write-auth.mjs.
   executeAuthenticatedAcademicWrite_:(_request,execute)=>execute(),
+  validateAcademicWriteAuthorization_:p=>{if(!p.auth)throw Error('ACADEMIC_WRITE_AUTH_REQUIRED');},
   ContentService:{MimeType:{JSON:'json'},createTextOutput(text){return {setMimeType(){return JSON.parse(text);}};}},
   normalizarNombreCursoRapido_:s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(),
   crearQuizAsistenciaRapido:m=>{calls.push('quizAsistencia');return {workId:'attendance',state:'DRAFT'};},
@@ -26,13 +27,13 @@ ctx.diagnosticarProgresoClaseWeb_=()=>{calls.push('diagnosticarClase');return {r
 ctx.auditarIdentidadClassroomWeb_=()=>{calls.push('auditarIdentidadClassroom');return {readOnly:true};};
 
 const run=p=>ctx.ejecutarServicioAcademicoWeb_(p);
-const good=p=>prepareRequest({materia:'Administración',...p}).request;
+const good=p=>({...prepareRequest({materia:'Administración',...p}).request,auth:{synthetic:true}});
 let checks=0;
 function blocked(p,error){calls=[];const r=run(p);assert.equal(r.ok,false);assert.match(r.error,error);assert.equal(calls.length,0);checks++;}
 
-blocked({action:'uaqExecutor',operation:'actividad',materia:'Administración'},/ACADEMIC_CONTEXT_REQUIRED/);
+blocked({action:'uaqExecutor',operation:'actividad',materia:'Administración',auth:{synthetic:true}},/ACADEMIC_CONTEXT_REQUIRED/);
 const validContext=good({action:'uaqExecutor',operation:'actividad',params:{}}).operationalContext;
-blocked({action:'actividad',materia:'Administración',operationalContext:validContext},/ACCION_NO_PERMITIDA/);
+blocked({action:'actividad',materia:'Administración',operationalContext:validContext,auth:{synthetic:true}},/ACCION_NO_PERMITIDA/);
 for(const direct of manifest.operations.uaqExecutor.allowedOperations)
   assert.throws(()=>prepareRequest({action:direct,materia:'Administración'}),/DIRECT_ROUTINE_ACTION_FORBIDDEN_USE_UAQ_EXECUTOR/);
 checks+=manifest.operations.uaqExecutor.allowedOperations.length;
