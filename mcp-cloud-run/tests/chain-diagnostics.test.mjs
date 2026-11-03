@@ -63,10 +63,10 @@ test('Apps Script application errors preserve bounded stage and function, not de
 });
 test('GitHub and Cloud Run credential failures remain attributable and sanitized',()=>{
   let result=diagnosticPayload(new Error('GITHUB_APP_CREDENTIALS_NOT_CONFIGURED'));
-  assert.equal(result.failedAt,'GITHUB_APP_OR_ACTIONS');
+  assert.equal(result.failedAt,'GITHUB_APP_CONFIG');
   assert.equal(result.nextCheck,'CHECK_OPTIONAL_GITHUB_APP_SETTINGS');
   result=diagnosticPayload(new Error('CLOUD_RUN_VIEWER_ACCESS_OR_API_ERROR: 403'));
-  assert.equal(result.failedAt,'GOOGLE_CLOUD_CONTROL_API');
+  assert.equal(result.failedAt,'CLOUD_RUN_ADMIN_API');
   assert.equal(result.httpStatus,403);
   result=diagnosticPayload(new Error('token=DO_NOT_PRINT'));
   assert.equal(result.errorCode,'MCP_INTERNAL_FAILURE');
