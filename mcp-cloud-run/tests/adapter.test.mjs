@@ -99,6 +99,12 @@ test('OAuth issuer, subject, audience and scope; MCP rejects anonymous and execu
    response=await rpc('', 'tools/call',{name:'cerrar_unidad',arguments:{courseId:'871149624583',unidad:2,confirmar:true}},9);
    assert.equal(response.status,401);
    assert.match(response.headers.get('www-authenticate'),/resource_metadata=/);
+   const authFailure=await response.json();
+   assert.equal(authFailure.errorCode,'AUTH_REQUIRED');
+   assert.equal(authFailure.failedAt,'MCP_OAUTH_BOUNDARY');
+   assert.equal(authFailure.phase,'BEARER_VALIDATION');
+   assert.equal(authFailure.httpStatus,401);
+   assert.match(authFailure.diagnosticId,/^[a-f0-9]{16}$/);
    response=await rpc(denied,'initialize',{protocolVersion:'2025-06-18',capabilities:{},clientInfo:{name:'test',version:'1'}});
    assert.equal(response.status,401);
    response=await rpc(read,'initialize',{protocolVersion:'2025-06-18',capabilities:{},clientInfo:{name:'test',version:'1'}});
