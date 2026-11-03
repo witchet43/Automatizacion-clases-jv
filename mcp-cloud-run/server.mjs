@@ -126,6 +126,20 @@ export function signedHmacProbe(config){
   return {...unsigned,auth:{timestamp,nonce,signature}};
 }
 
+export function signedAcademicReadRequest(config,action,courseId,options={}){
+  if(!['diagnosticarClase','auditarIdentidadClassroom'].includes(action))
+    throw Error('ACADEMIC_READ_ACTION_INVALID');
+  if(!config.courseIds.has(String(courseId)))throw Error('COURSE_NOT_REGISTERED');
+  const unsigned={
+    action,courseId:String(courseId),
+    requestId:'read_'+randomBytes(18).toString('hex'),
+    ...options,operationalContext:config.operationalContext
+  };
+  const timestamp=Date.now(),nonce=randomBytes(24).toString('base64url');
+  const signature=createHmac('sha256',config.hmac)
+    .update(JSON.stringify(unsigned)).digest('hex');
+  return {...unsigned,auth:{timestamp,nonce,signature}};
+}
 export function signedSubmissionRequest(config, action, courseId, courseWorkId, params, requestId) {
   const actions=new Set(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft']);
   if(!actions.has(action))throw Error('SUBMISSION_ACTION_INVALID');
@@ -572,10 +586,9 @@ function buildServer(config,identity,fetcher){
     try{
       if(!mayUsePublicReadTool(identity))throw Error('INSUFFICIENT_SCOPE');
       if(!config.courseIds.has(courseId))throw Error('COURSE_NOT_REGISTERED');
-      const data=await callWebApp(config,{
-        action:'diagnosticarClase',courseId,soloClassroom,soloDrafts:false,
-        operationalContext:config.operationalContext
-      },fetcher);
+      const data=await callWebApp(config,signedAcademicReadRequest(
+        config,'diagnosticarClase',courseId,{soloClassroom,soloDrafts:false}
+      ),fetcher);
       return toolOk(data);
     }catch(e){return toolFail(e);}
   });
@@ -588,10 +601,9 @@ function buildServer(config,identity,fetcher){
     try{
       if(!mayUsePublicReadTool(identity))throw Error('INSUFFICIENT_SCOPE');
       if(!config.courseIds.has(courseId))throw Error('COURSE_NOT_REGISTERED');
-      return toolOk(await callWebApp(config,{
-        action:'auditarIdentidadClassroom',courseId,
-        operationalContext:config.operationalContext
-      },fetcher));
+      return toolOk(await callWebApp(config,signedAcademicReadRequest(
+        config,'auditarIdentidadClassroom',courseId
+      ),fetcher));
     }catch(e){return toolFail(e);}
   });
   server.registerTool('crear_recurso',{
