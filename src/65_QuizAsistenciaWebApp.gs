@@ -41,11 +41,14 @@ function cursosAcademicosWeb_(){
 
 
 function doGet(e){
-  // No academic mutation may be reached via a URL/query string.
-  const params=e&&e.parameter?e.parameter:{};
-  if(['diagnosticarClase','auditarIdentidadClassroom'].indexOf(String(params.action||''))<0)
-    return respuestaAcademicaWeb_({ok:false,errorCode:'ACADEMIC_READ_ONLY_GET_REQUIRED',error:'ACADEMIC_READ_ONLY_GET_REQUIRED',errorDetails:{code:'ACADEMIC_READ_ONLY_GET_REQUIRED',failedAt:'APPS_SCRIPT_HTTP_ENTRY',stage:'REQUEST_VALIDATION',provider:'GOOGLE_APPS_SCRIPT'}});
-  return ejecutarServicioAcademicoWeb_(params);
+  // Never expose academic reads in URL parameters; all operations are signed POST.
+  return respuestaAcademicaWeb_({ok:false,
+    errorCode:'ACADEMIC_POST_HMAC_REQUIRED',
+    error:'ACADEMIC_POST_HMAC_REQUIRED',
+    errorDetails:{code:'ACADEMIC_POST_HMAC_REQUIRED',
+      failedAt:'APPS_SCRIPT_HTTP_ENTRY',stage:'REQUEST_VALIDATION',
+      provider:'GOOGLE_APPS_SCRIPT'}
+  });
 }
 
 function doPost(e){
@@ -66,6 +69,11 @@ function ejecutarServicioAcademicoWeb_(params){
     const action=String(p.action||'').trim();
     if(!action)throw new Error('ACCION_REQUERIDA');
     if(ACADEMIC_WEB.ACTIONS.indexOf(action)<0)throw new Error('ACCION_NO_PERMITIDA');
+    if(action!=='diagnosticarFirma'){
+      // Every route, including reads, requires the existing HMAC. Signed reads
+      // are validated without creating a write receipt.
+      validateAcademicWriteAuthorization_(p,PropertiesService.getScriptProperties());
+    }
     if(action==='diagnosticarFirma'){
       // Dedicated non-mutating diagnostic. Only boolean comparisons are disclosed.
       // Never access Classroom or return keys, full signatures, fingerprints or receipts.
