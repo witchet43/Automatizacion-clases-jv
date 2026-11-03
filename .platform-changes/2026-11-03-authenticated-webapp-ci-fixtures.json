@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Entonces haz todos los cambios para no tener acceso anónimo",
+  "reason": "Fix canonical academic context smoke test to supply an authorization fixture because all Apps Script operations now require HMAC; deploy existing WebApp securely.",
+  "allowedChangedPaths": [
+    "scripts/test-academic-context.mjs",
+    "src/65_QuizAsistenciaWebApp.gs"
+  ],
+  "classroomMutationAllowed": false,
+  "noNewInfrastructure": true
+}

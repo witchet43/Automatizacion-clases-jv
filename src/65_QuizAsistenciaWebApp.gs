@@ -71,6 +71,7 @@ function ejecutarServicioAcademicoWeb_(params){
     if(!action)throw new Error('ACCION_REQUERIDA');
     if(ACADEMIC_WEB.ACTIONS.indexOf(action)<0)throw new Error('ACCION_NO_PERMITIDA');
     if(action!=='diagnosticarFirma'){
+      // A Google login alone never authorizes academic data access.
       // Every route, including reads, requires the existing HMAC. Signed reads
       // are validated without creating a write receipt.
       validateAcademicWriteAuthorization_(p,PropertiesService.getScriptProperties());
