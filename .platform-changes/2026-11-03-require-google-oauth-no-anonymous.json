@@ -1,0 +1,24 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Entonces haz todos los cambios para no tener acceso anónimo",
+  "reason": "Cerrar todas las llamadas anónimas del Gateway académico, exigir Auth0 OAuth en todas las herramientas, autenticación Google OAuth de Cloud Run ante Apps Script y firma HMAC para cada POST, sin nuevas credenciales permanentes ni endpoints.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-apps-script.yml",
+    ".github/workflows/deploy-cloud-run-mcp.yml",
+    "docs/DIAGNOSTICO_Y_RECUPERACION.md",
+    "mcp-cloud-run/server.mjs",
+    "mcp-cloud-run/tests/anonymous.test.mjs",
+    "mcp-cloud-run/tests/chain-diagnostics.test.mjs",
+    "mcp-cloud-run/tests/discovery.test.mjs",
+    "scripts/test-webapp-error-diagnostics.mjs",
+    "scripts/verify-academic-webapp.mjs",
+    "src/65_QuizAsistenciaWebApp.gs",
+    "src/appsscript.json"
+  ],
+  "expectedAccess": "MCP tools require Auth0 OAuth; WebApp access ANYONE (Google sign-in required) and all academic operations signed POST.",
+  "noNewInfrastructure": true,
+  "classroomMutationAllowed": false,
+  "rollback": "Revert changes only after security review. Do not re-enable anonymous public WebApp automatically."
+}
