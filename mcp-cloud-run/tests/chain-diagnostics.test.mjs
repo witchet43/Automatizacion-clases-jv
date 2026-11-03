@@ -21,7 +21,7 @@ test('HTTP 403 at Apps Script entry identifies hop, status and safe correlation'
   assert.equal(result.phase,'GOOGLE_HTTP_RESPONSE');
   assert.equal(result.httpStatus,403);
   assert.equal(result.provider,'GOOGLE_APPS_SCRIPT');
-  assert.equal(result.requestIdHint,'_1234567890');
+  assert.equal(result.requestIdHint,request.requestId.slice(-12));
   assert.match(result.diagnosticId,/^[a-f0-9]{16}$/);
   assert.equal(result.nextCheck,'CHECK_WEBAPP_HTTP_ACCESS_AND_REDIRECT');
   assert.ok(!JSON.stringify(result).includes('script.google.com'));
