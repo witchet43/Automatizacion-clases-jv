@@ -90,7 +90,7 @@ jobs:
             --build-service-account "projects/$PROJECT/serviceAccounts/$RUNTIME_SA" \
             --allow-unauthenticated --ingress all \
             --min-instances=0 --memory=512Mi --timeout=300 \
-            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=https://dev-67cfevmusm7px130.us.auth0.com/,MCP_OAUTH_JWKS_URL=https://dev-67cfevmusm7px130.us.auth0.com/.well-known/jwks.json,MCP_DEPLOY_COMMIT=${{ github.sha }}" \
+            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=https://dev-67cfevmusm7px130.us.auth0.com/,MCP_OAUTH_JWKS_URL=https://dev-67cfevmusm7px130.us.auth0.com/.well-known/jwks.json,MCP_DEPLOY_COMMIT=${{ github.sha }},GOOGLE_WEBAPP_AUTH_MODE=google_oauth" \
             --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest,MCP_ALLOWED_SUBJECTS=academic-mcp-allowed-subjects:latest" \
             --quiet
           REAL_URL="$URL"
@@ -131,7 +131,7 @@ jobs:
           print('OAUTH_DEPLOYMENT_VERIFIED; ANONYMOUS_GRADE_WRITE_DENIED')
           PY
 
-      - name: Verify live MCP initialization, tools/list and gateway_status
+      - name: Verify live MCP discovery and mandatory OAuth
         shell: bash
         run: |
           set -euo pipefail
@@ -159,10 +159,19 @@ jobs:
               'auditar_recursos','crear_recurso','listar_entregas','calificar_entrega_draft',
               'cerrar_materia','cerrar_unidad'}
           assert tools==expected,(tools^expected)
-          result=rpc('tools/call',{'name':'gateway_status','arguments':{'verificarFirma':True}},3)['result']
-          assert result.get('isError')!=True, result
-          status=json.loads(result['content'][0]['text'])
-          assert status['configured'] is True and status['writesThrough']=='SIGNED_WEBAPP_ONLY'
-          assert status['upstreamHmacAccepted'] is True, status
-          print('LIVE_MCP_TOOLS_DISCOVERY_AND_HMAC_VERIFIED: 12 tools and signed Apps Script challenge')
+          # Protocol discovery remains public; academic tools require OAuth.
+          import urllib.error
+          data=json.dumps({'jsonrpc':'2.0','id':3,'method':'tools/call',
+              'params':{'name':'gateway_status','arguments':{'verificarFirma':True}}}).encode()
+          request=urllib.request.Request(base,data=data,headers={
+              'Content-Type':'application/json',
+              'Accept':'application/json, text/event-stream'
+          },method='POST')
+          try:
+              urllib.request.urlopen(request,timeout=30)
+              raise AssertionError('Unauthenticated gateway_status unexpectedly succeeded')
+          except urllib.error.HTTPError as e:
+              assert e.code==401, e.code
+              assert 'academic.read' in e.headers.get('WWW-Authenticate','')
+          print('LIVE_MCP_DISCOVERY_AND_OAUTH_GUARD_VERIFIED: 12 tools, anonymous tool execution denied')
           PY

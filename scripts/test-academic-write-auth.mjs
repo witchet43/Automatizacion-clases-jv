@@ -80,7 +80,9 @@ assert.throws(()=>sandbox.executeAuthenticatedAcademicWrite_(mk('key-unconfigure
 assert.equal(effects,3);
 assert.match(web,/executeAuthenticatedAcademicWrite_\(p,function\(\)\{\s*return ejecutarUaqExecutorWeb_\(p\)/);
 assert.match(web,/executeAuthenticatedAcademicWrite_\(p,function\(\)\{\s*return eliminarCourseWorkDraftsWeb_\(course,p\)/);
-assert.match(web,/ACADEMIC_READ_ONLY_GET_REQUIRED/);
+assert.match(web,/ACADEMIC_POST_HMAC_REQUIRED/);
+assert.match(web,/action!=='diagnosticarFirma'/);
+assert.match(web,/validateAcademicWriteAuthorization_\(p,PropertiesService.getScriptProperties\(\)\)/);
 
 // HMAC probe must validate the signature before any academic action or receipt.
 assert.match(web,/if\(action==='diagnosticarFirma'\)\{/);

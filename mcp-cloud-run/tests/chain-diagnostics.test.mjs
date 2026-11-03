@@ -9,8 +9,8 @@ function mockResponse(status,url,redirected=false,body='{}',type='application/js
   return {ok:status>=200&&status<300,status,url,redirected,
     headers:{get:()=>type},text:async()=>body};
 }
-async function failure(fetcher,body=request){
-  try{await callWebApp(config,body,fetcher);}
+async function failure(fetcher,body=request,settings=config){
+  try{await callWebApp(settings,body,fetcher);}
   catch(e){return diagnosticPayload(e);}
   assert.fail('Expected diagnostic failure');
 }
@@ -76,4 +76,33 @@ test('GitHub and Cloud Run credential failures remain attributable and sanitized
   result=diagnosticPayload(new Error('token=DO_NOT_PRINT'));
   assert.equal(result.errorCode,'MCP_INTERNAL_FAILURE');
   assert.ok(!JSON.stringify(result).includes('DO_NOT_PRINT'));
+});
+
+test('authenticated WebApp transport fetches short-lived Google OAuth from existing metadata identity',async()=>{
+  const requests=[];
+  const secured={...config,webAppAuthMode:'google_oauth'};
+  const fetcher=async (url,options)=>{
+    requests.push({url,options});
+    if(url.startsWith('http://metadata.google.internal/')){
+      assert.equal(options.headers['Metadata-Flavor'],'Google');
+      assert.match(url,/drive.readonly/);
+      return {ok:true,json:async()=>({access_token:'SYNTHETIC_GOOGLE_TOKEN'})};
+    }
+    assert.equal(url,secured.upstreamUrl);
+    assert.equal(options.headers.Authorization,'Bearer SYNTHETIC_GOOGLE_TOKEN');
+    return mockResponse(200,url,false,'{"ok":true}');
+  };
+  const result=await callWebApp(secured,request,fetcher);
+  assert.equal(result.ok,true);
+  assert.equal(requests.length,2);
+});
+test('Google WebApp OAuth metadata failures report precise hop without disclosing tokens',async()=>{
+  const secured={...config,webAppAuthMode:'google_oauth'};
+  const result=await failure(async(url)=>{
+    assert.match(url,/metadata.google.internal/);
+    return {ok:false,status:403};
+  },request,secured);
+  assert.equal(result.errorCode,'GOOGLE_WEBAPP_OAUTH_TOKEN_HTTP_403');
+  assert.equal(result.failedAt,'CLOUD_RUN_METADATA_SERVER');
+  assert.equal(result.httpStatus,403);
 });

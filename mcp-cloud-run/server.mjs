@@ -28,7 +28,7 @@ function validHttps(value,name){
 export function loadConfig(env=process.env,contextPath=join(dirname(fileURLToPath(import.meta.url)),'context.json')){
   const publicUrl=required('MCP_PUBLIC_URL',env).replace(/\/$/,'');
   const authMode=String(env.MCP_AUTH_MODE||'oauth').trim().toLowerCase();
-  if(!['oauth','anonymous'].includes(authMode))throw Error('MCP_AUTH_MODE_INVALID');
+  if(authMode!=='oauth')throw Error('MCP_OAUTH_REQUIRED');
   const issuer=authMode==='oauth'?required('MCP_OAUTH_ISSUER',env):'';
   const jwksUrl=authMode==='oauth'?required('MCP_OAUTH_JWKS_URL',env):'';
   validHttps(publicUrl,'MCP_PUBLIC_URL');
@@ -56,8 +56,10 @@ export function loadConfig(env=process.env,contextPath=join(dirname(fileURLToPat
     throw Error('MCP_UPSTREAM_MUST_BE_CANONICAL_APPS_SCRIPT');
   if(!Array.isArray(config.courseIds)||!config.courseIds.length||
     !config.courseIds.every(x=>/^\d+$/.test(x)))throw Error('MCP_COURSE_REGISTRY_INVALID');
+  const webAppAuthMode=String(env.GOOGLE_WEBAPP_AUTH_MODE||'legacy').trim();
+  if(!['legacy','google_oauth'].includes(webAppAuthMode))throw Error('GOOGLE_WEBAPP_AUTH_MODE_INVALID');
   return {
-    publicUrl,issuer,jwksUrl,allowedSubjects:allowed,hmac,authMode,
+    publicUrl,issuer,jwksUrl,allowedSubjects:allowed,hmac,authMode,webAppAuthMode,
     operationalContext:ctx,upstreamUrl:ctx.endpoint,
     courseIds:new Set(config.courseIds),port:Number(env.PORT||8080)
   };
@@ -124,6 +126,20 @@ export function signedHmacProbe(config){
   return {...unsigned,auth:{timestamp,nonce,signature}};
 }
 
+export function signedAcademicReadRequest(config,action,courseId,options={}){
+  if(!['diagnosticarClase','auditarIdentidadClassroom'].includes(action))
+    throw Error('ACADEMIC_READ_ACTION_INVALID');
+  if(!config.courseIds.has(String(courseId)))throw Error('COURSE_NOT_REGISTERED');
+  const unsigned={
+    action,courseId:String(courseId),
+    requestId:'read_'+randomBytes(18).toString('hex'),
+    ...options,operationalContext:config.operationalContext
+  };
+  const timestamp=Date.now(),nonce=randomBytes(24).toString('base64url');
+  const signature=createHmac('sha256',config.hmac)
+    .update(JSON.stringify(unsigned)).digest('hex');
+  return {...unsigned,auth:{timestamp,nonce,signature}};
+}
 export function signedSubmissionRequest(config, action, courseId, courseWorkId, params, requestId) {
   const actions=new Set(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft']);
   if(!actions.has(action))throw Error('SUBMISSION_ACTION_INVALID');
@@ -245,6 +261,34 @@ export function diagnosticPayload(error){
   else if(errorCode==='MCP_INTERNAL_FAILURE')data.nextCheck='CHECK_CLOUD_RUN_DIAGNOSTIC_ID';
   return data;
 }
+// Google identity is obtained at runtime from the existing Cloud Run service
+// account. Never persist or print access tokens. Auth0 tokens are NOT Google
+// OAuth tokens and must never be forwarded to script.google.com.
+export async function googleWebAppOAuthToken(fetcher=fetch){
+  const metadata='http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token';
+  const url=metadata+'?scopes='+encodeURIComponent('https://www.googleapis.com/auth/drive.readonly');
+  let response;
+  try{response=await fetcher(url,{
+    headers:{'Metadata-Flavor':'Google'},signal:AbortSignal.timeout(10000)
+  });}catch{throw diagnosticError('GOOGLE_WEBAPP_OAUTH_TOKEN_FETCH_FAILED',{
+    failedAt:'CLOUD_RUN_METADATA_SERVER',phase:'GOOGLE_OAUTH_TOKEN'
+  });}
+  if(!response.ok)throw diagnosticError('GOOGLE_WEBAPP_OAUTH_TOKEN_HTTP_'+response.status,{
+    failedAt:'CLOUD_RUN_METADATA_SERVER',phase:'GOOGLE_OAUTH_TOKEN',
+    httpStatus:response.status
+  });
+  let value;
+  try{value=await response.json();}catch{
+    throw diagnosticError('GOOGLE_WEBAPP_OAUTH_TOKEN_INVALID',{
+      failedAt:'CLOUD_RUN_METADATA_SERVER',phase:'GOOGLE_OAUTH_TOKEN'
+    });
+  }
+  if(!value?.access_token||typeof value.access_token!=='string')
+    throw diagnosticError('GOOGLE_WEBAPP_OAUTH_TOKEN_MISSING',{
+      failedAt:'CLOUD_RUN_METADATA_SERVER',phase:'GOOGLE_OAUTH_TOKEN'
+    });
+  return value.access_token;
+}
 export async function callWebApp(config,body,fetcher=fetch){
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),180000);
@@ -253,12 +297,16 @@ export async function callWebApp(config,body,fetcher=fetch){
   try{
     let response;
     try{
+      const accessToken=config.webAppAuthMode==='google_oauth'
+        ?await googleWebAppOAuthToken(fetcher):null;
       response=await fetcher(config.upstreamUrl,{
         method:'POST',redirect:'follow',
-        headers:{'content-type':'text/plain;charset=utf-8'},
+        headers:{'content-type':'text/plain;charset=utf-8',
+          ...(accessToken?{Authorization:'Bearer '+accessToken}:{})},
         body:JSON.stringify(body),signal:controller.signal
       });
     }catch(err){
+      if(err?.publicDiagnostic)throw err;
       const timeoutError=err?.name==='AbortError'||err?.name==='TimeoutError';
       throw diagnosticError(timeoutError?'WEBAPP_TRANSPORT_TIMEOUT':'WEBAPP_TRANSPORT_FAILURE',{
         ...context,failedAt:'MCP_TO_APPS_SCRIPT_WEBAPP',phase:timeoutError?'TIMEOUT':'NETWORK_TRANSPORT'
@@ -456,9 +504,9 @@ function mayUsePublicReadTool(identity){
 function buildServer(config,identity,fetcher){
   // Explicit tool-level policies are required for mixed authentication: an absent
   // securitySchemes array inherits the server's OAuth policy in ChatGPT.
-  const readSecurity={securitySchemes:[{type:'noauth'}]};
+  const readSecurity={securitySchemes:[{type:'oauth2',scopes:[SCOPES.read]}]};
   const privateReadSecurity={securitySchemes:[{type:'oauth2',scopes:[SCOPES.read]}]};
-  const gradeSecurity=config.authMode==='anonymous'?{}:{securitySchemes:[{type:'oauth2',scopes:[SCOPES.grade]}]};
+  const gradeSecurity={securitySchemes:[{type:'oauth2',scopes:[SCOPES.grade]}]};
   const server=new McpServer({name:'classroom-academic-gateway',version:'1.0.0'});
   server.registerTool('gateway_status',{
     title:'Estado del Gateway académico',
@@ -466,7 +514,8 @@ function buildServer(config,identity,fetcher){
     inputSchema:{verificarFirma:z.boolean().optional()},...readSecurity,
     annotations:{readOnlyHint:true}
   },async({verificarFirma=false})=>{
-    const status={configured:true,transport:config.authMode==='anonymous'?'STREAMABLE_HTTP_ANONYMOUS':'STREAMABLE_HTTP_OAUTH',
+    if(!mayUsePublicReadTool(identity))return toolFail(Error('INSUFFICIENT_SCOPE'));
+    const status={configured:true,transport:'STREAMABLE_HTTP_OAUTH',
       service:'ACADEMIC_CLASSROOM_CANONICAL_MCP',writesThrough:'SIGNED_WEBAPP_ONLY',
       siteEdited:false,secretExposed:false,manifestSha256:config.operationalContext.manifestSha256,
       contextVersion:config.operationalContext.contractVersion,contextFields:config.operationalContext};
@@ -537,10 +586,9 @@ function buildServer(config,identity,fetcher){
     try{
       if(!mayUsePublicReadTool(identity))throw Error('INSUFFICIENT_SCOPE');
       if(!config.courseIds.has(courseId))throw Error('COURSE_NOT_REGISTERED');
-      const data=await callWebApp(config,{
-        action:'diagnosticarClase',courseId,soloClassroom,soloDrafts:false,
-        operationalContext:config.operationalContext
-      },fetcher);
+      const data=await callWebApp(config,signedAcademicReadRequest(
+        config,'diagnosticarClase',courseId,{soloClassroom,soloDrafts:false}
+      ),fetcher);
       return toolOk(data);
     }catch(e){return toolFail(e);}
   });
@@ -553,10 +601,9 @@ function buildServer(config,identity,fetcher){
     try{
       if(!mayUsePublicReadTool(identity))throw Error('INSUFFICIENT_SCOPE');
       if(!config.courseIds.has(courseId))throw Error('COURSE_NOT_REGISTERED');
-      return toolOk(await callWebApp(config,{
-        action:'auditarIdentidadClassroom',courseId,
-        operationalContext:config.operationalContext
-      },fetcher));
+      return toolOk(await callWebApp(config,signedAcademicReadRequest(
+        config,'auditarIdentidadClassroom',courseId
+      ),fetcher));
     }catch(e){return toolFail(e);}
   });
   server.registerTool('crear_recurso',{
@@ -681,7 +728,7 @@ function buildServer(config,identity,fetcher){
         ? [{type:'oauth2',scopes:[SCOPES.grade]}]
         : tool.name==='listar_entregas'
           ? [{type:'oauth2',scopes:[SCOPES.read]}]
-          : [{type:'noauth'}];
+          : [{type:'oauth2',scopes:[SCOPES.read]}];
       return {...tool,securitySchemes};
     })};
   });
@@ -707,27 +754,24 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
     if(req.method!=='POST')return res.status(405).set('Allow','POST').end();
     let identity;
     try{
-      if(config.authMode==='anonymous'){
-        identity={subject:'anonymous',scopes:new Set([SCOPES.read])};
+      const isToolCall=req.body?.method==='tools/call';
+      const tool=isToolCall?req.body?.params?.name:'';
+      const protectedWrite=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','iniciar_despliegue_mcp'].includes(tool);
+      const privateRead=tool==='listar_entregas';
+      if(!req.headers.authorization && !isToolCall){
+        // MCP initialization and tool metadata remain discoverable; no academic
+        // operation or user-specific data is accessible without OAuth.
+        identity={subject:'discovery-only',scopes:new Set()};
       }else{
-        const tool=req.body?.method==='tools/call'?req.body?.params?.name:'';
-        const protectedWrite=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','iniciar_despliegue_mcp'].includes(tool);
-        // Submissions contain students' private data: never give an
-        // anonymous read-only identity to a submission-reading operation.
-        const privateRead=['listar_entregas'].includes(tool);
-        if(!req.headers.authorization && !protectedWrite && !privateRead){
-          identity={subject:'anonymous-readonly',scopes:new Set([SCOPES.read])};
-        }else{
-          identity=await verifyBearer(config,req.headers.authorization,protectedWrite?SCOPES.grade:SCOPES.read,jwks)
-            .catch(async error=>{
-              if(!protectedWrite && error.message==='INSUFFICIENT_SCOPE')
-                return await verifyBearer(config,req.headers.authorization,SCOPES.grade,jwks);
-              throw error;
-            });
-        }
+        identity=await verifyBearer(config,req.headers.authorization,
+          protectedWrite?SCOPES.grade:SCOPES.read,jwks).catch(async error=>{
+            if(!protectedWrite&&!privateRead&&error.message==='INSUFFICIENT_SCOPE')
+              return await verifyBearer(config,req.headers.authorization,SCOPES.grade,jwks);
+            throw error;
+          });
       }
     }catch(e){
-      const scope=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft'].includes(req.body?.params?.name)?SCOPES.grade:SCOPES.read;
+      const scope=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','iniciar_despliegue_mcp'].includes(req.body?.params?.name)?SCOPES.grade:SCOPES.read;
       const authCode=['AUTH_REQUIRED','INSUFFICIENT_SCOPE','SUBJECT_NOT_ALLOWED'].includes(e?.message)
         ?e.message:'MCP_OAUTH_TOKEN_REJECTED';
       const diagnostic=diagnosticPayload(diagnosticError(authCode,{

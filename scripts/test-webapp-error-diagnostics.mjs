@@ -20,6 +20,10 @@ const ctx={
   setProperty:(k,v)=>props.set(k,v)
  })},
  validarArranqueAcademicoWeb_:()=>({contractVersion:'1.1.0'}),
+ validateAcademicWriteAuthorization_:p=>{
+   if(!p.auth)throw Error('ACADEMIC_WRITE_AUTH_REQUIRED');
+   return p.requestId||'test-auth';
+ },
  executeAuthenticatedAcademicWrite_:()=>{throw Error('EXAMEN_SYNTHETIC_FAILURE: simulated internal details')},
  respuestaAcademicaWeb_:value=>value
 };
@@ -30,10 +34,16 @@ assert.equal(invalidJson.errorCode,'JSON_INVALIDO');
 assert.equal(invalidJson.errorDetails.failedAt,'APPS_SCRIPT_REQUEST_PARSE');
 assert.equal(invalidJson.errorDetails.stage,'REQUEST_PARSE');
 const invalidGet=ctx.doGet({parameter:{action:'clase'}});
-assert.equal(invalidGet.errorCode,'ACADEMIC_READ_ONLY_GET_REQUIRED');
+assert.equal(invalidGet.errorCode,'ACADEMIC_POST_HMAC_REQUIRED');
 assert.equal(invalidGet.errorDetails.failedAt,'APPS_SCRIPT_HTTP_ENTRY');
+const anonymousRead=ctx.ejecutarServicioAcademicoWeb_({
+  action:'diagnosticarClase',courseId:'875776451793'
+});
+assert.equal(anonymousRead.errorCode,'ACADEMIC_WRITE_AUTH_REQUIRED');
+assert.equal(anonymousRead.errorDetails.failedAt,'APPS_SCRIPT_AUTH_CONTEXT');
 const result=ctx.ejecutarServicioAcademicoWeb_({
- action:'uaqExecutor',operation:'examen',courseId:'875776451793',requestId:'test-request'
+ action:'uaqExecutor',operation:'examen',courseId:'875776451793',requestId:'test-request',
+ auth:{timestamp:1,nonce:'mock',signature:'mock'}
 });
 assert.equal(result.ok,false);
 assert.equal(result.errorCode,'EXAMEN_SYNTHETIC_FAILURE');

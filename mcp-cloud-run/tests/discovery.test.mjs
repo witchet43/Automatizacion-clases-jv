@@ -31,7 +31,7 @@ async function rpc(base,method,params,id=1){
   return {status:res.status,headers:res.headers,json:JSON.parse(raw)};
 }
 
-test('MCP initializes, exposes all tools and runs gateway_status without OAuth',async()=>{
+test('MCP discovers tools but rejects all unauthenticated academic operations',async()=>{
   const f=fixture(), app=createApp(f.config);
   const listener=await new Promise(resolve=>{
     const s=app.listen(0,'127.0.0.1',()=>resolve(s));
@@ -49,13 +49,13 @@ test('MCP initializes, exposes all tools and runs gateway_status without OAuth',
       'auditar_recursos','crear_recurso','listar_entregas','calificar_entrega_draft',
       'cerrar_materia','cerrar_unidad'];
     assert.deepEqual(names.slice().sort(),expected.slice().sort());
-    // Mixed auth must expose public reads explicitly, without inheriting OAuth.
+    // Discovery metadata is public, but all tool invocation requires scoped OAuth.
     const discovered=new Map((r.json.result?.tools||[]).map(t=>[t.name,t]));
     for(const publicTool of ['gateway_status','consultar_despliegues_mcp',
       'consultar_ejecucion_mcp','verificar_despliegue','diagnosticar_clase',
       'auditar_recursos']){
       assert.deepEqual(discovered.get(publicTool)?.securitySchemes,
-        [{type:'noauth'}],publicTool+' must be anonymously discoverable');
+        [{type:'oauth2',scopes:['academic.read']}],publicTool+' must require OAuth');
     }
     assert.deepEqual(discovered.get('listar_entregas')?.securitySchemes,
       [{type:'oauth2',scopes:['academic.read']}],
@@ -67,9 +67,8 @@ test('MCP initializes, exposes all tools and runs gateway_status without OAuth',
         protectedTool+' must require scoped OAuth');
     }
     r=await rpc(base,'tools/call',{name:'gateway_status',arguments:{}},3);
-    assert.equal(r.status,200,JSON.stringify(r.json));
-    assert.notEqual(r.json.result.isError,true);
-    assert.equal(JSON.parse(r.json.result.content[0].text).configured,true);
+    assert.equal(r.status,401,'Anonymous gateway_status must be denied');
+    assert.match(r.headers.get('www-authenticate'),/academic.read/);
     r=await rpc(base,'tools/call',{name:'listar_entregas',arguments:{
       courseId:'871149624583',courseWorkId:'893188672194'}},4);
     assert.equal(r.status,401,'Student submissions must require an authenticated identity');
@@ -121,11 +120,8 @@ test('HMAC read-only probe matches signing contract and never sends academic wri
     try{
       const r=await rpc(base,'tools/call',{name:'gateway_status',
         arguments:{verificarFirma:true}});
-      assert.equal(r.status,200,JSON.stringify(r.json));
-      assert.notEqual(r.json.result?.isError,true);
-      assert.equal(JSON.parse(r.json.result.content[0].text).upstreamHmacAccepted,true);
-      assert.equal(sent.length,1);
-      assert.equal(sent[0].action,'diagnosticarFirma');
+      assert.equal(r.status,401,'Unauthenticated HMAC probe must be rejected');
+      assert.equal(sent.length,0,'WebApp must not receive unauthenticated probe');
     }finally{await new Promise(resolve=>listener.close(resolve));}
   }finally{fs.rmSync(f.dir,{recursive:true,force:true});}
 });
