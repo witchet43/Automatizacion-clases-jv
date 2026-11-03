@@ -44,7 +44,7 @@ function doGet(e){
   // No academic mutation may be reached via a URL/query string.
   const params=e&&e.parameter?e.parameter:{};
   if(['diagnosticarClase','auditarIdentidadClassroom'].indexOf(String(params.action||''))<0)
-    return respuestaAcademicaWeb_({ok:false,error:'ACADEMIC_READ_ONLY_GET_REQUIRED'});
+    return respuestaAcademicaWeb_({ok:false,errorCode:'ACADEMIC_READ_ONLY_GET_REQUIRED',error:'ACADEMIC_READ_ONLY_GET_REQUIRED',errorDetails:{code:'ACADEMIC_READ_ONLY_GET_REQUIRED',failedAt:'APPS_SCRIPT_HTTP_ENTRY',stage:'REQUEST_VALIDATION',provider:'GOOGLE_APPS_SCRIPT'}});
   return ejecutarServicioAcademicoWeb_(params);
 }
 
@@ -53,7 +53,7 @@ function doPost(e){
   const raw=e&&e.postData?String(e.postData.contents||''):'';
   if(raw){
     try{params=JSON.parse(raw);}
-    catch(err){return respuestaAcademicaWeb_({ok:false,error:'JSON_INVALIDO'});}
+    catch(err){return respuestaAcademicaWeb_({ok:false,errorCode:'JSON_INVALIDO',error:'JSON_INVALIDO',errorDetails:{code:'JSON_INVALIDO',failedAt:'APPS_SCRIPT_REQUEST_PARSE',stage:'REQUEST_PARSE',provider:'GOOGLE_APPS_SCRIPT'}});}
   }else if(e&&e.parameter){
     params=e.parameter;
   }
@@ -190,8 +190,9 @@ function ejecutarServicioAcademicoWeb_(params){
     // Original explanation stays in the authenticated write response; the
     // read-only diagnostic exposes only code, phase, location and correlation.
     return respuestaAcademicaWeb_({
-      ok:false,errorCode:details.code,error:original,
+      ok:false,errorCode:details.code,error:details.code,
       errorDetails:{code:details.code,stage:details.stage,cause:details.cause,
+        failedAt:details.failedAt,provider:details.provider,
         requestIdHint:details.requestIdHint,sourceLocation:details.sourceLocation,loggedAt:details.at,
         mismatchFields:Array.isArray(err&&err.mismatchFields)?err.mismatchFields:undefined}
     });
@@ -214,6 +215,32 @@ function detallarFalloAcademicoWeb_(err,request) {
     ? 'AUTHORIZATION_OR_CONTEXT' :
     /^(TASK_|BLOCKED_|ACADEMIC_READINESS_)/.test(code)
     ? 'PREFLIGHT_OR_POLICY' : 'ACADEMIC_EXECUTION';
+  // Provider classification uses only a bounded local error/stack observation.
+  // It must never disclose the original message, tokens, URLs or student data.
+  const signature=(original+' '+String(err&&err.stack||'')).slice(0,2500);
+  const provider=/\bClassroom\.(?:Courses|StudentSubmissions|UserProfiles)|classroom\.googleapis|API call to classroom/i.test(signature)
+    ?'GOOGLE_CLASSROOM'
+    :/\bDrive\.(?:Files|Permissions)|drive\.googleapis|API call to drive/i.test(signature)
+    ?'GOOGLE_DRIVE'
+    :/\bForms\.(?:Forms|Responses)|forms\.googleapis|API call to forms/i.test(signature)
+    ?'GOOGLE_FORMS'
+    :/\bCalendar\.(?:Events|CalendarList)|calendar\.googleapis|API call to calendar/i.test(signature)
+    ?'GOOGLE_CALENDAR'
+    :/\bSpreadsheetApp\b|\bSheets\.(?:Spreadsheets|Values)|sheets\.googleapis/i.test(signature)
+    ?'GOOGLE_SHEETS'
+    :/\bDocumentApp\b|\bDocs\.Documents|docs\.googleapis/i.test(signature)
+    ?'GOOGLE_DOCS'
+    :/\bUrlFetchApp\b|\bUrlFetch\b/i.test(signature)
+    ?'EXTERNAL_HTTP':'GOOGLE_APPS_SCRIPT';
+  const failedAt=stage==='AUTHORIZATION_OR_CONTEXT'?'APPS_SCRIPT_AUTH_CONTEXT':
+    stage==='PREFLIGHT_OR_POLICY'?'APPS_SCRIPT_POLICY_PREFLIGHT':
+    provider==='GOOGLE_CLASSROOM'?'GOOGLE_CLASSROOM_API':
+    provider==='GOOGLE_DRIVE'?'GOOGLE_DRIVE_API':
+    provider==='GOOGLE_FORMS'?'GOOGLE_FORMS_API':
+    provider==='GOOGLE_CALENDAR'?'GOOGLE_CALENDAR_API':
+    provider==='GOOGLE_SHEETS'?'GOOGLE_SHEETS_API':
+    provider==='GOOGLE_DOCS'?'GOOGLE_DOCS_API':
+    provider==='EXTERNAL_HTTP'?'APPS_SCRIPT_EXTERNAL_HTTP':'APPS_SCRIPT_EXECUTION';
   const requestId=String(request&&request.requestId||'');
   const courseId=String(request&&request.courseId||'');
   const frames=String(err&&err.stack||'').split('\n').slice(1,6);
@@ -222,7 +249,7 @@ function detallarFalloAcademicoWeb_(err,request) {
     return m?m[1].slice(0,80):'';
   }).filter(Boolean).slice(0,3);
   return {
-    code:code,stage:stage,cause:cause,
+    code:code,stage:stage,cause:cause,failedAt:failedAt,provider:provider,
     action:String(request&&request.action||'').slice(0,30),
     operation:String(request&&(request.operation||request.action)||'').slice(0,30),
     courseId:/^\d{8,20}$/.test(courseId)?courseId:'',
@@ -243,6 +270,8 @@ function leerUltimoFalloAcademicoWeb_(courseId) {
     return {
       code:String(x.code||'').slice(0,80),
       stage:String(x.stage||'').slice(0,40),
+      failedAt:String(x.failedAt||'').slice(0,50),
+      provider:String(x.provider||'').slice(0,30),
       cause:String(x.cause||'').slice(0,60),
       operation:String(x.operation||'').slice(0,30),
       action:String(x.action||'').slice(0,30),

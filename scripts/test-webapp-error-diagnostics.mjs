@@ -25,12 +25,21 @@ const ctx={
 };
 vm.createContext(ctx);
 vm.runInContext(web+'\n'+maintenance,ctx);
+const invalidJson=ctx.doPost({postData:{contents:'{invalid'}});
+assert.equal(invalidJson.errorCode,'JSON_INVALIDO');
+assert.equal(invalidJson.errorDetails.failedAt,'APPS_SCRIPT_REQUEST_PARSE');
+assert.equal(invalidJson.errorDetails.stage,'REQUEST_PARSE');
+const invalidGet=ctx.doGet({parameter:{action:'clase'}});
+assert.equal(invalidGet.errorCode,'ACADEMIC_READ_ONLY_GET_REQUIRED');
+assert.equal(invalidGet.errorDetails.failedAt,'APPS_SCRIPT_HTTP_ENTRY');
 const result=ctx.ejecutarServicioAcademicoWeb_({
  action:'uaqExecutor',operation:'examen',courseId:'875776451793',requestId:'test-request'
 });
 assert.equal(result.ok,false);
 assert.equal(result.errorCode,'EXAMEN_SYNTHETIC_FAILURE');
-assert.match(result.error,/simulated internal details/);
+assert.equal(result.error,'EXAMEN_SYNTHETIC_FAILURE');
+assert.ok(!JSON.stringify(result).includes('simulated internal details'),
+  'No raw backend exception or sensitive detail reaches the caller');
 const summary=ctx.diagnosticarPropiedadesAcademicas();
 assert.equal(summary.recibosPendientes,2);
 assert.equal(summary.recibosPendientesPorOperacion.examen,2);
@@ -40,6 +49,10 @@ const safe=ctx.leerUltimoFalloAcademicoWeb_('875776451793');
 assert.equal(safe.code,'EXAMEN_SYNTHETIC_FAILURE');
 assert.equal(safe.operation,'examen');
 assert.equal(safe.stage,'ACADEMIC_EXECUTION');
+assert.equal(safe.failedAt,'APPS_SCRIPT_EXECUTION');
+assert.equal(safe.provider,'GOOGLE_APPS_SCRIPT');
+assert.equal(result.errorDetails.failedAt,'APPS_SCRIPT_EXECUTION');
+assert.equal(result.errorDetails.provider,'GOOGLE_APPS_SCRIPT');
 assert.equal(ctx.leerUltimoFalloAcademicoWeb_('123456789'),null,
   'Failure diagnostics must not leak across courses');
 assert.equal(result.errorDetails.code,'EXAMEN_SYNTHETIC_FAILURE');
@@ -50,6 +63,22 @@ const mapped=ctx.detallarFalloAcademicoWeb_(new Error(
 assert.equal(mapped.code,'TASK_NEXT_SESSION_CONTEXT_MISSING');
 assert.equal(mapped.stage,'PREFLIGHT_OR_POLICY');
 assert.equal(mapped.requestIdHint,'_20261021_V1');
+assert.equal(mapped.failedAt,'APPS_SCRIPT_POLICY_PREFLIGHT');
+const classroom=ctx.detallarFalloAcademicoWeb_(new Error(
+  'GoogleJsonResponseException: API call to classroom.courses.courseWork.list failed'),
+  {action:'diagnosticarClase',courseId:'875776451793'});
+assert.equal(classroom.provider,'GOOGLE_CLASSROOM');
+assert.equal(classroom.failedAt,'GOOGLE_CLASSROOM_API');
+assert.equal(classroom.stage,'ACADEMIC_EXECUTION');
+assert.ok(!JSON.stringify(classroom).includes('GoogleJsonResponseException'));
+const sheets=ctx.detallarFalloAcademicoWeb_(new Error(
+  'Exception: You do not have permission to call SpreadsheetApp.openById'),{action:'clase'});
+assert.equal(sheets.provider,'GOOGLE_SHEETS');
+assert.equal(sheets.failedAt,'GOOGLE_SHEETS_API');
+const docs=ctx.detallarFalloAcademicoWeb_(new Error(
+  'Exception: API call to Docs.Documents failed'),{action:'practica'});
+assert.equal(docs.provider,'GOOGLE_DOCS');
+assert.equal(docs.failedAt,'GOOGLE_DOCS_API');
 assert.equal(summary.claveHmacConfigurada,true);
 assert.ok(!log.join(' ').includes('DO_NOT_PRINT_THIS_TEST_SECRET_'));
 assert.ok(!log.join(' ').includes('ACADEMIC_WRITE_RECEIPT_111'));

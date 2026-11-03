@@ -2,6 +2,69 @@
 
 **Uso:** seguir esta secuencia después de conectar el plugin, después de cualquier deploy y ante errores. Nunca probar creando o publicando notas de alumnos.
 
+## 0. Contrato obligatorio de errores por eslabón (noviembre 2026)
+
+**Objetivo:** el operador no debe recibir únicamente `UPSTREAM_HTTP_403` o
+`CANONICAL_UPSTREAM_FAILURE`. Las herramientas del MCP devuelven un objeto
+de diagnóstico seguro con estas claves:
+
+| Campo | Qué permite determinar |
+|---|---|
+| `errorCode` | Tipo de fallo, sin detalles privados |
+| `failedAt` | Último eslabón observable: OAuth, MCP, Google WebApp (entrada o redirección), Apps Script, Classroom/Drive/Docs/Sheets/Forms/Calendar, Cloud Run Admin, Secret Manager o GitHub |
+| `phase` | Token, HTTP, transporte, lectura, decodificación, autorización/contexto, política o ejecución |
+| `httpStatus` | Código HTTP cuando una respuesta realmente se recibió |
+| `wasRedirected` | Si la respuesta final siguió una redirección |
+| `diagnosticId` | Identificador aleatorio para buscar **MCP_CHAIN_DIAGNOSTIC** en Cloud Logging |
+| `requestIdHint` | Últimos 12 caracteres del ID de solicitud, nunca credenciales |
+| `sourceLocation` | Hasta tres funciones identificadas por Apps Script |
+| `nextCheck` | Siguiente punto de inspección indicado por el error, no autorización de cambios |
+
+Ejemplo de formato (valores ilustrativos, **no** resultado de producción):
+
+```json
+{"ok":false,"errorCode":"UPSTREAM_HTTP_403",
+ "failedAt":"APPS_SCRIPT_WEBAPP_ENTRY","phase":"GOOGLE_HTTP_RESPONSE",
+ "httpStatus":403,"diagnosticId":"0011223344556677",
+ "nextCheck":"CHECK_WEBAPP_HTTP_ACCESS_AND_REDIRECT"}
+```
+
+**Límites de inferencia:** `APPS_SCRIPT_WEBAPP_ENTRY` indica el *host HTTP
+final observado*, **no demuestra** que se ejecutó `doPost`. Si el host final
+es `script.googleusercontent.com`, se devuelve
+`APPS_SCRIPT_RESPONSE_REDIRECT`; si no está disponible la URL final se devuelve
+`WEBAPP_HTTP_GATE_UNKNOWN` o `WEBAPP_REDIRECT_UNKNOWN`. En ningún caso se
+imprime la URL completa: las redirecciones pueden incluir tokens.
+
+**Política de seguridad y alcance:** ningún diagnóstico devuelve contraseñas,
+llaves HMAC, cabeceras Authorization, tokens, cuerpo de solicitudes/respuestas,
+identidad o calificaciones de estudiantes. Los errores no disparan nuevos
+intentos de escritura. Las respuestas de Apps Script deben exponer
+`errorDetails.failedAt`, `stage`, `provider`, `sourceLocation` y
+`requestIdHint`, con `error` reducido a su código seguro. El Gateway conserva
+esas señales y emite un ID para correlación en logs. No se requiere nuevo
+servicio, almacenamiento, plugin ni credencial para la observabilidad.
+
+**Casos canónicos:**
+
+- `MCP_OAUTH_BOUNDARY / BEARER_VALIDATION`: token o scope rechazado antes de ejecutar la herramienta.
+- `APPS_SCRIPT_WEBAPP_ENTRY / GOOGLE_HTTP_RESPONSE / 403`: respuesta HTTP de la entrada Google; no asumir firma HMAC equivocada.
+- `APPS_SCRIPT_RESPONSE_REDIRECT`: respuesta HTTP rechazada tras la redirección a Google Content.
+- `MCP_TO_APPS_SCRIPT_WEBAPP / NETWORK_TRANSPORT`: no se recibió una respuesta HTTP.
+- `APPS_SCRIPT_AUTH_CONTEXT`: el código Apps Script devolvió un fallo de firma o contexto.
+- `GOOGLE_CLASSROOM_API`, `GOOGLE_DRIVE_API`, `GOOGLE_DOCS_API`, `GOOGLE_SHEETS_API`, `GOOGLE_FORMS_API`, `GOOGLE_CALENDAR_API`: la excepción de Apps Script contiene evidencia del proveedor; sin evidencia se conserva `APPS_SCRIPT_EXECUTION`.
+- `CLOUD_RUN_ADMIN_API`, `CLOUD_RUN_METADATA_SERVER`, `GOOGLE_SECRET_MANAGER`: introspección GCP fallida; no equivale a una falla de Classroom.
+- `GITHUB_APP_CONFIG` o `GITHUB_APP_TOKEN_EXCHANGE`: herramienta auxiliar de GitHub; no implica que el MCP académico deje de funcionar.
+
+**Regresión:** `mcp-cloud-run/tests/chain-diagnostics.test.mjs`,
+`mcp-cloud-run/tests/adapter.test.mjs`,
+`scripts/test-webapp-error-diagnostics.mjs` y
+`scripts/verify-academic-webapp.mjs`. Se ejercitan errores simulados de HTTP,
+redirección, red, firma y ejecución, sin datos reales de Classroom. El
+workflow de Cloud Run comprueba además una firma HMAC LIVE contra Apps Script
+tras desplegar; si falla, el resultado de la verificación no acredita operación
+académica aunque la revisión esté creada.
+
 ## 1. Health check seguro en orden
 
 | Prueba | Acción | Criterio mínimo |

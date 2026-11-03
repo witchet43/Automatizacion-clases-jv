@@ -171,32 +171,137 @@ export function signedCourseClosureRequest(config,courseId,unidades,ponderacione
     signature:createHmac('sha256',config.hmac).update(JSON.stringify(unsigned)).digest('hex')}};
 }
 
-function safeError(err){
-  const message=String(err?.message||err||'UNKNOWN');
-  // Never include HTTP request bodies, personal grades or credentials in an
-  // MCP error. Upstream may include private details; emit its errorCode only.
-  return /^[A-Z][A-Z0-9_:-]{2,100}$/.test(message)?message:'CANONICAL_UPSTREAM_FAILURE';
+// Diagnostic contract: public, bounded and safe for MCP tools and Cloud Logging.
+// Never include request bodies, response bodies, raw URLs, tokens or student data.
+const SAFE_DIAG_TOKEN=/^[A-Z][A-Z0-9_]{2,79}$/;
+function safeDiagnosticToken(value,fallback){
+  const token=String(value||'');
+  return SAFE_DIAG_TOKEN.test(token)?token:fallback;
+}
+function safeRequestHint(body){
+  const id=String(body?.requestId||'');
+  return /^[A-Za-z0-9_-]{12,96}$/.test(id)?id.slice(-12):null;
+}
+function webAppResponseHop(response){
+  // fetch follows Google's redirect. Only the hostname class is retained.
+  try{
+    const hostname=new URL(response.url).hostname.toLowerCase();
+    if(hostname==='script.google.com')return 'APPS_SCRIPT_WEBAPP_ENTRY';
+    if(hostname==='script.googleusercontent.com'||hostname.endsWith('.script.googleusercontent.com'))
+      return 'APPS_SCRIPT_RESPONSE_REDIRECT';
+    if(hostname==='accounts.google.com')return 'GOOGLE_LOGIN_REDIRECT';
+    return 'UNEXPECTED_HTTP_DESTINATION';
+  }catch{return response?.redirected?'WEBAPP_REDIRECT_UNKNOWN':'WEBAPP_HTTP_GATE_UNKNOWN';}
+}
+function diagnosticError(errorCode,fields={}){
+  const error=new Error(errorCode);
+  error.publicDiagnostic={errorCode,...fields};
+  return error;
+}
+export function diagnosticPayload(error){
+  const raw=String(error?.message||error||'UNKNOWN');
+  const match=raw.match(/^([A-Z][A-Z0-9_]{2,79})(?::\s*(\d{3}|[A-Z][A-Z0-9_]{2,79}))?$/);
+  const explicit=error?.publicDiagnostic||{};
+  const errorCode=safeDiagnosticToken(explicit.errorCode||match?.[1],'MCP_INTERNAL_FAILURE');
+  const httpStatus=Number(explicit.httpStatus||match?.[2]||0);
+  const fallbackHop=/^(MCP_CONFIG_|MCP_INVALID_URL|MCP_MANIFEST_|MCP_CANONICAL_CONTEXT_|MCP_HMAC_)/.test(errorCode)?'MCP_STARTUP_CONFIG':
+    /^(WRITE_AUTH_REQUIRED|INSUFFICIENT_SCOPE|STUDENT_DATA_REQUIRES_AUTH|STUDENT_GRADES_REQUIRE_AUTH)/.test(errorCode)?'MCP_TOOL_AUTHORIZATION':
+    /^GITHUB_APP_CREDENTIALS/.test(errorCode)?'GITHUB_APP_CONFIG':
+    /^GITHUB_APP_TOKEN/.test(errorCode)?'GITHUB_APP_TOKEN_EXCHANGE':
+    /^GITHUB_ACTIONS_/.test(errorCode)?'GITHUB_ACTIONS_API':
+    /^GITHUB_/.test(errorCode)?'GITHUB_APP':
+    /^CLOUD_RUN_/.test(errorCode)?'CLOUD_RUN_ADMIN_API':
+    /^GCP_METADATA_/.test(errorCode)?'CLOUD_RUN_METADATA_SERVER':
+    /^SECRET_MANAGER_/.test(errorCode)?'GOOGLE_SECRET_MANAGER':
+    /^(ACADEMIC_HMAC_|APPS_SCRIPT_HMAC_|CLOUD_RUN_HMAC_)/.test(errorCode)?'MCP_TO_APPS_SCRIPT_HMAC':
+    'MCP_ADAPTER';
+  const source=Array.isArray(explicit.sourceLocation)
+    ?explicit.sourceLocation.filter(x=>/^[A-Za-z_$][\w.$]{0,79}$/.test(String(x))).slice(0,3):[];
+  const data={
+    ok:false,
+    errorCode,
+    failedAt:safeDiagnosticToken(explicit.failedAt,fallbackHop),
+    phase:safeDiagnosticToken(explicit.phase,
+      fallbackHop==='MCP_STARTUP_CONFIG'?'CONFIG_VALIDATION':
+      fallbackHop==='MCP_TOOL_AUTHORIZATION'?'TOOL_AUTHORIZATION':'OPERATION'),
+    diagnosticId:/^[a-f0-9]{16}$/.test(String(explicit.diagnosticId||''))
+      ?explicit.diagnosticId:randomBytes(8).toString('hex')
+  };
+  const configKey=raw.match(/^MCP_CONFIG_REQUIRED:\s*(MCP_[A-Z0-9_]+|ACADEMIC_WRITE_HMAC_KEY)$/)?.[1];
+  if(configKey)data.configKey=configKey; // name only, never value
+  if(httpStatus>=100&&httpStatus<=599)data.httpStatus=httpStatus;
+  if(explicit.wasRedirected===true)data.wasRedirected=true;
+  if(['HTML','JSON','OTHER'].includes(explicit.responseType))data.responseType=explicit.responseType;
+  if(/^[A-Za-z0-9_-]{1,50}$/.test(String(explicit.operation||'')))data.operation=explicit.operation;
+  if(/^[A-Za-z0-9_-]{1,12}$/.test(String(explicit.requestIdHint||'')))
+    data.requestIdHint=explicit.requestIdHint;
+  if(source.length)data.sourceLocation=source;
+  if(['GOOGLE_APPS_SCRIPT','GOOGLE_CLASSROOM','GOOGLE_DRIVE','GOOGLE_FORMS','GOOGLE_CALENDAR','GOOGLE_SHEETS','GOOGLE_DOCS','EXTERNAL_HTTP','AUTH0','GITHUB','GOOGLE_CLOUD_RUN'].includes(explicit.provider))
+    data.provider=explicit.provider;
+  // Distinguishes an HTTP gate failure from an Apps Script HMAC failure.
+  if(errorCode.startsWith('UPSTREAM_HTTP_'))data.nextCheck='CHECK_WEBAPP_HTTP_ACCESS_AND_REDIRECT';
+  else if(/^(ACADEMIC_HMAC_|APPS_SCRIPT_HMAC_|CLOUD_RUN_HMAC_)/.test(errorCode))data.nextCheck='CHECK_HMAC_EQUIVALENCE';
+  else if(errorCode==='GITHUB_APP_CREDENTIALS_NOT_CONFIGURED')data.nextCheck='CHECK_OPTIONAL_GITHUB_APP_SETTINGS';
+  else if(errorCode==='MCP_INTERNAL_FAILURE')data.nextCheck='CHECK_CLOUD_RUN_DIAGNOSTIC_ID';
+  return data;
 }
 export async function callWebApp(config,body,fetcher=fetch){
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),180000);
+  const context={operation:String(body?.operation||body?.action||'').slice(0,50),
+    requestIdHint:safeRequestHint(body),provider:'GOOGLE_APPS_SCRIPT'};
   try{
-    const response=await fetcher(config.upstreamUrl,{
-      method:'POST',redirect:'follow',
-      headers:{'content-type':'text/plain;charset=utf-8'},
-      body:JSON.stringify(body),signal:controller.signal
+    let response;
+    try{
+      response=await fetcher(config.upstreamUrl,{
+        method:'POST',redirect:'follow',
+        headers:{'content-type':'text/plain;charset=utf-8'},
+        body:JSON.stringify(body),signal:controller.signal
+      });
+    }catch(err){
+      const timeoutError=err?.name==='AbortError'||err?.name==='TimeoutError';
+      throw diagnosticError(timeoutError?'WEBAPP_TRANSPORT_TIMEOUT':'WEBAPP_TRANSPORT_FAILURE',{
+        ...context,failedAt:'MCP_TO_APPS_SCRIPT_WEBAPP',phase:timeoutError?'TIMEOUT':'NETWORK_TRANSPORT'
+      });
+    }
+    if(!response.ok){
+      throw diagnosticError('UPSTREAM_HTTP_'+response.status,{
+        ...context,failedAt:webAppResponseHop(response),
+        phase:'GOOGLE_HTTP_RESPONSE',httpStatus:response.status,
+        wasRedirected:response.redirected===true
+      });
+    }
+    let raw;
+    try{raw=await response.text();}
+    catch{throw diagnosticError('WEBAPP_RESPONSE_READ_FAILED',{
+      ...context,failedAt:'APPS_SCRIPT_RESPONSE',phase:'BODY_READ'
+    });}
+    if(raw.length>1024*1024)throw diagnosticError('UPSTREAM_RESPONSE_TOO_LARGE',{
+      ...context,failedAt:'APPS_SCRIPT_RESPONSE',phase:'RESPONSE_SIZE'
     });
-    if(!response.ok)throw Error('UPSTREAM_HTTP_'+response.status);
-    const raw=await response.text();
-    if(raw.length>1024*1024)throw Error('UPSTREAM_RESPONSE_TOO_LARGE');
     let result;
-    try{result=JSON.parse(raw);}catch{throw Error('UPSTREAM_NON_JSON');}
+    try{result=JSON.parse(raw);}catch{
+      const contentType=String(response.headers?.get?.('content-type')||'').toLowerCase();
+      throw diagnosticError('UPSTREAM_NON_JSON',{
+        ...context,failedAt:webAppResponseHop(response),phase:'RESPONSE_DECODE',
+        responseType:contentType.includes('html')?'HTML':'OTHER'
+      });
+    }
     if(!result||result.ok!==true){
-      if(result?.errorCode==='ACADEMIC_CONTEXT_MISMATCH'&&Array.isArray(result?.errorDetails?.mismatchFields)){
-        const keys=result.errorDetails.mismatchFields.filter(k=>/^(source|contractVersion|manifestSha256|repository|workflow|endpoint)$/.test(k));
-        if(keys.length)throw Error('ACADEMIC_CONTEXT_MISMATCH_'+keys.map(k=>k.replace(/([a-z])([A-Z])/g,'$1_$2').toUpperCase()).join('_'));
+      let code=String(result?.errorCode||'UPSTREAM_REJECTED');
+      if(code==='ACADEMIC_CONTEXT_MISMATCH'&&Array.isArray(result?.errorDetails?.mismatchFields)){
+        const keys=result.errorDetails.mismatchFields.filter(k=>
+          /^(source|contractVersion|manifestSha256|repository|workflow|endpoint)$/.test(k));
+        if(keys.length)code='ACADEMIC_CONTEXT_MISMATCH_'+keys.map(k=>
+          k.replace(/([a-z])([A-Z])/g,'$1_$2').toUpperCase()).join('_');
       }
-      throw Error(String(result?.errorCode||'UPSTREAM_REJECTED'));
+      const details=result?.errorDetails||{};
+      throw diagnosticError(safeDiagnosticToken(code,'UPSTREAM_REJECTED'),{
+        ...context,
+        failedAt:safeDiagnosticToken(details.failedAt,'APPS_SCRIPT_EXECUTION'),
+        phase:safeDiagnosticToken(details.stage,'APPS_SCRIPT_HANDLER'),
+        sourceLocation:details.sourceLocation
+      });
     }
     return result;
   }finally{clearTimeout(timeout);}
@@ -316,7 +421,11 @@ export async function githubActionsCall(kind,{runId,confirmar}={}, {fetcher=fetc
 }
 
 function toolOk(payload){return {content:[{type:'text',text:JSON.stringify(payload)}]};}
-function toolFail(error){return {isError:true,content:[{type:'text',text:safeError(error)}]};}
+function toolFail(error){
+  const diagnostic=diagnosticPayload(error);
+  console.error('MCP_CHAIN_DIAGNOSTIC '+JSON.stringify(diagnostic));
+  return {isError:true,content:[{type:'text',text:JSON.stringify(diagnostic)}]};
+}
 
 export async function verifyBearer(config,header,scope,jwks=undefined){
   if(typeof header!=='string'||!/^Bearer [^\s]+$/.test(header))
@@ -594,7 +703,7 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
       (_req,res)=>res.json(metadata));
   app.all('/mcp',async(req,res)=>{
     if(req.headers.origin&&!['https://chatgpt.com','https://chat.openai.com'].includes(req.headers.origin))
-      return res.status(403).json({error:'origin_forbidden'});
+      return res.status(403).json({error:'origin_forbidden',errorCode:'MCP_ORIGIN_FORBIDDEN',failedAt:'MCP_ORIGIN_POLICY',phase:'HTTP_REQUEST',httpStatus:403});
     if(req.method!=='POST')return res.status(405).set('Allow','POST').end();
     let identity;
     try{
@@ -619,9 +728,16 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
       }
     }catch(e){
       const scope=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft'].includes(req.body?.params?.name)?SCOPES.grade:SCOPES.read;
+      const authCode=['AUTH_REQUIRED','INSUFFICIENT_SCOPE','SUBJECT_NOT_ALLOWED'].includes(e?.message)
+        ?e.message:'MCP_OAUTH_TOKEN_REJECTED';
+      const diagnostic=diagnosticPayload(diagnosticError(authCode,{
+        failedAt:'MCP_OAUTH_BOUNDARY',phase:'BEARER_VALIDATION',
+        provider:'AUTH0',httpStatus:401
+      }));
+      console.error('MCP_CHAIN_DIAGNOSTIC '+JSON.stringify(diagnostic));
       return res.status(401).set('WWW-Authenticate',challenge(config,scope,
         e.message==='INSUFFICIENT_SCOPE'?'insufficient_scope':'invalid_token'))
-        .json({error:'unauthorized'});
+        .json({error:'unauthorized',...diagnostic});
     }
     const server=buildServer(config,identity,fetcher);
     const transport=new StreamableHTTPServerTransport({sessionIdGenerator:undefined});
@@ -629,7 +745,11 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
       await server.connect(transport);
       await transport.handleRequest(req,res,req.body);
     }catch(e){
-      if(!res.headersSent)res.status(500).json({error:'mcp_transport_failed'});
+      const diagnostic=diagnosticPayload(diagnosticError('MCP_TRANSPORT_FAILURE',{
+        failedAt:'MCP_STREAMABLE_HTTP',phase:'RPC_DISPATCH',httpStatus:500
+      }));
+      console.error('MCP_CHAIN_DIAGNOSTIC '+JSON.stringify(diagnostic));
+      if(!res.headersSent)res.status(500).json({error:'mcp_transport_failed',...diagnostic});
     }finally{
       await transport.close().catch(()=>{});
       await server.close().catch(()=>{});
@@ -638,8 +758,16 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
   return app;
 }
 if(process.argv[1]&&fileURLToPath(import.meta.url)===process.argv[1]){
-  const config=loadConfig();
-  createApp(config).listen(config.port,'0.0.0.0',()=>{
-    console.log('Academic JV MCP ready on port '+config.port+' (auth='+config.authMode+')');
-  });
+  try{
+    const config=loadConfig();
+    createApp(config).listen(config.port,'0.0.0.0',()=>{
+      console.log('Academic JV MCP ready on port '+config.port+' (auth='+config.authMode+')');
+    });
+  }catch(error){
+    const diagnostic=diagnosticPayload(error);
+    diagnostic.failedAt='MCP_STARTUP_CONFIG';
+    diagnostic.phase='CONFIG_VALIDATION';
+    console.error('MCP_CHAIN_DIAGNOSTIC '+JSON.stringify(diagnostic));
+    process.exitCode=1;
+  }
 }

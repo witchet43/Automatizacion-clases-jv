@@ -13,13 +13,27 @@ async function post(request){
       try{return JSON.parse(raw);}catch{throw Error('WEB_APP_INVALID_JSON_RESPONSE');}
     }
     if([404,429,500,502,503,504].includes(response.status)&&attempt<4){await sleep(1000*(attempt+1));continue;}
-    if(response.status===403)throw Error('WEB_APP_AUTHORIZATION_REQUIRED');
+    if(response.status===403){
+      // Observe the final HTTP hop without logging the URL or any token.
+      let hop='UNKNOWN_HTTP_GATE';
+      try{
+        const host=new URL(response.url).hostname.toLowerCase();
+        if(host==='script.google.com')hop='SCRIPT_GOOGLE_COM_ENTRY';
+        else if(host==='script.googleusercontent.com')hop='SCRIPT_GOOGLEUSERCONTENT_REDIRECT';
+        else if(host==='accounts.google.com')hop='GOOGLE_LOGIN_REDIRECT';
+        else hop='UNEXPECTED_HTTP_DESTINATION';
+      }catch{}
+      throw Error('WEB_APP_AUTHORIZATION_REQUIRED_AT_'+hop);
+    }
     throw Error('WEB_APP_HEALTH_HTTP_'+response.status);
   }
   throw Error('WEB_APP_HEALTH_HTTP_'+String(last&&last.status||'UNKNOWN'));
 }
 const missing=await post({action:'uaqExecutor',operation:'clase',materia:'Administración',params:{resources:[]}});
 assert.equal(missing.ok,false);assert.equal(missing.error,'ACADEMIC_CONTEXT_REQUIRED');
+assert.equal(missing.errorDetails?.failedAt,'APPS_SCRIPT_AUTH_CONTEXT',
+  'WebApp health response must identify the failing execution component');
+assert.equal(missing.errorDetails?.provider,'GOOGLE_APPS_SCRIPT');
 // Health verification may only exercise rejected requests. Live Classroom
 // diagnostics are performed directly by the private Site, never by Actions.
 const empty=prepareRequest({action:'uaqExecutor',operation:'clase',requestId:'deployment-negative-auth-check',materia:'Administración',params:{resources:[]}});
