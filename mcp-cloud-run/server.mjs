@@ -204,8 +204,13 @@ export function diagnosticPayload(error){
   const explicit=error?.publicDiagnostic||{};
   const errorCode=safeDiagnosticToken(explicit.errorCode||match?.[1],'MCP_INTERNAL_FAILURE');
   const httpStatus=Number(explicit.httpStatus||match?.[2]||0);
-  const fallbackHop=/^GITHUB_/.test(errorCode)?'GITHUB_APP_OR_ACTIONS':
-    /^(CLOUD_RUN_|GCP_METADATA_|SECRET_MANAGER_)/.test(errorCode)?'GOOGLE_CLOUD_CONTROL_API':
+  const fallbackHop=/^GITHUB_APP_CREDENTIALS/.test(errorCode)?'GITHUB_APP_CONFIG':
+    /^GITHUB_APP_TOKEN/.test(errorCode)?'GITHUB_APP_TOKEN_EXCHANGE':
+    /^GITHUB_ACTIONS_/.test(errorCode)?'GITHUB_ACTIONS_API':
+    /^GITHUB_/.test(errorCode)?'GITHUB_APP':
+    /^CLOUD_RUN_/.test(errorCode)?'CLOUD_RUN_ADMIN_API':
+    /^GCP_METADATA_/.test(errorCode)?'CLOUD_RUN_METADATA_SERVER':
+    /^SECRET_MANAGER_/.test(errorCode)?'GOOGLE_SECRET_MANAGER':
     /^ACADEMIC_HMAC_/.test(errorCode)?'MCP_TO_APPS_SCRIPT_HMAC':
     'MCP_ADAPTER';
   const source=Array.isArray(explicit.sourceLocation)
