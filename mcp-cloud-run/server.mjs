@@ -200,7 +200,7 @@ function diagnosticError(errorCode,fields={}){
 }
 export function diagnosticPayload(error){
   const raw=String(error?.message||error||'UNKNOWN');
-  const match=raw.match(/^([A-Z][A-Z0-9_]{2,79})(?::\s*(\d{3}))?$/);
+  const match=raw.match(/^([A-Z][A-Z0-9_]{2,79})(?::\s*(\d{3}|[A-Z][A-Z0-9_]{2,79}))?$/);
   const explicit=error?.publicDiagnostic||{};
   const errorCode=safeDiagnosticToken(explicit.errorCode||match?.[1],'MCP_INTERNAL_FAILURE');
   const httpStatus=Number(explicit.httpStatus||match?.[2]||0);
