@@ -30,5 +30,14 @@ assert.equal(fs.existsSync(ctx.workflow.path),false);
 const adapter=fs.readFileSync('mcp-cloud-run/server.mjs','utf8');
 assert.match(adapter,/signedClosureRequest/);
 assert.match(adapter,/verifyBearer/);
-assert.doesNotMatch(adapter,/classroom\.googleapis\.com|forms\.googleapis\.com|script\.googleapis\.com/);
+// Only a single opt-in Apps Script API bridge to the same HMAC handler is allowed.
+assert.equal(adapter.includes('classroom.googleapis.com'),false);
+assert.equal(adapter.includes('forms.googleapis.com'),false);
+const officialApiCalls=adapter.split('script.googleapis.com/v1/scripts/').length-1;
+assert.ok(officialApiCalls<=1,'Do not recreate retired alternate academic API paths');
+if(officialApiCalls===1){
+  assert.ok(adapter.includes('ACADEMIC_UPSTREAM_TRANSPORT'));
+  assert.ok(adapter.includes("function:'ejecutarServicioAcademicoApi_'"));
+  assert.ok(adapter.includes('GOOGLE_ACADEMIC_OAUTH_REFRESH_TOKEN'));
+}
 console.log('PASS: retired alternate actions and request files remain absent; independent OAuth MCP proxies only the signed canonical WebApp.');
