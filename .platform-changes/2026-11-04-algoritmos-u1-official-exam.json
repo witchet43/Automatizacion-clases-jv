@@ -1,0 +1,19 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "El examen oficial para el 70 % del cierre de Unidad 1 del curso 871156334717 es Examen Unidad 1 - Algoritmos y Estructuras de Datos (878569197406). Resuelve únicamente el conflicto de los dos exámenes y completa el cierre mediante Classroom Academic Gateway, sin rediseñar la infraestructura. Conserva las calificaciones en draftGrade.",
+  "reason": "The authenticated Gateway cerrar_unidad failed because its canonical scoring routine found 2 PUBLISHED exams in Algoritmos y Estructuras de Datos Unidad 1. Add a single course+unit override selecting the explicitly authorized official exam, excluding the other published exam from BOTH the 70% exam and 30% coursework components. Never edit exams, roster, grades or Cloud Run as part of the code change. Then perform confirmed close via Gateway.",
+  "allowedChangedPaths": [
+    "src/13_RecalculoFinalCeros.gs",
+    "scripts/test-grade-closure-resilience.mjs"
+  ],
+  "courseId": "871156334717",
+  "unit": "Unidad 1",
+  "officialExamWorkId": "878569197406",
+  "excludedExamWorkId": "876666547526",
+  "noNewInfrastructure": true,
+  "classroomMutationsAllowedOnlyThroughGatewayClosing": true,
+  "gradeField": "draftGrade",
+  "rollback": "Restore prior Apps Script deployment if any regression; do not modify unrelated unit."
+}
