@@ -60,8 +60,25 @@ export function loadConfig(env=process.env,contextPath=join(dirname(fileURLToPat
   if(!['legacy','google_oauth'].includes(webAppAuthMode))throw Error('GOOGLE_WEBAPP_AUTH_MODE_INVALID');
   if(env.MCP_DEPLOY_COMMIT&&webAppAuthMode!=='google_oauth')
     throw Error('GOOGLE_WEBAPP_OAUTH_REQUIRED_IN_PRODUCTION');
+  const academicTransport=String(env.ACADEMIC_UPSTREAM_TRANSPORT||'webapp').trim();
+  if(!['webapp','script_api'].includes(academicTransport))
+    throw Error('ACADEMIC_UPSTREAM_TRANSPORT_INVALID');
+  let googleOAuthUser=null;
+  if(academicTransport==='script_api'){
+    googleOAuthUser={
+      clientId:required('GOOGLE_ACADEMIC_OAUTH_CLIENT_ID',env),
+      clientSecret:required('GOOGLE_ACADEMIC_OAUTH_CLIENT_SECRET',env),
+      refreshToken:required('GOOGLE_ACADEMIC_OAUTH_REFRESH_TOKEN',env),
+      executionDeploymentId:required('GOOGLE_ACADEMIC_EXECUTION_DEPLOYMENT_ID',env)
+    };
+    if(!/^[A-Za-z0-9_-]{30,200}$/.test(googleOAuthUser.executionDeploymentId))
+      throw Error('GOOGLE_ACADEMIC_EXECUTION_DEPLOYMENT_INVALID');
+    if(!/^[0-9]+-[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$/.test(googleOAuthUser.clientId))
+      throw Error('GOOGLE_ACADEMIC_OAUTH_CLIENT_ID_INVALID');
+  }
   return {
     publicUrl,issuer,jwksUrl,allowedSubjects:allowed,hmac,authMode,webAppAuthMode,
+    academicTransport,googleOAuthUser,
     operationalContext:ctx,upstreamUrl:ctx.endpoint,
     courseIds:new Set(config.courseIds),port:Number(env.PORT||8080)
   };
@@ -291,7 +308,90 @@ export async function googleWebAppOAuthToken(fetcher=fetch){
     });
   return value.access_token;
 }
+// Official Google Apps Script Execution API. Unlike restricted WebApps,
+// scripts.run accepts a correctly scoped *user* OAuth token (not service accounts).
+// Never log tokens, token responses, Google error messages, input bodies or grades.
+export async function callScriptApi(config,body,fetcher=fetch){
+  const ctx={operation:String(body?.operation||body?.action||'').slice(0,50),
+    requestIdHint:safeRequestHint(body),provider:'GOOGLE_APPS_SCRIPT'};
+  const auth=config.googleOAuthUser;
+  if(!auth?.clientId||!auth.clientSecret||!auth.refreshToken||!auth.executionDeploymentId)
+    throw diagnosticError('GOOGLE_USER_OAUTH_CONFIG_REQUIRED',{
+      ...ctx,failedAt:'CLOUD_RUN_SECRET_CONFIG',phase:'CONFIG_VALIDATION'
+    });
+  let refresh;
+  try{
+    refresh=await fetcher('https://oauth2.googleapis.com/token',{
+      method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({client_id:auth.clientId,client_secret:auth.clientSecret,
+        refresh_token:auth.refreshToken,grant_type:'refresh_token'}),
+      signal:AbortSignal.timeout(15000)
+    });
+  }catch{
+    throw diagnosticError('GOOGLE_USER_OAUTH_REFRESH_TRANSPORT_FAILED',{
+      ...ctx,failedAt:'GOOGLE_OAUTH_TOKEN_ENDPOINT',phase:'TOKEN_REFRESH'
+    });
+  }
+  if(!refresh.ok)throw diagnosticError('GOOGLE_USER_OAUTH_REFRESH_HTTP_'+refresh.status,{
+    ...ctx,failedAt:'GOOGLE_OAUTH_TOKEN_ENDPOINT',phase:'TOKEN_REFRESH',
+    httpStatus:refresh.status
+  });
+  let token;
+  try{token=await refresh.json();}catch{
+    throw diagnosticError('GOOGLE_USER_OAUTH_REFRESH_BAD_JSON',{
+      ...ctx,failedAt:'GOOGLE_OAUTH_TOKEN_ENDPOINT',phase:'RESPONSE_DECODE'
+    });
+  }
+  if(typeof token?.access_token!=='string'||token.access_token.length<12)
+    throw diagnosticError('GOOGLE_USER_OAUTH_REFRESH_NO_TOKEN',{
+      ...ctx,failedAt:'GOOGLE_OAUTH_TOKEN_ENDPOINT',phase:'TOKEN_REFRESH'
+    });
+  let response;
+  try{
+    response=await fetcher('https://script.googleapis.com/v1/scripts/'+
+      encodeURIComponent(auth.executionDeploymentId)+':run',{
+      method:'POST',headers:{'content-type':'application/json',
+        Authorization:'Bearer '+token.access_token},
+      body:JSON.stringify({function:'ejecutarServicioAcademicoApi',parameters:[body]}),
+      signal:AbortSignal.timeout(180000)
+    });
+  }catch{
+    throw diagnosticError('APPS_SCRIPT_EXECUTION_API_TRANSPORT_FAILED',{
+      ...ctx,failedAt:'APPS_SCRIPT_EXECUTION_API',phase:'NETWORK_TRANSPORT'
+    });
+  }
+  if(!response.ok)throw diagnosticError('APPS_SCRIPT_EXECUTION_API_HTTP_'+response.status,{
+    ...ctx,failedAt:'APPS_SCRIPT_EXECUTION_API',phase:'GOOGLE_API_RESPONSE',
+    httpStatus:response.status
+  });
+  let execution;
+  try{execution=await response.json();}catch{
+    throw diagnosticError('APPS_SCRIPT_EXECUTION_API_BAD_JSON',{
+      ...ctx,failedAt:'APPS_SCRIPT_EXECUTION_API',phase:'RESPONSE_DECODE'
+    });
+  }
+  if(execution?.error)
+    throw diagnosticError('APPS_SCRIPT_EXECUTION_API_RUNTIME_ERROR',{
+      ...ctx,failedAt:'APPS_SCRIPT_EXECUTION_API',phase:'REMOTE_EXECUTION'
+    });
+  const data=execution?.response?.result;
+  if(!data||typeof data!=='object')
+    throw diagnosticError('APPS_SCRIPT_EXECUTION_API_EMPTY_RESULT',{
+      ...ctx,failedAt:'APPS_SCRIPT_EXECUTION_API',phase:'RESPONSE_DECODE'
+    });
+  if(data.ok!==true){
+    const details=data?.errorDetails||{};
+    throw diagnosticError(safeDiagnosticToken(data.errorCode,'UPSTREAM_REJECTED'),{
+      ...ctx,failedAt:safeDiagnosticToken(details.failedAt,'APPS_SCRIPT_EXECUTION'),
+      phase:safeDiagnosticToken(details.stage,'APPS_SCRIPT_HANDLER'),
+      sourceLocation:details.sourceLocation
+    });
+  }
+  return data;
+}
 export async function callWebApp(config,body,fetcher=fetch){
+  if(config.academicTransport==='script_api')
+    return await callScriptApi(config,body,fetcher);
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),180000);
   const context={operation:String(body?.operation||body?.action||'').slice(0,50),

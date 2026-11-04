@@ -64,6 +64,22 @@ function doPost(e){
   return ejecutarServicioAcademicoWeb_(params);
 }
 
+// Official scripts.run entry: returns only JSON-compatible primitives. The
+// existing HMAC dispatcher remains the sole authorization and routing source.
+function ejecutarServicioAcademicoApi(params){
+  const response=ejecutarServicioAcademicoWeb_(params);
+  if(response&&typeof response.getContent==='function'){
+    const raw=response.getContent();
+    if(typeof raw!=='string'||raw.length>1024*1024)
+      throw new Error('ACADEMIC_EXECUTION_API_RESULT_INVALID');
+    return JSON.parse(raw);
+  }
+  // Test fixtures may provide the decoded data directly; runtime uses TextOutput.
+  if(response&&typeof response==='object'&&typeof response.ok==='boolean')
+    return response;
+  throw new Error('ACADEMIC_EXECUTION_API_RESULT_INVALID');
+}
+
 function ejecutarServicioAcademicoWeb_(params){
   try{
     const p=params&&typeof params==='object'?params:{};

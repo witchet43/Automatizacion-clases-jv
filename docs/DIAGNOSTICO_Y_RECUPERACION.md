@@ -77,6 +77,68 @@ El flujo académico ya no permite ejecutar herramientas MCP de forma anónima.
 
 **Restricción técnica:** los tokens Google de una cuenta de servicio NO equivalen a una sesión Google personal. Google puede seguir respondiendo 401/403 pese a que el token se envíe correctamente; la transición no se declarará operativa hasta que el servidor acepte una llamada real. La API `scripts.run` no es un sustituto automático porque Google no admite service accounts para ese método. No reducir permisos ni abrir de nuevo el acceso anónimo como “solución” sin autorización explícita.
 
+## Ruta compatible para eliminar el 403 sin acceso anónimo — API Executable
+
+**Evidencia del 3 de noviembre de 2026:** el proyecto Apps Script está asociado
+al proyecto Google Cloud estándar `473915513985`; el MCP vive en
+`classroom-mcp-512122`. El inventario autenticado detectó **cuatro implementaciones
+`EXECUTION_API` existentes** (versión más alta: 226), sin necesidad de crear otra.
+La autorización OAuth de `clasp` omitía 13 de los 15 scopes del manifest y la
+prueba segura de `scripts.run` recibió `PERMISSION_DENIED` (403).
+
+Google explica los requisitos:
+https://developers.google.com/apps-script/api/how-tos/execute
+
+Se preparó un transportador opcional `ACADEMIC_UPSTREAM_TRANSPORT=script_api`,
+pero **NO debe habilitarse** hasta cumplir las siguientes condiciones:
+
+1. Crear o reutilizar un OAuth Client **en el proyecto Google Cloud 473915513985**
+   (el cliente Auth0 no es un token OAuth válido para Google).
+2. Obtener consentimiento **del usuario propietario** para todos los scopes
+   declarados en `src/appsscript.json`. El grant de `clasp` está reservado al
+   despliegue y no tiene permisos suficientes; no copiarlo a Cloud Run.
+3. Los tres secretos en `classroom-mcp-512122` ya existen, están
+   `ENABLED` y la cuenta de Cloud Run tiene permiso `secretAccessor`
+   (verificación de GitHub Actions 2026-11-04, ejecución 41748603076):
+   `academic-google-oauth-client-id`,
+   `academic-google-oauth-client-secret`,
+   `academic-google-oauth-refresh-token`. No leer ni imprimir sus valores.
+4. Las tres API EXECUTION_API *versionadas* encontradas corresponden a
+   `ADSI Unit 2 exam` y dos `Quiz Asistencia Web App`; **no
+   sobrescribirlas** porque podrían tener consumidores existentes. El cuarto
+   es el despliegue HEAD v0, destinado exclusivamente a pruebas.
+   Agregar `executionApi.access=MYSELF` al manifest canónico, manteniendo
+   `webapp.access=ANYONE` y firma HMAC, e inspeccionar si actualizar la
+   WebApp canónica ofrece además un entry point EXECUTION_API con **el
+   mismo deployment ID**. Si no, crear una implementación *nueva y dedicada
+   dentro del mismo proyecto Apps Script*; no crear servicios Cloud Run
+   paralelos ni modificar los tres despliegues históricos.
+5. El ID de deployment **no es una credencial**. Pasarlo como variable de
+   entorno `GOOGLE_ACADEMIC_EXECUTION_DEPLOYMENT_ID` una vez validado;
+   no crear un cuarto secreto solo para el identificador. La API de Google
+   Apps Script debe estar habilitada en el proyecto `uaq-tareas`.
+6. Solo tras confirmar `EXECUTION_API` con acceso `MYSELF`, actualizar
+   el workflow Cloud Run para activar `ACADEMIC_UPSTREAM_TRANSPORT=script_api`
+   y asociar los tres secretos al servicio existente. **No cambiar antes
+   el tráfico de producción**. El endpoint WebApp existente mantiene
+   cuenta Google obligatoria + HMAC; no reabrir acceso anónimo.
+7. Probar `gateway_status(true)` con
+   `upstreamHmacAccepted=true` y `diagnosticar_clase` para una materia
+   autorizada. No ejecutar cierres ni crear recursos hasta completar estas
+   pruebas de lectura.
+
+**Flujo técnico:** ChatGPT Auth0 → MCP Cloud Run (HMAC de aplicación) →
+OAuth Google del propietario → `script.googleapis.com/v1/scripts/{deploymentId}:run`
+→ `ejecutarServicioAcademicoApi(params)` → dispatcher existente →
+Classroom/Drive/Forms/Sheets. El retorno es JSON plano; fallos OAuth,
+`scripts.run` y Apps Script exponen `failedAt`, `phase` y `diagnosticId`
+sin copiar la respuesta original ni credenciales.
+
+La ruta actual `webapp` permanece como predeterminada durante la preparación;
+**en producción sigue bloqueada por la autenticación de entrada de Google**.
+La existencia de código preparado no acredita autenticación ni funcionamiento
+hasta que se obtenga consentimiento Google y pasen pruebas reales.
+
 ## 1. Health check seguro en orden
 
 | Prueba | Acción | Criterio mínimo |
