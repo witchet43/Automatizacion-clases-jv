@@ -70,6 +70,26 @@ jobs:
           if [[ "$state" != ENABLED ]]; then
             echo "::error::Missing enabled OAuth subject allowlist"; exit 1
           fi
+      - name: Require three Google user OAuth secrets enabled (metadata only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for secret in \
+            academic-google-oauth-client-id \
+            academic-google-oauth-client-secret \
+            academic-google-oauth-refresh-token; do
+            status="$(gcloud secrets versions describe latest --secret "$secret" \
+              --project classroom-mcp-512122 --format='value(state)')"
+            if [[ "$status" != ENABLED ]]; then
+              echo "::error::Required Google OAuth secret not enabled: $secret"; exit 1
+            fi
+          done
+      - name: Verify canonical owner-only Apps Script Execution API (read-only)
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          REQUIRE_CANONICAL_EXECUTION_API: 'true'
+        run: node scripts/inventory-apps-script-deployments.mjs
+
       - name: Deploy only new independent MCP adapter
         env:
           PROJECT: classroom-mcp-512122
@@ -90,8 +110,8 @@ jobs:
             --build-service-account "projects/$PROJECT/serviceAccounts/$RUNTIME_SA" \
             --allow-unauthenticated --ingress all \
             --min-instances=0 --memory=512Mi --timeout=300 \
-            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=https://dev-67cfevmusm7px130.us.auth0.com/,MCP_OAUTH_JWKS_URL=https://dev-67cfevmusm7px130.us.auth0.com/.well-known/jwks.json,MCP_DEPLOY_COMMIT=${{ github.sha }},GOOGLE_WEBAPP_AUTH_MODE=google_oauth" \
-            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest,MCP_ALLOWED_SUBJECTS=academic-mcp-allowed-subjects:latest" \
+            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=https://dev-67cfevmusm7px130.us.auth0.com/,MCP_OAUTH_JWKS_URL=https://dev-67cfevmusm7px130.us.auth0.com/.well-known/jwks.json,MCP_DEPLOY_COMMIT=${{ github.sha }},GOOGLE_WEBAPP_AUTH_MODE=google_oauth,ACADEMIC_UPSTREAM_TRANSPORT=script_api,GOOGLE_ACADEMIC_EXECUTION_DEPLOYMENT_ID=AKfycbz2rCuB9jUsbnt0tj0RgHmr3lguOZjVL34a_2F_yhggiwLNTOEn8QdsdbFv4SK6aGxr" \
+            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest,MCP_ALLOWED_SUBJECTS=academic-mcp-allowed-subjects:latest,GOOGLE_ACADEMIC_OAUTH_CLIENT_ID=academic-google-oauth-client-id:latest,GOOGLE_ACADEMIC_OAUTH_CLIENT_SECRET=academic-google-oauth-client-secret:latest,GOOGLE_ACADEMIC_OAUTH_REFRESH_TOKEN=academic-google-oauth-refresh-token:latest" \
             --quiet
           REAL_URL="$URL"
           [[ "$REAL_URL" == https://* ]] || { echo "::error::Missing public Cloud Run HTTPS URL"; exit 1; }
@@ -101,7 +121,7 @@ jobs:
             echo "Endpoint: $REAL_URL/mcp"
             echo 'MCP_AUTH_MODE=oauth; protected user-grading actions require academic.close_unit.'
             echo 'Only the runtime can access Secret Manager HMAC; requests are signed to canonical WebApp.'
-            echo 'Academic mutations use the existing canonical signed WebApp workflow.'
+            echo 'Canonical owner-only Apps Script Execution API with Google OAuth; payloads retain HMAC and Classroom DRAFT restrictions.'
             echo 'Deployment performs no Classroom grade mutation.'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Verify live OAuth metadata and unauthenticated rejection
