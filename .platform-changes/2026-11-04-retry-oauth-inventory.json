@@ -1,0 +1,12 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "3 secretos guardados",
+  "reason": "Re-ejecutar inventario exclusivamente de metadatos de implementaciones API ya existentes para seleccionar la apropiada, después de comprobar los tres secretos y los permisos IAM; sin nuevas infraestructuras ni cambios a Classroom.",
+  "allowedChangedPaths": [
+    "scripts/inventory-apps-script-deployments.mjs"
+  ],
+  "noNewInfrastructure": true,
+  "classroomMutationAllowed": false
+}

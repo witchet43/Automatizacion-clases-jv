@@ -34,6 +34,7 @@ try{
     const executions=rows.filter(x=>x.entryPoints?.some(e=>e.entryPointType==='EXECUTION_API'));
     const types=[...new Set(rows.flatMap(x=>(x.entryPoints||[]).map(e=>String(e.entryPointType||'UNKNOWN'))))].sort();
     const deployments=executions.map(x=>String(x.deploymentId||'')).filter(x=>/^[A-Za-z0-9_-]{20,200}$/.test(x)).slice(0,10);
+    // Only deployment metadata: never record OAuth tokens, source or request payloads.
     const apiCandidates=executions.map(x=>({
       deploymentId:String(x.deploymentId||'').slice(0,200),
       version:Number(x.deploymentConfig?.versionNumber||0),
