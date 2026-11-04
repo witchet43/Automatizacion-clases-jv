@@ -97,10 +97,23 @@ pero **NO debe habilitarse** hasta cumplir las siguientes condiciones:
 2. Obtener consentimiento **del usuario propietario** para todos los scopes
    declarados en `src/appsscript.json`. El grant de `clasp` está reservado al
    despliegue y no tiene permisos suficientes; no copiarlo a Cloud Run.
-3. Guardar `GOOGLE_ACADEMIC_OAUTH_CLIENT_ID`,
-   `GOOGLE_ACADEMIC_OAUTH_CLIENT_SECRET`,
-   `GOOGLE_ACADEMIC_OAUTH_REFRESH_TOKEN` en controles de secretos seguros y
-   con accesos mínimos, nunca en GitHub ni en logs.
+3. Guardar **en Secret Manager del proyecto `classroom-mcp-512122`**,
+   sin introducir nada en chats, GitHub, líneas de comandos ni logs:
+   - `academic-google-oauth-client-id`: client ID del proyecto
+     `uaq-tareas` (`473915513985`).
+   - `academic-google-oauth-client-secret`: último secreto rotado, **no**
+     el secreto anterior visible en una captura.
+   - `academic-google-oauth-refresh-token`: refresh token del propietario
+     generado usando ese mismo client ID en Google OAuth Playground.
+   - `academic-google-api-deployment-id`: el ID de una implementación
+     `EXECUTION_API` **existente y expresamente seleccionada**, tras
+     actualizar su versión a código que incluya
+     `ejecutarServicioAcademicoApi_`.
+   El workflow de Cloud Run verifica `ENABLED`, concede el rol
+   `roles/secretmanager.secretAccessor` a la cuenta de servicio *actual*
+   para **estos cuatro secretos únicamente**, e inyecta referencias a
+   secretos (nunca valores). La integración permanece en un PR borrador
+   hasta completar autorizaciones y pruebas.
 4. Elegir y actualizar **una** de las implementaciones API existentes a una
    versión que contenga `ejecutarServicioAcademicoApi_`, revisando primero
    descripción y clientes actuales; no alterar otras implementaciones.
