@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "3 secretos guardados; Listo",
+  "reason": "Release owner-only Apps Script Execution API without relaxing WebApp authentication; correct outdated pipeline guard and force deployment of already tested safe signed dispatcher; no Classroom changes.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-apps-script.yml",
+    "src/65_QuizAsistenciaWebApp.gs"
+  ],
+  "noNewInfrastructure": true,
+  "classroomMutationAllowed": false
+}
