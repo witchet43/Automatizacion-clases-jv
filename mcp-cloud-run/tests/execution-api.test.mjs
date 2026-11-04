@@ -28,7 +28,7 @@ test('existing API Executable receives authenticated, HMAC-bearing JSON without 
     assert.match(url,/^https:\/\/script\.googleapis\.com\/v1\/scripts\/AKfy/);
     assert.equal(init.headers.Authorization,'Bearer SYNTHETIC_GOOGLE_OWNER_ACCESS_TOKEN');
     const payload=JSON.parse(init.body);
-    assert.equal(payload.function,'ejecutarServicioAcademicoApi_');
+    assert.equal(payload.function,'ejecutarServicioAcademicoApi');
     assert.deepEqual(payload.parameters,[request]);
     return new Response(JSON.stringify({response:{result:{ok:true,action:'diagnosticarFirma',signatureAccepted:true}}}),{status:200});
   };
