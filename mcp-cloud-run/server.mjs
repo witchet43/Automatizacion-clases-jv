@@ -277,6 +277,12 @@ export function diagnosticPayload(error){
   if(errorCode.startsWith('UPSTREAM_HTTP_'))data.nextCheck='CHECK_WEBAPP_HTTP_ACCESS_AND_REDIRECT';
   else if(/^(ACADEMIC_HMAC_|APPS_SCRIPT_HMAC_|CLOUD_RUN_HMAC_)/.test(errorCode))data.nextCheck='CHECK_HMAC_EQUIVALENCE';
   else if(errorCode==='GITHUB_APP_CREDENTIALS_NOT_CONFIGURED')data.nextCheck='CHECK_OPTIONAL_GITHUB_APP_SETTINGS';
+  else if(errorCode==='GOOGLE_USER_OAUTH_REFRESH_INVALID_GRANT')
+    data.nextCheck='REAUTHORIZE_GOOGLE_REFRESH_TOKEN';
+  else if(errorCode==='GOOGLE_USER_OAUTH_REFRESH_INVALID_CLIENT')
+    data.nextCheck='VERIFY_GOOGLE_OAUTH_CLIENT_ID_SECRET_PAIR';
+  else if(errorCode==='GOOGLE_USER_OAUTH_REFRESH_UNAUTHORIZED_CLIENT')
+    data.nextCheck='VERIFY_GOOGLE_OAUTH_CLIENT_CONFIGURATION';
   else if(errorCode==='MCP_INTERNAL_FAILURE')data.nextCheck='CHECK_CLOUD_RUN_DIAGNOSTIC_ID';
   return data;
 }
@@ -332,10 +338,22 @@ export async function callScriptApi(config,body,fetcher=fetch){
       ...ctx,failedAt:'GOOGLE_OAUTH_TOKEN_ENDPOINT',phase:'TOKEN_REFRESH'
     });
   }
-  if(!refresh.ok)throw diagnosticError('GOOGLE_USER_OAUTH_REFRESH_HTTP_'+refresh.status,{
-    ...ctx,failedAt:'GOOGLE_OAUTH_TOKEN_ENDPOINT',phase:'TOKEN_REFRESH',
-    httpStatus:refresh.status
-  });
+  if(!refresh.ok){
+    // Google's RFC 6749 error code is safe to expose; error_description,
+    // response URL, raw body, client ID and refresh token are NEVER logged.
+    let oauthCode='UNKNOWN';
+    try{
+      const payload=await refresh.json();
+      const candidate=String(payload?.error||'').toUpperCase();
+      if(['INVALID_GRANT','INVALID_CLIENT','UNAUTHORIZED_CLIENT',
+          'INVALID_REQUEST','UNSUPPORTED_GRANT_TYPE','ACCESS_DENIED',
+          'TEMPORARILY_UNAVAILABLE'].includes(candidate))oauthCode=candidate;
+    }catch{}
+    throw diagnosticError('GOOGLE_USER_OAUTH_REFRESH_'+oauthCode,{
+      ...ctx,failedAt:'GOOGLE_OAUTH_TOKEN_ENDPOINT',phase:'TOKEN_REFRESH',
+      httpStatus:refresh.status
+    });
+  }
   let token;
   try{token=await refresh.json();}catch{
     throw diagnosticError('GOOGLE_USER_OAUTH_REFRESH_BAD_JSON',{
