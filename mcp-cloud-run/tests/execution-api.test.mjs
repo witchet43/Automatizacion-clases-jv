@@ -38,9 +38,9 @@ test('existing API Executable receives authenticated, HMAC-bearing JSON without 
 });
 test('Secret Manager OAuth values strip surrounding paste whitespace only',async()=>{
   const settings={...config,googleOAuthUser:{...config.googleOAuthUser,
-    clientId:'  '+config.googleOAuthUser.clientId+'\\n',
-    clientSecret:config.googleOAuthUser.clientSecret+'\\n',
-    refreshToken:'  '+config.googleOAuthUser.refreshToken+'\\n'}};
+    clientId:'  '+config.googleOAuthUser.clientId+'\n',
+    clientSecret:config.googleOAuthUser.clientSecret+'\n',
+    refreshToken:'  '+config.googleOAuthUser.refreshToken+'\n'}};
   const fetcher=async (url,init)=>{
     if(url.includes('oauth2.googleapis.com')){
       const body=new URLSearchParams(init.body);
