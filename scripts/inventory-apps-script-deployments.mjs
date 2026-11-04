@@ -34,10 +34,18 @@ try{
     const executions=rows.filter(x=>x.entryPoints?.some(e=>e.entryPointType==='EXECUTION_API'));
     const types=[...new Set(rows.flatMap(x=>(x.entryPoints||[]).map(e=>String(e.entryPointType||'UNKNOWN'))))].sort();
     const deployments=executions.map(x=>String(x.deploymentId||'')).filter(x=>/^[A-Za-z0-9_-]{20,200}$/.test(x)).slice(0,10);
+    const apiCandidates=executions.map(x=>({
+      deploymentId:String(x.deploymentId||'').slice(0,200),
+      version:Number(x.deploymentConfig?.versionNumber||0),
+      description:String(x.deploymentConfig?.description||'').replace(/[^a-zA-Z0-9 _-]/g,'').slice(0,90),
+      access:(x.entryPoints||[]).filter(e=>e.entryPointType==='EXECUTION_API')
+        .map(e=>String(e.executionApi?.access||'UNKNOWN').slice(0,35)),
+      updateTime:String(x.updateTime||'').slice(0,35)
+    })).sort((a,b)=>b.version-a.version);
     console.log(JSON.stringify({check:'APPS_SCRIPT_DEPLOYMENT_INVENTORY',success:true,
       cloudProjectNumber:String(script.projectId||''),deploymentCount:rows.length,
       observedEntryPointTypes:types,apiExecutableCount:executions.length,
-      existingApiDeploymentIds:deployments,paginationPresent:Boolean(data.nextPageToken),
+      existingApiDeploymentIds:deployments,apiCandidates,paginationPresent:Boolean(data.nextPageToken),
       noAcademicActions:true,noCredentialsExposed:true}));
   }
 }catch(e){
