@@ -3,20 +3,22 @@
   "authorized": true,
   "requestedByUser": true,
   "authorizationText": "Pues hay que hacerlo, esto es raro por que ya había funcionado pero hay que hacerlo",
-  "reason": "Preparar el uso seguro y optativo de cuatro deployments Google Apps Script API Executable existentes con OAuth Google delegado por propietario; ningún acceso anónimo ni secretos en repositorio.",
+  "reason": "Safely introduce an owner-only API entry point and an optional OAuth transport; keep current Cloud Run traffic on webapp until the Apps Script deployment is confirmed to expose EXECUTION_API and all secrets are verified; no student data modifications.",
   "allowedChangedPaths": [
-    ".github/workflows/deploy-cloud-run-mcp.yml",
+    ".github/workflows/deploy-apps-script.yml",
     "docs/DIAGNOSTICO_Y_RECUPERACION.md",
     "mcp-cloud-run/server.mjs",
     "mcp-cloud-run/tests/execution-api.test.mjs",
     "scripts/test-architecture-boundaries.mjs",
     "scripts/test-decommissioned-routes.mjs",
     "scripts/test-webapp-error-diagnostics.mjs",
-    "src/65_QuizAsistenciaWebApp.gs"
+    "src/65_QuizAsistenciaWebApp.gs",
+    "src/appsscript.json"
   ],
   "deployOnlyAfterAuthorizedConsent": true,
   "noNewInfrastructure": true,
   "classroomMutationAllowed": false,
   "credentialMigrationAllowed": false,
-  "secretsStoredInGcpOnly": true
+  "secretsStoredInGcpOnly": true,
+  "activationDeferred": true
 }
