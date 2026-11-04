@@ -97,31 +97,31 @@ pero **NO debe habilitarse** hasta cumplir las siguientes condiciones:
 2. Obtener consentimiento **del usuario propietario** para todos los scopes
    declarados en `src/appsscript.json`. El grant de `clasp` está reservado al
    despliegue y no tiene permisos suficientes; no copiarlo a Cloud Run.
-3. Guardar **en Secret Manager del proyecto `classroom-mcp-512122`**,
-   sin introducir nada en chats, GitHub, líneas de comandos ni logs:
-   - `academic-google-oauth-client-id`: client ID del proyecto
-     `uaq-tareas` (`473915513985`).
-   - `academic-google-oauth-client-secret`: último secreto rotado, **no**
-     el secreto anterior visible en una captura.
-   - `academic-google-oauth-refresh-token`: refresh token del propietario
-     generado usando ese mismo client ID en Google OAuth Playground.
-   - `academic-google-api-deployment-id`: el ID de una implementación
-     `EXECUTION_API` **existente y expresamente seleccionada**, tras
-     actualizar su versión a código que incluya
-     `ejecutarServicioAcademicoApi`.
-   El workflow de Cloud Run verifica `ENABLED`, concede el rol
-   `roles/secretmanager.secretAccessor` a la cuenta de servicio *actual*
-   para **estos cuatro secretos únicamente**, e inyecta referencias a
-   secretos (nunca valores). La integración permanece en un PR borrador
-   hasta completar autorizaciones y pruebas.
-4. Elegir y actualizar **una** de las implementaciones API existentes a una
-   versión que contenga `ejecutarServicioAcademicoApi`, revisando primero
-   descripción y clientes actuales; no alterar otras implementaciones.
-   Configurar `GOOGLE_ACADEMIC_EXECUTION_DEPLOYMENT_ID` con su ID exacto.
-5. Habilitar la API Google Apps Script en el proyecto **473915513985**.
-6. Solo entonces activar `ACADEMIC_UPSTREAM_TRANSPORT=script_api` en
-   Cloud Run. Los endpoints de la WebApp continúan requiriendo cuenta Google
-   y HMAC; no reabrir `ANYONE_ANONYMOUS`.
+3. Los tres secretos en `classroom-mcp-512122` ya existen, están
+   `ENABLED` y la cuenta de Cloud Run tiene permiso `secretAccessor`
+   (verificación de GitHub Actions 2026-11-04, ejecución 41748603076):
+   `academic-google-oauth-client-id`,
+   `academic-google-oauth-client-secret`,
+   `academic-google-oauth-refresh-token`. No leer ni imprimir sus valores.
+4. Las tres API EXECUTION_API *versionadas* encontradas corresponden a
+   `ADSI Unit 2 exam` y dos `Quiz Asistencia Web App`; **no
+   sobrescribirlas** porque podrían tener consumidores existentes. El cuarto
+   es el despliegue HEAD v0, destinado exclusivamente a pruebas.
+   Agregar `executionApi.access=MYSELF` al manifest canónico, manteniendo
+   `webapp.access=ANYONE` y firma HMAC, e inspeccionar si actualizar la
+   WebApp canónica ofrece además un entry point EXECUTION_API con **el
+   mismo deployment ID**. Si no, crear una implementación *nueva y dedicada
+   dentro del mismo proyecto Apps Script*; no crear servicios Cloud Run
+   paralelos ni modificar los tres despliegues históricos.
+5. El ID de deployment **no es una credencial**. Pasarlo como variable de
+   entorno `GOOGLE_ACADEMIC_EXECUTION_DEPLOYMENT_ID` una vez validado;
+   no crear un cuarto secreto solo para el identificador. La API de Google
+   Apps Script debe estar habilitada en el proyecto `uaq-tareas`.
+6. Solo tras confirmar `EXECUTION_API` con acceso `MYSELF`, actualizar
+   el workflow Cloud Run para activar `ACADEMIC_UPSTREAM_TRANSPORT=script_api`
+   y asociar los tres secretos al servicio existente. **No cambiar antes
+   el tráfico de producción**. El endpoint WebApp existente mantiene
+   cuenta Google obligatoria + HMAC; no reabrir acceso anónimo.
 7. Probar `gateway_status(true)` con
    `upstreamHmacAccepted=true` y `diagnosticar_clase` para una materia
    autorizada. No ejecutar cierres ni crear recursos hasta completar estas
