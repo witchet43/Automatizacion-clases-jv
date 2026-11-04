@@ -1,29 +1,33 @@
 import assert from 'node:assert/strict';
 import {readContext} from './academic-context.mjs';
 
-// Deployment access is Google-authenticated. CI has no end-user Google OAuth
-// token, so it must verify *denial* of an unauthenticated request, not pretend
-// to verify the signed HMAC path. The OAuth-authenticated MCP performs that.
+// Live negative authorization probe: anonymous HTTP transport is permitted,
+// but NO unsigned action may succeed. Do not call Classroom or modify data.
+// A valid signed HMAC E2E must separately be confirmed by MCP gateway_status.
 const {manifest,digest}=readContext();
 const response=await fetch(manifest.webApp.url,{
-  method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+  method:'POST',
+  headers:{'Content-Type':'text/plain;charset=utf-8'},
   body:JSON.stringify({action:'diagnosticarFirma'}),
+  redirect:'follow',
   signal:AbortSignal.timeout(30000)
 });
-if(![401,403].includes(response.status)){
-  throw Error('WEBAPP_ANONYMOUS_ACCESS_NOT_DENIED_HTTP_'+response.status);
-}
-let hop='UNKNOWN_HTTP_GATE';
-try{
-  const hostname=new URL(response.url).hostname.toLowerCase();
-  if(hostname==='script.google.com')hop='SCRIPT_GOOGLE_COM_ENTRY';
-  else if(hostname==='accounts.google.com')hop='GOOGLE_LOGIN_REDIRECT';
-  else if(hostname==='script.googleusercontent.com')hop='SCRIPT_GOOGLEUSERCONTENT_REDIRECT';
-}catch{}
+if(!response.ok)
+  throw Error('WEBAPP_HTTP_ENTRY_FAILURE_'+response.status);
+const contentType=String(response.headers.get('content-type')||'');
+if(contentType.toLowerCase().includes('text/html'))
+  throw Error('WEBAPP_RETURNED_HTML_NOT_APPS_SCRIPT_JSON');
+let data;
+try{data=await response.json();}
+catch{throw Error('WEBAPP_RETURNED_NON_JSON');}
+assert.equal(data?.ok,false,'Unsigned diagnostic must not succeed');
+assert.equal(data?.errorCode,'ACADEMIC_HMAC_DIAGNOSTIC_INVALID',
+  'Expected canonical doPost validation, not a Google sign-in page');
 assert.ok(manifest.webApp.url.startsWith('https://script.google.com/'));
 console.log(JSON.stringify({
-  ok:true,webAppAccessPolicy:'GOOGLE_SIGNED_IN_REQUIRED',
-  anonymousDenied:true,anonymousStatus:response.status,anonymousDeniedAt:hop,
-  manifestSha256:digest,signedHmacTested:false,classroomContacted:false,
+  ok:true,transport:'PUBLIC_HTTP_WITH_MANDATORY_SIGNED_HMAC',
+  anonymousHttpEntryReached:true,unsignedActionRejected:true,
+  errorCode:data.errorCode,manifestSha256:digest,
+  signedHmacTested:false,classroomContacted:false,
   validAcademicWritesSent:0,resourcesCreated:0
 }));
