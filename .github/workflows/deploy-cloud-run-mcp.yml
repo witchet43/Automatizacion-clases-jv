@@ -70,42 +70,6 @@ jobs:
           if [[ "$state" != ENABLED ]]; then
             echo "::error::Missing enabled OAuth subject allowlist"; exit 1
           fi
-      - name: Require delegated Google OAuth secrets (metadata only)
-        shell: bash
-        run: |
-          set -euo pipefail
-          for secret in \
-            academic-google-oauth-client-id \
-            academic-google-oauth-client-secret \
-            academic-google-oauth-refresh-token \
-            academic-google-api-deployment-id; do
-            state="$(gcloud secrets versions describe latest --secret "$secret" --project classroom-mcp-512122 --format='value(state)' 2>/dev/null)" || {
-              echo "::error::Missing Google OAuth Secret Manager secret: $secret"; exit 1;
-            }
-            if [[ "$state" != ENABLED ]]; then
-              echo "::error::Google OAuth secret is not enabled: $secret"; exit 1;
-            fi
-          done
-
-      - name: Grant existing runtime service account access only to four OAuth secrets
-        env:
-          PROJECT: classroom-mcp-512122
-          RUNTIME_SA: classroom-mcp-sa@classroom-mcp-512122.iam.gserviceaccount.com
-        shell: bash
-        run: |
-          set -euo pipefail
-          for secret in \
-            academic-google-oauth-client-id \
-            academic-google-oauth-client-secret \
-            academic-google-oauth-refresh-token \
-            academic-google-api-deployment-id; do
-            gcloud secrets add-iam-policy-binding "$secret" \
-              --project "$PROJECT" \
-              --member "serviceAccount:$RUNTIME_SA" \
-              --role roles/secretmanager.secretAccessor \
-              --quiet >/dev/null
-          done
-
       - name: Deploy only new independent MCP adapter
         env:
           PROJECT: classroom-mcp-512122
@@ -126,8 +90,8 @@ jobs:
             --build-service-account "projects/$PROJECT/serviceAccounts/$RUNTIME_SA" \
             --allow-unauthenticated --ingress all \
             --min-instances=0 --memory=512Mi --timeout=300 \
-            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=https://dev-67cfevmusm7px130.us.auth0.com/,MCP_OAUTH_JWKS_URL=https://dev-67cfevmusm7px130.us.auth0.com/.well-known/jwks.json,MCP_DEPLOY_COMMIT=${{ github.sha }},GOOGLE_WEBAPP_AUTH_MODE=google_oauth,ACADEMIC_UPSTREAM_TRANSPORT=script_api" \
-            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest,MCP_ALLOWED_SUBJECTS=academic-mcp-allowed-subjects:latest,GOOGLE_ACADEMIC_OAUTH_CLIENT_ID=academic-google-oauth-client-id:latest,GOOGLE_ACADEMIC_OAUTH_CLIENT_SECRET=academic-google-oauth-client-secret:latest,GOOGLE_ACADEMIC_OAUTH_REFRESH_TOKEN=academic-google-oauth-refresh-token:latest,GOOGLE_ACADEMIC_EXECUTION_DEPLOYMENT_ID=academic-google-api-deployment-id:latest" \
+            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=https://dev-67cfevmusm7px130.us.auth0.com/,MCP_OAUTH_JWKS_URL=https://dev-67cfevmusm7px130.us.auth0.com/.well-known/jwks.json,MCP_DEPLOY_COMMIT=${{ github.sha }},GOOGLE_WEBAPP_AUTH_MODE=google_oauth" \
+            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest,MCP_ALLOWED_SUBJECTS=academic-mcp-allowed-subjects:latest" \
             --quiet
           REAL_URL="$URL"
           [[ "$REAL_URL" == https://* ]] || { echo "::error::Missing public Cloud Run HTTPS URL"; exit 1; }
@@ -137,7 +101,7 @@ jobs:
             echo "Endpoint: $REAL_URL/mcp"
             echo 'MCP_AUTH_MODE=oauth; protected user-grading actions require academic.close_unit.'
             echo 'Only the runtime can access Secret Manager HMAC; requests are signed to canonical WebApp.'
-            echo 'Delegated Google user OAuth calls the existing Apps Script API Executable with the canonical signed HMAC dispatcher.'
+            echo 'Academic mutations use the existing canonical signed WebApp workflow.'
             echo 'Deployment performs no Classroom grade mutation.'
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Verify live OAuth metadata and unauthenticated rejection
