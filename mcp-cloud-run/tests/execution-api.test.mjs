@@ -36,6 +36,23 @@ test('existing API Executable receives authenticated, HMAC-bearing JSON without 
   assert.equal(result.signatureAccepted,true);
   assert.equal(calls.length,2);
 });
+test('Secret Manager OAuth values strip surrounding paste whitespace only',async()=>{
+  const settings={...config,googleOAuthUser:{...config.googleOAuthUser,
+    clientId:'  '+config.googleOAuthUser.clientId+'\\n',
+    clientSecret:config.googleOAuthUser.clientSecret+'\\n',
+    refreshToken:'  '+config.googleOAuthUser.refreshToken+'\\n'}};
+  const fetcher=async (url,init)=>{
+    if(url.includes('oauth2.googleapis.com')){
+      const body=new URLSearchParams(init.body);
+      assert.equal(body.get('client_id'),config.googleOAuthUser.clientId);
+      assert.equal(body.get('client_secret'),config.googleOAuthUser.clientSecret);
+      assert.equal(body.get('refresh_token'),config.googleOAuthUser.refreshToken);
+      return new Response('{"access_token":"SYNTHETIC_GOOGLE_OWNER_ACCESS_TOKEN"}',{status:200});
+    }
+    return new Response('{"response":{"result":{"ok":true}}}',{status:200});
+  };
+  assert.equal((await callWebApp(settings,request,fetcher)).ok,true);
+});
 test('OAuth refresh error identifies Google RFC category without sensitive details',async()=>{
   const d=await getFailure(async()=>new Response(JSON.stringify({
     error:'invalid_grant',
