@@ -47,10 +47,10 @@ for (const [name, op] of Object.entries(manifest.operations || {})) {
 }
 // A dedicated owner-only Apps Script Execution API entry is allowed solely
 // for the OAuth-protected canonical signed dispatcher after explicit platform
-// authorization. The old WebApp remains sign-in-only and HMAC protected.
+// authorization. The canonical WebApp accepts HTTP requests but academic operations require mandatory signed HMAC.
 if (Object.prototype.hasOwnProperty.call(appsscript,'executionApi')) {
   if (appsscript.executionApi?.access !== 'MYSELF' ||
-      appsscript.webapp?.access !== 'ANYONE' ||
+      appsscript.webapp?.access !== 'ANYONE_ANONYMOUS' ||
       !fs.readFileSync(path.join(root,'mcp-cloud-run/server.mjs'),'utf8')
         .includes("function:'ejecutarServicioAcademicoApi'"))
     fail.push('executionApi must be owner-only and bound to canonical signed handler');
