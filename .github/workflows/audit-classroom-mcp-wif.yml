@@ -63,7 +63,7 @@ jobs:
             echo '- Cannot read runtime service-account IAM; roles/iam.serviceAccountUser not confirmed.' >> "$GITHUB_STEP_SUMMARY"
           fi
           echo '### Secret names and runtime access (no values)' >> "$GITHUB_STEP_SUMMARY"
-          for secret in academic-write-hmac academic-mcp-allowed-subjects; do
+          for secret in academic-write-hmac academic-mcp-allowed-subjects academic-google-oauth-client-id academic-google-oauth-client-secret academic-google-oauth-refresh-token academic-google-api-deployment-id; do
             if gcloud secrets describe "$secret" --project "$PROJECT" --format='value(name)' >/dev/null 2>&1; then
               echo "- Exists: $secret" >> "$GITHUB_STEP_SUMMARY"
               iam="$(gcloud secrets get-iam-policy "$secret" --project "$PROJECT" --format=json 2>/dev/null || true)"
