@@ -108,14 +108,14 @@ pero **NO debe habilitarse** hasta cumplir las siguientes condiciones:
    - `academic-google-api-deployment-id`: el ID de una implementación
      `EXECUTION_API` **existente y expresamente seleccionada**, tras
      actualizar su versión a código que incluya
-     `ejecutarServicioAcademicoApi_`.
+     `ejecutarServicioAcademicoApi`.
    El workflow de Cloud Run verifica `ENABLED`, concede el rol
    `roles/secretmanager.secretAccessor` a la cuenta de servicio *actual*
    para **estos cuatro secretos únicamente**, e inyecta referencias a
    secretos (nunca valores). La integración permanece en un PR borrador
    hasta completar autorizaciones y pruebas.
 4. Elegir y actualizar **una** de las implementaciones API existentes a una
-   versión que contenga `ejecutarServicioAcademicoApi_`, revisando primero
+   versión que contenga `ejecutarServicioAcademicoApi`, revisando primero
    descripción y clientes actuales; no alterar otras implementaciones.
    Configurar `GOOGLE_ACADEMIC_EXECUTION_DEPLOYMENT_ID` con su ID exacto.
 5. Habilitar la API Google Apps Script en el proyecto **473915513985**.
@@ -129,7 +129,7 @@ pero **NO debe habilitarse** hasta cumplir las siguientes condiciones:
 
 **Flujo técnico:** ChatGPT Auth0 → MCP Cloud Run (HMAC de aplicación) →
 OAuth Google del propietario → `script.googleapis.com/v1/scripts/{deploymentId}:run`
-→ `ejecutarServicioAcademicoApi_(params)` → dispatcher existente →
+→ `ejecutarServicioAcademicoApi(params)` → dispatcher existente →
 Classroom/Drive/Forms/Sheets. El retorno es JSON plano; fallos OAuth,
 `scripts.run` y Apps Script exponen `failedAt`, `phase` y `diagnosticId`
 sin copiar la respuesta original ni credenciales.
