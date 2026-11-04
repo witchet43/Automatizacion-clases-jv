@@ -11,6 +11,11 @@ assert.doesNotMatch(deploy,/classroom-mcp-token/);
 assert.match(deploy,/MCP_OAUTH_ISSUER/);
 assert.match(deploy,/MCP_OAUTH_JWKS_URL/);
 assert.match(deploy,/MCP_AUTH_MODE=oauth/);
+// Google Auth0 still protects MCP tools; Apps Script is called over signed HTTP.
+assert.match(deploy,/ACADEMIC_UPSTREAM_TRANSPORT=webapp/);
+assert.match(deploy,/GOOGLE_WEBAPP_AUTH_MODE=legacy/);
+assert.doesNotMatch(deploy,/ACADEMIC_UPSTREAM_TRANSPORT=script_api/);
+assert.doesNotMatch(deploy,/GOOGLE_ACADEMIC_OAUTH_(REFRESH_TOKEN|CLIENT_ID|CLIENT_SECRET)/);
 assert.match(deploy,/mcp-cloud-run\/\*\*/);
 assert.match(deploy,/--allow-unauthenticated/);
 assert.match(deploy,/--set-secrets/);

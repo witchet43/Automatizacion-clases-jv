@@ -251,7 +251,7 @@ jobs:
             requiredActions.some(action => !web.includes("'" + action + "'")) ||
             !/function\s+doPost\s*\(/.test(web) ||
             !/executeAs\s*":\s*"USER_DEPLOYING"/.test(JSON.stringify(manifest)) ||
-            !/access\s*":\s*"ANYONE"/.test(JSON.stringify(manifest)) ||
+            !/access\s*":\s*"ANYONE_ANONYMOUS"/.test(JSON.stringify(manifest)) ||
             manifest.executionApi?.access !== 'MYSELF' ||
           !/function\s+ejecutarServicioAcademicoApi\s*\(/.test(web);
           if (failed) process.exit(1);
