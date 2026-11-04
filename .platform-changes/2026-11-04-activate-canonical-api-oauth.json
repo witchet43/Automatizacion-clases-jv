@@ -1,0 +1,15 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "3 secretos guardados; Listo",
+  "reason": "After confirming three OAuth secrets enabled/accessor and canonical WebApp @277 exposing owner-only execution API with same deployment ID, switch the existing Cloud Run MCP to Google user OAuth while preserving Auth0 authentication and HMAC. No new services or Classroom mutations.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-cloud-run-mcp.yml",
+    "docs/DIAGNOSTICO_Y_RECUPERACION.md",
+    "scripts/inventory-apps-script-deployments.mjs"
+  ],
+  "noNewInfrastructure": true,
+  "classroomMutationAllowed": false,
+  "rollback": "Redeploy previous Cloud Run revision or restore ACADEMIC_UPSTREAM_TRANSPORT=webapp, without opening anonymous access."
+}
