@@ -1,0 +1,32 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Quiero definitivamente WebApp",
+  "supportingUserInstruction": "La seguridad no era prioritaria; pidió dejar los cambios repetitivos y volver a WebApp",
+  "reason": "Restore single canonical WebApp transport (direct POST with existing HMAC), removing the OAuth-user scripts.run route and credential dependencies in the existing Cloud Run service. Runtime retains Auth0 OAuth on MCP tools and HMAC on Apps Script; no new infrastructure, secrets or Classroom mutations.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-apps-script.yml",
+    ".github/workflows/deploy-cloud-run-mcp.yml",
+    "docs/DIAGNOSTICO_Y_RECUPERACION.md",
+    "docs/academic-webapp-architecture.md",
+    "mcp-cloud-run/server.mjs",
+    "scripts/test-architecture-boundaries.mjs",
+    "scripts/test-mcp-audited-gcp-config.mjs",
+    "scripts/verify-academic-webapp.mjs",
+    "src/appsscript.json"
+  ],
+  "webAppAccess": "ANYONE_ANONYMOUS",
+  "webAppExecuteAs": "USER_DEPLOYING",
+  "mcpAuthMode": "oauth",
+  "academicTransport": "webapp",
+  "googleUserOAuthActive": false,
+  "noNewInfrastructure": true,
+  "classroomMutationAllowed": false,
+  "rollback": "Previous existing Cloud Run/App Script revisions remain accessible for operator-led restoration; do not automatically re-enable Google user OAuth, and do not claim the original HTTP 403 is fixed until live HTTP HMAC E2E succeeds.",
+  "acceptance": [
+    "WebApp direct unsigned negative POST reaches Apps Script and returns JSON code ACADEMIC_HMAC_DIAGNOSTIC_INVALID",
+    "Authenticated plugin gateway_status(true) returns upstreamHmacAccepted=true with keyEquivalent=true and signatureAccepted=true",
+    "Authenticated plugin diagnosticar_clase returns real Classroom data in read-only mode"
+  ]
+}
