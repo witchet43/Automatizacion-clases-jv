@@ -64,6 +64,7 @@ function doPost(e){
   return ejecutarServicioAcademicoWeb_(params);
 }
 
+// Owner-only Execution API entry: JSON-compatible return and mandatory HMAC.
 // Official scripts.run entry: returns only JSON-compatible primitives. The
 // existing HMAC dispatcher remains the sole authorization and routing source.
 function ejecutarServicioAcademicoApi(params){
