@@ -56,4 +56,55 @@ assert.match(facade,/modo:'OMITIDO_POR_NOTAS_ASIGNADAS'/);
 assert.match(facade,/noWrites:true/);
 assert.ok(facade.indexOf('const publicado=detectarCierreConNotasAsignadas_')<
   facade.indexOf('const ss = SpreadsheetApp.openById',facade.indexOf('const publicado=detectarCierreConNotasAsignadas_')));
+// Regression: the teacher chose an official U1 exam; the old exam must not
+// contribute to either 70% (exam) or 30% (other published coursework).
+const algSource=fs.readFileSync('src/13_RecalculoFinalCeros.gs','utf8');
+const selectedWorks=[
+  {id:'876666547526',title:'Examen 1',topicId:'u1',state:'PUBLISHED',maxPoints:100},
+  {id:'878569197406',title:'Examen Unidad 1 - Algoritmos y Estructuras de Datos',topicId:'u1',state:'PUBLISHED',maxPoints:100},
+  {id:'work-1',title:'Actividad 1',topicId:'u1',state:'PUBLISHED',maxPoints:100}
+];
+const gradesFor={
+  '876666547526':{learner:{draftGrade:100}},
+  '878569197406':{learner:{draftGrade:80}},
+  'work-1':{learner:{draftGrade:100}}
+};
+const mockSheet={
+  getLastRow:()=>2,
+  getDataRange:()=>({getValues:()=>[
+    ['ID del curso','Unidad / tema','Tipo instrumento','Título','ID actividad Classroom'],
+    ['871156334717','Unidad 1','EXAMEN','Examen Unidad 1 - Algoritmos y Estructuras de Datos','878569197406']
+  ]})
+};
+const algCtx={
+  Set,Date,Math,Number,String,
+  ACADEMIC_POLICY:{UNIT_GRADING:{SCOPE:'EXACT_UNIT_PUBLISHED',TOUCH_OTHER_UNITS:false,MISSING_GRADE_VALUE:0,FINAL_ROUNDING:'NEAREST_INTEGER'}},
+  politicaCalificacionUnidad_:()=>({examWeight:0.7,nonExamWeight:0.3}),
+  buscarTopicIdUnidad_:()=> 'u1',
+  listarCourseWorkPublicacion_:()=>selectedWorks,
+  entregasPorAlumnoPromedio_:(_course,id)=>gradesFor[id],
+  listarAlumnosPromedio_:()=>[{userId:'learner',profile:{name:{fullName:'Alumno'}}}],
+  tieneNota_:s=>s?.draftGrade!==null&&s?.draftGrade!==undefined,
+  normalizarNota_:(s,max)=>Number(s.draftGrade)/max*100,
+  promedioSimple_:x=>x.reduce((a,b)=>a+b,0)/x.length,
+  redondearCalificacionFinalCanonica_:n=>Math.round(n),
+  redondearPromedio_:n=>Math.round(n*100)/100,
+  captured:null,
+  escribirReportePromedios_(_ss,_course,_unit,rows){algCtx.captured=rows;}
+};
+const algSs={getSheetByName:name=>name==='Quizzes'?mockSheet:null};
+algCtx.algSs=algSs;
+vm.createContext(algCtx);
+vm.runInContext(extract(algSource,'calcularPromediosDirectoClassroomConCeros_'),algCtx);
+const algResult=vm.runInContext('calcularPromediosDirectoClassroomConCeros_(algSs,"871156334717","Unidad 1")',algCtx);
+assert.equal(algResult.examenes.length,1);
+assert.equal(algResult.examenes[0].classroomId,'878569197406');
+assert.equal(algResult.noExamen.length,1);
+assert.equal(algResult.noExamen[0].classroomId,'work-1');
+assert.equal(algCtx.captured[0][10],86,'80x70% + 100x30% = 86, never counting Examen 1');
+assert.throws(()=>vm.runInContext('calcularPromediosDirectoClassroomConCeros_(algSs,"another-course","Unidad 1")',algCtx),/Se esperaba exactamente 1 examen/,'Exception must not change other courses');
+selectedWorks[1].state='DRAFT';
+assert.throws(()=>vm.runInContext('calcularPromediosDirectoClassroomConCeros_(algSs,"871156334717","Unidad 1")',algCtx),/CLOSE_OFFICIAL_EXAM_NOT_FOUND/,'Never silently select the old exam');
+selectedWorks[1].state='PUBLISHED';
+console.log('PASS: Algorithms U1 only official 878569197406 counts for 70%; old exam excluded from 30%; others untouched.');
 console.log('PASS: cierre reintenta notas desactualizadas, protege assignedGrade, usa exclusivamente draftGrade y serializa cierres.');
