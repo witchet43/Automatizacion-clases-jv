@@ -1,0 +1,12 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Listo",
+  "reason": "Read-only inventory of existing Apps Script API executable deployment versions/descriptions for safe reuse; no classroom mutations, no secret values.",
+  "allowedChangedPaths": [
+    "scripts/inventory-apps-script-deployments.mjs"
+  ],
+  "noNewInfrastructure": true,
+  "classroomMutationAllowed": false
+}
