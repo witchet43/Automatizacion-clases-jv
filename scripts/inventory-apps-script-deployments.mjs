@@ -40,9 +40,15 @@ try{
       version:Number(x.deploymentConfig?.versionNumber||0),
       description:String(x.deploymentConfig?.description||'').replace(/[^a-zA-Z0-9 _-]/g,'').slice(0,90),
       access:(x.entryPoints||[]).filter(e=>e.entryPointType==='EXECUTION_API')
-        .map(e=>String(e.executionApi?.access||'UNKNOWN').slice(0,35)),
+        .map(e=>String(e.executionApi?.entryPointConfig?.access||'UNKNOWN').slice(0,35)),
       updateTime:String(x.updateTime||'').slice(0,35)
     })).sort((a,b)=>b.version-a.version);
+    if(process.env.REQUIRE_CANONICAL_EXECUTION_API==='true'){
+      const canonical='AKfycbz2rCuB9jUsbnt0tj0RgHmr3lguOZjVL34a_2F_yhggiwLNTOEn8QdsdbFv4SK6aGxr';
+      const selected=apiCandidates.find(x=>x.deploymentId===canonical);
+      if(!selected || !selected.access.includes('MYSELF') || selected.version<277)
+        throw Error('CANONICAL_OWNER_ONLY_EXECUTION_API_NOT_READY');
+    }
     console.log(JSON.stringify({check:'APPS_SCRIPT_DEPLOYMENT_INVENTORY',success:true,
       cloudProjectNumber:String(script.projectId||''),deploymentCount:rows.length,
       observedEntryPointTypes:types,apiExecutableCount:executions.length,
