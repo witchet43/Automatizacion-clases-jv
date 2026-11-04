@@ -352,7 +352,7 @@ export async function callScriptApi(config,body,fetcher=fetch){
       encodeURIComponent(auth.executionDeploymentId)+':run',{
       method:'POST',headers:{'content-type':'application/json',
         Authorization:'Bearer '+token.access_token},
-      body:JSON.stringify({function:'ejecutarServicioAcademicoApi_',parameters:[body]}),
+      body:JSON.stringify({function:'ejecutarServicioAcademicoApi',parameters:[body]}),
       signal:AbortSignal.timeout(180000)
     });
   }catch{
