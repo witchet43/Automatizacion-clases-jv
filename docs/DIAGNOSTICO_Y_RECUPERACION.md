@@ -134,7 +134,23 @@ Classroom/Drive/Forms/Sheets. El retorno es JSON plano; fallos OAuth,
 `scripts.run` y Apps Script exponen `failedAt`, `phase` y `diagnosticId`
 sin copiar la respuesta original ni credenciales.
 
-La ruta actual `webapp` permanece como predeterminada durante la preparación;
+El 4 de noviembre de 2026 se verificó el despliegue canónico WebApp
+`@277` con acceso anónimo bloqueado HTTP 401; **el mismo deployment ID**
+`AKfycbz2rCuB9jUsbnt0tj0RgHmr3lguOZjVL34a_2F_yhggiwLNTOEn8QdsdbFv4SK6aGxr`
+expone ahora `EXECUTION_API`. No se tocó el ejecutable de ADSI ni las dos
+implementaciones de Quiz Asistencia. Los tres secretos OAuth están `ENABLED`
+y la cuenta Cloud Run tiene `secretAccessor`; no se necesita un cuarto secreto
+para el deployment ID porque no es una credencial.
+
+La transición de Cloud Run se hace exclusivamente después de verificar con
+`scripts/inventory-apps-script-deployments.mjs` que el API entry point
+canónico tiene `access=MYSELF` y versión >= 277. El nuevo transporte
+`ACADEMIC_UPSTREAM_TRANSPORT=script_api` utiliza los tres secretos inyectados
+como referencias de Secret Manager, la misma HMAC y la cuenta OAuth de usuario,
+sin cambiar Auth0 ni habilitar acceso anónimo.
+
+**Estado anterior:** la ruta `webapp` permanecía como predeterminada durante
+la preparación;
 **en producción sigue bloqueada por la autenticación de entrada de Google**.
 La existencia de código preparado no acredita autenticación ni funcionamiento
 hasta que se obtenga consentimiento Google y pasen pruebas reales.
