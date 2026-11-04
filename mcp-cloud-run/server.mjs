@@ -329,8 +329,11 @@ export async function callScriptApi(config,body,fetcher=fetch){
   try{
     refresh=await fetcher('https://oauth2.googleapis.com/token',{
       method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},
-      body:new URLSearchParams({client_id:auth.clientId,client_secret:auth.clientSecret,
-        refresh_token:auth.refreshToken,grant_type:'refresh_token'}),
+      // UI-created Secret Manager versions sometimes contain a trailing newline.
+      // Normalize surrounding whitespace in memory only; never print values.
+      body:new URLSearchParams({client_id:auth.clientId.trim(),
+        client_secret:auth.clientSecret.trim(),
+        refresh_token:auth.refreshToken.trim(),grant_type:'refresh_token'}),
       signal:AbortSignal.timeout(15000)
     });
   }catch{
