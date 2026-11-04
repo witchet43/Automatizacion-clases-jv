@@ -62,6 +62,18 @@ jobs:
           else
             echo '- Cannot read runtime service-account IAM; roles/iam.serviceAccountUser not confirmed.' >> "$GITHUB_STEP_SUMMARY"
           fi
+          echo '### OAuth related secret name inventory (no values)' >> "$GITHUB_STEP_SUMMARY"
+          names="$(gcloud secrets list --project "$PROJECT" --format='value(name)' 2>/dev/null || true)"
+          if [[ -z "$names" ]]; then
+            echo '- Cannot list secret names or no secrets visible.' >> "$GITHUB_STEP_SUMMARY"
+          else
+            # Only print canonical academic OAuth secret identifiers, never values.
+            while IFS= read -r name; do
+              if [[ "$name" =~ ^academic-google-[a-z0-9-]+$ ]]; then
+                echo "- Found identifier: $name" >> "$GITHUB_STEP_SUMMARY"
+              fi
+            done <<< "$names"
+          fi
           echo '### Secret names and runtime access (no values)' >> "$GITHUB_STEP_SUMMARY"
           for secret in academic-write-hmac academic-mcp-allowed-subjects academic-google-oauth-client-id academic-google-oauth-client-secret academic-google-oauth-refresh-token academic-google-api-deployment-id; do
             if gcloud secrets describe "$secret" --project "$PROJECT" --format='value(name)' >/dev/null 2>&1; then
