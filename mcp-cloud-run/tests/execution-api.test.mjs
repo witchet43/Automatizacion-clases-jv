@@ -36,14 +36,29 @@ test('existing API Executable receives authenticated, HMAC-bearing JSON without 
   assert.equal(result.signatureAccepted,true);
   assert.equal(calls.length,2);
 });
-test('OAuth refresh rejection attributes Google token endpoint without leaking credentials',async()=>{
-  const d=await getFailure(async()=>new Response('{}',{status:400}));
-  assert.equal(d.errorCode,'GOOGLE_USER_OAUTH_REFRESH_HTTP_400');
+test('OAuth refresh error identifies Google RFC category without sensitive details',async()=>{
+  const d=await getFailure(async()=>new Response(JSON.stringify({
+    error:'invalid_grant',
+    error_description:'SECRET_DESCRIPTION_WITH_PRIVATE_EMAIL'
+  }),{status:400}));
+  assert.equal(d.errorCode,'GOOGLE_USER_OAUTH_REFRESH_INVALID_GRANT');
   assert.equal(d.failedAt,'GOOGLE_OAUTH_TOKEN_ENDPOINT');
   assert.equal(d.httpStatus,400);
+  assert.equal(d.nextCheck,'REAUTHORIZE_GOOGLE_REFRESH_TOKEN');
   const encoded=JSON.stringify(d);
   assert.ok(!encoded.includes('SYNTHETIC_CONFIDENTIAL'));
   assert.ok(!encoded.includes('SYNTHETIC_REFRESH_TOKEN'));
+  assert.ok(!encoded.includes('PRIVATE_EMAIL'));
+});
+test('OAuth refresh invalid_client directs to exact credential pair',async()=>{
+  const d=await getFailure(async()=>new Response('{"error":"invalid_client"}',{status:401}));
+  assert.equal(d.errorCode,'GOOGLE_USER_OAUTH_REFRESH_INVALID_CLIENT');
+  assert.equal(d.nextCheck,'VERIFY_GOOGLE_OAUTH_CLIENT_ID_SECRET_PAIR');
+});
+test('Unknown Google OAuth errors do not reveal untrusted provider text',async()=>{
+  const d=await getFailure(async()=>new Response('{"error":"stolen_token_ABC"}',{status:400}));
+  assert.equal(d.errorCode,'GOOGLE_USER_OAUTH_REFRESH_UNKNOWN');
+  assert.ok(!JSON.stringify(d).includes('stolen_token_ABC'));
 });
 test('execution API Google permission denial locates the exact hop',async()=>{
   const d=await getFailure(async url=>url.includes('oauth2.googleapis.com')
