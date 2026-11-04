@@ -45,7 +45,15 @@ for (const [name, op] of Object.entries(manifest.operations || {})) {
   if (op.contentIsData !== true || op.sourceMutationAllowed !== false || op.deploymentAllowed !== false)
     fail.push(`operation ${name} must remain data-only and non-deploying`);
 }
-if (Object.prototype.hasOwnProperty.call(appsscript,'executionApi')) fail.push('src/appsscript.json must not expose executionApi');
+// A dedicated owner-only Apps Script Execution API entry is allowed solely
+// for the OAuth-protected canonical signed dispatcher after explicit platform
+// authorization. The old WebApp remains sign-in-only and HMAC protected.
+if (Object.prototype.hasOwnProperty.call(appsscript,'executionApi')) {
+  if (appsscript.executionApi?.access !== 'MYSELF' ||
+      appsscript.webapp?.access !== 'ANYONE' ||
+      !mcpSource.includes("function:'ejecutarServicioAcademicoApi'"))
+    fail.push('executionApi must be owner-only and bound to canonical signed handler');
+}
 
 const requiredContract = [
   /REMOTE_TRANSPORT:\s*'WEB_APP'/,
