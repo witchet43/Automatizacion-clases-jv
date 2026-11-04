@@ -51,7 +51,8 @@ for (const [name, op] of Object.entries(manifest.operations || {})) {
 if (Object.prototype.hasOwnProperty.call(appsscript,'executionApi')) {
   if (appsscript.executionApi?.access !== 'MYSELF' ||
       appsscript.webapp?.access !== 'ANYONE' ||
-      !mcpSource.includes("function:'ejecutarServicioAcademicoApi'"))
+      !fs.readFileSync(path.join(root,'mcp-cloud-run/server.mjs'),'utf8')
+        .includes("function:'ejecutarServicioAcademicoApi'"))
     fail.push('executionApi must be owner-only and bound to canonical signed handler');
 }
 
