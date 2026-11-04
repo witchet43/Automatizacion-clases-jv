@@ -66,7 +66,7 @@ function doPost(e){
 
 // Official scripts.run entry: returns only JSON-compatible primitives. The
 // existing HMAC dispatcher remains the sole authorization and routing source.
-function ejecutarServicioAcademicoApi_(params){
+function ejecutarServicioAcademicoApi(params){
   const response=ejecutarServicioAcademicoWeb_(params);
   if(response&&typeof response.getContent==='function'){
     const raw=response.getContent();
