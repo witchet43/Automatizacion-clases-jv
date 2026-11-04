@@ -1,0 +1,14 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "3 secretos guardados; Listo",
+  "reason": "An end-to-end read-only probe proved OAuth token endpoint HTTP 400 after successful protected Cloud Run/Apps Script API deployment. Expose the provider RFC OAuth failure category without response descriptions or credential values to isolate which existing secret or authorization is invalid.",
+  "allowedChangedPaths": [
+    "mcp-cloud-run/server.mjs",
+    "mcp-cloud-run/tests/execution-api.test.mjs"
+  ],
+  "noNewInfrastructure": true,
+  "classroomMutationAllowed": false,
+  "credentialValuesRead": false
+}
