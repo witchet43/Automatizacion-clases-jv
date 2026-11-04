@@ -36,7 +36,7 @@ assert.equal(invalidJson.errorDetails.stage,'REQUEST_PARSE');
 const invalidGet=ctx.doGet({parameter:{action:'clase'}});
 assert.equal(invalidGet.errorCode,'ACADEMIC_POST_HMAC_REQUIRED');
 assert.equal(invalidGet.errorDetails.failedAt,'APPS_SCRIPT_HTTP_ENTRY');
-const apiUnsignedRead=ctx.ejecutarServicioAcademicoApi_({
+const apiUnsignedRead=ctx.ejecutarServicioAcademicoApi({
   action:'diagnosticarClase',courseId:'875776451793'
 });
 assert.equal(apiUnsignedRead.ok,false);
