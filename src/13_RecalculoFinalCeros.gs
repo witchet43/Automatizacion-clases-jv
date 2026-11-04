@@ -56,10 +56,21 @@ function calcularPromediosDirectoClassroomConCeros_(ss,courseId,unidad){
     }
   }
 
-  const instrumentos=all.map(w=>({
+  // Única excepción académica: el docente definió el examen oficial de
+  // Algoritmos y Estructuras de Datos, Unidad 1, el 04-nov-2026.
+  // No se eliminan ni reclasifican los exámenes; el no oficial queda
+  // excluido de AMBOS componentes (70% y 30%) del promedio.
+  const oficialUnidadUno=String(courseId)==='871156334717'&&
+    String(unidad).trim().toLowerCase()==='unidad 1'?'878569197406':'';
+  const clasificados=all.map(w=>({
     classroomId:String(w.id),titulo:String(w.title||''),maxPoints:Number(w.maxPoints),
     esExamen:examenIds.has(String(w.id))||/^EXAMEN\b/i.test(String(w.title||'').trim())
   }));
+  if(oficialUnidadUno&&!clasificados.some(w=>w.esExamen&&w.classroomId===oficialUnidadUno))
+    throw new Error('CLOSE_OFFICIAL_EXAM_NOT_FOUND: no se incluye el examen oficial publicado de Unidad 1.');
+  const instrumentos=oficialUnidadUno
+    ?clasificados.filter(w=>!w.esExamen||w.classroomId===oficialUnidadUno)
+    :clasificados;
   const examenes=instrumentos.filter(x=>x.esExamen),noExamen=instrumentos.filter(x=>!x.esExamen);
   if(examenes.length!==1) throw new Error('Se esperaba exactamente 1 examen publicado en '+unidad+'; encontrados: '+examenes.length+'.');
   if(!noExamen.length) throw new Error('No hay instrumentos no-examen publicados en '+unidad+'.');
