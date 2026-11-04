@@ -101,7 +101,7 @@ if(scriptApiMatches>1)fail.push('MCP must not create multiple direct Apps Script
 if(scriptApiMatches===1 &&
    (!mcpSource.includes('ACADEMIC_UPSTREAM_TRANSPORT')||
     !mcpSource.includes("config.academicTransport==='script_api'")||
-    !mcpSource.includes("function:'ejecutarServicioAcademicoApi_'")||
+    !mcpSource.includes("function:'ejecutarServicioAcademicoApi'")||
     !mcpSource.includes('GOOGLE_ACADEMIC_OAUTH_REFRESH_TOKEN')||
     !mcpSource.includes('signedAcademicRequest')))
   fail.push('Optional Execution API must be user-OAuth-only and preserve canonical signed dispatcher');
