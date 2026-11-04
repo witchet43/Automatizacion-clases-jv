@@ -7,6 +7,9 @@ const root = process.cwd();
 const manifest = JSON.parse(fs.readFileSync(path.join(root,'config/academic-context.json'),'utf8'));
 const appsscript = JSON.parse(fs.readFileSync(path.join(root,'src/appsscript.json'),'utf8'));
 const contract = fs.readFileSync(path.join(root,'src/00_ContratoArquitectura.gs'),'utf8');
+if(appsscript.webapp?.access!=='ANYONE_ANONYMOUS' ||
+   appsscript.webapp?.executeAs!=='USER_DEPLOYING')
+  fail.push('Canonical WebApp requires HTTP entry by non-logged-in caller; mandatory signed HMAC handles authorization');
 
 if (manifest.rules?.alternativeRoutesAllowed !== false) fail.push('manifest must keep alternativeRoutesAllowed=false');
 if (manifest.rules?.routeResolution !== 'MANIFEST_OPERATION_ONLY') fail.push('manifest must keep MANIFEST_OPERATION_ONLY');
