@@ -211,8 +211,12 @@ function ejecutarServicioAcademicoWeb_(params){
     const details=detallarFalloAcademicoWeb_(err,request);
     // Log only safe codes/locations. No payload, HMAC or student information.
     try{
-      PropertiesService.getScriptProperties().setProperty(
-        'ACADEMIC_LAST_WEBAPP_WRITE_FAILURE',JSON.stringify(details));
+      const props=PropertiesService.getScriptProperties();
+      props.setProperty('ACADEMIC_LAST_WEBAPP_WRITE_FAILURE',JSON.stringify(details));
+      // Per-course diagnostic survives failures from other courses.
+      if(/^\d{8,20}$/.test(String(details.courseId||'')))
+        props.setProperty('ACADEMIC_LAST_WEBAPP_WRITE_FAILURE_COURSE_'+
+          String(details.courseId),JSON.stringify(details));
       console.error('ACADEMIC_WEBAPP_FAILURE '+JSON.stringify(details));
     }catch(ignore){}
     // Original explanation stays in the authenticated write response; the
@@ -289,7 +293,9 @@ function detallarFalloAcademicoWeb_(err,request) {
 
 function leerUltimoFalloAcademicoWeb_(courseId) {
   try {
-    const raw=PropertiesService.getScriptProperties().getProperty('ACADEMIC_LAST_WEBAPP_WRITE_FAILURE');
+    const props=PropertiesService.getScriptProperties();
+    const raw=props.getProperty('ACADEMIC_LAST_WEBAPP_WRITE_FAILURE_COURSE_'+String(courseId))||
+      props.getProperty('ACADEMIC_LAST_WEBAPP_WRITE_FAILURE');
     if(!raw)return null;
     const x=JSON.parse(String(raw));
     // Diagnostic is available only in the specific course and never discloses
@@ -549,9 +555,7 @@ function diagnosticarProgresoClaseWeb_(course,p){
     }),
     planningSkipped:soloClassroom,
     ultimoFalloGateway:ultimoFallo,
-    formsApiProbe:soloClassroom&&ultimoFallo&&
-      /^FORMS_BATCHUPDATE_|^FORMS_VERIFIED_EMAIL_/i.test(String(ultimoFallo.code||''))
-      ?diagnosticarGoogleFormsApiSoloLectura_():undefined,
+    formsApiProbe:soloClassroom?diagnosticarGoogleFormsApiSoloLectura_():undefined,
     courseWork:active
   };
 }
