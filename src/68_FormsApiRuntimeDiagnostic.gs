@@ -1,6 +1,6 @@
 /**
  * Read-only Google Forms REST runtime probe.
- * Only invoked after a recorded Forms failure. No Classroom/Form changes.
+ * Only invoked by explicit read-only Classroom diagnosis. No Classroom/Form changes.
  * Never return tokens, URLs, IDs or untrusted provider message bodies.
  */
 function diagnosticarGoogleFormsApiSoloLectura_() {
