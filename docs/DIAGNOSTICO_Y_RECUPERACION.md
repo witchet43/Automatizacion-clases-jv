@@ -170,6 +170,22 @@ No eliminar ni regenerar:
 
 Los cambios en repositorio **no** autorizan eliminar trabajos, notas publicadas, triggers ni Script Properties.
 
+## Diagnóstico dirigido: Forms API sin escrituras (5-nov-2026)
+
+Si el último error de un curso es `FORMS_BATCHUPDATE_*`, el comando
+`diagnosticar_clase(courseId, soloClassroom=true)` incluye
+`formsApiProbe` de **solo lectura**. Primero comprueba las autorizaciones
+`forms.body` y `script.external_request`, después la disponibilidad
+de un token OAuth (nunca su valor) y finalmente realiza un GET sobre un
+identificador de formulario **deliberadamente inexistente**. HTTP 400 o
+404 significa que UrlFetch completó transporte; un 401/403 demuestra que
+se recibió un rechazo HTTP y hay que revisar `googleStatus`.
+`AUTHORIZATION_REQUIRED` exige consentimiento del propietario de Apps Script.
+`OAUTH_TOKEN_FAILED` o `URL_FETCH_FAILED` identifican el paso exacto.
+No envía preguntas, no crea recursos, no elimina recibos ni relaja la
+exigencia `emailCollectionType=VERIFIED`. Nunca registrar tokens, IDs
+de formularios, URLs completas ni el cuerpo de error del proveedor.
+
 ## 4. Diagnóstico de Apps Script sin datos personales
 
 En el editor del proyecto Apps Script existente, las funciones de mantenimiento definidas en `src/66_MantenimientoPropiedadesAcademicas.gs` son:
