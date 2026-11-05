@@ -4,7 +4,7 @@ import vm from 'node:vm';
 
 const source=fs.readFileSync('src/68_FormsApiRuntimeDiagnostic.gs','utf8');
 const web=fs.readFileSync('src/65_QuizAsistenciaWebApp.gs','utf8');
-assert.match(web,/formsApiProbe:soloClassroom\\?diagnosticarGoogleFormsApiSoloLectura_/);
+assert.match(web,/formsApiProbe:soloClassroom\?diagnosticarGoogleFormsApiSoloLectura_/);
 assert.match(web,/diagnosticarGoogleFormsApiSoloLectura_\(\)/);
 const diagnosticStart=web.indexOf('function diagnosticarProgresoClaseWeb_(course,p)');
 assert.ok(diagnosticStart>0);
