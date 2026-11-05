@@ -18,7 +18,7 @@ const form={
  setShowLinkToRespondAgain(){return this;},setPublishingSummary(){return this;}
 };
 const ctx={
- Date,console:{warn(){}},
+ Date,console:{warn(){},error(){}},
  clean_:v=>String(v===undefined||v===null?'':v).trim(),
  quizDescription_:v=>v,
  yes_:v=>String(v).trim().toUpperCase()==='SÍ',
