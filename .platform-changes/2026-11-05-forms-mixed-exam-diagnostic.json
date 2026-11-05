@@ -7,7 +7,10 @@
   "allowedChangedPaths": [
     "src/01_PipelineQuizzes.gs",
     "src/02_ValidacionYUtilidades.gs",
-    "scripts/test-exam-40-mixed-forms.mjs"
+    "scripts/test-exam-40-mixed-forms.mjs",
+    "scripts/test-exam-form-batch.mjs",
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    ".github/workflows/deploy-apps-script.yml"
   ],
   "productionDeploymentAuthorized": false,
   "scope": "Apps Script Forms builder only; no cambios a Classroom, OAuth, Cloud Run, plugin o endpoints",
