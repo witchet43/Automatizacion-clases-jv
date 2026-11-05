@@ -423,7 +423,6 @@ function auditarIdentidadClassroomWeb_(p){
       recursos:recursos
     });
   });
-  const ultimoFallo=leerUltimoFalloAcademicoWeb_(course.id);
   return {
     diagnostic:true,
     readOnly:true,
@@ -541,6 +540,7 @@ function diagnosticarProgresoClaseWeb_(course,p){
     }
     return item;
   }).sort(function(a,b){return String(a.creationTime).localeCompare(String(b.creationTime));});
+  const ultimoFallo=leerUltimoFalloAcademicoWeb_(course.id);
   return {
     diagnostic:true,
     readOnly:true,
