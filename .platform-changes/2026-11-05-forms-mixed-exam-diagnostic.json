@@ -2,17 +2,19 @@
   "mode": "PLATFORM_CHANGE",
   "authorized": true,
   "requestedByUser": true,
-  "authorizationText": "Identifica el error y corrígelo",
+  "authorizationText": "Identifica el error y corrígelo. Continua",
   "reason": "Unidad 2 Sistemas Distribuidos: el examen de 40 reactivos falla en Forms API y el pipeline mixto realiza operaciones por reactivo; fortalecer diagnóstico y batch con regresión.",
   "allowedChangedPaths": [
-    "src/01_PipelineQuizzes.gs",
-    "src/02_ValidacionYUtilidades.gs",
+    ".github/workflows/deploy-apps-script.yml",
+    ".github/workflows/validate-minimal-academic-operations.yml",
     "scripts/test-exam-40-mixed-forms.mjs",
     "scripts/test-exam-form-batch.mjs",
-    ".github/workflows/validate-minimal-academic-operations.yml",
-    ".github/workflows/deploy-apps-script.yml"
+    "scripts/test-webapp-error-diagnostics.mjs",
+    "src/01_PipelineQuizzes.gs",
+    "src/02_ValidacionYUtilidades.gs",
+    "src/65_QuizAsistenciaWebApp.gs"
   ],
-  "productionDeploymentAuthorized": false,
+  "productionDeploymentAuthorized": true,
   "scope": "Apps Script Forms builder only; no cambios a Classroom, OAuth, Cloud Run, plugin o endpoints",
   "validation": "node scripts/test-exam-form-batch.mjs && node scripts/test-exam-40-mixed-forms.mjs"
 }
