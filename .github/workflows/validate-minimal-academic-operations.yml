@@ -75,6 +75,7 @@ jobs:
           node scripts/test-exam-form-batch.mjs
           node scripts/test-exam-40-mixed-forms.mjs
           node scripts/test-forms-runtime-probe.mjs
+          node scripts/test-forms-verified-read-before-write.mjs
           node scripts/test-webapp-error-diagnostics.mjs
           node scripts/test-task-due-optional.mjs
           node scripts/test-architecture-boundaries.mjs
