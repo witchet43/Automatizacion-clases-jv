@@ -73,18 +73,30 @@ function formsGet_(formId) {
 
 function configureVerifiedEmail_(formId, enabled) {
   if (!enabled) return;
-  // FormApp.setCollectEmail(true) alone does not prove VERIFIED (rather than
-  // RESPONDER_INPUT). Keep fail-closed verification and do not silently degrade.
+  // FormApp.setCollectEmail(true) is not a guarantee of VERIFIED; always
+  // inspect the canonical REST settings before deciding whether to write.
+  let current='UNKNOWN';
   try {
-    formsBatchUpdate_(formId, [{
-      updateSettings: {
-        settings: {emailCollectionType: 'VERIFIED'},
-        updateMask: 'emailCollectionType'
-      }
-    }]);
-  } catch(err) {
-    console.error('FORMS_VERIFIED_EMAIL_CONFIGURATION_FAILED');
-    throw err;
+    const snapshot=formsGet_(formId);
+    current=clean_(snapshot&&snapshot.settings&&
+      snapshot.settings.emailCollectionType).toUpperCase()||'UNKNOWN';
+  }catch(err) {
+    // A failed read never authorizes ignoring VERIFIED identity safeguards.
+    console.error('FORMS_VERIFIED_EMAIL_PRECHECK_FAILED');
+    throw new Error('FORMS_VERIFIED_EMAIL_PRECHECK_FAILED');
+  }
+  if(current!=='VERIFIED') {
+    try {
+      formsBatchUpdate_(formId, [{
+        updateSettings: {
+          settings: {emailCollectionType: 'VERIFIED'},
+          updateMask: 'emailCollectionType'
+        }
+      }]);
+    } catch(err) {
+      console.error('FORMS_VERIFIED_EMAIL_CONFIGURATION_FAILED');
+      throw err;
+    }
   }
   const form = FormApp.openById(formId);
   form.setLimitOneResponsePerUser(true);
