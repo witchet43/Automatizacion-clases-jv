@@ -540,6 +540,7 @@ function diagnosticarProgresoClaseWeb_(course,p){
     }
     return item;
   }).sort(function(a,b){return String(a.creationTime).localeCompare(String(b.creationTime));});
+  const ultimoFallo=leerUltimoFalloAcademicoWeb_(course.id);
   return {
     diagnostic:true,
     readOnly:true,
@@ -547,7 +548,10 @@ function diagnosticarProgresoClaseWeb_(course,p){
       return {session:String(r.session||''),unit:String(r.unit||''),topic:String(r.topic||''),practice:String(r.practice||''),gammaUrl:String(r.gammaUrl||''),gammaState:String(r.gammaState||'')};
     }),
     planningSkipped:soloClassroom,
-    ultimoFalloGateway:leerUltimoFalloAcademicoWeb_(course.id),
+    ultimoFalloGateway:ultimoFallo,
+    formsApiProbe:soloClassroom&&ultimoFallo&&
+      /^FORMS_BATCHUPDATE_|^FORMS_VERIFIED_EMAIL_/i.test(String(ultimoFallo.code||''))
+      ?diagnosticarGoogleFormsApiSoloLectura_():undefined,
     courseWork:active
   };
 }

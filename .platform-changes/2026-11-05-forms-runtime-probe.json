@@ -1,0 +1,17 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Identifica el error y corrígelo. Continua",
+  "reason": "Tras desplegar PR #139, el examen real falló con FORMS_BATCHUPDATE_TRANSPORT; diagnosticar sólo lectura OAuth, token y UrlFetch para identificar bloqueo sin nuevos intentos de escritura.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-apps-script.yml",
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    "docs/DIAGNOSTICO_Y_RECUPERACION.md",
+    "scripts/test-forms-runtime-probe.mjs",
+    "src/65_QuizAsistenciaWebApp.gs",
+    "src/68_FormsApiRuntimeDiagnostic.gs"
+  ],
+  "productionDeploymentAuthorized": true,
+  "scope": "Apps Script read-only incident probe; no cambios en Classroom, autenticación MCP, Cloud Run, plugin ni HMAC"
+}
