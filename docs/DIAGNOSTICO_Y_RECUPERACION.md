@@ -172,9 +172,9 @@ Los cambios en repositorio **no** autorizan eliminar trabajos, notas publicadas,
 
 ## Diagnóstico dirigido: Forms API sin escrituras (5-nov-2026)
 
-Si el último error de un curso es `FORMS_BATCHUPDATE_*`, el comando
+El comando
 `diagnosticar_clase(courseId, soloClassroom=true)` incluye
-`formsApiProbe` de **solo lectura**. Primero comprueba las autorizaciones
+`formsApiProbe` de **solo lectura**, incluso cuando el último error global fue sobrescrito. Los fallos recientes se conservan también por curso para evitar pérdida de contexto. Primero comprueba las autorizaciones
 `forms.body` y `script.external_request`, después la disponibilidad
 de un token OAuth (nunca su valor) y finalmente realiza un GET sobre un
 identificador de formulario **deliberadamente inexistente**. HTTP 400 o
