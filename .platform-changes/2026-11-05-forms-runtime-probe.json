@@ -7,6 +7,7 @@
   "allowedChangedPaths": [
     ".github/workflows/deploy-apps-script.yml",
     ".github/workflows/validate-minimal-academic-operations.yml",
+    "docs/DIAGNOSTICO_Y_RECUPERACION.md",
     "scripts/test-forms-runtime-probe.mjs",
     "src/65_QuizAsistenciaWebApp.gs",
     "src/68_FormsApiRuntimeDiagnostic.gs"
