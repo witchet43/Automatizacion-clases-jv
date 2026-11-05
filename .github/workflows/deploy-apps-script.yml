@@ -107,6 +107,7 @@ jobs:
       - name: Regression - complete EXAMEN batch and safe WebApp error codes
         run: |
           node scripts/test-exam-form-batch.mjs
+          node scripts/test-exam-40-mixed-forms.mjs
           node scripts/test-webapp-error-diagnostics.mjs
           node scripts/test-task-due-optional.mjs
           node scripts/test-site-direct-write-client.mjs
