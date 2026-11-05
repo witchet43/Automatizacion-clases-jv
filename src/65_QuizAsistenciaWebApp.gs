@@ -250,7 +250,7 @@ function detallarFalloAcademicoWeb_(err,request) {
     ?'GOOGLE_CLASSROOM'
     :/\bDrive\.(?:Files|Permissions)|drive\.googleapis|API call to drive/i.test(signature)
     ?'GOOGLE_DRIVE'
-    :/\bForms\.(?:Forms|Responses)|forms\.googleapis|API call to forms/i.test(signature)
+    :/\bForms\.(?:Forms|Responses)|forms\.googleapis|API call to forms|^FORMS_BATCHUPDATE_/i.test(signature)
     ?'GOOGLE_FORMS'
     :/\bCalendar\.(?:Events|CalendarList)|calendar\.googleapis|API call to calendar/i.test(signature)
     ?'GOOGLE_CALENDAR'
