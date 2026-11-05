@@ -72,6 +72,8 @@ assert.equal(result.errorDetails.provider,'GOOGLE_APPS_SCRIPT');
 assert.equal(ctx.leerUltimoFalloAcademicoWeb_('123456789'),null,
   'Failure diagnostics must not leak across courses');
 assert.equal(result.errorDetails.code,'EXAMEN_SYNTHETIC_FAILURE');
+assert.ok(props.has('ACADEMIC_LAST_WEBAPP_WRITE_FAILURE_COURSE_875776451793'),
+  'Per-course errors must survive failures from other courses');
 assert.ok(!JSON.stringify(safe).includes('simulated internal details'));
 const mapped=ctx.detallarFalloAcademicoWeb_(new Error(
  'TAREA requiere fechaSiguienteSesion y horaInicioSiguienteSesion'),
