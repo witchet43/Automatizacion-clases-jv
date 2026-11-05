@@ -86,6 +86,15 @@ const classroom=ctx.detallarFalloAcademicoWeb_(new Error(
 assert.equal(classroom.provider,'GOOGLE_CLASSROOM');
 assert.equal(classroom.failedAt,'GOOGLE_CLASSROOM_API');
 assert.equal(classroom.stage,'ACADEMIC_EXECUTION');
+const forms=ctx.detallarFalloAcademicoWeb_(
+  new Error('FORMS_BATCHUPDATE_HTTP_403_PERMISSION_DENIED_SERVICE_DISABLED'),
+  {action:'uaqExecutor',operation:'examen',courseId:'875776451793'}
+);
+assert.equal(forms.code,'FORMS_BATCHUPDATE_HTTP_403_PERMISSION_DENIED_SERVICE_DISABLED');
+assert.equal(forms.provider,'GOOGLE_FORMS');
+assert.equal(forms.failedAt,'GOOGLE_FORMS_API');
+assert.equal(forms.stage,'ACADEMIC_EXECUTION');
+
 assert.ok(!JSON.stringify(classroom).includes('GoogleJsonResponseException'));
 const sheets=ctx.detallarFalloAcademicoWeb_(new Error(
   'Exception: You do not have permission to call SpreadsheetApp.openById'),{action:'clase'});

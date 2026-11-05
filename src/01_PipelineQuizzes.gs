@@ -113,31 +113,36 @@ function validateQuizFeedbackRequirements_(quiz, items) {
  * Only EXAMEN uses this optimized path; QUIZ feedback remains unchanged.
  */
 function prepararReactivosExamenBatch_(items) {
+  // RADIO and CHECKBOX are both supported by Forms API createItem.
+  // Prevalidate the ENTIRE exam before FormApp.create to prevent partial Forms.
   const letters=['A','B','C','D','E','F','G','H'];
   return items.map(function(rec,index){
     const x=rec.data;
-    if(normalizeQuizQuestionType_(x.Tipo)!=='OPCION_MULTIPLE')
+    const type=normalizeQuizQuestionType_(x.Tipo);
+    if(type!=='OPCION_MULTIPLE'&&type!=='CASILLAS')
       throw new Error('EXAMEN_BATCH_UNSUPPORTED_TYPE: '+String(x.Tipo||''));
     const pairs=letters.map(function(letter,i){
       return {letter:letter,text:clean_(x['Opción '+letter])};
     }).filter(function(o){return Boolean(o.text);});
     const keys=parseChoiceAnswerKeys_(x['Respuesta correcta']);
-    if(pairs.length<2 || keys.length!==1 ||
-       !pairs.some(function(o){return o.letter===keys[0];}))
+    if(pairs.length<2 || keys.length!==(type==='CASILLAS'?2:1) ||
+       keys.some(function(key){return !pairs.some(function(o){return o.letter===key;});}))
       throw new Error('EXAMEN_RESPUESTA_INVALIDA_PREGUNTA_'+String(index+1));
     if(new Set(pairs.map(function(o){return o.text;})).size!==pairs.length)
       throw new Error('EXAMEN_OPCIONES_DUPLICADAS_PREGUNTA_'+String(index+1));
     const points=Number(x.Puntos);
     if(!Number.isInteger(points)||points<0)
       throw new Error('EXAMEN_PUNTOS_INVALIDOS_PREGUNTA_'+String(index+1));
-    const correct=pairs.find(function(o){return o.letter===keys[0];}).text;
+    const correct=pairs.filter(function(o){return keys.indexOf(o.letter)>=0;})
+      .map(function(o){return {value:o.text};});
     return {createItem:{
       item:{
         title:clean_(x.Pregunta),
         questionItem:{question:{
           required:yes_(x.Obligatoria),
-          grading:{pointValue:points,correctAnswers:{answers:[{value:correct}]}},
-          choiceQuestion:{type:'RADIO',options:pairs.map(function(o){return {value:o.text};})}
+          grading:{pointValue:points,correctAnswers:{answers:correct}},
+          choiceQuestion:{type:type==='CASILLAS'?'CHECKBOX':'RADIO',
+            options:pairs.map(function(o){return {value:o.text};})}
         }}
       },
       location:{index:index}
@@ -149,7 +154,9 @@ function buildQuizForm_(quiz, items) {
   const showFeedback = validateQuizFeedbackRequirements_(quiz, items);
   const isExam=clean_(quiz['Tipo instrumento']).toUpperCase()==='EXAMEN';
   const examRequests=isExam && items.length>=10 &&
-    items.every(function(rec){return normalizeQuizQuestionType_(rec.data.Tipo)==='OPCION_MULTIPLE';})
+    items.every(function(rec){
+      return ['OPCION_MULTIPLE','CASILLAS'].includes(normalizeQuizQuestionType_(rec.data.Tipo));
+    })
     ? prepararReactivosExamenBatch_(items) : null;
 
   // Un Form nuevo se crea SIN publicar desde el primer instante: un Classroom
@@ -351,22 +358,41 @@ function createShortAnswerQuestion_(formId, index, x, showFeedback) {
 }
 
 function formsBatchUpdate_(formId, requests) {
-  const response = UrlFetchApp.fetch(
-    'https://forms.googleapis.com/v1/forms/' + encodeURIComponent(formId) + ':batchUpdate',
-    {
-      method: 'post',
-      contentType: 'application/json',
-      headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()},
-      payload: JSON.stringify({requests: requests}),
-      muteHttpExceptions: true
-    }
-  );
-  const code = response.getResponseCode();
-  if (code < 200 || code >= 300) {
-    throw new Error(
-      'Forms API batchUpdate falló: HTTP ' + code + ' - ' +
-      response.getContentText().slice(0, 500)
+  let response;
+  try {
+    response=UrlFetchApp.fetch(
+      'https://forms.googleapis.com/v1/forms/' + encodeURIComponent(formId) + ':batchUpdate',
+      {
+        method:'post',
+        contentType:'application/json',
+        headers:{Authorization:'Bearer '+ScriptApp.getOAuthToken()},
+        payload:JSON.stringify({requests:requests}),
+        muteHttpExceptions:true
+      }
     );
+  }catch(err){
+    // Do not log tokens, form IDs, URL, questions or response bodies.
+    const detail=String(err&&err.message||err||'');
+    const kind=/authorization|permission|scope|access denied/i.test(detail)
+      ?'OAUTH_PERMISSION':/quota|rate limit/i.test(detail)
+      ?'QUOTA':/timed? ?out|timeout/i.test(detail)
+      ?'TIMEOUT':'TRANSPORT';
+    console.error('FORMS_BATCHUPDATE_'+kind);
+    throw new Error('FORMS_BATCHUPDATE_'+kind+': UrlFetchApp no completó la solicitud');
   }
-  return JSON.parse(response.getContentText() || '{}');
+  const code=response.getResponseCode();
+  if(code<200||code>=300){
+    let status='UNKNOWN',reason='UNKNOWN';
+    try{
+      const body=JSON.parse(response.getContentText()||'{}');
+      const error=body.error||{};
+      status=/^[A-Z_]+$/.test(String(error.status||''))?error.status:'UNKNOWN';
+      const details=Array.isArray(error.details)?error.details:[];
+      const info=details.find(function(d){return d&&typeof d.reason==='string';})||{};
+      reason=/^[A-Z_]+$/.test(String(info.reason||''))?info.reason:'UNKNOWN';
+    }catch(ignore){}
+    console.error('FORMS_BATCHUPDATE_HTTP_'+code+'_'+status+'_'+reason);
+    throw new Error('FORMS_BATCHUPDATE_HTTP_'+code+'_'+status+'_'+reason);
+  }
+  return JSON.parse(response.getContentText()||'{}');
 }
