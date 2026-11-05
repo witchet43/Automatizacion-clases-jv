@@ -1,0 +1,15 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Identifica el error y corrígelo. Continua",
+  "reason": "El WebApp no logra POST al actualizar Forms. Antes de escribir, verificar por GET si FormApp ya configuró el correo en VERIFIED; omitir sólo POST redundante sin relajar garantías.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-apps-script.yml",
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    "scripts/test-forms-verified-read-before-write.mjs",
+    "src/02_ValidacionYUtilidades.gs"
+  ],
+  "productionDeploymentAuthorized": true,
+  "scope": "Apps Script Form email setting read-before-write; no OAuth/HMAC/Cloud Run/ID changes"
+}
