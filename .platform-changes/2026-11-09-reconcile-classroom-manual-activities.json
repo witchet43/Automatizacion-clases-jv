@@ -1,0 +1,16 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "La discrepancia en la numeración surge por que yo de repente creo actividades de manera manual fuera de la planeación que tú realizaste, por lo que el proceso debería hacer una reconciliación, es decir, empatar ambas plataformas, si hay actividades nuevas creadas en classroom y no aparecen en la planeación, se crean en la planeación y sus respectivos Google documentos y se recorre la numeración para ajustar la numeración y todo corresponda",
+  "reason": "Implementar conciliación de actividades Classroom creadas fuera de la planeación mediante inventario con identificadores estables, reutilización de Docs, números Classroom como anclas, renumeración incremental de documentos planeados y preflight obligatorio antes de generar clases. Mantener IDs, estados, notas, entregas, permisos y WebApp canónica.",
+  "allowedChangedPaths": [
+    "AGENTS.md",
+    ".github/workflows/deploy-apps-script.yml",
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    "docs/RECONCILIACION_ACTIVIDADES_CLASSROOM.md",
+    "scripts/test-classroom-activity-reconciliation.mjs",
+    "src/65_QuizAsistenciaWebApp.gs",
+    "src/68_ConciliacionActividadesWebApp.gs"
+  ]
+}
