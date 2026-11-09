@@ -1,0 +1,15 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "si la actividad 14 ya existe no debes de detenerte solo debes de obtener la referencia para poder agregarla a las presentaciones de gamma, pero nunca detenerte si ya existe. El segundo caso donde recibes themeId: null ya ha sido identificado como un problema conocido por nosotros, tú debes asegurarte que si envíes el tema correcto solamente en este caso \"UAQ\". En el caso 3, debes de corregir la planeación para que si muestre la numeración.",
+  "reason": "Aplicar reutilización no bloqueante de documentos de actividad vinculados a la planeación, aceptar themeId:null cuando la solicitud exacta del tema UAQ se verificó sin inventar confirmación visual, y derivar la numeración curricular Gamma 2.12 desde la planeación de Sistemas Operativos. Sin cambiar IDs, endpoint, auth, recibos, calificaciones o publicación de trabajos.",
+  "allowedChangedPaths": [
+    "AGENTS.md",
+    "src/41_SiguienteClase.gs",
+    "src/65_QuizAsistenciaWebApp.gs",
+    "scripts/test-gamma-institutional-identity.mjs",
+    "scripts/test-next-class-real-state.mjs",
+    "scripts/test-class-package-reconciliation.mjs"
+  ]
+}
