@@ -669,13 +669,20 @@ function contratoGammaClaseCanonicaWeb_(course,row){
   }))throw new Error('GAMMA_IDENTITY_MANIFEST_AMBIGUOUS: '+String(course.id));
   const topic=String(row&&row.topic||'').trim();
   if(!topic)throw new Error('GAMMA_CANONICAL_TOPIC_MISSING');
-  // Inserta el separador oficial en cada subtema, incluidos temas compuestos.
-  const title=topic.replace(/(^|\s+\+\s+)(\d+(?:\.\d+)+)(?:\s*[-–—]\s*|\s+)/g,
+  // Respeta numeración escrita y recupera la ordinal curricular calculada por
+  // la planeación, nunca de la fecha del sistema ni de un contador guardado.
+  const normalized=topic.replace(/(^|\s+\+\s+)(\d+(?:\.\d+)+)(?:\s*[-–—]\s*|\s+)/g,
     function(_,prefix,num){return prefix+num+' - ';}).replace(/\s+/g,' ').trim();
+  const isSO=String(course.materia||'').trim().toLowerCase()==='sistemas operativos';
+  const ordinal=String(row&&row.curricularNumber||'').trim();
+  const hasNumber=/^\d+(?:\.\d+)+\s*-\s*/.test(normalized);
+  const title=isSO&&!hasNumber&&/^\d+\.\d+$/.test(ordinal)
+    ? ordinal+' - '+normalized : normalized;
   return {
     source:'MANIFEST_COURSE_AND_CANONICAL_PLANNING',
     title:title,
-    coverTitle:String(row.unit||'').trim()+' · Tema '+title,
+    coverTitle:isSO&&/^\d+\.\d+\s*-/.test(title)
+      ? title : String(row.unit||'').trim()+' · Tema '+title,
     themeId:String(configured.gammaThemeId),
     themeName:String(configured.gammaThemeName||''),
     folderId:String(configured.gammaFolderId),
@@ -697,17 +704,42 @@ function verificarIdentidadGammaClaseWeb_(raw,contract){
     issues.push('GAMMA_THEME_REQUEST_UNVERIFIED');
   if(evidence.themeIdReturned!=null&&String(evidence.themeIdReturned)!==contract.themeId)
     issues.push('GAMMA_THEME_RETURNED_MISMATCH');
-  // NULL de Gamma no demuestra un tema incorrecto ni uno correcto:
-  // exige prueba independiente de aplicación, no basta el argumento enviado.
-  if(evidence.themeIdReturned==null&&evidence.themeAppliedVerified!==true)
+  // Gamma devuelve themeId:null aun con el theme institucional solicitado.
+  // Solo se tolera el NULL explícito si el tema se envió EXACTAMENTE como
+  // exige el manifiesto y la petición de Gamma quedó verificada. No afirmar
+  // que Gamma haya confirmado visualmente el tema.
+  const explicitNull=Object.prototype.hasOwnProperty.call(evidence,'themeIdReturned')&&
+    evidence.themeIdReturned===null;
+  const requestedExact=String(evidence.themeIdSent||'').trim()===contract.themeId&&
+    evidence.themeRequestVerified===true;
+  if((evidence.themeIdReturned==null&&!explicitNull)||
+    (explicitNull&&!requestedExact&&evidence.themeAppliedVerified!==true))
     issues.push('GAMMA_THEME_APPLIED_NOT_VERIFIED');
   if(String(evidence.folderIdSent||'').trim()!==contract.folderId)
     issues.push('GAMMA_FOLDER_NOT_SENT_FROM_MANIFEST');
   if(evidence.folderRequestVerified!==true)
     issues.push('GAMMA_FOLDER_REQUEST_UNVERIFIED');
   return {valid:issues.length===0,issues:issues,
+    themeVerification:explicitNull&&requestedExact?'REQUEST_VERIFIED_PROVIDER_RETURNED_NULL':
+      evidence.themeIdReturned===contract.themeId?'PROVIDER_THEME_MATCH':'INCOMPLETE',
+    themeAppliedVerified:evidence.themeAppliedVerified===true,
     action:issues.length?'REPAIR_EXISTING_GAMMA_IDENTITY':'REUSE',
     expected:contract};
+}
+/** Reutiliza el documento de actividad enlazado a la sesión, sin fabricar CourseWork. */
+function referenciaActividadPlaneadaClaseWeb_(row,resourceLiveEvidence){
+  const url=String(row&&row.activityDocumentUrl||'').trim();
+  const match=url.match(/^https:\/\/docs\.google\.com\/document\/d\/([A-Za-z0-9_-]+)/i);
+  const raw=resourceLiveEvidence&&typeof resourceLiveEvidence==='object'
+    ? resourceLiveEvidence[String(row&&row.session||'').trim()] : null;
+  const verified=!!(match&&raw&&raw.source==='GOOGLE_DRIVE_LIVE_CONNECTOR'&&
+    raw.status==='LIVE_DOCUMENT'&&String(raw.documentId||'')===match[1]&&
+    raw.contentVerified===true&&raw.canonicalTopicVerified===true);
+  return {type:'ACTIVIDAD',source:'PLANNING_LINKED_DOCUMENT',available:!!match,
+    url:match?url:'',documentId:match?match[1]:'',
+    documentTitle:verified?String(raw.title||''):'',
+    liveVerified:verified,courseWorkCreated:false,
+    decision:verified?'REUSE_EXISTING_DOCUMENT':match?'VERIFY_EXISTING_DOCUMENT':'NOT_LINKED'};
 }
 function planificarClaseCanonicaWeb_(course,p,works){
   const planning=leerPlaneacionSiguienteClase_(course.materia);
@@ -730,10 +762,12 @@ function planificarClaseCanonicaWeb_(course,p,works){
   const gammaGeneration=contratoGammaClaseCanonicaWeb_(course,row);
   const gammaRaw=(supplied.gammaLiveEvidence||{})[String(row.session||'')];
   const gammaIdentity=verificarIdentidadGammaClaseWeb_(gammaRaw,gammaGeneration);
+  const activityReference=referenciaActividadPlaneadaClaseWeb_(row,supplied.resourceLiveEvidence||{});
+  const resourceReady=evidence.recursoPreparado||activityReference.liveVerified;
   const gammaReady=!evidence.gammaRequired||
     (evidence.gammaVerificada&&gammaIdentity.valid);
   const missingComponents=[];
-  if(!evidence.recursoPreparado)missingComponents.push('CLASSROOM');
+  if(!resourceReady)missingComponents.push('CLASSROOM');
   if(evidence.gammaRequired&&!gammaReady)missingComponents.push('GAMMA');
   if(!evidence.notionVerificada||
      (evidence.gammaRequired&&!evidence.notionGammaReferenceVerified))
@@ -747,10 +781,15 @@ function planificarClaseCanonicaWeb_(course,p,works){
     requiredComponents:['CLASSROOM'].concat(evidence.gammaRequired?['GAMMA']:[],['NOTION']),
     gammaGeneration:gammaGeneration,
     gammaIdentity:gammaIdentity,
+    existingResourceReferences:activityReference.available?[activityReference]:[],
+    resourceReadySource:evidence.recursoPreparado?'CLASSROOM_COURSEWORK':
+      activityReference.liveVerified?'VERIFIED_PLANNING_DOCUMENT':'NOT_VERIFIED',
+    classroomCourseWorkPresent:evidence.recursoPreparado===true,
     missingComponents:missingComponents,
     courseId:String(course.id),materia:String(course.materia),
     target:{session:String(row.session||''),unit:String(row.unit||''),
-      topic:String(row.topic||''),kind:String(row.kind||''),
+      topic:String(row.topic||''),curricularNumber:String(row.curricularNumber||''),
+      activityDocumentUrl:String(row.activityDocumentUrl||''),kind:String(row.kind||''),
       practice:String(row.practice||''),previous:String(row.previous||''),
       next:String(row.next||''),gammaState:String(row.gammaState||''),
       gammaUrlCandidate:String(row.gammaUrl||'')},
@@ -767,6 +806,7 @@ function planificarClaseCanonicaWeb_(course,p,works){
       state:String(w.state||'')};}),
     createdCount:0,reusedCount:0,resources:[],
     nextPhase:canonicalComplete?'NONE':
+      missingComponents[0]==='CLASSROOM'&&activityReference.available?'VERIFY_EXISTING_ACTIVITY_DOCUMENT':
       missingComponents[0]==='CLASSROOM'?'CLASSROOM_RESOURCES':
       missingComponents[0]==='GAMMA'&&gammaRaw?'REPAIR_EXISTING_GAMMA_IDENTITY':
       missingComponents[0]==='GAMMA'?'GENERATE_OR_REUSE_GAMMA':

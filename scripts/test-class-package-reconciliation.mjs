@@ -31,7 +31,8 @@ function scenario(initial, opts={}){
   listarCourseWorkClase_(){calls.read++;return works},
   leerPlaneacionSiguienteClase_(){calls.plan++;return {rows:[{session:'19',unit:'2',
     topic:'Sincronización: mutex y semáforos',kind:'Clase',
-    practice:tasks[1].params.titulo,gammaUrl:'https://gamma.app/docs/gamma19'}],source:{}};},
+    practice:tasks[1].params.titulo,gammaUrl:'https://gamma.app/docs/gamma19',
+    activityDocumentUrl:opts.planActivityDocUrl||''}],source:{}};},
   seleccionarSiguienteClasePorEstadoReal_(rows,works,requested,options){
     const gamma=options?.gammaLiveEvidence?.['19'];
     const notion=options?.notionLiveEvidence?.['19'];
@@ -188,6 +189,27 @@ assert.equal(result.nextPhase,'NONE');
 assert.equal(s.calls.tarea+s.calls.practica+s.calls.delete+s.calls.format,0,
   'FINALIZE never creates, deletes, rewrites or validates individual docs');
 assert.equal(s.calls.read,5,'One Classroom inventory read per accepted request, never repeated postflight');
+
+// Una actividad ya documentada en la planeación se vincula sin inventar
+// otro CourseWork ni crear documentos nuevos. El PLAN expone la referencia.
+const docId='1nTPW0HMCCBmY9BBiRVOwOBpVoWTxbcXztzIIuqjinTM';
+const docUrl='https://docs.google.com/document/d/'+docId+'/edit';
+s=scenario([],{planActivityDocUrl:docUrl});
+result=s.run([], {mode:'PLAN',requestedSession:'19'});
+assert.equal(result.nextPhase,'VERIFY_EXISTING_ACTIVITY_DOCUMENT');
+assert.equal(result.existingResourceReferences[0].documentId,docId);
+assert.equal(result.existingResourceReferences[0].liveVerified,false);
+result=s.run([], {mode:'FINALIZE',requestedSession:'19',options:{
+ gammaLiveEvidence:{'19':gammaEvidence},notionLiveEvidence:{'19':notionEvidence},
+ resourceLiveEvidence:{'19':{source:'GOOGLE_DRIVE_LIVE_CONNECTOR',status:'LIVE_DOCUMENT',
+   documentId:docId,title:'Actividad existente',contentVerified:true,
+   canonicalTopicVerified:true}}
+}});
+assert.equal(result.complete,true,'A verified existing academic document may satisfy the resource component');
+assert.equal(result.resourceReadySource,'VERIFIED_PLANNING_DOCUMENT');
+assert.equal(result.classroomCourseWorkPresent,false,'Never invent a Classroom assignment');
+assert.equal(result.existingResourceReferences[0].decision,'REUSE_EXISTING_DOCUMENT');
+assert.equal(s.calls.tarea+s.calls.practica+s.calls.delete,0);
 
 const policy=fs.readFileSync('src/00_PoliticasCanonicas.gs','utf8');
 assert.match(policy,/EXPLICIT_SESSION_RECONCILES_ONLY_TARGET: true/);

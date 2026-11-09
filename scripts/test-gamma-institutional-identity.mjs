@@ -42,7 +42,31 @@ assert.ok(wrongReturnedTheme.issues.includes('GAMMA_THEME_RETURNED_MISMATCH'));
 const wrongFolder=check({...valid,folderIdSent:'fo_other'});
 assert.ok(wrongFolder.issues.includes('GAMMA_FOLDER_NOT_SENT_FROM_MANIFEST'));
 const unverifiedNull=check({...valid,themeAppliedVerified:false});
-assert.ok(unverifiedNull.issues.includes('GAMMA_THEME_APPLIED_NOT_VERIFIED'));
+assert.equal(unverifiedNull.valid,true,'Gamma null is a known provider response when the exact UAQ theme request is verified');
+assert.equal(unverifiedNull.themeVerification,'REQUEST_VERIFIED_PROVIDER_RETURNED_NULL');
+assert.equal(unverifiedNull.themeAppliedVerified,false,'Never claim the visual theme was provider-confirmed');
+const missingResponse={...valid,themeAppliedVerified:false};delete missingResponse.themeIdReturned;
+assert.ok(check(missingResponse).issues.includes('GAMMA_THEME_APPLIED_NOT_VERIFIED'),
+ 'Missing theme response is not the same as explicit provider null');
+const so=sandbox.contratoGammaClaseCanonicaWeb_({id:'875776451793',materia:'Sistemas Operativos'},
+  {session:'20',unit:'2',topic:'Interbloqueos: condiciones necesarias',curricularNumber:'2.12'});
+assert.equal(so.title,'2.12 - Interbloqueos: condiciones necesarias');
+assert.equal(so.coverTitle,'2.12 - Interbloqueos: condiciones necesarias');
+assert.equal(so.themeName,'UAQ');
+assert.equal(so.folderId,'fo_oig9jvuoy9kbmdw');
+const linked=sandbox.referenciaActividadPlaneadaClaseWeb_(
+  {session:'20',activityDocumentUrl:'https://docs.google.com/document/d/1nTPW0HMCCBmY9BBiRVOwOBpVoWTxbcXztzIIuqjinTM/edit'},
+  {'20':{source:'GOOGLE_DRIVE_LIVE_CONNECTOR',status:'LIVE_DOCUMENT',
+    documentId:'1nTPW0HMCCBmY9BBiRVOwOBpVoWTxbcXztzIIuqjinTM',
+    title:'Actividad 10 - Grafo de asignación de recursos y deadlock',
+    contentVerified:true,canonicalTopicVerified:true}});
+assert.equal(linked.liveVerified,true);
+assert.equal(linked.courseWorkCreated,false);
+assert.equal(linked.decision,'REUSE_EXISTING_DOCUMENT');
+assert.equal(sandbox.referenciaActividadPlaneadaClaseWeb_(
+  {session:'20',activityDocumentUrl:linked.url},
+  {'20':{source:'GOOGLE_DRIVE_LIVE_CONNECTOR',status:'LIVE_DOCUMENT',documentId:'incorrect',
+    contentVerified:true,canonicalTopicVerified:true}}).liveVerified,false);
 const noConfig={id:'11111111',materia:'Curso inventado'};
 assert.throws(()=>sandbox.contratoGammaClaseCanonicaWeb_(noConfig,row),/GAMMA_IDENTITY_MANIFEST_REQUIRED/);
 console.log('PASS: S19 title / cover / UAQ theme / folder derived strictly from manifest and exact planning; inconsistent Gamma cannot finalize.');

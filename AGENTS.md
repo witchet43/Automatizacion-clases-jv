@@ -38,6 +38,9 @@ Mantener estos tres manuales al día cuando cambien las herramientas, Auth0, los
 - Quiz de asistencia consecutivo, incluyendo borradores y publicados.
 - Introducción a TI: ambiente práctico Windows conforme a `config/academic-context.json`.
 - No duplicar Gamma ni notas de Notion; validar fuentes LIVE.
+- Para cada clase, buscar primero trabajos Classroom DRAFT/PUBLISHED **y** los enlaces de documentos académicos existentes en la fila canónica (p. ej. `Documento de actividad`). Si el documento existe, verificar su ID/contenido, recuperar su URL y referenciarlo desde Gamma; no detener Gamma/Notion ni repetir una escritura bloqueada por recibo PENDING. Nunca llamar `CursoWork creado` a un documento de Drive que no está en Classroom.
+- Gamma devuelve `themeId: null` en casos conocidos: no bloquear el paquete si el tema institucional exacto del manifiesto fue enviado y la petición quedó verificada; conservar una advertencia descriptiva, sin afirmar que el proveedor confirmó visualmente su aplicación. Un tema incorrecto, omitido o no solicitado sigue bloqueando la identidad.
+- La numeración del título Gamma en Sistemas Operativos procede del orden curricular de sesiones dentro de la unidad, excluidos exámenes: `2.12 - Interbloqueos: condiciones necesarias` para la clase 20. No tomarla de la fecha ni de un contador persistente; mantener el texto original del subtema como dato curricular.
 - Sin publicación automática de notas de estudiantes.
 
 ## Señales de configuración errónea
