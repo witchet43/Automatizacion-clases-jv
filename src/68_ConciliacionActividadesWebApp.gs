@@ -168,12 +168,21 @@ function reconciliarActividadesClaseWeb_(course,p,works){
   if(apply){
     const sheet=ledger.sheet;
     const mapped=p&&typeof p.sessionMap==='object'&&p.sessionMap?p.sessionMap:{};
+    const documentMap=p&&typeof p.documentMap==='object'&&p.documentMap?p.documentMap:{};
     // Validar la sesión contra la planeación canónica antes de asignarla.
     const planRows=Object.keys(mapped).length?leerPlaneacionSiguienteClase_(course.materia).rows:[];
     const pendingWork=plan.newClassroom.slice(0,maxMutations);
     pendingWork.forEach(function(w){
       try{
-        const found=buscarDocumentoActividadSinDuplicar_(w);
+        let found;
+        const suppliedDocument=String(documentMap[w.id]||'').trim();
+        if(suppliedDocument){
+          const file=DriveApp.getFileById(suppliedDocument);
+          if(file.getMimeType()!=='application/vnd.google-apps.document'||
+              String(file.getName()||'').trim()!==String(w.title||'').trim())
+            throw new Error('ACTIVITY_DOCUMENT_MAP_IDENTITY_MISMATCH');
+          found={documentId:suppliedDocument,origin:'VERIFIED_DOCUMENT_MAP'};
+        }else found=buscarDocumentoActividadSinDuplicar_(w);
         if(found.origin==='AMBIGUOUS_DOCUMENT'){
           errors.push({workId:w.id,code:'DOCUMENT_MATCH_AMBIGUOUS'});return;
         }
