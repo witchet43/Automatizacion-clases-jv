@@ -96,6 +96,44 @@ function leerLedgerActividadesCanonico_(course,createIfMissing){
   };}).filter(function(x){return x.key;});
   return {spreadsheetId:source.spreadsheetId,sheet:sh,rows:rows};
 }
+/** Inicializa un curso nuevo desde enlaces ya existentes en su planeación. */
+function sembrarActividadesPlaneadasReconciliacion_(course,sheet,works){
+  if(!sheet||sheet.getLastRow()>1)return 0;
+  const planning=leerPlaneacionSiguienteClase_(course.materia).rows;
+  const names=Object.create(null),byDocument=Object.create(null);
+  (works||[]).filter(function(w){return actividadNumeroYTextoReconcile_(w.title);})
+    .forEach(function(w){
+      const key=String(w.title||'').trim().toLowerCase();
+      if(!names[key])names[key]=[];
+      names[key].push(w);
+      (w.materials||[]).forEach(function(m){
+        const ref=m&&m.driveFile&&(m.driveFile.driveFile||m.driveFile);
+        if(ref&&ref.id)byDocument[String(ref.id)]=w;
+      });
+    });
+  const seen=new Set(),values=[];
+  planning.forEach(function(row){
+    const url=String(row.activityDocumentUrl||'').trim();
+    const match=url.match(/^https:\/\/docs\.google\.com\/document\/d\/([A-Za-z0-9_-]+)/i);
+    if(!match||seen.has(match[1]))return;
+    const id=match[1];
+    seen.add(id);
+    const file=DriveApp.getFileById(id);
+    if(file.getMimeType()!=='application/vnd.google-apps.document')
+      throw new Error('ACTIVITY_SEED_NON_DOCUMENT');
+    const title=String(file.getName()||'').trim(),parsed=actividadNumeroYTextoReconcile_(title);
+    if(!parsed)throw new Error('ACTIVITY_SEED_TITLE_NOT_NUMBERED');
+    const same=names[title.toLowerCase()]||[];
+    const work=byDocument[id]||(same.length===1?same[0]:null);
+    values.push([parsed.number,'PLANEACIÓN',String(row.session||''),String(row.unit||''),
+      title,work?String(work.id):'',work?String(work.state):'',id,url,
+      String(row.row||''),parsed.number,'ALINEADA','DOC:'+id,
+      work?'Classroom existente por identidad verificada':'Documento planeado; no crear otro trabajo']);
+  });
+  if(values.length)sheet.getRange(2,1,values.length,ACTIVITY_LEDGER_HEADERS_.length)
+    .setValues(values);
+  return values.length;
+}
 function documentoClassroomActividad_(work){
   const docs=(work.materials||[]).map(function(m){
     const ref=m&&m.driveFile&&(m.driveFile.driveFile||m.driveFile);
@@ -161,7 +199,12 @@ function actualizarDocumentoPlaneadoReconciliacion_(action){
 function reconciliarActividadesClaseWeb_(course,p,works){
   const mode=String(p.mode||'').toUpperCase();
   const apply=mode==='RECONCILE_APPLY';
-  const ledger=leerLedgerActividadesCanonico_(course,apply);
+  let ledger=leerLedgerActividadesCanonico_(course,apply);
+  let seededCount=0;
+  if(apply&&ledger.sheet&&ledger.rows.length===0){
+    seededCount=sembrarActividadesPlaneadasReconciliacion_(course,ledger.sheet,works);
+    ledger=leerLedgerActividadesCanonico_(course,false);
+  }
   const plan=planPuroReconciliacionActividades_(works,ledger.rows);
   const maxMutations=Math.min(8,Math.max(1,Number(p.maxMutations)||4));
   const details=[],errors=[];
@@ -234,9 +277,11 @@ function reconciliarActividadesClaseWeb_(course,p,works){
     numberingChanges:remaining.renumberDocuments,
     duplicateNumbers:remaining.duplicatedClassroomNumbers,
     applied:details,errors:errors,appliedCount:details.length,
-    complete:remaining.newClassroom.length===0&&
+    baselineSeeded:seededCount,catalogExists:!!finalLedger.sheet,
+    complete:!!finalLedger.sheet&&remaining.newClassroom.length===0&&
       remaining.renumberDocuments.length===0&&errors.length===0,
-    nextPhase:remaining.newClassroom.length||remaining.renumberDocuments.length
+    nextPhase:!finalLedger.sheet?'RECONCILE_CREATE_LEDGER':
+      remaining.newClassroom.length||remaining.renumberDocuments.length
       ?'RECONCILE_CONTINUE':'NONE',
     note:'No modifica IDs, estados, entregas o calificaciones de Classroom. Números curriculares (2.12) no se alteran.'};
 }
