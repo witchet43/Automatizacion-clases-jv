@@ -10,7 +10,7 @@ const ACTIVITY_LEDGER_HEADERS_=[
  'Numeración original','Estado reconciliación','Clave estable','Observaciones'
 ];
 function actividadNumeroYTextoReconcile_(title){
-  const m=String(title||'').trim().match(/^Actividad\\s+(\\d{1,3})\\s*[-–—]\\s*(.+)$/i);
+  const m=String(title||'').trim().match(/^Actividad\s+(\d{1,3})\s*[-–—]\s*(.+)$/i);
   return m?{number:Number(m[1]),text:String(m[2]).trim()}:null;
 }
 function ledgerActividadNumero_(n,text){
@@ -60,7 +60,7 @@ function planPuroReconciliacionActividades_(works,rows){
           documentId:entry.documentId,previousNumber:current,
           nextNumber:assigned,title:ledgerActividadNumero_(assigned,
             (actividadNumeroYTextoReconcile_(entry.title)||{}).text||
-            String(entry.title||'').replace(/^Actividad\\s+\\d+\\s*[-–—]\\s*/i,''))});
+            String(entry.title||'').replace(/^Actividad\s+\d+\s*[-–—]\s*/i,''))});
       last=Math.max(last,assigned);
     });
   return {newClassroom:newClassroom,renumberDocuments:changes,
