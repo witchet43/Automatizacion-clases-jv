@@ -99,6 +99,24 @@ vm.runInContext(resolver,ctx,{filename:'41_SiguienteClase.gs'});
   ],{},{});
   assert.equal(evidence.recursoPreparado,true,
     'El título exacto de la actividad en la planeación debe reconciliar el borrador real');
+  // La fila de Sistemas Operativos no contiene '2.12' en el texto del subtema:
+  // el ordinal se deriva del orden de la Unidad 2, sin tocar la hoja original.
+  const docsUrl='https://docs.google.com/document/d/1nTPW0HMCCBmY9BBiRVOwOBpVoWTxbcXztzIIuqjinTM/edit';
+  const soRows=[['Clase','Unidad','Subtema curricular (desglose de planeación)','Documento de actividad'],
+    ['8','1','Evaluación Unidad 1',''],
+    ...Array.from({length:12},(_,i)=>[String(i+9),'2',
+      i===11?'Interbloqueos: condiciones necesarias':'Subtema '+(i+1),
+      i===11?docsUrl:''])];
+  ctx.resolvePlanningSource_=()=>({spreadsheetId:'PLANEACION_SO',preferredSheet:'Planeación maestra',headerRow:1});
+  ctx.SpreadsheetApp={openById:()=>({
+    getSheetByName:()=>({getDataRange:()=>({getDisplayValues:()=>soRows})}),getSheets:()=>[]
+  })};
+  const soPlan=ctx.leerPlaneacionSiguienteClase_('Sistemas Operativos');
+  const so20=soPlan.rows.find(r=>r.session==='20');
+  assert.equal(so20.curricularNumber,'2.12');
+  assert.equal(so20.activityDocumentUrl,docsUrl);
+  assert.equal(soPlan.rows.find(r=>r.session==='8').curricularNumber,undefined,
+    'La evaluación de la unidad no consume número curricular');
   ctx.resolvePlanningSource_=actualSource;
   ctx.SpreadsheetApp=actualSheets;
 }
