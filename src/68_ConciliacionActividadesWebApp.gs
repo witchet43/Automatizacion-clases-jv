@@ -60,7 +60,7 @@ function planPuroReconciliacionActividades_(works,rows){
           documentId:entry.documentId,previousNumber:current,
           nextNumber:assigned,title:ledgerActividadNumero_(assigned,
             (actividadNumeroYTextoReconcile_(entry.title)||{}).text||
-            String(entry.title||'').replace(/^Actividad\\s+\\d+\\s*[-–—]\\s*/i,'')});
+            String(entry.title||'').replace(/^Actividad\\s+\\d+\\s*[-–—]\\s*/i,''))});
       last=Math.max(last,assigned);
     });
   return {newClassroom:newClassroom,renumberDocuments:changes,
