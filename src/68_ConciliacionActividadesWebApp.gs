@@ -168,6 +168,8 @@ function reconciliarActividadesClaseWeb_(course,p,works){
   if(apply){
     const sheet=ledger.sheet;
     const mapped=p&&typeof p.sessionMap==='object'&&p.sessionMap?p.sessionMap:{};
+    // Validar la sesión contra la planeación canónica antes de asignarla.
+    const planRows=Object.keys(mapped).length?leerPlaneacionSiguienteClase_(course.materia).rows:[];
     const pendingWork=plan.newClassroom.slice(0,maxMutations);
     pendingWork.forEach(function(w){
       try{
@@ -176,8 +178,14 @@ function reconciliarActividadesClaseWeb_(course,p,works){
           errors.push({workId:w.id,code:'DOCUMENT_MATCH_AMBIGUOUS'});return;
         }
         const documentId=found.documentId||crearDocumentoDeActividadManual_(w,course);
-        const session=String(mapped[w.id]||'').trim();
-        const entry=[w.number,'CLASSROOM MANUAL',session,'',ledgerActividadNumero_(w.number,w.text),
+        const suppliedSession=String(mapped[w.id]||'').trim();
+        const matchSession=suppliedSession?planRows.find(function(row){
+          return String(row.session||'').trim()===suppliedSession;
+        }):null;
+        if(suppliedSession&&!matchSession)throw new Error('ACTIVITY_SESSION_NOT_CANONICAL');
+        const session=matchSession?suppliedSession:'';
+        const unit=matchSession?String(matchSession.unit||''):'';
+        const entry=[w.number,'CLASSROOM MANUAL',session,unit,ledgerActividadNumero_(w.number,w.text),
           w.id,w.state,documentId,'https://docs.google.com/document/d/'+documentId+'/edit',
           '',w.number,session?'ALINEADA':'SESION_POR_ASIGNAR',
           'CW:'+w.id,'Origen '+found.origin+'; no altera trabajo publicado ni entregas'];
