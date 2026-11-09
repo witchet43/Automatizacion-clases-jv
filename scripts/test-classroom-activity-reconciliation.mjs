@@ -53,7 +53,7 @@ const manual=classroom.filter(x=>ctx.actividadNumeroYTextoReconcile_(x.title).nu
 const repeat=ctx.planPuroReconciliacionActividades_(classroom,[...synchronized,...manual]);
 assert.equal(repeat.newClassroom.length,0);
 assert.equal(repeat.renumberDocuments.length,0,'Rerun after sync cannot shift numbering again');
-const later=ctx.planPuroReconciliacionActividades_([...classroom,cw(18,1800,'Manual extra')],[...synchronized,...manual]);
+const later=ctx.planPuroReconciliacionActividades_([...classroom,cw(16,1600,'Manual extra')],[...synchronized,...manual]);
 assert.equal(later.newClassroom.length,1);
 assert.equal(later.renumberDocuments.find(x=>x.documentId==='p12').nextNumber,17,
   'A new numbered Classroom activity shifts only the next colliding planned Doc');
