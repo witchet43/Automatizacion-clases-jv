@@ -22,7 +22,7 @@ const ctx={
  clean_:v=>String(v===undefined||v===null?'':v).trim(),
  quizDescription_:v=>v,
  yes_:v=>String(v).trim().toUpperCase()==='SÍ',
- configureVerifiedEmail_:()=>{},
+ configureVerifiedEmail_:()=>{throw Error('Exam must skip separate email precheck');},
  FormApp:{create:(title,published)=>{
    createCount++;assert.equal(published,false);return form;
  }},
@@ -32,6 +32,9 @@ const ctx={
    assert.match(url,/^https:\/\/forms\.googleapis\.com\/v1\/forms\/synthetic_exam_form_id:batchUpdate$/);
    assert.equal(options.method,'post');
    const data=JSON.parse(options.payload);
+   const settings=data.requests.shift().updateSettings;
+   assert.equal(settings.updateMask,'emailCollectionType');
+   assert.equal(settings.settings.emailCollectionType,'VERIFIED');
    assert.equal(data.requests.length,25,'Must have exactly one batch for 25 items');
    data.requests.forEach((r,i)=>{
      const c=r.createItem;assert.equal(c.location.index,i);

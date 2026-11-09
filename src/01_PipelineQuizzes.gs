@@ -166,15 +166,24 @@ function buildQuizForm_(quiz, items) {
   assertQuizFormNotPublished_(form);
   form.setDescription(quizDescriptionForOutput_(quiz.Instrucciones));
   form.setIsQuiz(true);
-  form.setCollectEmail(true);
-  configureVerifiedEmail_(form.getId(), true);
+  if (!examRequests) {
+    form.setCollectEmail(true);
+    configureVerifiedEmail_(form.getId(), true);
+  }
   form.setShuffleQuestions(yes_(quiz['Barajar preguntas']));
   form.setLimitOneResponsePerUser(true);
   form.setShowLinkToRespondAgain(false);
   form.setPublishingSummary(false);
 
   if(examRequests){
-    formsBatchUpdate_(form.getId(),examRequests);
+    // Set VERIFIED in the same atomic request as the approved items.
+    // The caller verifies the stored setting before attaching the form.
+    formsBatchUpdate_(form.getId(), [{
+      updateSettings: {
+        settings: {emailCollectionType: 'VERIFIED'},
+        updateMask: 'emailCollectionType'
+      }
+    }].concat(examRequests));
     const actual=form.getItems();
     if(actual.length!==items.length ||
        actual.some(function(item,i){return clean_(item.getTitle())!==clean_(items[i].data.Pregunta);}))
