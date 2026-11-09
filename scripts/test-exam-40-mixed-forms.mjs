@@ -18,7 +18,7 @@ const form={
 const ctx={
   console:{error() {},warn() {}},Date,
   clean_:v=>String(v??'').trim(),quizDescription_:v=>v,
-  yes_:v=>String(v).toUpperCase()==='SÍ',configureVerifiedEmail_:()=>{},
+  yes_:v=>String(v).toUpperCase()==='SÍ',configureVerifiedEmail_:()=>{throw Error('Exam must skip separate email precheck');},
   ScriptApp:{getOAuthToken:()=> 'TOKEN_SYNTHETIC'},
   FormApp:{create:(_title,published)=>{assert.equal(published,false);created++;return form;}},
   DriveApp:{getFileById:()=>({setTrashed:value=>{if(value)trashed++;}})},
@@ -26,6 +26,9 @@ const ctx={
     batched++;assert.equal(args.muteHttpExceptions,true);
     if(transportError)throw Error('Service timed out');
     const requests=JSON.parse(args.payload).requests;
+    const settings=requests.shift().updateSettings;
+    assert.equal(settings.updateMask,'emailCollectionType');
+    assert.equal(settings.settings.emailCollectionType,'VERIFIED');
     if(http===200){
       assert.equal(requests.length,40,'Forty items must be one batch');
       stored=requests.map(x=>x.createItem.item);
