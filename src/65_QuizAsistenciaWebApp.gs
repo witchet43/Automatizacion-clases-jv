@@ -846,14 +846,19 @@ function crearPaqueteClaseWeb_(course,p){
   if(String(p.gammaUrl||'').trim())
     throw new Error('CLASE_RECURSOS_PRIMERO: gammaUrl solo se verifica después de preparar los recursos.');
   const mode=String(p.mode||p.executionMode||'EXECUTE').trim().toUpperCase();
-  if(['PLAN','EXECUTE','FINALIZE'].indexOf(mode)<0)
-    throw new Error('CLASE_MODO_INVALIDO: PLAN, EXECUTE o FINALIZE');
+  if(['PLAN','EXECUTE','FINALIZE','RECONCILE_PLAN','RECONCILE_APPLY'].indexOf(mode)<0)
+    throw new Error('CLASE_MODO_INVALIDO: PLAN, EXECUTE, FINALIZE, RECONCILE_PLAN o RECONCILE_APPLY');
   if(mode==='FINALIZE'&&!String(p.requestedSession||p.sesion||p.target&&p.target.session||'').trim())
     throw new Error('CLASE_FINALIZE_REQUIERE_SESION_EXPLICITA');
   const resources=Array.isArray(p.resources)?p.resources:[];
   const readStartedMs=Date.now();
   const works=listarCourseWorkClase_(course.id);
   const classroomReadMs=Date.now()-readStartedMs;
+  if(mode==='RECONCILE_PLAN'||mode==='RECONCILE_APPLY'){
+    const result=reconciliarActividadesClaseWeb_(course,p,works);
+    result.timingsMs={classroomRead:classroomReadMs,total:Date.now()-startedMs};
+    return result;
+  }
   // La sesión de un paquete se infiere de la planeación+Classroom cuando no fue
   // informada. El guardrail de cada recurso valida igualdad exacta del tema y
   // de la sesión antes de aceptar cualquier reconciliación retrospectiva.
