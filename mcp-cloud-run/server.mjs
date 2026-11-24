@@ -854,7 +854,7 @@ function buildServer(config,identity,fetcher){
         : tool.name==='listar_entregas'
           ? [{type:'oauth2',scopes:[SCOPES.read]}]
           : [{type:'oauth2',scopes:[SCOPES.read]}];
-      return {...tool,securitySchemes};
+      return {...tool,securitySchemes,_meta:{...tool._meta,securitySchemes}};
     })};
   });
   return server;
@@ -899,14 +899,18 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
       const scope=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','iniciar_despliegue_mcp'].includes(req.body?.params?.name)?SCOPES.grade:SCOPES.read;
       const authCode=['AUTH_REQUIRED','INSUFFICIENT_SCOPE','SUBJECT_NOT_ALLOWED'].includes(e?.message)
         ?e.message:'MCP_OAUTH_TOKEN_REJECTED';
+      const insufficient=e.message==='INSUFFICIENT_SCOPE';
+      const forbidden=insufficient||e.message==='SUBJECT_NOT_ALLOWED';
+      const status=forbidden?403:401;
       const diagnostic=diagnosticPayload(diagnosticError(authCode,{
         failedAt:'MCP_OAUTH_BOUNDARY',phase:'BEARER_VALIDATION',
-        provider:'AUTH0',httpStatus:401
+        provider:'AUTH0',httpStatus:status
       }));
-      console.error('MCP_CHAIN_DIAGNOSTIC '+JSON.stringify(diagnostic));
-      return res.status(401).set('WWW-Authenticate',challenge(config,scope,
-        e.message==='INSUFFICIENT_SCOPE'?'insufficient_scope':'invalid_token'))
-        .json({error:'unauthorized',...diagnostic});
+      console.error('MCP_CHAIN_DIAGNOSTIC '+JSON.stringify({...diagnostic,requiredScope:scope}));
+      if(e.message!=='SUBJECT_NOT_ALLOWED')
+        res.set('WWW-Authenticate',challenge(config,scope,
+          insufficient?'insufficient_scope':'invalid_token'));
+      return res.status(status).json({error:forbidden?'forbidden':'unauthorized',...diagnostic});
     }
     const server=buildServer(config,identity,fetcher);
     const transport=new StreamableHTTPServerTransport({sessionIdGenerator:undefined});

@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Hazlo (implementar el plan de reparación OAuth y despliegue previamente descrito).",
+  "reason": "Correct OAuth status and tool metadata without expanding student access or changing HMAC.",
+  "allowedChangedPaths": [
+    "mcp-cloud-run/server.mjs",
+    "mcp-cloud-run/tests/adapter.test.mjs"
+  ]
+}
