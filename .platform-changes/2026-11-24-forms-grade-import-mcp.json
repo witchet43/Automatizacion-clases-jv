@@ -1,0 +1,15 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Implementa de extremo a extremo la funcionalidad importar_calificaciones_forms en Classroom Academic Gateway MCP",
+  "reason": "Expose exact activity Forms grade import through canonical signed WebApp and protected MCP; preserve existing grades and verify draft writes.",
+  "allowedChangedPaths": [
+    "src/04_MonitorCalificaciones.gs",
+    "src/65_QuizAsistenciaWebApp.gs",
+    "mcp-cloud-run/server.mjs",
+    ".github/workflows/deploy-cloud-run-mcp.yml",
+    "mcp-cloud-run/README.md",
+    "mcp-cloud-run/tests/adapter.test.mjs"
+  ]
+}
