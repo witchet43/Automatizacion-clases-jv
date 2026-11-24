@@ -132,6 +132,17 @@ test('OAuth issuer, subject, audience and scope; MCP rejects anonymous and execu
    for(const tool of JSON.parse(listing).result.tools) assert.deepEqual(tool._meta.securitySchemes,tool.securitySchemes);
    assert.equal(calls.length,1);
    calls.length=0;
+   const importParams={name:'importar_calificaciones_forms',arguments:{courseId:'871149624583',courseWorkId:'101',confirmar:true,requestId:'forms_import_test_001'}};
+   const rejectedImport=await rpc(read,'tools/call',importParams,15);
+   assert.equal(rejectedImport.status,403);
+   assert.equal(calls.length,0);
+   const imported=await rpc(grade,'tools/call',importParams,16);
+   assert.equal(imported.status,200);
+   assert.equal(calls.length,1);
+   assert.equal(calls[0].action,'importarCalificacionesForms');
+   assert.equal(calls[0].params.courseWorkId,'101');
+   assert.equal(calls[0].auth.signature.length,64);
+   calls.length=0;
    response=await rpc(grade,'tools/call',{name:'cerrar_unidad',arguments:{courseId:'871149624583',unidad:2,confirmar:true}},2);
    assert.equal(response.status,200);
    let raw=await response.text();
