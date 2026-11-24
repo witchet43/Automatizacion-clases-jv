@@ -14,6 +14,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: read
       actions: read
@@ -323,17 +324,18 @@ jobs:
 
       - name: Determine whether canonical Apps Script source changed
         id: source_gate
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
         shell: bash
         run: |
           set -euo pipefail
           changed="$(git diff --name-only HEAD^ HEAD)"
           if grep -Eq '^(src/|config/academic-context[.]json$)' <<< "$changed"; then
-            echo 'needs_deploy=true' >> "$GITHUB_OUTPUT"
-            echo 'Apps Script source/config changed; deployment required.'
-          else
-            echo 'needs_deploy=false' >> "$GITHUB_OUTPUT"
-            echo 'Only platform files changed; skipping Apps Script deployment.'
+            echo 'Source/config present in authorized commit; checking actual deployed version.'
           fi
+          # Reconcile the canonical source, including authorized changes missed
+          # by a superseded deployment; never create a replacement deployment.
+          node scripts/verify-apps-script-release.mjs --plan
 
       - name: Verify OAuth grants for an existing API Executable (nonexistent function only)
         if: contains(github.event.head_commit.message, '[probe-existing-script-api]')
