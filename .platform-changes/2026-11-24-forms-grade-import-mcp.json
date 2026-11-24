@@ -11,6 +11,7 @@
     ".github/workflows/deploy-cloud-run-mcp.yml",
     "mcp-cloud-run/README.md",
     "mcp-cloud-run/tests/adapter.test.mjs",
-    "mcp-cloud-run/tests/discovery.test.mjs"
+    "mcp-cloud-run/tests/discovery.test.mjs",
+    "scripts/test-static-webapp-contract.mjs"
   ]
 }
