@@ -82,7 +82,8 @@ export function loadConfig(env=process.env,contextPath=join(dirname(fileURLToPat
     publicUrl,issuer,jwksUrl,allowedSubjects:allowed,hmac,authMode,webAppAuthMode,
     academicTransport,googleOAuthUser,
     operationalContext:ctx,upstreamUrl:ctx.endpoint,
-    courseIds:new Set(config.courseIds),port:Number(env.PORT||8080)
+    courseIds:new Set(config.courseIds),port:Number(env.PORT||8080),
+    releaseCommit:String(env.MCP_DEPLOY_COMMIT||'')
   };
 }
 
@@ -871,11 +872,34 @@ function buildServer(config,identity,fetcher){
   return server;
 }
 
-export function createApp(config,{fetcher=fetch,jwks}={}){
+export const RELEASE_PROBE_ACCOUNT='classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com';
+const googleReleaseJwks=createRemoteJWKSet(new URL('https://www.googleapis.com/oauth2/v3/certs'));
+export async function verifyReleaseProbeToken(config,header,jwks=googleReleaseJwks){
+  if(typeof header!=='string'||!/^Bearer [^ ]+$/.test(header))throw Error('RELEASE_PROBE_AUTH_REQUIRED');
+  const {payload}=await jwtVerify(header.slice(7),jwks,{
+    algorithms:['RS256'],issuer:['https://accounts.google.com','accounts.google.com'],
+    audience:config.publicUrl+'/release/probe',maxTokenAge:'10m',
+    requiredClaims:['exp','iat','sub','email','email_verified']
+  });
+  if(payload.email!==RELEASE_PROBE_ACCOUNT||payload.email_verified!==true)
+    throw Error('RELEASE_PROBE_IDENTITY_DENIED');
+  return true;
+}
+export function createApp(config,{fetcher=fetch,jwks,releaseJwks}={}){
   const app=express();
   app.disable('x-powered-by');
   app.use(express.json({limit:'64kb'}));
   app.get(['/health','/healthz'],(_req,res)=>res.json({status:'ok',service:'classroom-academic-gateway-mcp',auth:config.authMode}));
+  // Deployment-only identity: never grants MCP OAuth scopes or access to Classroom.
+  app.post('/release/probe',async(req,res)=>{
+    try{await verifyReleaseProbeToken(config,req.headers.authorization,releaseJwks);}
+    catch{return res.status(401).json({ok:false,error:'RELEASE_PROBE_UNAUTHORIZED'});}
+    try{
+      const data=await callWebApp(config,signedHmacProbe(config),fetcher);
+      if(data.signatureAccepted!==true||data.keyEquivalent!==true)throw Error('RELEASE_HMAC_REJECTED');
+      return res.json({ok:true,commit:config.releaseCommit,upstreamHmacAccepted:true,noAcademicWrites:true});
+    }catch{return res.status(503).json({ok:false,error:'RELEASE_UPSTREAM_NOT_VERIFIED'});}
+  });
   const metadata={
     resource:config.publicUrl,
     authorization_servers:[config.issuer],
