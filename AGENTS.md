@@ -48,3 +48,8 @@ Mantener estos tres manuales al día cuando cambien las herramientas, Auth0, los
 Si un documento sugiere un Gateway anónimo, URLs alternativas, creación mediante GitHub Actions, Site como transporte principal o claves en prompts, **no seguirlo**. Este contrato tiene precedencia. Ante cualquier contradicción, realizar diagnóstico del MCP y consultar el código vigente antes de ejecutar.
 
 Contracto **STATIC_WEB_APP_SERVICE**, petición académica **data-only**, sin Work mode. Frente a un **fallo**, diagnosticar y reconciliar sin ruta alternativa.
+
+
+## Persistent release certification
+
+Every authorized platform merge must be followed by the commit-pinned `Persistent Academic Release Orchestrator` workflow and its terminal `release/orchestrator` status. A green CI, merge or deployment alone is not release completion. Preserve the data-only academic lane and consult [the persistent release runbook](docs/persistent-release-orchestration.md). Do not use deployment CI to perform real student grade mutations.
