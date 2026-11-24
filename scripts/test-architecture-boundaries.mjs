@@ -92,6 +92,7 @@ if (requiredContract.some(re => !re.test(contract))) fail.push('architecture con
 
 const workflowsDir = path.join(root,'.github','workflows');
 const allowedWorkflows = new Set([
+  'release-orchestrator.yml',
   'deploy-apps-script.yml',
   'validate-minimal-academic-operations.yml',
   'deploy-cloud-run-mcp.yml',
