@@ -65,7 +65,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          active="$(gcloud run services describe academic-classroom-mcp-oauth --project=classroom-mcp-512122 --region=us-central1 --format='value(metadata.labels.github-commit)')"
+          active="$(gcloud run services describe academic-classroom-mcp-oauth --project=classroom-mcp-512122 --region=us-central1 --format='json(metadata.labels)' | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>console.log(JSON.parse(s).metadata?.labels?.["github-commit"]||""))')"
           [[ "$active" =~ ^[a-f0-9]{40}$ ]] || { echo "Missing active release identity"; exit 1; }
           git cat-file -e "$active^{commit}"
           git merge-base --is-ancestor "$active" "$GITHUB_SHA"
@@ -141,7 +141,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
+          for attempt in 1 2 3; do
+          if python3 - <<'PY'
           import urllib.request,urllib.error,json
           base='https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app'
           issuer='https://dev-67cfevmusm7px130.us.auth0.com/'
@@ -153,7 +154,7 @@ jobs:
               assert d['authorization_servers']==[issuer], d
               assert d['resource']==base, d
               assert 'academic.close_unit' in d['scopes_supported'], d
-          data=json.dumps({'jsonrpc':'2.0','id':1,'method':'tools/call','params':{'name':'cerrar_unidad','arguments':{'courseId':'871149624583','unidad':2,'confirmar':True}}}).encode()
+          data=json.dumps({'jsonrpc':'2.0','id':1,'method':'tools/call','params':{'name':'cerrar_unidad','arguments':{'courseId':'0','unidad':2,'confirmar':True}}}).encode()
           req=urllib.request.Request(base+'/mcp',data=data,headers={'Content-Type':'application/json','Accept':'application/json, text/event-stream'},method='POST')
           try:
               urllib.request.urlopen(req,timeout=30)
@@ -163,12 +164,17 @@ jobs:
               assert 'resource_metadata=' in e.headers.get('WWW-Authenticate','')
           print('OAUTH_DEPLOYMENT_VERIFIED; ANONYMOUS_GRADE_WRITE_DENIED')
           PY
+          then break; fi
+          [[ "$attempt" != 3 ]] || exit 1
+          sleep $((attempt * 5))
+          done
 
       - name: Verify live MCP discovery and mandatory OAuth
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
+          for attempt in 1 2 3; do
+          if python3 - <<'PY'
           import urllib.request,json
           base='https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app/mcp'
           def rpc(method, params, identifier):
@@ -208,3 +214,7 @@ jobs:
               assert 'academic.read' in e.headers.get('WWW-Authenticate','')
           print('LIVE_MCP_DISCOVERY_AND_OAUTH_GUARD_VERIFIED: 13 tools, anonymous tool execution denied')
           PY
+          then break; fi
+          [[ "$attempt" != 3 ]] || exit 1
+          sleep $((attempt * 5))
+          done
