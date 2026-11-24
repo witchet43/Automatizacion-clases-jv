@@ -1,0 +1,23 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Implementa un mecanismo persistente de orquestación que gestione automaticamente las validaciones, los reintentos, el despliegue, y las pruebas end-to-end independientemente de la duración de una respuesta en chatGPT.",
+  "reason": "Introduce durable SHA-pinned release orchestration, ordered CI and deploy gates, bounded safe retries and read-only production certification; preserve the canonical academic data-only route.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-apps-script.yml",
+    ".github/workflows/deploy-cloud-run-mcp.yml",
+    ".github/workflows/release-orchestrator.yml",
+    ".github/workflows/validate-minimal-academic-operations.yml",
+    "AGENTS.md",
+    "docs/persistent-release-orchestration.md",
+    "mcp-cloud-run/server.mjs",
+    "mcp-cloud-run/tests/release-probe.test.mjs",
+    "scripts/release-orchestrator.mjs",
+    "scripts/test-architecture-boundaries.mjs",
+    "scripts/test-decommissioned-routes.mjs",
+    "scripts/test-release-orchestrator.mjs",
+    "scripts/verify-apps-script-release.mjs",
+    "scripts/verify-live-release.mjs"
+  ]
+}

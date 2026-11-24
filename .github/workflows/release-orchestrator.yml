@@ -1,0 +1,75 @@
+name: Persistent Academic Release Orchestrator
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.platform-changes/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-orchestrator-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  certify:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: write
+      statuses: write
+      id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Coordinate exact-SHA pipelines and bounded safe retries
+        run: node scripts/release-orchestrator.mjs orchestrate
+      - name: Obtain short-lived release-only Google identity
+        id: release_auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/148028894895/locations/global/workloadIdentityPools/github-classroom-pool/providers/github
+          service_account: classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com
+          token_format: id_token
+          id_token_audience: https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app/release/probe
+          id_token_include_email: true
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Verify production source, traffic, OAuth and signed WebApp smoke
+        env:
+          RELEASE_PROBE_ID_TOKEN: ${{ steps.release_auth.outputs.id_token }}
+        run: node scripts/verify-live-release.mjs
+      - name: Certify release and record terminal commit status
+        run: node scripts/release-orchestrator.mjs finalize
+      - name: Record blocked release
+        if: failure()
+        run: node scripts/release-orchestrator.mjs fail
+      - name: Upload release evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-evidence-${{ github.sha }}-attempt-${{ github.run_attempt }}
+          path: |
+            release-evidence.json
+            release-live-evidence.json
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Publish execution summary
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f release-evidence.json ]]; then
+            echo '## Persistent release evidence' >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat release-evidence.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi

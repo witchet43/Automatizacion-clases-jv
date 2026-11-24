@@ -14,8 +14,10 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: read
+      actions: read
 
     steps:
       - name: Checkout
@@ -33,6 +35,11 @@ jobs:
 
       - name: Enforce explicit platform-change authorization
         run: node scripts/assert-platform-change-authorized.mjs
+
+      - name: Wait for exact-commit release CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release-orchestrator.mjs gate-ci
 
       - name: Block retired academic execution routes
         run: node scripts/test-decommissioned-routes.mjs
@@ -317,17 +324,18 @@ jobs:
 
       - name: Determine whether canonical Apps Script source changed
         id: source_gate
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
         shell: bash
         run: |
           set -euo pipefail
           changed="$(git diff --name-only HEAD^ HEAD)"
           if grep -Eq '^(src/|config/academic-context[.]json$)' <<< "$changed"; then
-            echo 'needs_deploy=true' >> "$GITHUB_OUTPUT"
-            echo 'Apps Script source/config changed; deployment required.'
-          else
-            echo 'needs_deploy=false' >> "$GITHUB_OUTPUT"
-            echo 'Only platform files changed; skipping Apps Script deployment.'
+            echo 'Source/config present in authorized commit; checking actual deployed version.'
           fi
+          # Reconcile the canonical source, including authorized changes missed
+          # by a superseded deployment; never create a replacement deployment.
+          node scripts/verify-apps-script-release.mjs --plan
 
       - name: Verify OAuth grants for an existing API Executable (nonexistent function only)
         if: contains(github.event.head_commit.message, '[probe-existing-script-api]')
@@ -353,6 +361,12 @@ jobs:
         run: |
           printf '%s' '${{ secrets.CLASPRC_JSON }}' > .clasprc.json
           chmod 600 .clasprc.json
+
+      - name: Reject superseded release before Apps Script mutation
+        if: steps.source_gate.outputs.needs_deploy == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release-orchestrator.mjs assert-main
 
       - name: Enable and list manifest advanced services
         if: steps.source_gate.outputs.needs_deploy == 'true'
@@ -389,9 +403,24 @@ jobs:
 
       - name: Verify deployed Web App without creating resources
         if: steps.source_gate.outputs.needs_deploy == 'true'
-        run: node scripts/verify-academic-webapp.mjs
+        run: |
+          for attempt in 1 2 3; do
+            if node scripts/verify-academic-webapp.mjs; then exit 0; fi
+            [[ "$attempt" != 3 ]] || exit 1
+            sleep $((attempt * 5))
+          done
       - name: Inspect API executable entry points after protected deployment (read-only)
         if: steps.source_gate.outputs.needs_deploy == 'true'
         env:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
-        run: node scripts/inventory-apps-script-deployments.mjs
+        run: |
+          for attempt in 1 2 3; do
+            if node scripts/inventory-apps-script-deployments.mjs; then exit 0; fi
+            [[ "$attempt" != 3 ]] || exit 1
+            sleep $((attempt * 5))
+          done
+
+      - name: Verify exact deployed Apps Script source (read-only)
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: node scripts/verify-apps-script-release.mjs

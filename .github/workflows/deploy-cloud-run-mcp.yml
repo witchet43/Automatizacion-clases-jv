@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
     paths:
+      - '.platform-changes/**'
+      - 'config/academic-context.json'
       - 'mcp-cloud-run/**'
       # README and Markdown guides are not container source changes.
       - '!mcp-cloud-run/**/*.md'
@@ -17,6 +19,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   id-token: write
 concurrency:
   group: academic-mcp-cloudrun-deploy
@@ -24,18 +27,26 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event_name == 'push' || inputs.confirm_deploy == true
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.confirm_deploy == true)
     runs-on: ubuntu-latest
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Enforce authorized platform change on push
         if: github.event_name == 'push'
         run: node scripts/assert-platform-change-authorized.mjs
+      - name: Wait for exact-commit CI and canonical Apps Script verification
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/release-orchestrator.mjs gate-ci
+          node scripts/release-orchestrator.mjs gate-apps
       - name: Synchronize canonical Apps Script context
         run: node mcp-cloud-run/sync-context.mjs
       - name: Test MCP without external Classroom calls
@@ -49,6 +60,23 @@ jobs:
           workload_identity_provider: projects/148028894895/locations/global/workloadIdentityPools/github-classroom-pool/providers/github
           service_account: classroom-mcp-deployer@classroom-mcp-512122.iam.gserviceaccount.com
       - uses: google-github-actions/setup-gcloud@v2
+      - name: Determine whether Cloud Run runtime source differs from production
+        id: runtime_gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          active="$(gcloud run services describe academic-classroom-mcp-oauth --project=classroom-mcp-512122 --region=us-central1 --format='json(metadata.labels)' | node -e 'let s="";process.stdin.on("data",c=>s+=c);process.stdin.on("end",()=>console.log(JSON.parse(s).metadata?.labels?.["github-commit"]||""))')"
+          [[ "$active" =~ ^[a-f0-9]{40}$ ]] || { echo "Missing active release identity"; exit 1; }
+          git cat-file -e "$active^{commit}"
+          git merge-base --is-ancestor "$active" "$GITHUB_SHA"
+          if git diff --quiet "$active" "$GITHUB_SHA" -- mcp-cloud-run/ config/academic-context.json .github/workflows/deploy-cloud-run-mcp.yml ':(exclude,glob)mcp-cloud-run/**/*.md'; then
+            echo 'needs_deploy=false' >> "$GITHUB_OUTPUT"
+            echo "Runtime source already matches production commit $active"
+          else
+            result=$?
+            [[ "$result" == 1 ]] || exit "$result"
+            echo 'needs_deploy=true' >> "$GITHUB_OUTPUT"
+          fi
       - name: Require existing HMAC Secret Manager version (metadata only)
         shell: bash
         run: |
@@ -70,7 +98,12 @@ jobs:
           if [[ "$state" != ENABLED ]]; then
             echo "::error::Missing enabled OAuth subject allowlist"; exit 1
           fi
+      - name: Reject superseded release before Cloud Run mutation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release-orchestrator.mjs assert-main
       - name: Deploy only new independent MCP adapter
+        if: steps.runtime_gate.outputs.needs_deploy == 'true' || github.event_name == 'workflow_dispatch'
         env:
           PROJECT: classroom-mcp-512122
           REGION: us-central1
@@ -108,7 +141,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
+          for attempt in 1 2 3; do
+          if python3 - <<'PY'
           import urllib.request,urllib.error,json
           base='https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app'
           issuer='https://dev-67cfevmusm7px130.us.auth0.com/'
@@ -120,7 +154,7 @@ jobs:
               assert d['authorization_servers']==[issuer], d
               assert d['resource']==base, d
               assert 'academic.close_unit' in d['scopes_supported'], d
-          data=json.dumps({'jsonrpc':'2.0','id':1,'method':'tools/call','params':{'name':'cerrar_unidad','arguments':{'courseId':'871149624583','unidad':2,'confirmar':True}}}).encode()
+          data=json.dumps({'jsonrpc':'2.0','id':1,'method':'tools/call','params':{'name':'cerrar_unidad','arguments':{'courseId':'0','unidad':2,'confirmar':True}}}).encode()
           req=urllib.request.Request(base+'/mcp',data=data,headers={'Content-Type':'application/json','Accept':'application/json, text/event-stream'},method='POST')
           try:
               urllib.request.urlopen(req,timeout=30)
@@ -130,12 +164,17 @@ jobs:
               assert 'resource_metadata=' in e.headers.get('WWW-Authenticate','')
           print('OAUTH_DEPLOYMENT_VERIFIED; ANONYMOUS_GRADE_WRITE_DENIED')
           PY
+          then break; fi
+          [[ "$attempt" != 3 ]] || exit 1
+          sleep $((attempt * 5))
+          done
 
       - name: Verify live MCP discovery and mandatory OAuth
         shell: bash
         run: |
           set -euo pipefail
-          python3 - <<'PY'
+          for attempt in 1 2 3; do
+          if python3 - <<'PY'
           import urllib.request,json
           base='https://academic-classroom-mcp-oauth-148028894895.us-central1.run.app/mcp'
           def rpc(method, params, identifier):
@@ -175,3 +214,7 @@ jobs:
               assert 'academic.read' in e.headers.get('WWW-Authenticate','')
           print('LIVE_MCP_DISCOVERY_AND_OAUTH_GUARD_VERIFIED: 13 tools, anonymous tool execution denied')
           PY
+          then break; fi
+          [[ "$attempt" != 3 ]] || exit 1
+          sleep $((attempt * 5))
+          done
