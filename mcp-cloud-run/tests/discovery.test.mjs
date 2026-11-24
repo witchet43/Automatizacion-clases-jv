@@ -47,7 +47,7 @@ test('MCP discovers tools but rejects all unauthenticated academic operations',a
     const expected=['gateway_status','consultar_despliegues_mcp','consultar_ejecucion_mcp',
       'iniciar_despliegue_mcp','verificar_despliegue','diagnosticar_clase',
       'auditar_recursos','crear_recurso','listar_entregas','calificar_entrega_draft',
-      'cerrar_materia','cerrar_unidad'];
+      'cerrar_materia','cerrar_unidad','importar_calificaciones_forms'];
     assert.deepEqual(names.slice().sort(),expected.slice().sort());
     // Discovery metadata is public, but all tool invocation requires scoped OAuth.
     const discovered=new Map((r.json.result?.tools||[]).map(t=>[t.name,t]));
@@ -61,11 +61,14 @@ test('MCP discovers tools but rejects all unauthenticated academic operations',a
       [{type:'oauth2',scopes:['academic.read']}],
       'Student submissions require authenticated academic.read');
     for(const protectedTool of ['iniciar_despliegue_mcp','crear_recurso',
-      'calificar_entrega_draft','cerrar_materia','cerrar_unidad']){
+      'calificar_entrega_draft','cerrar_materia','cerrar_unidad','importar_calificaciones_forms']){
       assert.deepEqual(discovered.get(protectedTool)?.securitySchemes,
         [{type:'oauth2',scopes:['academic.close_unit']}],
         protectedTool+' must require scoped OAuth');
     }
+    r=await rpc(base,'tools/call',{name:'importar_calificaciones_forms',arguments:{courseId:'871149624583',courseWorkId:'101',confirmar:true,requestId:'forms_import_test_002'}},5);
+    assert.equal(r.status,401);
+    assert.match(r.headers.get('www-authenticate'),/academic.close_unit/);
     r=await rpc(base,'tools/call',{name:'gateway_status',arguments:{}},3);
     assert.equal(r.status,401,'Anonymous gateway_status must be denied');
     assert.match(r.headers.get('www-authenticate'),/academic.read/);
