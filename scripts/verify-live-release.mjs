@@ -66,7 +66,7 @@ for(const name of ['gateway_status','listar_entregas','importar_calificaciones_f
 const gradeTool=discovered.get('importar_calificaciones_forms');
 assert.deepEqual(gradeTool.securitySchemes,[{type:'oauth2',scopes:['academic.close_unit']}]);
 const denied=await rpc('tools/call',{name:'importar_calificaciones_forms',arguments:{
-  courseId:'871158187513',courseWorkId:'893176002338',confirmar:true,requestId:'release_negative_probe'
+  courseId:'0',courseWorkId:'0',confirmar:true,requestId:'release_negative_probe'
 }},3,401);
 assert.match(denied.headers.get('www-authenticate')||'',/academic.close_unit/);
 const noMachine=await http('/release/probe',{method:'POST',expected:401});
