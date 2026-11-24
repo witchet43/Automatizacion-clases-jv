@@ -157,7 +157,7 @@ jobs:
           expected={'gateway_status','consultar_despliegues_mcp','consultar_ejecucion_mcp',
               'iniciar_despliegue_mcp','verificar_despliegue','diagnosticar_clase',
               'auditar_recursos','crear_recurso','listar_entregas','calificar_entrega_draft',
-              'cerrar_materia','cerrar_unidad'}
+              'cerrar_materia','cerrar_unidad','importar_calificaciones_forms'}
           assert tools==expected,(tools^expected)
           # Protocol discovery remains public; academic tools require OAuth.
           import urllib.error
@@ -173,5 +173,5 @@ jobs:
           except urllib.error.HTTPError as e:
               assert e.code==401, e.code
               assert 'academic.read' in e.headers.get('WWW-Authenticate','')
-          print('LIVE_MCP_DISCOVERY_AND_OAUTH_GUARD_VERIFIED: 12 tools, anonymous tool execution denied')
+          print('LIVE_MCP_DISCOVERY_AND_OAUTH_GUARD_VERIFIED: 13 tools, anonymous tool execution denied')
           PY

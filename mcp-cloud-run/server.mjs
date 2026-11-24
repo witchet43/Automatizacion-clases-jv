@@ -162,7 +162,7 @@ export function signedAcademicReadRequest(config,action,courseId,options={}){
   return {...unsigned,auth:{timestamp,nonce,signature}};
 }
 export function signedSubmissionRequest(config, action, courseId, courseWorkId, params, requestId) {
-  const actions=new Set(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft']);
+  const actions=new Set(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft','importarCalificacionesForms']);
   if(!actions.has(action))throw Error('SUBMISSION_ACTION_INVALID');
   if(!config.courseIds.has(String(courseId)))throw Error('COURSE_NOT_REGISTERED');
   if(!/^\d+$/.test(String(courseWorkId)))throw Error('COURSEWORK_ID_INVALID');
@@ -782,6 +782,17 @@ function buildServer(config,identity,fetcher){
       return toolOk(await callWebApp(config,body,fetcher));
     }catch(e){return toolFail(e);}
   });
+  server.registerTool('importar_calificaciones_forms',{
+    title:'Importar calificaciones Forms en borrador',
+    description:'Importa puntuaciones verificadas de un formulario asociado a una actividad existente, sin publicar ni devolver entregas. Preserva calificaciones existentes.',
+    inputSchema:{courseId:z.string().regex(/^\d+$/),courseWorkId:z.string().regex(/^\d+$/),confirmar:z.literal(true),requestId:z.string().regex(UUIDISH)},
+    ...gradeSecurity,annotations:{readOnlyHint:false,destructiveHint:false,idempotentHint:true}
+  },async({courseId,courseWorkId,confirmar,requestId})=>{
+    try{
+      if(config.authMode!=='oauth'||!identity.scopes.has(SCOPES.grade)||confirmar!==true)throw Error('WRITE_AUTH_REQUIRED');
+      return toolOk(await callWebApp(config,signedSubmissionRequest(config,'importarCalificacionesForms',courseId,courseWorkId,{confirmar},requestId),fetcher));
+    }catch(e){return toolFail(e);}
+  });
   server.registerTool('cerrar_materia',{
     title:'Cerrar materia: promedio de unidades en borrador',
     description:'Calcula en Apps Script el promedio de todas las unidades requeridas. Pesos iguales por defecto; diferentes únicamente si se proporcionan explícitamente. Nunca publica notas individuales.',
@@ -845,7 +856,7 @@ function buildServer(config,identity,fetcher){
   const baseListHandler=server.server._requestHandlers?.get('tools/list');
   if(typeof baseListHandler!=='function')throw Error('MCP_TOOLS_LIST_HANDLER_MISSING');
   const requiredWrite=new Set(['iniciar_despliegue_mcp','crear_recurso',
-    'calificar_entrega_draft','cerrar_materia','cerrar_unidad']);
+    'calificar_entrega_draft','importar_calificaciones_forms','cerrar_materia','cerrar_unidad']);
   server.server.setRequestHandler(ListToolsRequestSchema,async(request,extra)=>{
     const listed=await baseListHandler(request,extra);
     return {...listed,tools:listed.tools.map(tool=>{
@@ -881,7 +892,7 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
     try{
       const isToolCall=req.body?.method==='tools/call';
       const tool=isToolCall?req.body?.params?.name:'';
-      const protectedWrite=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','iniciar_despliegue_mcp'].includes(tool);
+      const protectedWrite=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','importar_calificaciones_forms','iniciar_despliegue_mcp'].includes(tool);
       const privateRead=tool==='listar_entregas';
       if(!req.headers.authorization && !isToolCall){
         // MCP initialization and tool metadata remain discoverable; no academic
@@ -896,7 +907,7 @@ export function createApp(config,{fetcher=fetch,jwks}={}){
           });
       }
     }catch(e){
-      const scope=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','iniciar_despliegue_mcp'].includes(req.body?.params?.name)?SCOPES.grade:SCOPES.read;
+      const scope=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','importar_calificaciones_forms','iniciar_despliegue_mcp'].includes(req.body?.params?.name)?SCOPES.grade:SCOPES.read;
       const authCode=['AUTH_REQUIRED','INSUFFICIENT_SCOPE','SUBJECT_NOT_ALLOWED'].includes(e?.message)
         ?e.message:'MCP_OAUTH_TOKEN_REJECTED';
       const insufficient=e.message==='INSUFFICIENT_SCOPE';

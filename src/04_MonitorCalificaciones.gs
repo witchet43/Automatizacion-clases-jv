@@ -260,3 +260,145 @@ function obtenerAjusteCalificacionQuiz_(quizId) {
   if (String(quizId || '').trim() === 'EXAM-20260831-ELI-U1-001') return 16;
   return 0;
 }
+
+
+/** Exact activity import. Never use title matching or a global monitor. */
+function importarCalificacionesFormsActividad_(courseId, workId) {
+  const cw = Classroom.Courses.CourseWork.get(courseId, workId);
+  const ss = SpreadsheetApp.openById(QUIZ_PIPELINE.SPREADSHEET_ID);
+  const sh = ss.getSheetByName(QUIZ_PIPELINE.QUIZZES_SHEET);
+  const rows = sh ? sh.getDataRange().getDisplayValues() : [];
+  const h = rows[0] || [];
+  const registry = rows.slice(1).filter(r =>
+    String(r[h.indexOf('ID del curso')]).trim() === courseId &&
+    String(r[h.indexOf('ID actividad Classroom')]).trim() === workId &&
+    String(r[h.indexOf('ID del Form')] || '').trim());
+  const registeredIds = [...new Set(registry.map(r => String(r[h.indexOf('ID del Form')]).trim()))];
+  if (registeredIds.length > 1) throw new Error('FORMS_LINK_AMBIGUOUS');
+  const links = (cw.materials || []).map(m => m.form && m.form.formUrl || m.link && m.link.url || '')
+    .filter(u => /^https:\/\/docs\.google\.com\/forms\/|^https:\/\/forms\.gle\//i.test(u));
+  const forms = [];
+  links.forEach(url => {
+    let form;
+    try { form = FormApp.openByUrl(url); } catch (err) {
+      if (!registeredIds.length) throw new Error('FORMS_LINK_NOT_RESOLVABLE');
+      const candidate = FormApp.openById(registeredIds[0]);
+      const clean = u => String(u).split('?')[0].replace(/\/$/, '');
+      if (![candidate.getPublishedUrl(), candidate.getEditUrl()].some(u => clean(u) === clean(url)))
+        throw new Error('FORMS_REGISTRY_LINK_MISMATCH');
+      form = candidate;
+    }
+    forms.push(form);
+  });
+  if (registeredIds.length) forms.push(FormApp.openById(registeredIds[0]));
+  const ids = [...new Set(forms.map(f => f.getId()))];
+  if (ids.length !== 1) throw new Error(ids.length ? 'FORMS_LINK_AMBIGUOUS' : 'FORMS_LINK_MISSING');
+  const form = forms[0];
+  if (!form.isQuiz()) throw new Error('FORMS_NOT_QUIZ');
+  const max = Number(cw.maxPoints);
+  if (!Number.isFinite(max) || max <= 0) throw new Error('CLASSROOM_MAX_POINTS_INVALID');
+  const expected = {};
+  const casts = {CHECKBOX:'asCheckboxItem',MULTIPLE_CHOICE:'asMultipleChoiceItem',LIST:'asListItem',
+    TEXT:'asTextItem',PARAGRAPH_TEXT:'asParagraphTextItem',SCALE:'asScaleItem',
+    DATE:'asDateItem',DATETIME:'asDateTimeItem',TIME:'asTimeItem',DURATION:'asDurationItem',
+    GRID:'asGridItem',CHECKBOX_GRID:'asCheckboxGridItem',FILE_UPLOAD:'asFileUploadItem',
+    RATING:'asRatingItem'};
+  form.getItems().forEach(item => {
+    const cast = casts[String(item.getType())];
+    if (!cast) {
+      if (!['IMAGE','VIDEO','SECTION_HEADER','PAGE_BREAK'].includes(String(item.getType())))
+        throw new Error('FORMS_ITEM_TYPE_UNSUPPORTED');
+      return;
+    }
+    const typed = typeof item[cast] === 'function' && item[cast]();
+    if (!typed || typeof typed.getPoints !== 'function') throw new Error('FORMS_POINTS_UNAVAILABLE');
+    const points = typed.getPoints();
+    if (!Number.isFinite(points) || points < 0) throw new Error('FORMS_POINTS_INVALID');
+    if (points > 0) expected[String(item.getId())] = points;
+  });
+  const total = Object.values(expected).reduce((a,b)=>a+b,0);
+  if (!total) throw new Error('FORMS_MAX_POINTS_INVALID');
+  const students = [];
+  const subs = [];
+  let token;
+  do {
+    const p = Classroom.Courses.Students.list(courseId, token ? {pageToken:token} : {});
+    students.push(...(p.students || [])); token = p.nextPageToken;
+  } while (token);
+  token = null;
+  do {
+    const p = Classroom.Courses.CourseWork.StudentSubmissions.list(courseId,workId,token ? {pageToken:token} : {});
+    subs.push(...(p.studentSubmissions || [])); token = p.nextPageToken;
+  } while (token);
+  const email = s => String(s || '').trim().toLowerCase();
+  const byEmail = new Map(), byUser = new Map();
+  students.forEach(s => {
+    const e = email(s.profile && s.profile.emailAddress);
+    if (!e || byEmail.has(e)) throw new Error('CLASSROOM_IDENTITY_AMBIGUOUS');
+    byEmail.set(e,s);
+  });
+  subs.forEach(s => {
+    if (byUser.has(String(s.userId))) throw new Error('CLASSROOM_SUBMISSION_AMBIGUOUS');
+    byUser.set(String(s.userId),s);
+  });
+  const responses = form.getResponses();
+  const latest = new Map(), ambiguous = new Set();
+  let missingIdentity = 0;
+  responses.forEach(r => {
+    const e = email(r.getRespondentEmail());
+    if (!e) { missingIdentity++; return; }
+    const prev = latest.get(e);
+    if (!prev || r.getTimestamp() > prev.getTimestamp()) { latest.set(e,r); ambiguous.delete(e); }
+    else if (+r.getTimestamp() === +prev.getTimestamp()) ambiguous.add(e);
+  });
+  const detail = [];
+  let imported = 0, unchanged = 0, errors = 0, skipped = 0, withoutTurnedIn = 0;
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    latest.forEach((r,e) => {
+      const student = byEmail.get(e);
+      const sub = student && byUser.get(String(student.userId));
+      const record = {userId:student ? String(student.userId) : null};
+      const omit = reason => { skipped++; detail.push({...record,status:reason}); };
+      if (!student || !sub) return omit('IDENTITY_OR_SUBMISSION_NOT_FOUND');
+      if (ambiguous.has(e)) return omit('AMBIGUOUS_RESPONSE');
+      const scores = {};
+      r.getGradableItemResponses().forEach(ir => {
+        const id = String(ir.getItem().getId());
+        if (Object.prototype.hasOwnProperty.call(expected,id)) {
+          const value = ir.getScore();
+          scores[id] = typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= expected[id] ? value : null;
+        }
+      });
+      if (Object.keys(expected).some(id => typeof scores[id] !== 'number')) return omit('INCOMPLETE_FORMS_SCORE');
+      const score = Object.values(scores).reduce((a,b)=>a+b,0);
+      const grade = Math.round(score / total * max * 100)/100;
+      try {
+        const api = Classroom.Courses.CourseWork.StudentSubmissions;
+        const before = api.get(courseId,workId,sub.id);
+        if (before.state !== 'TURNED_IN') withoutTurnedIn++;
+        const hasDraft = before.draftGrade !== null && before.draftGrade !== undefined;
+        const hasAssigned = before.assignedGrade !== null && before.assignedGrade !== undefined;
+        if (hasDraft || hasAssigned) {
+          if (hasDraft && Number(before.draftGrade) === grade) {
+            unchanged++; detail.push({...record,status:'ALREADY_MATCHES',grade,verified:true});
+          } else omit('EXISTING_GRADE_PRESERVED');
+          return;
+        }
+        api.patch({draftGrade:grade},courseId,workId,sub.id,{updateMask:'draftGrade'});
+        const after = api.get(courseId,workId,sub.id);
+        if (Number(after.draftGrade) !== grade || after.assignedGrade !== before.assignedGrade || after.state !== before.state)
+          throw new Error('GRADE_READBACK_MISMATCH');
+        imported++; detail.push({...record,status:'IMPORTED',grade,verified:true});
+      } catch (err) {
+        errors++; detail.push({...record,status:'WRITE_OR_VERIFICATION_ERROR'});
+      }
+    });
+  } finally { lock.releaseLock(); }
+  const noResponse = students.filter(s => !latest.has(email(s.profile.emailAddress))).length;
+  return {courseId,courseWorkId:workId,formId:ids[0],maxPoints:max,formsMaxPoints:total,
+    responses:responses.length,uniqueRespondents:latest.size,missingIdentity,students:students.length,
+    submissions:subs.length,imported,unchanged,skipped,errors,noResponse,withoutTurnedIn,
+    gradeState:'DRAFT_ONLY',detail};
+}

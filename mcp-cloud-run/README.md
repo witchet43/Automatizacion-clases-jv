@@ -26,3 +26,6 @@ Las últimas herramientas administrativas pueden necesitar credenciales adiciona
 5. Consultar Classroom en solo lectura antes de permitir nuevas escrituras.
 
 **Prohibido** restablecer flujos anónimos, deshabilitar OAuth/HMAC, crear otro MCP académico o usar GitHub Actions como ejecución ordinaria.
+
+### Importación de notas Forms
+`importar_calificaciones_forms(courseId, courseWorkId, confirmar: true, requestId)` resuelve exclusivamente el formulario asociado y conserva notas existentes. Normaliza al máximo de Classroom, verifica cada escritura y nunca devuelve entregas. Requiere `academic.close_unit` y HMAC.
