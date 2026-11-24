@@ -106,7 +106,7 @@ test('OAuth issuer, subject, audience and scope; MCP rejects anonymous and execu
    assert.equal(authFailure.httpStatus,401);
    assert.match(authFailure.diagnosticId,/^[a-f0-9]{16}$/);
    response=await rpc(denied,'initialize',{protocolVersion:'2025-06-18',capabilities:{},clientInfo:{name:'test',version:'1'}});
-   assert.equal(response.status,401);
+   assert.equal(response.status,403);
    response=await rpc(read,'initialize',{protocolVersion:'2025-06-18',capabilities:{},clientInfo:{name:'test',version:'1'}});
    assert.equal(response.status,200);
    const diagnosis=await rpc(grade,'tools/call',{name:'diagnosticar_clase',arguments:{courseId:'871149624583',soloClassroom:true}},10);
@@ -117,9 +117,19 @@ test('OAuth issuer, subject, audience and scope; MCP rejects anonymous and execu
    assert.notEqual(diagnostic.isError,true);
    assert.equal(JSON.parse(diagnostic.content[0].text).ok,true);
    const privatelyScoped=await rpc(grade,'tools/call',{name:'listar_entregas',arguments:{courseId:'871149624583',courseWorkId:'101'}},12);
-   assert.equal(privatelyScoped.status,401,
+   assert.equal(privatelyScoped.status,403,
      'Private student data must be rejected by OAuth before tool execution');
    assert.match(privatelyScoped.headers.get('www-authenticate'),/academic.read/);
+   assert.match(privatelyScoped.headers.get('www-authenticate'),/insufficient_scope/);
+   assert.equal((await privatelyScoped.json()).errorCode,'INSUFFICIENT_SCOPE');
+   const deniedWrite=await rpc(read,'tools/call',{name:'cerrar_unidad',arguments:{courseId:'871149624583',unidad:2,confirmar:true}},13);
+   assert.equal(deniedWrite.status,403);
+   assert.match(deniedWrite.headers.get('www-authenticate'),/academic.close_unit/);
+   const listed=await rpc(read,'tools/list',{},14);
+   assert.equal(listed.status,200);
+   let listing=await listed.text();
+   if(listing.includes('data: '))listing=listing.match(/data: (.+)/)?.[1]||listing;
+   for(const tool of JSON.parse(listing).result.tools) assert.deepEqual(tool._meta.securitySchemes,tool.securitySchemes);
    assert.equal(calls.length,1);
    calls.length=0;
    response=await rpc(grade,'tools/call',{name:'cerrar_unidad',arguments:{courseId:'871149624583',unidad:2,confirmar:true}},2);
