@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
+import {setTimeout as sleep} from 'node:timers/promises';
 import {readContext} from './academic-context.mjs';
 
 const sortJson=v=>Array.isArray(v)?v.map(sortJson):v&&typeof v==='object'
@@ -38,9 +39,19 @@ function localFiles(root,relative=''){
   });
 }
 async function fetchJson(url,options={}){
-  const r=await fetch(url,{...options,signal:AbortSignal.timeout(30000)});
-  if(!r.ok)throw Error('APPS_SCRIPT_RELEASE_HTTP_'+r.status);
-  return await r.json();
+  for(let attempt=0;attempt<3;attempt++){
+    let r;
+    try{r=await fetch(url,{...options,signal:AbortSignal.timeout(30000)});}
+    catch{
+      if(attempt===2)throw Error('APPS_SCRIPT_RELEASE_TRANSPORT');
+      await sleep(2000*(attempt+1));continue;
+    }
+    if(r.ok)return await r.json();
+    if([429,500,502,503,504].includes(r.status)&&attempt<2){
+      await sleep(2000*(attempt+1));continue;
+    }
+    throw Error('APPS_SCRIPT_RELEASE_HTTP_'+r.status);
+  }
 }
 async function inspect(){
   const {manifest}=readContext();
