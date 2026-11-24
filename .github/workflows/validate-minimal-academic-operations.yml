@@ -2,6 +2,7 @@ name: Validate Minimal Academic Operations
 on:
   push:
     paths:
+      - '.platform-changes/**'
       - 'src/**'
       - 'config/**'
       - 'scripts/**'
@@ -30,7 +31,7 @@ jobs:
         with:
           node-version: '22'
       - name: Enforce explicit platform-change authorization on main
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: node scripts/assert-platform-change-authorized.mjs
       - name: Verify live Classroom setup and change runbooks
         run: node scripts/test-classroom-operational-docs.mjs
@@ -69,6 +70,7 @@ jobs:
           npm run check
       - name: Exercise minimal-operation and academic regressions
         run: |
+          node --test scripts/test-release-orchestrator.mjs
           node scripts/test-academic-write-auth.mjs
           node scripts/test-maintenance-properties.mjs
           node scripts/test-site-direct-write-client.mjs
