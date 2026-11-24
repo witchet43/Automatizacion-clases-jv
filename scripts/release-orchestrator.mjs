@@ -40,9 +40,7 @@ export function safeRetry(kind,run,jobs){
 export function planRelease(paths){
   const scoped=paths.some(p=>/^\.platform-changes\/[^/]+\.json$/.test(p));
   if(!scoped)throw Error('RELEASE_AUTHORIZATION_EVIDENCE_MISSING');
-  return {ci:true,apps:true,cloud:paths.some(p=>
-    p==='config/academic-context.json'||p==='.github/workflows/deploy-cloud-run-mcp.yml'||
-    (p.startsWith('mcp-cloud-run/')&&!p.endsWith('.md')))};
+  return {ci:true,apps:true,cloud:true}; // each deployer independently compares actual live source
 }
 const git=(args)=>execFileSync('git',args,{encoding:'utf8'}).trim();
 const sha=process.env.GITHUB_SHA||'';
@@ -131,7 +129,14 @@ async function orchestrate(){
       }
       report.workflows[kind]=await waitFor(kind,{retry:true,deadline,onState:r=>{
         report.workflows[kind]=r;save(report);console.log(JSON.stringify(r));
-      }});save(report);
+      }});
+      if(kind==='apps'){
+        const jobs=(await request('/actions/runs/'+report.workflows[kind].id+'/jobs?filter=latest&per_page=100')).jobs||[];
+        if(!jobs.some(j=>(j.steps||[]).some(s=>s.name==='Verify exact deployed Apps Script source (read-only)'&&s.conclusion==='success')))
+          throw Error('RELEASE_APPS_SCRIPT_SOURCE_NOT_VERIFIED');
+        report.workflows.apps.sourceVerified=true;
+      }
+      save(report);
     }
     // A final job must verify the live release, not just green deployment jobs.
     await assertMain();
@@ -150,7 +155,7 @@ async function finalize(){
     if(report.sha!==sha||report.status!=='DEPLOYMENTS_VERIFIED')throw Error('RELEASE_EVIDENCE_INCOMPLETE');
     const live=JSON.parse(fs.readFileSync('release-live-evidence.json','utf8'));
     if(live.ok!==true||live.targetSha!==sha||live.oauthGuard!==true||
-      live.signedWebAppProbe!==true||live.traffic!==100||live.appsScriptVerified!==true)
+      live.signedWebAppProbe!==true||live.traffic!==100||live.appsScriptVerified!==true||report.workflows.apps.sourceVerified!==true)
       throw Error('RELEASE_LIVE_EVIDENCE_INVALID');
     report.checks=live;report.status='COMPLETED';report.finishedAt=new Date().toISOString();save(report);
     await status('success','CI, deployments and read-only production E2E verified');
