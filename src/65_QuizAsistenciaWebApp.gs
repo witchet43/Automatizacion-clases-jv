@@ -22,7 +22,7 @@
 // UAQ_EXECUTOR_SINGLE_ROUTINE_GATEWAY: routine academic mutations enter only through uaqExecutor.
 const ACADEMIC_WEB = Object.freeze({
   COURSE_REGISTRY_SOURCE:'ACADEMIC_CONTEXT_CONFIG',
-  ACTIONS:Object.freeze(['uaqExecutor','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts','listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft','diagnosticarFirma']),
+  ACTIONS:Object.freeze(['uaqExecutor','resolverClase','diagnosticarClase','auditarIdentidadClassroom','eliminarDrafts','listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft','importarCalificacionesForms','diagnosticarFirma']),
   ROUTINE_OPERATIONS:Object.freeze(['quizAsistencia','actividad','tarea','practica','quiz','examen','material','clase','cerrarUnidad','cerrarMateria']),
   FAST_PATHS:Object.freeze({
     quizAsistencia:Object.freeze({singleExternalInput:'materia',firstExternalAction:'WEB_APP',preflightReadsAllowed:false,documentationRead:false,auxiliaryReads:false,diagnosticOnlyAfterError:true})
@@ -119,8 +119,8 @@ function ejecutarServicioAcademicoWeb_(params){
         ok:true,action:'diagnosticarFirma',keyEquivalent,signatureAccepted
       });
     }
-    if(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft'].indexOf(action)<0)validarContratoOperacionWeb_(action);
-    if(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft'].indexOf(action)>=0){
+    if(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft','importarCalificacionesForms'].indexOf(action)<0)validarContratoOperacionWeb_(action);
+    if(['listarEntregasEvaluables','leerEvidenciaEntrega','guardarEvaluacionDraft','importarCalificacionesForms'].indexOf(action)>=0){
       // Academic grading operations are POST-only; mutating calls use HMAC + replay protection.
       // Student submissions and evidence are private: authenticate READS too.
       // Unlike mutations, reads require no one-time receipt.
@@ -139,6 +139,13 @@ function ejecutarServicioAcademicoWeb_(params){
         if(!target||target.state!=='TURNED_IN'||!target.attachments.some(function(a){return a.driveFileId===fileId;}))
           throw new Error('EVIDENCE_NOT_IN_SUBMISSION');
         return respuestaAcademicaWeb_({ok:true,action:action,result:leerEvidenciaEntrega_(fileId)});
+      }
+      if(action==='importarCalificacionesForms'){
+        if(payload.confirmar!==true)throw new Error('CONFIRMATION_REQUIRED');
+        const result=executeAuthenticatedAcademicWrite_(p,function(){
+          return importarCalificacionesFormsActividad_(String(course.id),workId);
+        });
+        return respuestaAcademicaWeb_({ok:true,action:action,result:result});
       }
       if(action==='guardarEvaluacionDraft'){
         const gradeRequest=Object.assign({},payload,{courseId:String(course.id)});
