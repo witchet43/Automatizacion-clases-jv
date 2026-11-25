@@ -64,6 +64,7 @@ function calcularPromediosDirectoClassroomConCeros_(ss,courseId,unidad){
     String(unidad).trim().toLowerCase()==='unidad 1'?'878569197406':'';
   const clasificados=all.map(w=>({
     classroomId:String(w.id),titulo:String(w.title||''),maxPoints:Number(w.maxPoints),
+    deliveryGraded:/^(TAREA|PR[ÁA]CTICA|ACTIVIDAD)\b/i.test(String(w.title||'').trim()),
     esExamen:examenIds.has(String(w.id))||/^EXAMEN\b/i.test(String(w.title||'').trim())
   }));
   if(oficialUnidadUno&&!clasificados.some(w=>w.esExamen&&w.classroomId===oficialUnidadUno))
@@ -77,6 +78,8 @@ function calcularPromediosDirectoClassroomConCeros_(ss,courseId,unidad){
 
   const grades={};instrumentos.forEach(w=>grades[w.classroomId]=entregasPorAlumnoPromedio_(courseId,w.classroomId));
   const students=listarAlumnosPromedio_(courseId),rows=[];let faltantesComoCero=0;
+
+  const deliveryAudit=calificarTrabajosCierrePorEntrega_(courseId,noExamen,grades,students,unitPolicy);
 
   students.forEach(student=>{
     const uid=String(student.userId),nombre=student.profile&&student.profile.name?student.profile.name.fullName:uid,email=student.profile&&student.profile.emailAddress?student.profile.emailAddress:'';
@@ -104,6 +107,33 @@ function calcularPromediosDirectoClassroomConCeros_(ss,courseId,unidad){
   escribirReportePromedios_(ss,courseId,unidad,rows,policy);
   return {
     courseId:String(courseId),unidad:unidad,alumnos:rows.length,examenes:examenes,noExamen:noExamen,
-    reporte:'Promedios Unidad',faltantesComoCero:faltantesComoCero,politica:policy,modo:unitPolicy.SCOPE,calificacionFinal:unitPolicy.FINAL_ROUNDING
+    reporte:'Promedios Unidad',deliveryAudit:deliveryAudit,faltantesComoCero:faltantesComoCero,politica:policy,modo:unitPolicy.SCOPE,calificacionFinal:unitPolicy.FINAL_ROUNDING
   };
+}
+
+/** Evaluate only eligible coursework in the exact requested unit. Never publish or return. */
+function calificarTrabajosCierrePorEntrega_(courseId,works,grades,students,policy){
+  const counts={onTime:0,late:0,missing:0,publishedPreserved:0,written:0,unchanged:0};
+  const api=Classroom.Courses.CourseWork.StudentSubmissions;
+  works.filter(w=>w.deliveryGraded).forEach(w=>{
+    const byStudent=grades[w.classroomId];
+    students.forEach(student=>{
+      const uid=String(student.userId),sub=byStudent[uid];
+      if(!sub||!sub.id)throw new Error('CLOSE_DELIVERY_SUBMISSION_MISSING');
+      if(sub.assignedGrade!==undefined&&sub.assignedGrade!==null){counts.publishedPreserved++;return;}
+      const state=String(sub.state||'').toUpperCase();
+      const delivered=state==='TURNED_IN'||state==='RETURNED';
+      const late=delivered&&sub.late===true;
+      const pct=delivered?(late?policy.DELIVERY_LATE:policy.DELIVERY_ON_TIME):policy.DELIVERY_MISSING;
+      if(!Number.isFinite(pct))throw new Error('CLOSE_DELIVERY_POLICY_INVALID');
+      counts[delivered?(late?'late':'onTime'):'missing']++;
+      const expected=Math.round(w.maxPoints*pct)/100;
+      if(typeof sub.draftGrade==='number'&&Math.abs(sub.draftGrade-expected)<0.001){counts.unchanged++;return;}
+      escribirCalificacionDraft_(courseId,w.classroomId,sub.id,expected);
+      const after=api.get(String(courseId),String(w.classroomId),String(sub.id));
+      if(!verificarCalificacionDraft_(after,expected).ok)throw new Error('CLOSE_DELIVERY_READBACK_MISMATCH');
+      byStudent[uid]=after;counts.written++;
+    });
+  });
+  return counts;
 }
