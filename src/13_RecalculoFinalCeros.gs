@@ -64,6 +64,7 @@ function calcularPromediosDirectoClassroomConCeros_(ss,courseId,unidad){
     String(unidad).trim().toLowerCase()==='unidad 1'?'878569197406':'';
   const clasificados=all.map(w=>({
     classroomId:String(w.id),titulo:String(w.title||''),maxPoints:Number(w.maxPoints),
+    associatedWithDeveloper:w.associatedWithDeveloper,
     deliveryGraded:/^(TAREA|PR[ÁA]CTICA|ACTIVIDAD)\b/i.test(String(w.title||'').trim()),
     esExamen:examenIds.has(String(w.id))||/^EXAMEN\b/i.test(String(w.title||'').trim())
   }));
@@ -86,6 +87,8 @@ function calcularPromediosDirectoClassroomConCeros_(ss,courseId,unidad){
     let faltNoExam=0,faltExam=0;
     const norm=(w,esExamen)=>{
       const sub=grades[w.classroomId][uid];
+      const derived=!esExamen&&deliveryAudit.derived[w.classroomId];
+      if(derived&&Object.prototype.hasOwnProperty.call(derived,uid))return derived[uid];
       if(!tieneNota_(sub)){
         faltantesComoCero++;
         if(esExamen) faltExam++; else faltNoExam++;
@@ -107,33 +110,46 @@ function calcularPromediosDirectoClassroomConCeros_(ss,courseId,unidad){
   escribirReportePromedios_(ss,courseId,unidad,rows,policy);
   return {
     courseId:String(courseId),unidad:unidad,alumnos:rows.length,examenes:examenes,noExamen:noExamen,
-    reporte:'Promedios Unidad',deliveryAudit:deliveryAudit,faltantesComoCero:faltantesComoCero,politica:policy,modo:unitPolicy.SCOPE,calificacionFinal:unitPolicy.FINAL_ROUNDING
+    reporte:'Promedios Unidad',deliveryAudit:deliveryAudit.counts,faltantesComoCero:faltantesComoCero,politica:policy,modo:unitPolicy.SCOPE,calificacionFinal:unitPolicy.FINAL_ROUNDING
   };
 }
 
-/** Evaluate only eligible coursework in the exact requested unit. Never publish or return. */
+/** Evaluate real submission status; never fabricate a Classroom submission or bypass project permissions. */
 function calificarTrabajosCierrePorEntrega_(courseId,works,grades,students,policy){
-  const counts={onTime:0,late:0,missing:0,publishedPreserved:0,written:0,unchanged:0};
+  const counts={onTime:0,late:0,missing:0,publishedPreserved:0,written:0,unchanged:0,noSubmission:0,readOnly:0,readOnlyWorks:[]};
+  const derived=Object.create(null);
   const api=Classroom.Courses.CourseWork.StudentSubmissions;
   works.filter(w=>w.deliveryGraded).forEach(w=>{
     const byStudent=grades[w.classroomId];
+    const values=derived[w.classroomId]=Object.create(null);
+    let readOnly=w.associatedWithDeveloper===false;
     students.forEach(student=>{
       const uid=String(student.userId),sub=byStudent[uid];
-      if(!sub||!sub.id)throw new Error('CLOSE_DELIVERY_SUBMISSION_MISSING');
+      if(!sub){counts.missing++;counts.noSubmission++;values[uid]=policy.DELIVERY_MISSING;return;}
+      if(!sub.id)throw new Error('CLOSE_DELIVERY_SUBMISSION_ID_MISSING');
       if(sub.assignedGrade!==undefined&&sub.assignedGrade!==null){counts.publishedPreserved++;return;}
       const state=String(sub.state||'').toUpperCase();
       const delivered=state==='TURNED_IN'||state==='RETURNED';
+      if(!['TURNED_IN','RETURNED','NEW','CREATED','RECLAIMED_BY_STUDENT'].includes(state))throw new Error('CLOSE_DELIVERY_UNKNOWN_STATE');
       const late=delivered&&sub.late===true;
       const pct=delivered?(late?policy.DELIVERY_LATE:policy.DELIVERY_ON_TIME):policy.DELIVERY_MISSING;
       if(!Number.isFinite(pct))throw new Error('CLOSE_DELIVERY_POLICY_INVALID');
       counts[delivered?(late?'late':'onTime'):'missing']++;
       const expected=Math.round(w.maxPoints*pct)/100;
       if(typeof sub.draftGrade==='number'&&Math.abs(sub.draftGrade-expected)<0.001){counts.unchanged++;return;}
-      escribirCalificacionDraft_(courseId,w.classroomId,sub.id,expected);
+      if(!readOnly){
+        try{escribirCalificacionDraft_(courseId,w.classroomId,sub.id,expected);}
+        catch(err){
+          if(!/@ProjectPermissionDenied\b/.test(String(err&&err.message||err)))throw err;
+          readOnly=true;
+        }
+      }
+      if(readOnly){values[uid]=pct;counts.readOnly++;return;}
       const after=api.get(String(courseId),String(w.classroomId),String(sub.id));
       if(!verificarCalificacionDraft_(after,expected).ok)throw new Error('CLOSE_DELIVERY_READBACK_MISMATCH');
       byStudent[uid]=after;counts.written++;
     });
+    if(readOnly)counts.readOnlyWorks.push({classroomId:w.classroomId,titulo:w.titulo});
   });
-  return counts;
+  return {counts:counts,derived:derived};
 }
