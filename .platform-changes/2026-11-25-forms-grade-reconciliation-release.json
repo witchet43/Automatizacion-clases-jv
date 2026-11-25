@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Actualiza la implementación efectiva de Apps Script.",
+  "reason": "Release merged Forms grade reconciliation fix to existing canonical Apps Script deployment, with exact importer regression and no changes to credentials or infrastructure.",
+  "allowedChangedPaths": [
+    "scripts/test-forms-import-without-turnedin.mjs"
+  ]
+}
