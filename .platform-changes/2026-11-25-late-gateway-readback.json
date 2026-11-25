@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Certifica la distribución exacta entre entregas puntuales y tardías, exponiendo en el Gateway el atributo late.",
+  "reason": "Expose native Classroom late boolean in authenticated listing and allow bounded read-only propagation retries before exact source certification.",
+  "allowedChangedPaths": [
+    "src/67_RevisionContenidoEntregas.gs",
+    "scripts/test-grading-bridge.mjs",
+    "scripts/verify-apps-script-release.mjs",
+    "scripts/test-release-orchestrator.mjs"
+  ]
+}
