@@ -86,3 +86,7 @@ assert.throws(()=>run('verificarTodosLosGoogleDocsEnClassroom_({materials:[{driv
 assert.throws(()=>run('asegurarCopiasDocumentosBorrador_("course1",{id:"work2",state:"PUBLISHED",materials:[]},["doc1"])'),/DRAFT/);
 
 console.log('PASS: TAREA, ACTIVIDAD y PRACTICA: detección automática, STUDENT_COPY aun con VIEW/EDIT, URLs Google Docs, creación automática, reparación idempotente de DRAFT, preservación de PDFs y bloqueo de PUBLISHED.');
+
+const register={courseId:'871156721160',tipo:'ACTIVIDAD',titulo:'Examen Unidad 3',temaSubtema:'Evaluación Unidad 3',backfillDraft:true,explicitSequenceOverride:true,descripcion:''};
+assert.equal(run('requiereDocumentoEditableClassroom_('+JSON.stringify(register)+')'),false);
+for(const change of [{documentId:'doc1'},{tipo:'PRACTICA'},{descripcion:'Trabajo didáctico'},{explicitSequenceOverride:false},{temaSubtema:'Evaluación Unidad 4'},{requiereGoogleDoc:true}]) assert.equal(run('requiereDocumentoEditableClassroom_('+JSON.stringify({...register,...change})+')'),true);

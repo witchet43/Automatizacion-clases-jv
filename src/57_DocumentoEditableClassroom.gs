@@ -72,6 +72,15 @@ function idsGoogleDocumentosAdjuntos_(materials) {
 function requiereDocumentoEditableClassroom_(p) {
   const tipo=String(p&&p.tipo||'').toUpperCase();
   if(DOCUMENTO_EDITABLE_CLASSROOM.TIPOS.indexOf(tipo)<0)return false;
+  // Administrative exam register: explicit historical evaluation session, no requested document or content.
+  const emptyExamRegister=tipo==='ACTIVIDAD' && p.backfillDraft===true && p.explicitSequenceOverride===true &&
+    /^Examen Unidad [1-9][0-9]*$/i.test(String(p.titulo||p.title||'').trim()) &&
+    /^Evaluación Unidad [1-9][0-9]*$/i.test(String(p.temaSubtema||'').trim()) &&
+    String(p.titulo||p.title).match(/\d+$/)[0]===String(p.temaSubtema).match(/\d+$/)[0] &&
+    !String(p.descripcion||p.description||'').trim() && !idsGoogleDocumentosSolicitados_(p).length &&
+    !String(p.contenidoDocumento||p.googleDocContent||'').trim() &&
+    p.requiereDocumentoEditable!==true && p.requiereGoogleDoc!==true;
+  if(emptyExamRegister)return false;
   return tipo==='PRACTICA'||
     idsGoogleDocumentosSolicitados_(p).length>0||
     p.requiereDocumentoEditable===true||p.requiereGoogleDoc===true||
