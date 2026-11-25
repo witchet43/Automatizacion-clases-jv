@@ -21,7 +21,7 @@ function listarEntregasEvaluables_(courseId, courseWorkId) {
       const a=s.assignmentSubmission||{};
       return {
         submissionId:String(s.id), userId:String(s.userId||''),
-        state:String(s.state||''), draftGrade:s.draftGrade,
+        state:String(s.state||''), late:s.late===true, draftGrade:s.draftGrade,
         assignedGrade:s.assignedGrade, updateTime:s.updateTime||null,
         attachments:(a.attachments||[]).map(function(x){
           const d=x.driveFile&&x.driveFile.id?x.driveFile:{};

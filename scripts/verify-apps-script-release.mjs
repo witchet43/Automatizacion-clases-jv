@@ -53,6 +53,15 @@ async function fetchJson(url,options={}){
     throw Error('APPS_SCRIPT_RELEASE_HTTP_'+r.status);
   }
 }
+export async function awaitExactSource(inspectFn,{attempts=12,pause=5000,wait=sleep}={}){
+  let result;
+  for(let i=0;i<attempts;i++){
+    result=await inspectFn();
+    if(result.matches)return result;
+    if(i+1<attempts)await wait(pause);
+  }
+  return result;
+}
 async function inspect(){
   const {manifest}=readContext();
   const clasp=JSON.parse(fs.readFileSync('.clasp.json','utf8'));
@@ -80,7 +89,7 @@ async function inspect(){
 }
 if(process.argv[1]&&pathToFileURL(process.argv[1]).href===import.meta.url){
   try{
-    const plan=process.argv.includes('--plan'),result=await inspect();
+    const plan=process.argv.includes('--plan'),result=plan?await inspect():await awaitExactSource(inspect);
     console.log(JSON.stringify(result));
     if(process.env.GITHUB_STEP_SUMMARY)
       fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,'\nApps Script deployed version: '+result.version+

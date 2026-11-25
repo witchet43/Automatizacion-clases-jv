@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {selectRun,safeRetry,planRelease} from './release-orchestrator.mjs';
-import {compareFiles} from './verify-apps-script-release.mjs';
+import {compareFiles,awaitExactSource} from './verify-apps-script-release.mjs';
 const sha='a'.repeat(40);
 const run={id:3,head_sha:sha,head_branch:'main',event:'push',status:'completed',conclusion:'failure',run_attempt:1};
 test('only the newest exact SHA main push is eligible',()=>{
@@ -56,4 +56,13 @@ test('production workflows preserve evidence gates and enforce deployment order'
   assert.match(coordinator,/actions\/upload-artifact@v4/);
   assert.ok(coordinator.indexOf('verify-live-release.mjs')<coordinator.indexOf('release-orchestrator.mjs finalize'));
   assert.doesNotMatch(coordinator,/clasp run|script\.googleapis\.com\/v1\/scripts|classroom\.googleapis\.com/);
+});
+
+test('read-only release verifier tolerates propagation delay but never accepts mismatched source',async()=>{
+  let calls=0;
+  const result=await awaitExactSource(async()=>({matches:++calls===3,version:calls===3?292:291}),{attempts:4,wait:async()=>{}});
+  assert.equal(result.matches,true);assert.equal(calls,3);
+  calls=0;
+  const blocked=await awaitExactSource(async()=>({matches:false,version:291,call:++calls}),{attempts:3,wait:async()=>{}});
+  assert.equal(blocked.matches,false);assert.equal(calls,3);
 });
