@@ -84,3 +84,24 @@ assert.equal(writes.length,2);
 assert.equal(submissions.every(x=>x.assignedGrade===null),true);
 assert.equal(submissions[0].state,'CREATED','No debe marcar la entrega ni devolverla.');
 console.log('PASS: Forms completo importa con y sin TURNED_IN; preserva notas existentes, identidad, puntajes completos y DRAFT_ONLY.');
+
+ // Exercise the actual WebApp importer, not only the legacy monitor.
+{
+ const course='871158187513', work='883667917533', formId='1gk6YnsPlhPC_WeDvYFntvv7jF7jDFjQqc1JkQdUhI2E';
+ const subs=[{id:'s1',userId:'u1',state:'CREATED',draftGrade:0},{id:'s2',userId:'u2',state:'NEW'},{id:'s3',userId:'u3',state:'CREATED',draftGrade:40,assignedGrade:40}];
+ const pupils=subs.map(s=>({userId:s.userId,profile:{emailAddress:s.userId+'@example.edu'}}));
+ const item={getType:()=> 'MULTIPLE_CHOICE',getId:()=>1,asMultipleChoiceItem:()=>({getPoints:()=>100})};
+ const form={getId:()=>formId,isQuiz:()=>true,getItems:()=>[item],getResponses:()=>pupils.map((s,i)=>({getRespondentEmail:()=>s.profile.emailAddress,getTimestamp:()=>new Date(0),getGradableItemResponses:()=>[{getItem:()=>item,getScore:()=>[80,0,90][i]}]}))};
+ const ctx={QUIZ_PIPELINE:{SPREADSHEET_ID:'test',QUIZZES_SHEET:'quizzes'},SpreadsheetApp:{openById:()=>({getSheetByName:()=>null})},FormApp:{openByUrl:()=>form},LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},Classroom:{Courses:{Students:{list:()=>({students:pupils})},CourseWork:{get:()=>({maxPoints:100,materials:[{link:{url:'https://docs.google.com/forms/d/'+formId+'/edit'}}]}),StudentSubmissions:{list:()=>({studentSubmissions:subs}),get:(_c,_w,id)=>({...subs.find(s=>s.id===id)}),patch:(body,_c,_w,id,opt)=>{assert.deepEqual(Object.keys(body),['draftGrade']);assert.equal(opt.updateMask,'draftGrade');subs.find(s=>s.id===id).draftGrade=body.draftGrade;}}}}}};
+ vm.createContext(ctx);
+ vm.runInContext(extract(monitor,'importarCalificacionesFormsActividad_'),ctx);
+ const result=ctx.importarCalificacionesFormsActividad_(course,work);
+ assert.equal(result.imported,2);
+ assert.equal(result.verifiedMatches,2);
+ assert.equal(result.complete,false);
+ assert.equal(subs[0].draftGrade,80);
+ assert.equal(subs[1].draftGrade,0);
+ assert.equal(subs[2].draftGrade,40);
+ assert.equal(subs[2].assignedGrade,40);
+ assert.equal(ctx.importarCalificacionesFormsActividad_(course,work).unchanged,2);
+}
