@@ -37,3 +37,15 @@ test('rejects a purported final-grade response',async()=>{
 test('rejects unknown grading actions before network access',()=>{
   assert.throws(()=>buildSignedGradingRequest({...base,action:'returnSubmission'},options),/GRADING_ACTION_INVALID/);
 });
+
+// Classroom omits false boolean values in JSON. Expose a stable boolean without inferring from timestamps.
+test('submission listing exposes late true and false, including omitted default',async()=>{
+  const {readFileSync}=await import('node:fs');
+  const vm=await import('node:vm');
+  const src=readFileSync('src/67_RevisionContenidoEntregas.gs','utf8');
+  const records=[{id:'a',userId:'1',state:'TURNED_IN',late:true},{id:'b',userId:'2',state:'TURNED_IN',late:false},{id:'c',userId:'3',state:'CREATED'}];
+  const ctx={Classroom:{Courses:{CourseWork:{get:()=>({title:'Task',maxPoints:100}),StudentSubmissions:{list:()=>({studentSubmissions:records})}}}}};
+  vm.createContext(ctx);vm.runInContext(src,ctx);
+  const result=vm.runInContext('listarEntregasEvaluables_("123","456")',ctx);
+  assert.deepEqual(Array.from(result.submissions,s=>s.late),[true,false,false]);
+});
