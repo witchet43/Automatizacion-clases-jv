@@ -67,7 +67,7 @@ const selectedWorks=[
 const gradesFor={
   '876666547526':{learner:{draftGrade:100}},
   '878569197406':{learner:{draftGrade:80}},
-  'work-1':{learner:{draftGrade:100}}
+  'work-1':{learner:{id:'s1',state:'TURNED_IN',draftGrade:100}}
 };
 const mockSheet={
   getLastRow:()=>2,
@@ -78,7 +78,10 @@ const mockSheet={
 };
 const algCtx={
   Set,Date,Math,Number,String,
-  ACADEMIC_POLICY:{UNIT_GRADING:{SCOPE:'EXACT_UNIT_PUBLISHED',TOUCH_OTHER_UNITS:false,MISSING_GRADE_VALUE:0,FINAL_ROUNDING:'NEAREST_INTEGER'}},
+  Classroom:{Courses:{CourseWork:{StudentSubmissions:{get:(_c,w,id)=>Object.values(gradesFor[w]).find(s=>s.id===id)}}}},
+  escribirCalificacionDraft_:(_c,w,id,grade)=>{Object.values(gradesFor[w]).find(s=>s.id===id).draftGrade=grade;},
+  verificarCalificacionDraft_:(sub,expected)=>({ok:sub.draftGrade===expected&&sub.assignedGrade==null}),
+  ACADEMIC_POLICY:{UNIT_GRADING:{SCOPE:'EXACT_UNIT_PUBLISHED',TOUCH_OTHER_UNITS:false,DELIVERY_ON_TIME:100,DELIVERY_LATE:90,DELIVERY_MISSING:0,MISSING_GRADE_VALUE:0,FINAL_ROUNDING:'NEAREST_INTEGER'}},
   politicaCalificacionUnidad_:()=>({examWeight:0.7,nonExamWeight:0.3}),
   buscarTopicIdUnidad_:()=> 'u1',
   listarCourseWorkPublicacion_:()=>selectedWorks,
@@ -96,6 +99,7 @@ const algSs={getSheetByName:name=>name==='Quizzes'?mockSheet:null};
 algCtx.algSs=algSs;
 vm.createContext(algCtx);
 vm.runInContext(extract(algSource,'calcularPromediosDirectoClassroomConCeros_'),algCtx);
+vm.runInContext(extract(algSource,'calificarTrabajosCierrePorEntrega_'),algCtx);
 const algResult=vm.runInContext('calcularPromediosDirectoClassroomConCeros_(algSs,"871156334717","Unidad 1")',algCtx);
 assert.equal(algResult.examenes.length,1);
 assert.equal(algResult.examenes[0].classroomId,'878569197406');
@@ -108,3 +112,14 @@ assert.throws(()=>vm.runInContext('calcularPromediosDirectoClassroomConCeros_(al
 selectedWorks[1].state='PUBLISHED';
 console.log('PASS: Algorithms U1 only official 878569197406 counts for 70%; old exam excluded from 30%; others untouched.');
 console.log('PASS: cierre reintenta notas desactualizadas, protege assignedGrade, usa exclusivamente draftGrade y serializa cierres.');
+
+const delivery=gradesFor['work-1'].learner;
+for(const [state,late,expected,final] of [['TURNED_IN',true,90,83],['CREATED',false,0,56],['TURNED_IN',false,100,86],['RETURNED',true,90,83]]){
+ delivery.state=state;delivery.late=late;
+ const result=vm.runInContext('calcularPromediosDirectoClassroomConCeros_(algSs,"871156334717","Unidad 1")',algCtx);
+ assert.equal(delivery.draftGrade,expected);assert.equal(algCtx.captured[0][10],final);
+ assert.equal(result.deliveryAudit.written,1);
+}
+delivery.assignedGrade=55;delivery.draftGrade=55;
+assert.equal(vm.runInContext('calcularPromediosDirectoClassroomConCeros_(algSs,"871156334717","Unidad 1")',algCtx).deliveryAudit.publishedPreserved,1);
+assert.equal(delivery.draftGrade,55);
