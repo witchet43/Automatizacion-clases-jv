@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Resuelve esa validación.",
+  "reason": "Allow empty exam grade register in historical evaluation session without artificial Google Docs; preserve document rules for all didactic work.",
+  "allowedChangedPaths": [
+    "src/57_DocumentoEditableClassroom.gs",
+    "scripts/test-google-doc-student-copy.mjs"
+  ]
+}
