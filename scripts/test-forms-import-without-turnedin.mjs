@@ -87,7 +87,7 @@ console.log('PASS: Forms completo importa con y sin TURNED_IN; preserva notas ex
 
  // Exercise the actual WebApp importer, not only the legacy monitor.
 {
- const course='871158187513', work='883667917533', formId='1gk6YnsPlhPC_WeDvYFntvv7jF7jDFjQqc1JkQdUhI2E';
+ const course='123456789', work='987654321', formId='generic-form-test';
  const subs=[{id:'s1',userId:'u1',state:'CREATED',draftGrade:0},{id:'s2',userId:'u2',state:'NEW'},{id:'s3',userId:'u3',state:'CREATED',draftGrade:40,assignedGrade:40}];
  const pupils=subs.map(s=>({userId:s.userId,profile:{emailAddress:s.userId+'@example.edu'}}));
  const item={getType:()=> 'MULTIPLE_CHOICE',getId:()=>1,asMultipleChoiceItem:()=>({getPoints:()=>100})};
