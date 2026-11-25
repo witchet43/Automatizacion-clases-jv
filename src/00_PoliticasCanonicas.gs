@@ -143,6 +143,9 @@ const ACADEMIC_POLICY = Object.freeze({
   UNIT_GRADING: Object.freeze({
     EXAM_WEIGHT: 0.70,
     NON_EXAM_WEIGHT: 0.30,
+    COURSE_WEIGHTS: Object.freeze({
+      '871158466533': Object.freeze({examWeight:0.50,nonExamWeight:0.50}) // Sistemas Distribuidos — UAQ
+    }),
     DELIVERY_ON_TIME: 100,
     DELIVERY_LATE: 90,
     DELIVERY_MISSING: 0,
