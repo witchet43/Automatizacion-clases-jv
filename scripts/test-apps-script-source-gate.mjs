@@ -11,12 +11,16 @@ const gated=[
   'Enable and list manifest advanced services',
   'Check Apps Script version capacity before mutation',
   'Deploy to Google Apps Script',
-  'Update canonical Web App deployment',
-  'Verify deployed Web App without creating resources'
+  'Update canonical Web App deployment'
 ];
 for(const name of gated){
   const escaped=name.replace(/[.*+?^$\{\}()|[\]\\]/g,'\\$&');
   assert.match(workflow,new RegExp('- name: '+escaped+'\\n\\s+if: steps\\.source_gate\\.outputs\\.needs_deploy'));
 }
 assert.match(workflow,/\.platform-changes\/\*\*/);
-console.log('PASS: Apps Script deployment is gated on actual Apps Script source changes; Cloud Run-only commits never trigger clasp.');
+assert.match(workflow,/- name: Verify deployed Web App without creating resources\n\s+run: node scripts\/verify-academic-webapp\.mjs/);
+assert.ok(workflow.includes("grep -Fxq '.platform-changes/2026-11-25-canonical-webapp-recovery.json'"));
+assert.ok(workflow.includes("echo 'needs_deploy=true'"));
+const ci=fs.readFileSync('.github/workflows/validate-minimal-academic-operations.yml','utf8');
+assert.match(ci.split('pull_request:')[1].split('workflow_dispatch:')[0],/deploy-apps-script\.yml/);
+console.log('PASS: source gate, exact recovery exception and unconditional HTTP postflight.');
