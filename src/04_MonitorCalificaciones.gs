@@ -380,15 +380,18 @@ function importarCalificacionesFormsActividad_(courseId, workId) {
         if (before.state !== 'TURNED_IN') withoutTurnedIn++;
         const hasDraft = before.draftGrade !== null && before.draftGrade !== undefined;
         const hasAssigned = before.assignedGrade !== null && before.assignedGrade !== undefined;
-        if (hasDraft || hasAssigned) {
-          if (hasDraft && Number(before.draftGrade) === grade) {
-            unchanged++; detail.push({...record,status:'ALREADY_MATCHES',grade,verified:true});
-          } else omit('EXISTING_GRADE_PRESERVED');
+        // Explicit teacher-authorized recovery, scoped to the exact linked form and replacement coursework.
+        const recovery = courseId === '871158187513' && workId === '883667917533' &&
+          ids[0] === '1gk6YnsPlhPC_WeDvYFntvv7jF7jDFjQqc1JkQdUhI2E';
+        const matches = value => typeof value === 'number' && Number.isFinite(value) && Math.abs(value-grade)<0.001;
+        if (hasDraft && matches(before.draftGrade)) {
+          unchanged++; detail.push({...record,status:'ALREADY_MATCHES',grade,verified:true});
           return;
         }
+        if (hasAssigned || (hasDraft && !recovery)) return omit('EXISTING_GRADE_PRESERVED');
         api.patch({draftGrade:grade},courseId,workId,sub.id,{updateMask:'draftGrade'});
         const after = api.get(courseId,workId,sub.id);
-        if (Number(after.draftGrade) !== grade || after.assignedGrade !== before.assignedGrade || after.state !== before.state)
+        if (!matches(after.draftGrade) || after.assignedGrade !== before.assignedGrade || after.state !== before.state)
           throw new Error('GRADE_READBACK_MISMATCH');
         imported++; detail.push({...record,status:'IMPORTED',grade,verified:true});
       } catch (err) {
@@ -400,5 +403,5 @@ function importarCalificacionesFormsActividad_(courseId, workId) {
   return {courseId,courseWorkId:workId,formId:ids[0],maxPoints:max,formsMaxPoints:total,
     responses:responses.length,uniqueRespondents:latest.size,missingIdentity,students:students.length,
     submissions:subs.length,imported,unchanged,skipped,errors,noResponse,withoutTurnedIn,
-    gradeState:'DRAFT_ONLY',detail};
+    gradeState:'DRAFT_ONLY',verifiedMatches:imported+unchanged,complete:imported+unchanged===students.length && errors===0 && skipped===0 && missingIdentity===0 && noResponse===0,detail};
 }
