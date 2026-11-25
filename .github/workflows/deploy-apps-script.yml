@@ -336,6 +336,10 @@ jobs:
           # Reconcile the canonical source, including authorized changes missed
           # by a superseded deployment; never create a replacement deployment.
           node scripts/verify-apps-script-release.mjs --plan
+          # Explicit, exact-scoped recovery request: refresh existing canonical deployment once.
+          if [[ -f .platform-changes/2026-11-25-canonical-webapp-recovery.json ]] && grep -Fxq '.platform-changes/2026-11-25-canonical-webapp-recovery.json' <<< "$changed"; then
+            echo 'needs_deploy=true' >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Verify OAuth grants for an existing API Executable (nonexistent function only)
         if: contains(github.event.head_commit.message, '[probe-existing-script-api]')
@@ -402,13 +406,7 @@ jobs:
           npm run apps-script:deploy
 
       - name: Verify deployed Web App without creating resources
-        if: steps.source_gate.outputs.needs_deploy == 'true'
-        run: |
-          for attempt in 1 2 3; do
-            if node scripts/verify-academic-webapp.mjs; then exit 0; fi
-            [[ "$attempt" != 3 ]] || exit 1
-            sleep $((attempt * 5))
-          done
+        run: node scripts/verify-academic-webapp.mjs
       - name: Inspect API executable entry points after protected deployment (read-only)
         if: steps.source_gate.outputs.needs_deploy == 'true'
         env:
