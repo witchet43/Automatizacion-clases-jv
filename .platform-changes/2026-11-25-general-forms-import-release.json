@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Despliega la modificación en producción.",
+  "reason": "Deploy generalized Forms import reconciliation to canonical Apps Script; no infrastructure or permissions changes.",
+  "allowedChangedPaths": [
+    "src/04_MonitorCalificaciones.gs",
+    "scripts/test-forms-import-without-turnedin.mjs"
+  ]
+}
