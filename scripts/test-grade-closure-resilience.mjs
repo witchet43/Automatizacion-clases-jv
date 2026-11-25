@@ -123,3 +123,24 @@ for(const [state,late,expected,final] of [['TURNED_IN',true,90,83],['CREATED',fa
 delivery.assignedGrade=55;delivery.draftGrade=55;
 assert.equal(vm.runInContext('calcularPromediosDirectoClassroomConCeros_(algSs,"871156334717","Unidad 1")',algCtx).deliveryAudit.publishedPreserved,1);
 assert.equal(delivery.draftGrade,55);
+
+// Missing submission: count zero without creating or patching any fake record.
+delete gradesFor['work-1'].learner;
+let result=vm.runInContext('calcularPromediosDirectoClassroomConCeros_(algSs,"871156334717","Unidad 1")',algCtx);
+assert.equal(result.deliveryAudit.noSubmission,1);
+assert.equal(algCtx.captured[0][10],56);
+gradesFor['work-1'].learner={id:'s1',state:'TURNED_IN',late:true};
+selectedWorks[2].associatedWithDeveloper=false;
+algCtx.escribirCalificacionDraft_=()=>{throw Error('must not write foreign work');};
+result=vm.runInContext('calcularPromediosDirectoClassroomConCeros_(algSs,"871156334717","Unidad 1")',algCtx);
+assert.equal(result.deliveryAudit.readOnly,1);
+assert.equal(algCtx.captured[0][10],83);
+assert.equal(gradesFor['work-1'].learner.draftGrade,undefined);
+delete selectedWorks[2].associatedWithDeveloper;
+algCtx.escribirCalificacionDraft_=()=>{throw Error('API call failed: @ProjectPermissionDenied The Developer Console project is not permitted to make this request.');};
+result=vm.runInContext('calcularPromediosDirectoClassroomConCeros_(algSs,"871156334717","Unidad 1")',algCtx);
+assert.equal(result.deliveryAudit.readOnly,1);
+assert.equal(algCtx.captured[0][10],83);
+algCtx.escribirCalificacionDraft_=()=>{throw Error('temporary outage');};
+assert.throws(()=>vm.runInContext('calcularPromediosDirectoClassroomConCeros_(algSs,"871156334717","Unidad 1")',algCtx),/temporary outage/);
+console.log('PASS: absent records count zero; project-restricted coursework uses verified submission state without unauthorized writes; unrelated errors fail closed.');
