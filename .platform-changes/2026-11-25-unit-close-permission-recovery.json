@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Corrige la escritura de califificaciones en los 3 trabajos pendientes y tratamientos de alumnos sin registro de entrega, y repite la prueba integral.",
+  "reason": "Handle Classroom project permission restrictions transparently and count absent records as zero without fictitious submissions.",
+  "allowedChangedPaths": [
+    "src/13_RecalculoFinalCeros.gs",
+    "scripts/test-grade-closure-resilience.mjs"
+  ]
+}
