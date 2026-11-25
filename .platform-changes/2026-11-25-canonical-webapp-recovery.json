@@ -1,0 +1,10 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "No entiendo como teniendo todas las herramientas, llevas un día sin encontrar que está fallando, vuelve a hacer mejor toda la configuración desde cero y ya hubieras acabado.",
+  "reason": "One authorized canonical WebApp refresh to address persistent HTTP 403 even when deployed code matches. Keep existing script, deployment, OAuth and HMAC; always require negative unsigned postflight; no academic writes.",
+  "allowedChangedPaths": [
+    ".github/workflows/deploy-apps-script.yml"
+  ]
+}
