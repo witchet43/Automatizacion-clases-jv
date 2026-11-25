@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Adapta el motor para admitir ponderaciones configurables por materia, sin alterar las reglas de las demás asignaturas, y volver a registrar las 3 unidades con el esquema 50/50.",
+  "reason": "Configurable isolated unit grading weights and audit metadata; retain published-grade protection.",
+  "allowedChangedPaths": [
+    "src/00_PoliticasCanonicas.gs",
+    "src/15_OperacionesAcademicas.gs",
+    "src/09_PromediosUnidad.gs",
+    "scripts/test-grade-closure-resilience.mjs"
+  ]
+}

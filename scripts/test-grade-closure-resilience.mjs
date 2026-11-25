@@ -144,3 +144,21 @@ assert.equal(algCtx.captured[0][10],83);
 algCtx.escribirCalificacionDraft_=()=>{throw Error('temporary outage');};
 assert.throws(()=>vm.runInContext('calcularPromediosDirectoClassroomConCeros_(algSs,"871156334717","Unidad 1")',algCtx),/temporary outage/);
 console.log('PASS: absent records count zero; project-restricted coursework uses verified submission state without unauthorized writes; unrelated errors fail closed.');
+
+const weightsCtx={ACADEMIC_POLICY:{UNIT_GRADING:{EXAM_WEIGHT:0.7,NON_EXAM_WEIGHT:0.3,COURSE_WEIGHTS:{'871158466533':{examWeight:0.5,nonExamWeight:0.5},'custom':{examWeight:0.2,nonExamWeight:0.8},'invalid':{examWeight:0.5,nonExamWeight:0.8}}}}};
+vm.createContext(weightsCtx);
+vm.runInContext(extract(facade,'politicaCalificacionUnidad_'),weightsCtx);
+for(const [id,a,b] of [['871158466533',0.5,0.5],['custom',0.2,0.8],['another-course',0.7,0.3],['toString',0.7,0.3]]){
+ const result=vm.runInContext('politicaCalificacionUnidad_('+JSON.stringify(id)+')',weightsCtx);
+ assert.equal(result.examWeight,a);assert.equal(result.nonExamWeight,b);
+}
+assert.throws(()=>vm.runInContext('politicaCalificacionUnidad_("invalid")',weightsCtx),/UNIT_GRADING_INVALID_WEIGHTS/);
+const reportSource=fs.readFileSync('src/09_PromediosUnidad.gs','utf8');
+const legacy=[new Date(),'other','Unidad 1','uid','Alumno','',80,56,100,30,86,1,0,0];
+let saved=[Array(14).fill('header'),legacy];
+const sheet={getDataRange:()=>({getValues:()=>saved}),clearContents:()=>{saved=[];},getRange:(row)=>({setValues:v=>{saved.splice(row-1,v.length,...v);}}),setFrozenRows:()=>{}};
+const reportCtx={UNIT_AVG_REQUEST:{REPORT_SHEET:'Promedios Unidad'},ss:{getSheetByName:()=>sheet},newRow:[new Date(),'871158466533','Unidad 2','uid','Alumno','',80,40,100,50,90,1,0,0]};
+vm.createContext(reportCtx);vm.runInContext(extract(reportSource,'escribirReportePromedios_'),reportCtx);
+vm.runInContext('escribirReportePromedios_(ss,"871158466533","Unidad 2",[newRow],{examWeight:0.5,nonExamWeight:0.5})',reportCtx);
+assert.equal(saved[1][10],86);assert.equal(saved[1][14],70);assert.equal(saved[1][15],30);assert.equal(saved[2][10],90);assert.equal(saved[2][14],50);assert.equal(saved[2][15],50);
+console.log('PASS: course weights, default isolation, invalid configuration, historical audit weights.');

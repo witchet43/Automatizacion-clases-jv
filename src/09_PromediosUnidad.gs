@@ -139,4 +139,25 @@ function tieneNota_(s){return !!s&&((s.assignedGrade!==undefined&&s.assignedGrad
 function normalizarNota_(s,max){if(!tieneNota_(s))return 0;const g=s.assignedGrade!==undefined&&s.assignedGrade!==null?Number(s.assignedGrade):Number(s.draftGrade);return Math.max(0,Math.min(100,(g/Number(max))*100));}
 function promedioSimple_(v){return v.length?v.reduce((a,b)=>a+Number(b||0),0)/v.length:0;}
 function redondearPromedio_(v){return Math.round(Number(v)*100)/100;}
-function escribirReportePromedios_(ss,courseId,unidad,rows,policy){let sh=ss.getSheetByName(UNIT_AVG_REQUEST.REPORT_SHEET);if(!sh)sh=ss.insertSheet(UNIT_AVG_REQUEST.REPORT_SHEET);const examPct=Math.round(Number(policy.examWeight)*100),nonPct=Math.round(Number(policy.nonExamWeight)*100),headers=['Fecha cálculo','ID curso','Unidad','User ID','Alumno','Correo','Examen (0-100)','Aporte examen '+examPct+'%','Promedio no examen (0-100)','Aporte no examen '+nonPct+'%','Promedio final','Trabajos no examen incluidos','No examen sin calificación','Examen sin calificación'],data=sh.getDataRange().getValues(),keep=[];if(data.length>1)for(let i=1;i<data.length;i++){if(String(data[i][1]||'')===String(courseId)&&String(data[i][2]||'')===String(unidad))continue;if(data[i].some(v=>v!==''))keep.push(data[i].slice(0,headers.length));}sh.clearContents();sh.getRange(1,1,1,headers.length).setValues([headers]);const all=keep.concat(rows);if(all.length)sh.getRange(2,1,all.length,headers.length).setValues(all);sh.setFrozenRows(1);}
+function escribirReportePromedios_(ss,courseId,unidad,rows,policy){
+  let sh=ss.getSheetByName(UNIT_AVG_REQUEST.REPORT_SHEET);
+  if(!sh)sh=ss.insertSheet(UNIT_AVG_REQUEST.REPORT_SHEET);
+  const headers=['Fecha cálculo','ID curso','Unidad','User ID','Alumno','Correo','Examen (0-100)','Aporte examen','Promedio no examen (0-100)','Aporte no examen','Promedio final','Trabajos no examen incluidos','No examen sin calificación','Examen sin calificación','Peso examen (%)','Peso no examen (%)'];
+  const data=sh.getDataRange().getValues(),keep=[];
+  if(data.length>1)for(let i=1;i<data.length;i++){
+    const r=data[i];
+    if(String(r[1]||'')===String(courseId)&&String(r[2]||'')===String(unidad))continue;
+    if(!r.some(v=>v!==''))continue;
+    // Historical reports used 70/30 exclusively before this migration.
+    const preserved=r.slice(0,14);
+    while(preserved.length<14)preserved.push('');
+    preserved.push(r[14]===''||r[14]==null?70:r[14],r[15]===''||r[15]==null?30:r[15]);
+    keep.push(preserved);
+  }
+  const examPct=Number(policy.examWeight)*100,nonPct=Number(policy.nonExamWeight)*100;
+  const all=keep.concat(rows.map(r=>r.slice(0,14).concat([examPct,nonPct])));
+  sh.clearContents();
+  sh.getRange(1,1,1,headers.length).setValues([headers]);
+  if(all.length)sh.getRange(2,1,all.length,headers.length).setValues(all);
+  sh.setFrozenRows(1);
+}

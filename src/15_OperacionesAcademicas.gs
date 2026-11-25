@@ -110,10 +110,14 @@ function detectarCierreConNotasAsignadas_(courseId,unidad) {
 }
 
 function politicaCalificacionUnidad_(courseId) {
-  return Object.freeze({
-    examWeight: ACADEMIC_POLICY.UNIT_GRADING.EXAM_WEIGHT,
-    nonExamWeight: ACADEMIC_POLICY.UNIT_GRADING.NON_EXAM_WEIGHT
-  });
+  const config=ACADEMIC_POLICY.UNIT_GRADING, overrides=config.COURSE_WEIGHTS||{};
+  const key=String(courseId||'');
+  const selected=Object.prototype.hasOwnProperty.call(overrides,key)?overrides[key]:
+    {examWeight:config.EXAM_WEIGHT,nonExamWeight:config.NON_EXAM_WEIGHT};
+  const a=selected.examWeight,b=selected.nonExamWeight;
+  if(!Number.isFinite(a)||!Number.isFinite(b)||a<0||b<0||a>1||b>1||Math.abs(a+b-1)>0.000001)
+    throw new Error('UNIT_GRADING_INVALID_WEIGHTS');
+  return Object.freeze({examWeight:a,nonExamWeight:b});
 }
 
 function resolverInstrumentoPorQuizId_(ss, quizId) {
