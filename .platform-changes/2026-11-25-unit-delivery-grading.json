@@ -1,0 +1,12 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Implementa esta regla en producción.",
+  "reason": "Apply teacher authorized 100/90/0 delivery policy before exact-unit closure; preserve published grades and exams.",
+  "allowedChangedPaths": [
+    "src/00_PoliticasCanonicas.gs",
+    "src/13_RecalculoFinalCeros.gs",
+    "scripts/test-grade-closure-resilience.mjs"
+  ]
+}
