@@ -15,6 +15,7 @@ on:
       - 'src/**'
       - 'scripts/test-*.mjs'
       - '.github/workflows/validate-minimal-academic-operations.yml'
+      - '.github/workflows/deploy-apps-script.yml'
       - '.github/workflows/deploy-cloud-run-mcp.yml'
       - '.github/workflows/audit-classroom-mcp-wif.yml'
       - 'mcp-cloud-run/**'
