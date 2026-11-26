@@ -90,6 +90,7 @@ function crearCourseWorkDirectoBloqueado_(p){
         if(String(verificado.description||'')!==conforme)throw new Error('BLOCKED_CLASSROOM_FORMAT: la reparación del borrador reutilizado no fue verificada.');
       }
     }
+    verificado=reconciliarMaterialesBorradorDirecto_(p,verificado);
     registrarAuditoriaCourseWorkDirecto_(p,verificado,topicName,'REUTILIZADO');
     return resultadoCreacionCourseWorkDirecto_(p,verificado,topicName,true);
   }
@@ -233,6 +234,47 @@ function construirMaterialesDirectos_(p){
     out.push({link:{url:url,title:String((x&&x.title)||url)}});
   });
   return out;
+}
+
+/** Reconcile explicit non-Doc links; existing native document policy remains authoritative. */
+function claveMaterialDirecto_(m){
+  if(m&&m.driveFile&&m.driveFile.driveFile&&m.driveFile.driveFile.id)
+    return 'drive:'+String(m.driveFile.driveFile.id)+':'+String(m.driveFile.shareMode||'');
+  if(m&&m.youtubeVideo&&m.youtubeVideo.id)return 'youtube:'+String(m.youtubeVideo.id);
+  const url=String(m&&m.link&&m.link.url||m&&m.form&&m.form.formUrl||'').trim();
+  if(url){
+    // Classroom may transform an ordinary link into a native Forms material.
+    const match=url.match(/^https:\/\/docs\.google\.com\/forms\/(?:u\/\d+\/)?d\/(e\/)?([A-Za-z0-9_-]+)(?:[/?#]|$)/i);
+    if(match)return 'form:'+(match[1]||'')+match[2];
+    return 'url:'+url;
+  }
+  return 'opaque:'+JSON.stringify(m);
+}
+
+function reconciliarMaterialesBorradorDirecto_(p,work){
+  if(String(work&&work.state||'').toUpperCase()!=='DRAFT')
+    throw new Error('BLOCKED_MATERIAL_RECONCILIATION_NOT_DRAFT');
+  const requested=(Array.isArray(p.links)?p.links:[]).filter(function(x){
+    return x&&String(x.url||'').trim()&&!extraerIdGoogleDocumentoDeUrl_(x.url);
+  }).map(function(x){return {link:{url:String(x.url).trim(),title:String(x.title||x.url)}};});
+  if(!requested.length)return work;
+  const current=verificarCourseWorkDraftDirecto_(p.courseId,work.id);
+  const existing=Array.isArray(current.materials)?current.materials:[];
+  const merged=existing.slice(),keys=new Set(existing.map(claveMaterialDirecto_));
+  requested.forEach(function(m){
+    const key=claveMaterialDirecto_(m);
+    if(!keys.has(key)){merged.push(m);keys.add(key);}
+  });
+  if(merged.length===existing.length)return current;
+  // Never rewrite published work or silently discard teacher attachments.
+  Classroom.Courses.CourseWork.patch({materials:merged},String(p.courseId),String(current.id),{updateMask:'materials'});
+  const verified=verificarCourseWorkDraftDirecto_(p.courseId,current.id);
+  const actual=Array.isArray(verified.materials)?verified.materials:[];
+  const counts=function(items){const out=new Map();items.forEach(function(m){const k=claveMaterialDirecto_(m);out.set(k,(out.get(k)||0)+1);});return out;};
+  const expected=counts(merged),observed=counts(actual);
+  if(actual.length!==merged.length||Array.from(expected.entries()).some(function(x){return observed.get(x[0])!==x[1];}))
+    throw new Error('BLOCKED_MATERIAL_RECONCILIATION_READBACK_MISMATCH');
+  return verified;
 }
 
 function resolverShareModeDirecto_(p){
