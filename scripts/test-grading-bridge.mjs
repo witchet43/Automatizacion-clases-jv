@@ -49,3 +49,29 @@ test('submission listing exposes late true and false, including omitted default'
   const result=vm.runInContext('listarEntregasEvaluables_("123","456")',ctx);
   assert.deepEqual(Array.from(result.submissions,s=>s.late),[true,false,false]);
 });
+
+test('authenticated coursework read exposes teacher materials separately from student attachments',async()=>{
+  const {readFileSync}=await import('node:fs');
+  const vm=await import('node:vm');
+  const src=readFileSync('src/67_RevisionContenidoEntregas.gs','utf8');
+  const materials=[
+    {form:{title:'Exam',formUrl:'https://docs.google.com/forms/d/e/example/viewform',responseUrl:'https://docs.google.com/forms/d/original/edit'}},
+    {link:{title:'Original exam link',url:'https://docs.google.com/forms/d/original/edit'}},
+    {driveFile:{driveFile:{id:'file123',title:'Guide',alternateLink:'https://docs.google.com/document/d/file123/edit'},shareMode:'STUDENT_COPY'}},
+    {youtubeVideo:{id:'v',title:'Video',alternateLink:'https://www.youtube.com/watch?v=v'}},
+    {unknown:{}}
+  ];
+  const ctx={Classroom:{Courses:{CourseWork:{get:()=>({title:'Exam 3',maxPoints:100,state:'PUBLISHED',materials}),StudentSubmissions:{list:()=>({studentSubmissions:[{id:'s',userId:'u',assignmentSubmission:{attachments:[{link:{url:'https://example.test/student-evidence'}}]}}]})}}}}};
+  vm.createContext(ctx);vm.runInContext(src,ctx);
+  const r=vm.runInContext('listarEntregasEvaluables_("123","456")',ctx);
+  assert.equal(r.state,'PUBLISHED');assert.equal(r.topicId,null);
+  assert.deepEqual(Array.from(r.materials,m=>m.type),['FORM','LINK','DRIVE','YOUTUBE','OTHER']);
+  assert.equal(r.materials[0].formUrl,materials[0].form.formUrl);
+  assert.equal(r.materials[0].responseUrl,materials[0].form.responseUrl);
+  assert.equal(r.materials[1].url,materials[1].link.url);
+  assert.equal(r.materials[2].driveFileId,'file123');
+  assert.equal(r.materials[2].shareMode,'STUDENT_COPY');
+  assert.equal(r.submissions[0].attachments[0].linkUrl,'https://example.test/student-evidence');
+  materials.length=0;
+  assert.equal(vm.runInContext('listarEntregasEvaluables_("123","456")',ctx).materials.length,0);
+});
