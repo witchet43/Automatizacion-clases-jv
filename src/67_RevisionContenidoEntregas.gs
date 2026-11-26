@@ -17,6 +17,17 @@ function listarEntregasEvaluables_(courseId, courseWorkId) {
     courseId:String(courseId), courseWorkId:String(courseWorkId),
     title:String(course.title||''), description:String(course.description||''),
     maxPoints:course.maxPoints, rubricId:course.rubricId||null,
+    state:String(course.state||''), topicId:course.topicId||null,
+    materials:(course.materials||[]).map(function(m){
+      // Teacher-provided materials, not student submission evidence.
+      // Preserve URLs supplied by Classroom; never guess a Forms ID.
+      const form=m.form||{}, link=m.link||{}, drive=(m.driveFile||{}).driveFile||{}, video=m.youtubeVideo||{};
+      if(m.form)return {type:'FORM',title:form.title||null,formUrl:form.formUrl||null,responseUrl:form.responseUrl||null};
+      if(m.link)return {type:'LINK',title:link.title||null,url:link.url||null};
+      if(m.driveFile)return {type:'DRIVE',title:drive.title||null,driveFileId:drive.id||null,url:drive.alternateLink||null,shareMode:m.driveFile.shareMode||null};
+      if(m.youtubeVideo)return {type:'YOUTUBE',title:video.title||null,url:video.alternateLink||null,id:video.id||null};
+      return {type:'OTHER'};
+    }),
     submissions:subs.map(function(s){
       const a=s.assignmentSubmission||{};
       return {
