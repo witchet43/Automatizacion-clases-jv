@@ -1,0 +1,14 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "El permiso ya fue concedido. Habilita la lectura del token e implementa la operación académica que motivó toda esta integración.",
+  "reason": "Read teacher refresh token with runtime identity and attach verified original form through official additive MCP tool.",
+  "allowedChangedPaths": [
+    "mcp-cloud-run/server.mjs",
+    "mcp-cloud-run/google-agent-oauth.mjs",
+    "mcp-cloud-run/tests/google-agent-oauth.test.mjs",
+    "mcp-cloud-run/tests/discovery.test.mjs",
+    ".github/workflows/deploy-cloud-run-mcp.yml"
+  ]
+}
