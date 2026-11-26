@@ -869,7 +869,7 @@ function buildServer(config,identity,fetcher){
   const baseListHandler=server.server._requestHandlers?.get('tools/list');
   if(typeof baseListHandler!=='function')throw Error('MCP_TOOLS_LIST_HANDLER_MISSING');
   const requiredWrite=new Set(['iniciar_despliegue_mcp','crear_recurso',
-    'calificar_entrega_draft','importar_calificaciones_forms','cerrar_materia','cerrar_unidad']);
+    'calificar_entrega_draft','importar_calificaciones_forms','cerrar_materia','cerrar_unidad','anexar_formulario_original']);
   server.server.setRequestHandler(ListToolsRequestSchema,async(request,extra)=>{
     const listed=await baseListHandler(request,extra);
     return {...listed,tools:listed.tools.map(tool=>{
