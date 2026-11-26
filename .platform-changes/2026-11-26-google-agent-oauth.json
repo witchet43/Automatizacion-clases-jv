@@ -1,0 +1,13 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Despliega el callback y genera el enlace de autorización docente.",
+  "reason": "Separate Google agent OAuth with PKCE and verified teacher identity; persist refresh token without disclosure.",
+  "allowedChangedPaths": [
+    "mcp-cloud-run/server.mjs",
+    "mcp-cloud-run/google-agent-oauth.mjs",
+    "mcp-cloud-run/tests/google-agent-oauth.test.mjs",
+    ".github/workflows/deploy-cloud-run-mcp.yml"
+  ]
+}
