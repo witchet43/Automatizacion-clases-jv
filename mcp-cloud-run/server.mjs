@@ -1,5 +1,5 @@
 import express from 'express';
-import {createGoogleAgentFlow} from './google-agent-oauth.mjs';
+import {createGoogleAgentFlow,attachOriginalForm} from './google-agent-oauth.mjs';
 import fs from 'node:fs';
 import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -754,6 +754,16 @@ function buildServer(config,identity,fetcher){
       return toolOk({ok:true,operation,courseId,requestId,result:data});
     }catch(e){return toolFail(e);}
   });
+  server.registerTool('anexar_formulario_original',{
+    title:'Anexar formulario original a borrador existente',
+    description:'Copia únicamente el adjunto Forms de una actividad del mismo curso mediante Google Classroom MCP oficial; verifica el mismo ID y estado DRAFT.',
+    inputSchema:{courseId:z.string().regex(/^\d+$/),sourceWorkId:z.string().regex(/^\d+$/),targetWorkId:z.string().regex(/^\d+$/),formId:z.string().regex(/^[A-Za-z0-9_-]+$/),confirmar:z.literal(true)},
+    ...gradeSecurity,annotations:{readOnlyHint:false,destructiveHint:false}
+  },async(args)=>{
+    try{if(config.authMode!=='oauth'||!identity.scopes.has(SCOPES.grade))throw Error('WRITE_AUTH_REQUIRED');
+      return toolOk(await attachOriginalForm(config,args,fetcher));
+    }catch(e){return toolFail(e);}
+  });
   server.registerTool('listar_entregas',{
     title:'Consultar entregas evaluables',
     description:'Consulta entregas de un trabajo mediante la WebApp canónica. Requiere OAuth por contener datos personales.',
@@ -923,7 +933,7 @@ export function createApp(config,{fetcher=fetch,jwks,releaseJwks}={}){
     try{
       const isToolCall=req.body?.method==='tools/call';
       const tool=isToolCall?req.body?.params?.name:'';
-      const protectedWrite=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','importar_calificaciones_forms','iniciar_despliegue_mcp'].includes(tool);
+      const protectedWrite=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','importar_calificaciones_forms','iniciar_despliegue_mcp','anexar_formulario_original'].includes(tool);
       const privateRead=tool==='listar_entregas';
       if(!req.headers.authorization && !isToolCall){
         // MCP initialization and tool metadata remain discoverable; no academic
@@ -938,7 +948,7 @@ export function createApp(config,{fetcher=fetch,jwks,releaseJwks}={}){
           });
       }
     }catch(e){
-      const scope=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','importar_calificaciones_forms','iniciar_despliegue_mcp'].includes(req.body?.params?.name)?SCOPES.grade:SCOPES.read;
+      const scope=['cerrar_unidad','cerrar_materia','crear_recurso','calificar_entrega_draft','importar_calificaciones_forms','iniciar_despliegue_mcp','anexar_formulario_original'].includes(req.body?.params?.name)?SCOPES.grade:SCOPES.read;
       const authCode=['AUTH_REQUIRED','INSUFFICIENT_SCOPE','SUBJECT_NOT_ALLOWED'].includes(e?.message)
         ?e.message:'MCP_OAUTH_TOKEN_REJECTED';
       const insufficient=e.message==='INSUFFICIENT_SCOPE';
