@@ -38,3 +38,25 @@ assert.throws(()=>context.buscarCourseWorkDirectoPorEvidencia_(p,topicId),
 assert.equal(context.buscarCourseWorkDirectoExacto_(courseId,title,topicId).id,'893237625248');
 assert.ok(requests.every(x=>x.courseWorkStates.includes('DRAFT')));
 console.log('PASS: both Classroom existence lookups see drafts; duplicate Practice 16 now blocks further creation.');
+
+const formUrl='https://docs.google.com/forms/d/original123/edit';
+const prior=[{driveFile:{driveFile:{id:docId},shareMode:'STUDENT_COPY'}},{link:{url:'https://example.org/guide',title:'Guide'}},{youtubeVideo:{id:'abc'}}];
+let live={id:'draft-1',state:'DRAFT',materials:JSON.parse(JSON.stringify(prior))},writes=0,reads=0,drop=false;
+context.extraerIdGoogleDocumentoDeUrl_=()=> '';
+context.ACADEMIC_POLICY={CLASSROOM:{DEFAULT_COURSEWORK_STATE:'DRAFT'}};
+context.Classroom={Courses:{CourseWork:{get:()=>{reads++;return JSON.parse(JSON.stringify(live));},patch:(body,c,w,opts)=>{
+ assert.equal(c,courseId);assert.equal(w,'draft-1');assert.equal(opts.updateMask,'materials');writes++;
+ live.materials=JSON.parse(JSON.stringify(body.materials));
+ if(drop)live.materials.shift();
+ else live.materials=live.materials.map(m=>m.link?.url===formUrl?{form:{formUrl,title:'Exam'}}:m);
+}}}};
+const params={courseId,links:[{url:formUrl},{url:formUrl}]};
+let result=context.reconciliarMaterialesBorradorDirecto_(params,live);
+assert.equal(writes,1);assert.equal(reads,2);assert.equal(result.materials.length,4);
+assert.deepEqual(result.materials.slice(0,3),prior);
+assert.equal(result.materials[3].form.formUrl,formUrl);
+context.reconciliarMaterialesBorradorDirecto_(params,live);assert.equal(writes,1);
+live.state='PUBLISHED';assert.throws(()=>context.reconciliarMaterialesBorradorDirecto_(params,live),/NOT_DRAFT/);assert.equal(writes,1);
+live.state='DRAFT';drop=true;
+assert.throws(()=>context.reconciliarMaterialesBorradorDirecto_({courseId,links:[{url:'https://example.org/new'}]},live),/READBACK_MISMATCH/);
+console.log('PASS: draft materials append, preserve existing, normalize native Forms identity, deduplicate, protect published, and verify readback.');
