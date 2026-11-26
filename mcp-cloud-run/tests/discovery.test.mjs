@@ -47,7 +47,7 @@ test('MCP discovers tools but rejects all unauthenticated academic operations',a
     const expected=['gateway_status','consultar_despliegues_mcp','consultar_ejecucion_mcp',
       'iniciar_despliegue_mcp','verificar_despliegue','diagnosticar_clase',
       'auditar_recursos','crear_recurso','listar_entregas','calificar_entrega_draft',
-      'cerrar_materia','cerrar_unidad','importar_calificaciones_forms'];
+      'cerrar_materia','cerrar_unidad','importar_calificaciones_forms','anexar_formulario_original'];
     assert.deepEqual(names.slice().sort(),expected.slice().sort());
     // Discovery metadata is public, but all tool invocation requires scoped OAuth.
     const discovered=new Map((r.json.result?.tools||[]).map(t=>[t.name,t]));
@@ -61,7 +61,7 @@ test('MCP discovers tools but rejects all unauthenticated academic operations',a
       [{type:'oauth2',scopes:['academic.read']}],
       'Student submissions require authenticated academic.read');
     for(const protectedTool of ['iniciar_despliegue_mcp','crear_recurso',
-      'calificar_entrega_draft','cerrar_materia','cerrar_unidad','importar_calificaciones_forms']){
+      'calificar_entrega_draft','cerrar_materia','cerrar_unidad','importar_calificaciones_forms','anexar_formulario_original']){
       assert.deepEqual(discovered.get(protectedTool)?.securitySchemes,
         [{type:'oauth2',scopes:['academic.close_unit']}],
         protectedTool+' must require scoped OAuth');
