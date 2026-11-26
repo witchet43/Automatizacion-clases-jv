@@ -1,4 +1,5 @@
 import express from 'express';
+import {createGoogleAgentFlow} from './google-agent-oauth.mjs';
 import fs from 'node:fs';
 import { randomBytes, createHmac, timingSafeEqual } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -81,6 +82,7 @@ export function loadConfig(env=process.env,contextPath=join(dirname(fileURLToPat
   return {
     publicUrl,issuer,jwksUrl,allowedSubjects:allowed,hmac,authMode,webAppAuthMode,
     academicTransport,googleOAuthUser,
+    googleAgent:env.GOOGLE_AGENT_CLIENT_SECRET?{clientId:required('GOOGLE_AGENT_CLIENT_ID',env),clientSecret:required('GOOGLE_AGENT_CLIENT_SECRET',env),redirectUri:required('GOOGLE_AGENT_REDIRECT_URI',env),teacherEmail:required('GOOGLE_AGENT_TEACHER_EMAIL',env)}:null,
     operationalContext:ctx,upstreamUrl:ctx.endpoint,
     courseIds:new Set(config.courseIds),port:Number(env.PORT||8080),
     releaseCommit:String(env.MCP_DEPLOY_COMMIT||'')
@@ -890,6 +892,11 @@ export function createApp(config,{fetcher=fetch,jwks,releaseJwks}={}){
   app.disable('x-powered-by');
   app.use(express.json({limit:'64kb'}));
   app.get(['/health','/healthz'],(_req,res)=>res.json({status:'ok',service:'classroom-academic-gateway-mcp',auth:config.authMode}));
+  const googleAgentFlow=createGoogleAgentFlow(config,{fetcher});
+  if(googleAgentFlow){
+    app.get('/oauth/google/start',googleAgentFlow.start);
+    app.get('/oauth/google/callback',googleAgentFlow.callback);
+  }
   // Deployment-only identity: never grants MCP OAuth scopes or access to Classroom.
   app.post('/release/probe',async(req,res)=>{
     try{await verifyReleaseProbeToken(config,req.headers.authorization,releaseJwks);}
