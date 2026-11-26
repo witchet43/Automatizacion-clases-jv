@@ -14,3 +14,23 @@ test('PKCE state cookie and safe callback storage',async()=>{
  assert.equal(good.code,200);assert.equal(calls.length,3);assert.match(calls[2].url,/:addVersion$/);assert.equal(good.body.includes('refresh'),false);
 });
 test('disabled without separate agent configuration',()=>assert.equal(createGoogleAgentFlow({}),null));
+
+test('official material update uses refresh token and adds only native original form, verifies and is idempotent',async()=>{
+ const {attachOriginalForm}=await import('../google-agent-oauth.mjs');
+ const url='https://docs.google.com/forms/d/abc123/edit';
+ const source={id:'1',state:'PUBLISHED',materials:[{id:'a',form:{formUrl:url}}]};
+ const target={id:'2',state:'DRAFT',materials:[{id:'b',link:{url:'https://example.test'}}]};
+ let writes=0;
+ const fetcher=async(u,o)=>{
+ if(u.startsWith('http://metadata'))return new Response(JSON.stringify({access_token:'runtime'}));
+ if(u.includes(':access'))return new Response(JSON.stringify({payload:{data:Buffer.from('refresh').toString('base64')}}));
+ if(u.includes('oauth2.googleapis.com'))return new Response(JSON.stringify({access_token:'teacher'}));
+ const req=JSON.parse(o.body);assert.equal(o.headers.Authorization,'Bearer teacher');
+ if(req.params.name==='update_course_work'){writes++;assert.deepEqual(req.params.arguments,{courseId:'3',courseWorkId:'2',timeZone:'America/Mexico_City',addMaterials:[{formUrl:url}]});target.materials.push({id:'c',form:{formUrl:url}});}
+ return new Response(JSON.stringify({result:{structuredContent:{courseWork:[source,target]}}}));
+ };
+ const config={...cfg,courseIds:new Set(['3'])},args={courseId:'3',sourceWorkId:'1',targetWorkId:'2',formId:'abc123',confirmar:true};
+ assert.equal((await attachOriginalForm(config,args,fetcher)).added,true);
+ assert.equal((await attachOriginalForm(config,args,fetcher)).added,false);assert.equal(writes,1);
+ target.state='PUBLISHED';await assert.rejects(()=>attachOriginalForm(config,args,fetcher),/DRAFT_REQUIRED/);assert.equal(writes,1);
+});
