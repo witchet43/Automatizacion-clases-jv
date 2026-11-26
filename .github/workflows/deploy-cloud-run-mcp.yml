@@ -123,8 +123,8 @@ jobs:
             --build-service-account "projects/$PROJECT/serviceAccounts/$RUNTIME_SA" \
             --allow-unauthenticated --ingress all \
             --min-instances=0 --memory=512Mi --timeout=300 \
-            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=https://dev-67cfevmusm7px130.us.auth0.com/,MCP_OAUTH_JWKS_URL=https://dev-67cfevmusm7px130.us.auth0.com/.well-known/jwks.json,MCP_DEPLOY_COMMIT=${{ github.sha }},GOOGLE_WEBAPP_AUTH_MODE=legacy,ACADEMIC_UPSTREAM_TRANSPORT=webapp" \
-            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest,MCP_ALLOWED_SUBJECTS=academic-mcp-allowed-subjects:latest" \
+            --set-env-vars "MCP_AUTH_MODE=oauth,MCP_PUBLIC_URL=$URL,MCP_OAUTH_ISSUER=https://dev-67cfevmusm7px130.us.auth0.com/,MCP_OAUTH_JWKS_URL=https://dev-67cfevmusm7px130.us.auth0.com/.well-known/jwks.json,MCP_DEPLOY_COMMIT=${{ github.sha }},GOOGLE_WEBAPP_AUTH_MODE=legacy,ACADEMIC_UPSTREAM_TRANSPORT=webapp,GOOGLE_AGENT_CLIENT_ID=148028894895-tcfvacemkjoe13ocurt9hlfgintjrtql.apps.googleusercontent.com,GOOGLE_AGENT_REDIRECT_URI=https://academic-classroom-mcp-oauth-egncivfxva-uc.a.run.app/oauth/google/callback,GOOGLE_AGENT_TEACHER_EMAIL=witchet43@gmail.com" \
+            --set-secrets "ACADEMIC_WRITE_HMAC_KEY=academic-write-hmac:latest,MCP_ALLOWED_SUBJECTS=academic-mcp-allowed-subjects:latest,GOOGLE_AGENT_CLIENT_SECRET=classroom-agent-oauth-client-secret:latest" \
             --quiet
           REAL_URL="$URL"
           [[ "$REAL_URL" == https://* ]] || { echo "::error::Missing public Cloud Run HTTPS URL"; exit 1; }
