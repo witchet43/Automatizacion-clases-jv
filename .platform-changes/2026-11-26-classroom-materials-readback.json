@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "¿Por qué no pudiste recuperar el enlace de Google Forms? Hay que reparar esto.",
+  "reason": "Expose original teacher materials in authenticated coursework readback; no grading or publishing changes.",
+  "allowedChangedPaths": [
+    "src/67_RevisionContenidoEntregas.gs",
+    "scripts/test-grading-bridge.mjs"
+  ]
+}
