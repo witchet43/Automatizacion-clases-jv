@@ -1,0 +1,11 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Corrige src/20_CreacionDirectaRecursos.gs para permitir incorporar materiales faltantes a borradores existentes, conservar sus adjuntos previos y verificar el resultado mediante una nueva lectura de Classroom.",
+  "reason": "Reconcile requested links on existing drafts without replacing existing materials or changing published coursework.",
+  "allowedChangedPaths": [
+    "src/20_CreacionDirectaRecursos.gs",
+    "scripts/test-direct-coursework-draft-idempotency.mjs"
+  ]
+}
