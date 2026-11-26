@@ -1,0 +1,12 @@
+{
+  "mode": "PLATFORM_CHANGE",
+  "authorized": true,
+  "requestedByUser": true,
+  "authorizationText": "Certifica el endpoint desplegado y comprueba que redirige correctamente a Google con el cliente OAuth autorizado y la protección PKCE.",
+  "reason": "Repair missing Docker runtime module and add live no-consent OAuth smoke test.",
+  "allowedChangedPaths": [
+    "mcp-cloud-run/Dockerfile",
+    "mcp-cloud-run/tests/cloudrun-deployment.test.mjs",
+    ".github/workflows/deploy-cloud-run-mcp.yml"
+  ]
+}

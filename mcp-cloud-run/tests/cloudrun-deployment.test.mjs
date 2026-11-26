@@ -29,3 +29,5 @@ test('Cloud Run inspection reports lack of viewer permission',async()=>{
    :{ok:false,status:403};
  await assert.rejects(()=>describeCloudRunDeployment({fetcher}),/CLOUD_RUN_VIEWER_ACCESS_OR_API_ERROR: 403/);
 });
+
+test('Docker runtime includes all relative modules imported by server',async()=>{const {readFileSync}=await import('node:fs');const source=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');const docker=readFileSync(new URL('../Dockerfile',import.meta.url),'utf8');for(const match of source.matchAll(/from ['"]\.\/([^'"]+)['"]/g)){assert.ok(docker.split('\n').some(line=>line.startsWith('COPY ')&&line.split(/\s+/).includes(match[1])), 'Missing Docker module '+match[1]);}});

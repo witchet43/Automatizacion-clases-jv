@@ -218,3 +218,36 @@ jobs:
           [[ "$attempt" != 3 ]] || exit 1
           sleep $((attempt * 5))
           done
+
+      - name: Verify live Google teacher OAuth redirect and PKCE without consent
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import urllib.request, urllib.error, urllib.parse
+          base='https://academic-classroom-mcp-oauth-egncivfxva-uc.a.run.app'
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*args,**kwargs): return None
+          opener=urllib.request.build_opener(NoRedirect())
+          states=[]
+          challenges=[]
+          for _ in range(2):
+              try: opener.open(base+'/oauth/google/start',timeout=30)
+              except urllib.error.HTTPError as e:
+                  assert e.code==303, e.code
+                  u=urllib.parse.urlparse(e.headers['Location']); q=urllib.parse.parse_qs(u.query)
+                  assert u.scheme=='https' and u.netloc=='accounts.google.com' and u.path=='/o/oauth2/v2/auth'
+                  assert q['client_id']==['148028894895-tcfvacemkjoe13ocurt9hlfgintjrtql.apps.googleusercontent.com']
+                  assert q['redirect_uri']==[base+'/oauth/google/callback']
+                  assert q['code_challenge_method']==['S256'] and len(q['code_challenge'][0])==43
+                  assert q['access_type']==['offline'] and q['response_type']==['code']
+                  assert 'https://www.googleapis.com/auth/classroom.coursework.students' in q['scope'][0].split()
+                  cookie=e.headers['Set-Cookie'].lower()
+                  assert '__host-classroom-agent-oauth=' in cookie and 'httponly' in cookie and 'secure' in cookie and 'samesite=lax' in cookie
+                  states.append(q['state'][0]); challenges.append(q['code_challenge'][0])
+              else: raise AssertionError('Missing OAuth redirect')
+          assert len(set(states))==len(set(challenges))==2
+          try: opener.open(base+'/oauth/google/callback?state=invalid&code=invalid',timeout=30)
+          except urllib.error.HTTPError as e: assert e.code==400,e.code
+          else: raise AssertionError('Invalid callback accepted')
+          print('LIVE_GOOGLE_OAUTH_REDIRECT_PKCE_AND_INVALID_CALLBACK_VERIFIED')
+          PY
